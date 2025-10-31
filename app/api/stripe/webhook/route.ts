@@ -133,7 +133,7 @@ export async function POST(req: Request) {
                 if (customerData.email) {
                   console.log('🔍 Attempting to find user by email:', customerData.email);
                   const { data: authUser } = await supabase.auth.admin.listUsers();
-                  const matchingUser = authUser?.users.find(u => u.email === customerData.email);
+                  const matchingUser = authUser?.users.find((u: any) => u.email === customerData.email);
                   
                   if (matchingUser) {
                     console.log('✅ Found user by email:', matchingUser.id);
@@ -381,7 +381,7 @@ export async function POST(req: Request) {
             if (customerData2.email) {
               console.log('🔍 Attempting to find user by email:', customerData2.email);
               const { data: authUser } = await supabase.auth.admin.listUsers();
-              const matchingUser = authUser?.users.find(u => u.email === customerData2.email);
+              const matchingUser = authUser?.users.find((u: any) => u.email === customerData2.email);
               
               if (matchingUser) {
                 console.log('✅ Found user by email:', matchingUser.id);
