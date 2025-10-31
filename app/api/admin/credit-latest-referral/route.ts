@@ -9,7 +9,7 @@ export async function POST() {
 
     // Get the most recent user
     const { data: latestUser } = await supabase.auth.admin.listUsers();
-    const sortedUsers = latestUser?.users.sort((a, b) => 
+    const sortedUsers = latestUser?.users.sort((a: any, b: any) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
     
