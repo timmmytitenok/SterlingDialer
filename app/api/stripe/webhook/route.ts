@@ -128,13 +128,13 @@ export async function POST(req: Request) {
                 userProfile = { user_id: userId };
               } else {
                 console.error('❌ Stripe customer has no supabase_user_id in metadata!');
-                console.error('📋 Customer email:', customer.email);
+                console.error('📋 Customer email:', customerData.email);
                 
                 // Try to find user by email as last resort
-                if (customer.email) {
-                  console.log('🔍 Attempting to find user by email:', customer.email);
+                if (customerData.email) {
+                  console.log('🔍 Attempting to find user by email:', customerData.email);
                   const { data: authUser } = await supabase.auth.admin.listUsers();
-                  const matchingUser = authUser?.users.find(u => u.email === customer.email);
+                  const matchingUser = authUser?.users.find(u => u.email === customerData.email);
                   
                   if (matchingUser) {
                     console.log('✅ Found user by email:', matchingUser.id);
@@ -348,15 +348,17 @@ export async function POST(req: Request) {
         console.warn('⚠️ Profile not found by customer_id, checking Stripe metadata...');
         try {
           const customer = await stripe.customers.retrieve(customerId);
+          const customerData2 = customer as any;
+          
           console.log('📋 Stripe customer data:', {
-            id: customer.id,
-            email: customer.email,
-            deleted: customer.deleted,
-            metadata: customer.metadata
+            id: customerData2.id,
+            email: customerData2.email,
+            deleted: customerData2.deleted,
+            metadata: customerData2.metadata
           });
           
-          if (customer && !customer.deleted && customer.metadata?.supabase_user_id) {
-            const userId = customer.metadata.supabase_user_id;
+          if (customerData2 && !customerData2.deleted && customerData2.metadata?.supabase_user_id) {
+            const userId = customerData2.metadata.supabase_user_id;
             console.log('✅ Found user ID in Stripe metadata:', userId);
             
             // Update profile with this customer ID for future lookups
@@ -374,13 +376,13 @@ export async function POST(req: Request) {
             userProfile2 = { user_id: userId };
           } else {
             console.error('❌ Stripe customer has no supabase_user_id in metadata!');
-            console.error('📋 Customer email:', customer.email);
+            console.error('📋 Customer email:', customerData2.email);
             
             // Try to find user by email as last resort
-            if (customer.email) {
-              console.log('🔍 Attempting to find user by email:', customer.email);
+            if (customerData2.email) {
+              console.log('🔍 Attempting to find user by email:', customerData2.email);
               const { data: authUser } = await supabase.auth.admin.listUsers();
-              const matchingUser = authUser?.users.find(u => u.email === customer.email);
+              const matchingUser = authUser?.users.find(u => u.email === customerData2.email);
               
               if (matchingUser) {
                 console.log('✅ Found user by email:', matchingUser.id);
