@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 
-// Define types to avoid 'any' issues
-type AuthUser = {
+// Properly typed AuthUser interface
+interface AuthUser {
   id: string;
   email?: string;
   created_at: string;
-};
+}
 
 export async function POST() {
   try {
@@ -22,7 +22,7 @@ export async function POST() {
       return NextResponse.json({ error: 'No users found' }, { status: 404 });
     }
 
-    const sortedUsers = [...users].sort((a, b) => 
+    const sortedUsers: AuthUser[] = [...users].sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
@@ -40,7 +40,7 @@ export async function POST() {
 
     // Find the latest user WITH a referral code
     let targetUser: AuthUser | null = null;
-    let targetProfile = null;
+    let targetProfile: any = null;
 
     for (const user of sortedUsers) {
       const { data: profile } = await supabase
@@ -57,11 +57,14 @@ export async function POST() {
     }
 
     if (!targetUser || !targetProfile) {
-      const latestUsersList = sortedUsers.slice(0, 5).map(user => ({
-        email: user.email,
-        id: user.id,
-        created_at: user.created_at
-      }));
+      // Explicitly type the mapped array
+      const latestUsersList: Array<{ email: string | undefined; id: string; created_at: string }> = sortedUsers
+        .slice(0, 5)
+        .map((user: AuthUser) => ({
+          email: user.email,
+          id: user.id,
+          created_at: user.created_at
+        }));
 
       return NextResponse.json({ 
         error: 'No user with referral code found',
