@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sterling AI - Revive Old Leads",
+  title: "SterlingAI",
   description: "Turn old life insurance leads into booked appointments automatically. AI-powered calling for life insurance agents.",
   viewport: "width=device-width, initial-scale=1, maximum-scale=5",
   themeColor: "#0B1437",
