@@ -266,9 +266,10 @@ export default function OnboardingFormPage() {
                       </a>
                     </li>
                     <li>Click "New Webhook"</li>
-                    <li>Use this URL for testing: <span className="text-amber-400 font-mono text-xs">https://test.sterlingai.com/webhook</span></li>
+                    <li>Paste this URL: <span className="text-green-400 font-mono text-xs">https://sterlingdailer.com/api/appointments/cal-webhook</span></li>
                     <li>Select trigger: <strong className="text-white">"Booking Created"</strong></li>
-                    <li>Click "Create"</li>
+                    <li>Enable the webhook toggle</li>
+                    <li>Click "Create Webhook"</li>
                   </ul>
                 </div>
               </div>
