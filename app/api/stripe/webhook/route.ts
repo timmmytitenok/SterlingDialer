@@ -97,15 +97,19 @@ export async function POST(req: Request) {
             console.warn('⚠️ Profile not found by customer_id, checking Stripe metadata...');
             try {
               const customer = await stripe.customers.retrieve(customerId);
+              
+              // Cast to any to access properties safely
+              const customerData = customer as any;
+              
               console.log('📋 Stripe customer data:', {
-                id: customer.id,
-                email: customer.email,
-                deleted: customer.deleted,
-                metadata: customer.metadata
+                id: customerData.id,
+                email: customerData.email,
+                deleted: customerData.deleted,
+                metadata: customerData.metadata
               });
               
-              if (customer && !customer.deleted && customer.metadata?.supabase_user_id) {
-                const userId = customer.metadata.supabase_user_id;
+              if (customerData && !customerData.deleted && customerData.metadata?.supabase_user_id) {
+                const userId = customerData.metadata.supabase_user_id;
                 console.log('✅ Found user ID in Stripe metadata:', userId);
                 
                 // Update profile with this customer ID for future lookups
