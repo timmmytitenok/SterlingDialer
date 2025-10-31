@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Sparkles, DollarSign, TrendingUp, Zap } from 'lucide-react';
 
-export default function SubscribeSuccessPage() {
+function SubscribeSuccessPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [fadeOut, setFadeOut] = useState(false);
@@ -311,6 +311,14 @@ export default function SubscribeSuccessPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function SubscribeSuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-[#0B1437] via-purple-900 to-[#0B1437] flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+      <SubscribeSuccessPageContent />
+    </Suspense>
   );
 }
 
