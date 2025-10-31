@@ -50,7 +50,7 @@ export async function POST() {
     if (!targetUser || !targetProfile) {
       return NextResponse.json({ 
         error: 'No user with referral code found',
-        latestUsers: sortedUsers.slice(0, 5).map(u => ({
+        latestUsers: sortedUsers.slice(0, 5).map((u: any) => ({
           email: u.email,
           id: u.id,
           created_at: u.created_at
