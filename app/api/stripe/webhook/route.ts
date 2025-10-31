@@ -1,4 +1,3 @@
-// FORCE REBUILD Fri Oct 31 04:41:08 EDT 2025
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
