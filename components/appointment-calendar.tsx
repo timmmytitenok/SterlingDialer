@@ -1,0 +1,190 @@
+'use client';
+
+import { useState } from 'react';
+import { AppointmentModal } from './appointment-modal';
+
+interface AppointmentCalendarProps {
+  appointments: any[];
+  userId: string;
+  startHour?: number;
+  endHour?: number;
+}
+
+export function AppointmentCalendar({ 
+  appointments, 
+  userId, 
+  startHour = 8, 
+  endHour = 20 
+}: AppointmentCalendarProps) {
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Generate 5 days starting from today
+  const days: Date[] = [];
+  for (let i = 0; i < 5; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() + i);
+    days.push(date);
+  }
+
+  // Hours based on user settings (include the end hour)
+  const hourCount = endHour - startHour + 1;
+  const hours = Array.from({ length: hourCount }, (_, i) => i + startHour);
+
+  // Helper: Extract customer name only (remove Cal.ai event title prefix)
+  const extractCustomerName = (fullName: string | null) => {
+    if (!fullName) return 'Appointment';
+    
+    // Common patterns to remove:
+    // "Event Name - Customer Name" or "Event Name – Customer Name"
+    // Just return the part after the dash/hyphen
+    const dashPattern = /[-–—]\s*(.+)$/;
+    const match = fullName.match(dashPattern);
+    
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+    
+    // If no dash found, return the whole name
+    return fullName.trim();
+  };
+
+  const getAppointmentsForSlot = (day: Date, hour: number) => {
+    return appointments.filter(apt => {
+      // Parse the appointment time and convert to local timezone
+      const aptDate = new Date(apt.scheduled_at);
+      
+      // Create a date at midnight for comparison (in local timezone)
+      const dayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+      
+      return (
+        aptDate.getDate() === dayStart.getDate() &&
+        aptDate.getMonth() === dayStart.getMonth() &&
+        aptDate.getFullYear() === dayStart.getFullYear() &&
+        aptDate.getHours() === hour
+      );
+    });
+  };
+
+  const handleAppointmentClick = (appointment: any) => {
+    setSelectedAppointment(appointment);
+    setIsModalOpen(true);
+  };
+
+  return (
+    <>
+      <div className="bg-[#1A2647] rounded-xl border border-gray-800 overflow-hidden">
+        <div className="p-6 border-b border-gray-800">
+          <h3 className="text-xl font-bold text-white mb-1">Calendar View</h3>
+          <p className="text-sm text-gray-400">Next 5 days - Click an appointment to view details</p>
+        </div>
+
+        <div className="w-full">
+          <div>
+            {/* Days Header */}
+            <div className="grid grid-cols-6 border-b border-gray-800">
+              <div className="p-4 bg-[#0B1437] border-r border-gray-800">
+                <span className="text-sm font-medium text-gray-400">Time</span>
+              </div>
+              {days.map((day, idx) => (
+                <div key={idx} className="p-4 bg-[#0B1437] border-r border-gray-800 last:border-r-0">
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-white">
+                      {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Time Slots */}
+            <div>
+              {hours.map((hour) => (
+                <div key={hour} className="grid grid-cols-6 border-b border-gray-800">
+                  {/* Hour Label */}
+                  <div className="p-3 border-r border-gray-800 bg-[#0B1437]/30">
+                    <span className="text-sm text-gray-400">
+                      {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
+                    </span>
+                  </div>
+
+                  {/* Day Columns */}
+                  {days.map((day, dayIdx) => {
+                    const slotAppointments = getAppointmentsForSlot(day, hour);
+                    return (
+                      <div key={dayIdx} className="p-2 border-r border-gray-800 last:border-r-0 min-h-[70px]">
+                        {slotAppointments.map((apt) => (
+                          <button
+                            key={apt.id}
+                            onClick={() => handleAppointmentClick(apt)}
+                            className={`w-full p-2 rounded-lg text-left text-xs transition-all hover:scale-105 ${
+                              apt.is_sold || apt.status === 'sold'
+                                ? 'bg-yellow-900/40 border-2 border-yellow-500/70 text-yellow-300 shadow-lg shadow-yellow-500/20'
+                                : apt.status === 'no_show' || apt.is_no_show
+                                ? 'bg-red-900/40 border border-red-500/50 text-red-300'
+                                : apt.status === 'completed'
+                                ? 'bg-green-900/40 border border-green-500/50 text-green-300'
+                                : 'bg-blue-900/40 border border-blue-500/50 text-blue-300 hover:bg-blue-900/60'
+                            }`}
+                          >
+                            <div className="font-medium truncate flex items-center gap-1">
+                              {apt.is_sold && <span>💰</span>}
+                              {extractCustomerName(apt.prospect_name)}
+                            </div>
+                            <div className="text-[10px] opacity-75 truncate">
+                              {new Date(apt.scheduled_at).toLocaleTimeString('en-US', {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true,
+                              })}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="p-4 border-t border-gray-800 bg-[#0B1437] flex gap-6 justify-center flex-wrap">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-blue-900/40 border border-blue-500/50" />
+            <span className="text-xs text-gray-400">Scheduled</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-green-900/40 border border-green-500/50" />
+            <span className="text-xs text-gray-400">Completed</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-yellow-900/40 border-2 border-yellow-500/70" />
+            <span className="text-xs text-gray-400">💰 Sold</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-red-900/40 border border-red-500/50" />
+            <span className="text-xs text-gray-400">No-Show</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Appointment Modal */}
+      {isModalOpen && selectedAppointment && (
+        <AppointmentModal
+          appointment={selectedAppointment}
+          userId={userId}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedAppointment(null);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
