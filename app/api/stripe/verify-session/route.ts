@@ -56,12 +56,15 @@ export async function POST(req: Request) {
         : session.customer?.id;
 
       const priceId = subscription.items.data[0]?.price.id;
+      
+      // Cast to any to access all properties
+      const sub = subscription as any;
 
       console.log('💳 Subscription details:', {
-        subscriptionId: subscription.id,
+        subscriptionId: sub.id,
         customerId,
         priceId,
-        status: subscription.status,
+        status: sub.status,
       });
 
       // Determine tier
@@ -82,16 +85,16 @@ export async function POST(req: Request) {
         .upsert({
           user_id: user.id,
           stripe_customer_id: customerId,
-          stripe_subscription_id: subscription.id,
-          stripe_price_id: subscription.items.data[0]?.price.id,
+          stripe_subscription_id: sub.id,
+          stripe_price_id: sub.items.data[0]?.price.id,
           subscription_tier: tier,
-          status: subscription.status,
+          status: sub.status,
           plan_name: `Sterling AI - ${tier.charAt(0).toUpperCase() + tier.slice(1)} Plan`,
-          amount: subscription.items.data[0]?.price.unit_amount ? subscription.items.data[0].price.unit_amount / 100 : 0,
-          currency: subscription.currency,
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-          cancel_at_period_end: subscription.cancel_at_period_end,
+          amount: sub.items.data[0]?.price.unit_amount ? sub.items.data[0].price.unit_amount / 100 : 0,
+          currency: sub.currency,
+          current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
+          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+          cancel_at_period_end: sub.cancel_at_period_end,
         }, {
           onConflict: 'stripe_subscription_id'
         });
@@ -108,7 +111,7 @@ export async function POST(req: Request) {
         .update({
           subscription_tier: tier,
           stripe_customer_id: customerId,
-          subscription_status: subscription.status,
+          subscription_status: sub.status,
           has_active_subscription: true,
         })
         .eq('user_id', user.id);
