@@ -42,7 +42,11 @@ In Cal.ai webhook settings (the screen you showed me):
 
 1. **Subscriber URL:**
    ```
-   https://your-ngrok-url.ngrok.io/api/appointments/cal-webhook
+   https://your-ngrok-url.ngrok.io/api/appointments/cal-webhook  (for local testing)
+   
+   OR
+   
+   https://sterlingdailer.com/api/appointments/cal-webhook  (for production)
    ```
 
 2. **Enable Webhook:** Turn toggle **ON**

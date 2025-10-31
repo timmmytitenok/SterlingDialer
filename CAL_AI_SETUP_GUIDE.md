@@ -93,7 +93,7 @@ CAL_AI_USER_ID=a1b2c3d4-e5f6-7890-abcd-ef1234567890
 
 **Your webhook URL is:**
 ```
-https://your-actual-domain.com/api/appointments/cal-webhook
+https://sterlingdailer.com/api/appointments/cal-webhook
 ```
 
 ---
@@ -109,7 +109,7 @@ https://your-ngrok-url.ngrok.io/api/appointments/cal-webhook
 ```
 OR for production:
 ```
-https://your-domain.com/api/appointments/cal-webhook
+https://sterlingdailer.com/api/appointments/cal-webhook
 ```
 
 ### **2. Enable Webhook**
@@ -270,7 +270,7 @@ From each Cal.ai booking, we capture:
 2. Add `CAL_AI_USER_ID` to your production environment variables
 3. Update Cal.ai webhook URL to your production domain:
    ```
-   https://your-actual-domain.com/api/appointments/cal-webhook
+   https://sterlingdailer.com/api/appointments/cal-webhook
    ```
 4. Test with a real booking!
 

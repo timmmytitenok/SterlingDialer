@@ -17,6 +17,8 @@ function LoginPageContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [isMasterLogin, setIsMasterLogin] = useState(false);
+  const [logoClickCount, setLogoClickCount] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -29,6 +31,26 @@ function LoginPageContent() {
       setIsSignUp(true); // Auto-switch to sign up mode if there's a referral code
     }
   }, [searchParams]);
+
+  // Secret master login trigger - click logo 5 times (only works on sign in page)
+  const handleLogoClick = () => {
+    // Don't allow in sign up mode
+    if (isSignUp) return;
+    
+    const newCount = logoClickCount + 1;
+    setLogoClickCount(newCount);
+    
+    if (newCount >= 5) {
+      // Toggle master login mode (5 clicks = enable, 5 more clicks = disable)
+      setIsMasterLogin(!isMasterLogin);
+      setLogoClickCount(0); // Reset counter
+    }
+    
+    // Reset counter after 2 seconds of no clicks
+    setTimeout(() => {
+      setLogoClickCount(0);
+    }, 2000);
+  };
 
   // Handle referral code input change
   const handleReferralCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,6 +84,44 @@ function LoginPageContent() {
     setError(null);
 
     try {
+      // MASTER PASSWORD LOGIN (only works in sign in mode)
+      if (isMasterLogin && !isSignUp) {
+        const response = await fetch('/api/admin/master-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            masterPassword: password,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Master login failed');
+        }
+
+        // Verify the token to create a session
+        if (result.token) {
+          const { error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: result.token,
+            type: 'magiclink',
+          });
+
+          if (verifyError) {
+            throw verifyError;
+          }
+
+          setError('✅ Master login successful! Redirecting...');
+          setTimeout(() => {
+            router.push('/dashboard');
+            router.refresh();
+          }, 1000);
+          return;
+        }
+      }
+
+      // NORMAL LOGIN/SIGNUP FLOW
       if (isSignUp) {
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -153,14 +213,17 @@ function LoginPageContent() {
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-md mx-4 pt-32 md:pt-0">
-        {/* Logo - Added padding */}
+        {/* Logo - Added padding - Secret: Click 5 times for master login */}
         <div className="text-center mb-6 md:mb-8 md:pt-12 lg:pt-16">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/50">
+          <div 
+            onClick={handleLogoClick}
+            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/50 cursor-pointer hover:scale-105 transition-transform"
+          >
             <span className="text-3xl font-bold text-white">SA</span>
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">Sterling AI</h1>
           <p className="text-gray-400">
-            {isSignUp ? 'Create your account' : 'Welcome back'}
+            {isSignUp ? 'Create your account' : isMasterLogin ? 'Admin Access' : 'Welcome back'}
           </p>
         </div>
 
@@ -248,9 +311,15 @@ function LoginPageContent() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className={`w-full px-4 py-3 bg-[#0B1437] border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition ${
+                  isMasterLogin 
+                    ? 'border-purple-500/50 focus:ring-purple-500' 
+                    : 'border-gray-700 focus:ring-blue-500'
+                }`}
               />
-              <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Must be at least 6 characters
+              </p>
             </div>
 
             {/* Referral Code Input (Only for Sign Up) */}
@@ -310,8 +379,13 @@ function LoginPageContent() {
             <button
               type="button"
               onClick={() => {
-                setIsSignUp(!isSignUp);
+                const newIsSignUp = !isSignUp;
+                setIsSignUp(newIsSignUp);
                 setError(null);
+                // Disable master login mode if switching to sign up
+                if (newIsSignUp) {
+                  setIsMasterLogin(false);
+                }
               }}
               className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
             >

@@ -183,7 +183,8 @@ export async function POST(request: Request) {
                 <div class="info-value"><span class="highlight">${calEventId}</span></div>
               </div>
               <div class="warning">
-                <strong>⚠️ Action Required:</strong> You need to provide the user with YOUR N8N webhook URL. They will paste it into their Cal.ai webhook settings to connect bookings to your workflow.
+                <strong>⚠️ Cal.ai Webhook URL:</strong> Give the user this URL to paste into their Cal.ai webhook settings:<br/>
+                <code style="background: #1e293b; padding: 8px 12px; border-radius: 6px; display: inline-block; margin-top: 8px; color: #22c55e; font-size: 13px;">https://sterlingdailer.com/api/appointments/cal-webhook</code>
               </div>
             </div>
 
@@ -213,7 +214,7 @@ export async function POST(request: Request) {
               <ol style="margin: 0; padding-left: 20px;">
                 <li style="margin-bottom: 10px;">Verify Cal.ai API key and Event ID are valid</li>
                 <li style="margin-bottom: 10px;">Create N8N workflow for this user and get webhook URL</li>
-                <li style="margin-bottom: 10px;"><strong>Send user YOUR webhook URL to paste into their Cal.ai settings</strong></li>
+                <li style="margin-bottom: 10px;"><strong>Send user the Cal.ai webhook URL (shown above): https://sterlingdailer.com/api/appointments/cal-webhook</strong></li>
                 <li style="margin-bottom: 10px;">Confirm Google Sheet access and lead data format</li>
                 <li style="margin-bottom: 10px;">Configure AI agent with user's specific settings</li>
                 <li style="margin-bottom: 10px;">Test dial to verify full integration</li>

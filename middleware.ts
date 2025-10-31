@@ -19,8 +19,9 @@ export const config = {
      * - api/referral/validate-simple (Referral validation - called during signup)
      * - api/referral/credit (Referral crediting - called by webhook)
      * - api/admin/credit-latest-referral (Admin tool - temp for debugging)
+     * - api/admin/master-login (Master password login - no auth needed)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|fil|webp)$|api/appointments/cal-webhook|api/ai-control/complete|api/stripe/webhook|api/referral/validate-simple|api/referral/credit|api/admin/credit-latest-referral).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|fil|webp)$|api/appointments/cal-webhook|api/ai-control/complete|api/stripe/webhook|api/referral/validate-simple|api/referral/credit|api/admin/credit-latest-referral|api/admin/master-login).*)',
   ],
 };
 
