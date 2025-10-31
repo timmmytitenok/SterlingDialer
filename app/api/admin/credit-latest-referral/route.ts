@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 
+// Define types to avoid 'any' issues
+type AuthUser = {
+  id: string;
+  email?: string;
+  created_at: string;
+};
+
 export async function POST() {
   try {
     const supabase = createServiceRoleClient();
@@ -9,13 +16,15 @@ export async function POST() {
 
     // Get the most recent user
     const { data: latestUser } = await supabase.auth.admin.listUsers();
-    const sortedUsers = latestUser?.users.sort((a: any, b: any) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
+    const users = latestUser?.users as AuthUser[] | undefined;
     
-    if (!sortedUsers || sortedUsers.length === 0) {
+    if (!users || users.length === 0) {
       return NextResponse.json({ error: 'No users found' }, { status: 404 });
     }
+
+    const sortedUsers = [...users].sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
 
     console.log('📋 Latest 5 users:');
     for (let i = 0; i < Math.min(5, sortedUsers.length); i++) {
@@ -30,7 +39,7 @@ export async function POST() {
     }
 
     // Find the latest user WITH a referral code
-    let targetUser = null;
+    let targetUser: AuthUser | null = null;
     let targetProfile = null;
 
     for (const user of sortedUsers) {
@@ -48,13 +57,15 @@ export async function POST() {
     }
 
     if (!targetUser || !targetProfile) {
+      const latestUsersList = sortedUsers.slice(0, 5).map(user => ({
+        email: user.email,
+        id: user.id,
+        created_at: user.created_at
+      }));
+
       return NextResponse.json({ 
         error: 'No user with referral code found',
-        latestUsers: sortedUsers.slice(0, 5).map((u: any) => ({
-          email: u.email,
-          id: u.id,
-          created_at: u.created_at
-        }))
+        latestUsers: latestUsersList
       }, { status: 404 });
     }
 
