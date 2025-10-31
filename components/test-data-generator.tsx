@@ -652,7 +652,7 @@ export function TestDataGenerator({ userId }: TestDataGeneratorProps) {
                   } else {
                     // 40% not answered
                     const missedType = ['no_answer', 'busy', 'voicemail'][Math.floor(Math.random() * 3)];
-                    await addCall(missedType, null, randomDay);
+                    await addCall(missedType, undefined, randomDay);
                   }
                   
                   await new Promise(resolve => setTimeout(resolve, 50));
