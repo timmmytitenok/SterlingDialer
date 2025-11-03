@@ -34,20 +34,40 @@ function SubscribeSuccessPageContent() {
       .catch(err => console.error('❌ Error verifying payment:', err));
     }
 
-    // Start fade out after 4 seconds
-    const fadeTimer = setTimeout(() => {
-      setFadeOut(true);
-    }, 4000);
+    // Check if user has already completed onboarding
+    const checkOnboardingStatus = async () => {
+      try {
+        const response = await fetch('/api/user/onboarding-status');
+        const data = await response.json();
+        
+        // Start fade out after 4 seconds
+        const fadeTimer = setTimeout(() => {
+          setFadeOut(true);
+        }, 4000);
 
-    // Redirect to onboarding after 5 seconds
-    const redirectTimer = setTimeout(() => {
-      router.push('/onboarding');
-    }, 5000);
+        // Redirect based on onboarding status after 5 seconds
+        const redirectTimer = setTimeout(() => {
+          if (data.onboardingCompleted) {
+            console.log('✅ User already completed onboarding - going to dashboard');
+            router.push('/dashboard');
+          } else {
+            console.log('🆕 New user - going to onboarding');
+            router.push('/onboarding');
+          }
+        }, 5000);
 
-    return () => {
-      clearTimeout(fadeTimer);
-      clearTimeout(redirectTimer);
+        return () => {
+          clearTimeout(fadeTimer);
+          clearTimeout(redirectTimer);
+        };
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        // Default to onboarding if check fails
+        setTimeout(() => router.push('/onboarding'), 5000);
+      }
     };
+
+    checkOnboardingStatus();
   }, [router, searchParams]);
 
   return (
