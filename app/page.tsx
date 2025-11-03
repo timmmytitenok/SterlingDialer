@@ -110,7 +110,7 @@ export default function LandingPage() {
             {/* Free Trial Badge */}
             <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-green-600/20 border-2 border-green-500/50 rounded-full mb-12 lg:mb-20 hover:scale-105 transition-transform cursor-pointer animate-slide-up mx-auto" style={{ animationDelay: '0.2s' }}>
               <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 animate-pulse flex-shrink-0" />
-              <span className="text-sm sm:text-base text-white font-bold text-center">30-Day Free Trial • Only Pay <span className="text-green-400">$0.30/min</span> for Calls!</span>
+              <span className="text-xs sm:text-base text-white font-bold text-center">30-Day Free Trial • Only Pay <span className="text-green-400">$0.30/min</span> for Calls!</span>
             </div>
 
             {/* CTA Buttons */}
@@ -561,7 +561,7 @@ export default function LandingPage() {
               © 2025 Sterling AI. All rights reserved.
             </p>
             <p className="text-gray-500 text-sm">
-              Start your <span className="text-gray-300 font-bold">30 day</span> free trial today • Pay only for minutes used
+              Start your <span className="text-gray-300 font-bold">30 day</span> free trial today
             </p>
           </div>
         </div>
