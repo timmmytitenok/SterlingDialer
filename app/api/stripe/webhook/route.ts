@@ -516,6 +516,12 @@ export async function POST(req: Request) {
 
       console.log('🎯 Determined tier:', { tier, maxCalls, hasChecker, callerCount });
 
+      // Determine cost per minute based on tier
+      let costPerMinuteForSub = 0.30; // default
+      if (tier === 'starter') costPerMinuteForSub = 0.30;
+      else if (tier === 'pro') costPerMinuteForSub = 0.25;
+      else if (tier === 'elite') costPerMinuteForSub = 0.20;
+
       // Upsert subscription
       const { error: upsertError } = await supabase
         .from('subscriptions')
@@ -525,6 +531,7 @@ export async function POST(req: Request) {
           stripe_subscription_id: subscription.id,
           stripe_price_id: priceId,
           subscription_tier: tier,
+          cost_per_minute: costPerMinuteForSub, // 🔥 SET COST PER MINUTE IN SUBSCRIPTIONS TABLE
           max_daily_calls: maxCalls,
           has_appointment_checker: hasChecker,
           ai_caller_count: callerCount,
@@ -546,11 +553,20 @@ export async function POST(req: Request) {
 
       console.log(`✅ Subscription ${event.type === 'customer.subscription.created' ? 'created' : 'updated'} for user:`, userProfile2.user_id, `Tier: ${tier}`);
 
+      // Determine cost per minute based on tier
+      let costPerMinute = 0.30; // default
+      if (tier === 'starter') costPerMinute = 0.30;
+      else if (tier === 'pro') costPerMinute = 0.25;
+      else if (tier === 'elite') costPerMinute = 0.20;
+
+      console.log(`💰 Setting cost_per_minute to $${costPerMinute} for ${tier} tier`);
+
       // 🚨 CRITICAL: Update profiles table with subscription info (for middleware checks)
       const { error: profileSubError2 } = await supabase
         .from('profiles')
         .update({
           subscription_tier: tier,
+          cost_per_minute: costPerMinute, // 🔥 SET COST PER MINUTE ON UPGRADE
           stripe_customer_id: customerId,
           subscription_status: subscription.status,
           has_active_subscription: true // 🔥 SIMPLE BOOLEAN FLAG
@@ -560,7 +576,7 @@ export async function POST(req: Request) {
       if (profileSubError2) {
         console.error('❌ Error updating profile subscription info:', profileSubError2);
       } else {
-        console.log('✅ Profile updated with subscription tier and customer ID');
+        console.log('✅ Profile updated with subscription tier, cost_per_minute, and customer ID');
       }
 
       // Check if this is an upgrade (tier change) or new subscription
