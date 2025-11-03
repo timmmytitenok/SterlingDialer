@@ -22,9 +22,10 @@ export default function SettingsLayout({
         const response = await fetch('/api/balance/get');
         const data = await response.json();
         
-        // Get subscription tier from the response
-        if (data.subscriptionTier) {
-          setSubscriptionTier(data.subscriptionTier);
+        // Get subscription tier from the response (API returns subscription_tier in snake_case)
+        if (data.subscription_tier) {
+          setSubscriptionTier(data.subscription_tier);
+          console.log('✅ User subscription tier:', data.subscription_tier);
         } else {
           setSubscriptionTier('none');
         }
