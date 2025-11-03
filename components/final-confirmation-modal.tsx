@@ -11,9 +11,9 @@ interface FinalConfirmationModalProps {
 }
 
 const TIER_INFO = {
-  starter: { name: 'Starter', price: 999 },
-  pro: { name: 'Pro', price: 1399 },
-  elite: { name: 'Elite', price: 1999 },
+  starter: { name: 'Starter', price: 499 },
+  pro: { name: 'Pro', price: 899 },
+  elite: { name: 'Elite', price: 1499 },
 };
 
 export function FinalConfirmationModal({

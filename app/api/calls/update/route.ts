@@ -190,13 +190,13 @@ export async function POST(request: Request) {
         let monthlyPrice = 0;
         switch (subscription.subscription_tier) {
           case 'starter':
-            monthlyPrice = 999;
+            monthlyPrice = 499;
             break;
           case 'pro':
-            monthlyPrice = 1399;
+            monthlyPrice = 899;
             break;
           case 'elite':
-            monthlyPrice = 1999;
+            monthlyPrice = 1499;
             break;
         }
         

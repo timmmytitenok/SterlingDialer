@@ -85,9 +85,9 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
     
     const tier = subscriptionInfo.subscription_tier;
     const tierData = {
-      starter: { name: 'Starter', price: 999, leads: 600, callers: 1, color: 'blue' },
-      pro: { name: 'Pro', price: 1399, leads: 1200, callers: 2, color: 'purple' },
-      elite: { name: 'Elite', price: 1999, leads: 1800, callers: 3, color: 'amber' },
+      starter: { name: 'Starter', price: 499, leads: 600, callers: 1, color: 'blue' },
+      pro: { name: 'Pro', price: 899, leads: 1200, callers: 2, color: 'purple' },
+      elite: { name: 'Elite', price: 1499, leads: 1800, callers: 3, color: 'amber' },
     };
     
     return tierData[tier as keyof typeof tierData] || null;
