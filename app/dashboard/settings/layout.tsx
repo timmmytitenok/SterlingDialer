@@ -13,31 +13,28 @@ export default function SettingsLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
+  const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null);
 
-  // Check if user has subscription
+  // Check user's subscription tier
   useEffect(() => {
-    const checkSubscription = async () => {
+    const checkSubscriptionTier = async () => {
       try {
         const response = await fetch('/api/balance/get');
         const data = await response.json();
-        // If they have balance data, they likely have a subscription
-        // But let's check properly
-        const subResponse = await fetch('/api/stripe/check-subscription');
-        if (subResponse.ok) {
-          const subData = await subResponse.json();
-          setHasSubscription(subData.hasSubscription);
+        
+        // Get subscription tier from the response
+        if (data.subscriptionTier) {
+          setSubscriptionTier(data.subscriptionTier);
         } else {
-          // Fallback - assume no subscription
-          setHasSubscription(false);
+          setSubscriptionTier('none');
         }
       } catch (error) {
-        console.error('Error checking subscription:', error);
-        setHasSubscription(false);
+        console.error('Error checking subscription tier:', error);
+        setSubscriptionTier('none');
       }
     };
 
-    checkSubscription();
+    checkSubscriptionTier();
   }, []);
 
   const baseNav = [
@@ -47,8 +44,8 @@ export default function SettingsLayout({
     { name: 'Calendar', href: '/dashboard/settings/calendar', icon: Calendar },
   ];
 
-  // Only add Referrals if user has subscription
-  const settingsNav = hasSubscription 
+  // Only add Referrals if user is on FREE TRIAL
+  const settingsNav = subscriptionTier === 'free_trial'
     ? [...baseNav, { name: 'Referrals', href: '/dashboard/settings/referrals', icon: Gift }]
     : baseNav;
 
@@ -92,8 +89,8 @@ export default function SettingsLayout({
               );
             })}
             
-            {/* Show loading state while checking subscription */}
-            {hasSubscription === null && (
+            {/* Show loading state while checking subscription tier */}
+            {subscriptionTier === null && (
               <div className="px-4 py-3 text-gray-600 text-sm flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-600"></div>
                 Loading...
