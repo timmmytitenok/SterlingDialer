@@ -91,10 +91,12 @@ DROP TRIGGER IF EXISTS trg_calculate_trial_days_remaining ON profiles CASCADE;
 DROP TRIGGER IF EXISTS update_trial_days_remaining ON profiles CASCADE;
 DROP TRIGGER IF EXISTS trg_extend_referrer_trial_on_completion ON referrals CASCADE;
 
--- Drop functions with CASCADE
+-- Drop ALL function versions (with and without default parameters)
 DROP FUNCTION IF EXISTS calculate_trial_days_remaining() CASCADE;
 DROP FUNCTION IF EXISTS start_free_trial(UUID, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS start_free_trial(UUID) CASCADE;
 DROP FUNCTION IF EXISTS grant_free_access(UUID, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS grant_free_access(UUID) CASCADE;
 DROP FUNCTION IF EXISTS extend_trial(UUID, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS expire_free_trials() CASCADE;
 DROP FUNCTION IF EXISTS extend_referrer_trial_on_completion() CASCADE;
