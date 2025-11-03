@@ -194,7 +194,7 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
               <div className="space-y-3">
                 <h3 className="text-xl md:text-2xl font-bold text-white">Try Sterling AI Risk-Free!</h3>
                 <p className="text-sm md:text-base text-gray-300">
-                  Get full access to all features for 30 days. No credit card required.
+                  Get full access to all features for 30 days. Only pay $0.30/min for calls you make.
                 </p>
                 <div className="space-y-2">
                   <div className="flex items-start gap-2">
@@ -258,10 +258,11 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
             <h3 className="text-xl md:text-2xl font-bold text-white mb-1 md:mb-2">Starter</h3>
             <p className="text-gray-400 text-xs md:text-sm mb-3 md:mb-4">Perfect for getting started</p>
             
-            <div className="flex items-baseline justify-center gap-1 mb-4 md:mb-6">
-              <span className="text-4xl md:text-5xl font-bold text-white">$999</span>
+            <div className="flex items-baseline justify-center gap-1 mb-2">
+              <span className="text-4xl md:text-5xl font-bold text-white">$499</span>
               <span className="text-lg md:text-xl text-gray-400">/mo</span>
             </div>
+            <p className="text-sm text-blue-400 font-semibold">+ $0.30/min</p>
           </div>
 
           <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
@@ -317,14 +318,20 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
         <div className={`relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl md:rounded-2xl p-4 md:p-6 border-2 transform lg:scale-105 transition-all duration-500 md:hover:scale-110 hover:border-purple-500/70 hover:shadow-3xl hover:shadow-purple-500/50 cursor-pointer group ${
           isCurrentTier('pro') ? 'border-purple-500/50 ring-2 ring-purple-500/30' : 'border-purple-500/40'
         }`}>
-          <div className="text-center mb-4 md:mb-6">
+          {/* Most Popular Badge */}
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs md:text-sm rounded-full shadow-lg whitespace-nowrap">
+            ⭐ MOST POPULAR
+          </div>
+          
+          <div className="text-center mb-4 md:mb-6 mt-2">
             <h3 className="text-xl md:text-2xl font-bold text-white mb-1 md:mb-2">Pro</h3>
             <p className="text-gray-400 text-xs md:text-sm mb-3 md:mb-4">For serious closers</p>
             
-            <div className="flex items-baseline justify-center gap-1 mb-4 md:mb-6">
-              <span className="text-4xl md:text-5xl font-bold text-white">$1,399</span>
+            <div className="flex items-baseline justify-center gap-1 mb-2">
+              <span className="text-4xl md:text-5xl font-bold text-white">$899</span>
               <span className="text-lg md:text-xl text-gray-400">/mo</span>
             </div>
+            <p className="text-sm text-purple-400 font-semibold">+ $0.25/min</p>
           </div>
 
           <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
@@ -384,10 +391,11 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
             <h3 className="text-xl md:text-2xl font-bold text-white mb-1 md:mb-2">Elite</h3>
             <p className="text-gray-400 text-xs md:text-sm mb-3 md:mb-4">Maximum volume & automation</p>
             
-            <div className="flex items-baseline justify-center gap-1 mb-4 md:mb-6">
-              <span className="text-4xl md:text-5xl font-bold text-white">$1,999</span>
+            <div className="flex items-baseline justify-center gap-1 mb-2">
+              <span className="text-4xl md:text-5xl font-bold text-white">$1,499</span>
               <span className="text-lg md:text-xl text-gray-400">/mo</span>
             </div>
+            <p className="text-sm text-amber-400 font-semibold">+ $0.20/min</p>
           </div>
 
           <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
@@ -397,7 +405,7 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <span className="text-white font-semibold text-xs md:text-sm">1,800 leads per day</span>
+              <span className="text-white font-semibold text-xs md:text-sm">2,000 leads per day</span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
