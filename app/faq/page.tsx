@@ -38,8 +38,8 @@ export default function FAQPage() {
       answer: "Absolutely. No contracts, no commitments. Cancel anytime through your billing portal. But here's the thing: most agents DOUBLE their appointments in the first month. Once you see results, you won't want to stop."
     },
     {
-      question: "How do I get 30% off my first month?",
-      answer: "Use code STERLING at signup! Everyone gets 30% off their first month. No tricks, no catches. Just enter STERLING when you create your account and watch the discount apply automatically at checkout."
+      question: "How does the free trial work?",
+      answer: "Start with a 30-day free trial! You get 1 AI Caller and can make up to 600 calls per day. You only pay $0.30 per minute for calls you make. No credit card required to start, cancel anytime."
     },
     {
       question: "What if I run out of calling credits?",
@@ -107,45 +107,45 @@ export default function FAQPage() {
           </p>
         </div>
 
-        {/* 30% Off Banner */}
-        <div className="mb-12 group relative overflow-hidden bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-2 border-purple-500/40 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:border-purple-500/60 transition-all duration-300 hover:scale-[1.02] animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '0.2s' }}>
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/10 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        {/* Free Trial Banner */}
+        <div className="mb-12 group relative overflow-hidden bg-gradient-to-r from-green-600/20 to-emerald-600/20 border-2 border-green-500/40 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:border-green-500/60 transition-all duration-300 hover:scale-[1.02] animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '0.2s' }}>
+          <div className="absolute inset-0 bg-gradient-to-r from-green-500/0 via-green-500/10 to-green-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           
           {/* Mobile: Vertical Stack */}
           <div className="relative flex flex-col sm:hidden gap-3 text-center">
             <div className="flex items-center justify-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
-                <Gift className="w-5 h-5 text-purple-400" />
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center border border-green-500/30">
+                <Zap className="w-5 h-5 text-green-400" />
               </div>
               <div className="text-left">
-                <p className="text-white font-bold text-base">Get 30% Off Your First Month!</p>
-                <p className="text-gray-400 text-xs">Use code <span className="text-purple-400 font-mono font-bold">STERLING</span> at signup</p>
+                <p className="text-white font-bold text-base">Start Your 30-Day Free Trial!</p>
+                <p className="text-gray-400 text-xs">Only pay <span className="text-green-400 font-bold">$0.30/min</span> for calls</p>
               </div>
             </div>
             <Link
               href="/login"
-              className="w-full px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-sm rounded-lg transition-all hover:scale-105 hover:shadow-xl hover:shadow-purple-500/50"
+              className="w-full px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold text-sm rounded-lg transition-all hover:scale-105 hover:shadow-xl hover:shadow-green-500/50"
             >
-              Claim Discount →
+              Start Free Trial →
             </Link>
           </div>
           
           {/* Desktop: Horizontal Layout */}
           <div className="relative hidden sm:flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30 group-hover:scale-110 transition-transform">
-                <Gift className="w-6 h-6 text-purple-400" />
+              <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center border border-green-500/30 group-hover:scale-110 transition-transform">
+                <Zap className="w-6 h-6 text-green-400" />
               </div>
               <div>
-                <p className="text-white font-bold text-lg">Get 30% Off Your First Month!</p>
-                <p className="text-gray-400 text-sm">Use code <span className="text-purple-400 font-mono font-bold">STERLING</span> at signup</p>
+                <p className="text-white font-bold text-lg">Start Your 30-Day Free Trial!</p>
+                <p className="text-gray-400 text-sm">Only pay <span className="text-green-400 font-bold">$0.30/min</span> for calls you make</p>
               </div>
             </div>
             <Link
               href="/login"
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-lg transition-all hover:scale-105 hover:shadow-xl hover:shadow-purple-500/50"
+              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-lg transition-all hover:scale-105 hover:shadow-xl hover:shadow-green-500/50"
             >
-              Claim Discount →
+              Start Free Trial →
             </Link>
           </div>
         </div>
@@ -212,8 +212,8 @@ export default function FAQPage() {
               </Link>
             </div>
             <p className="text-xs sm:text-sm text-gray-400 mt-4">
-              <Gift className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-purple-400" />
-              Use code <span className="text-purple-400 font-mono font-bold">STERLING</span> for 30% off first month
+              <Zap className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-green-400" />
+              30 Days Free • Only Pay <span className="text-green-400 font-bold">$0.30/min</span> for Calls
             </p>
           </div>
         </div>
