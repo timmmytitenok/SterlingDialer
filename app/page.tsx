@@ -526,9 +526,6 @@ export default function LandingPage() {
                 <Link href="/pricing" className="block text-gray-400 hover:text-white transition-colors text-sm">
                   Pricing
                 </Link>
-                <Link href="/case-studies" className="block text-gray-400 hover:text-white transition-colors text-sm">
-                  Case Studies
-                </Link>
               </div>
             </div>
 
