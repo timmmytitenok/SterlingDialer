@@ -85,12 +85,17 @@ CREATE POLICY "Service role can update referrals" ON referrals
 -- PART 5: FREE TRIAL MANAGEMENT FUNCTIONS
 -- ============================================================================
 
--- Drop existing functions first to avoid parameter conflicts
+-- Drop triggers FIRST (they depend on functions)
+DROP TRIGGER IF EXISTS trg_calculate_trial_days_remaining ON profiles;
+DROP TRIGGER IF EXISTS trg_extend_referrer_trial_on_completion ON referrals;
+
+-- Now drop functions (order matters!)
 DROP FUNCTION IF EXISTS start_free_trial(UUID, INTEGER);
 DROP FUNCTION IF EXISTS grant_free_access(UUID, INTEGER);
 DROP FUNCTION IF EXISTS extend_trial(UUID, INTEGER);
 DROP FUNCTION IF EXISTS expire_free_trials();
 DROP FUNCTION IF EXISTS calculate_trial_days_remaining();
+DROP FUNCTION IF EXISTS extend_referrer_trial_on_completion();
 DROP FUNCTION IF EXISTS add_to_balance(UUID, DECIMAL);
 
 -- Function: Start a free trial for a user
@@ -285,11 +290,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Drop existing trigger and recreate
-DROP TRIGGER IF EXISTS trg_calculate_trial_days_remaining ON profiles;
-DROP TRIGGER IF EXISTS trg_extend_referrer_trial_on_completion ON referrals;
-
--- Create trigger to auto-calculate days remaining
+-- Create trigger to auto-calculate days remaining (trigger already dropped above)
 CREATE TRIGGER trg_calculate_trial_days_remaining
   BEFORE INSERT OR UPDATE OF free_trial_ends_at ON profiles
   FOR EACH ROW
