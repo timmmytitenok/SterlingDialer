@@ -47,7 +47,7 @@ export default function FAQPage() {
     },
     {
       question: "What's the difference between Starter, Pro, and Elite?",
-      answer: "Starter ($999/mo): 1 AI caller, 600 leads/day. Pro ($1,399/mo): 2 AI callers, 1,200 leads/day. Elite ($1,999/mo): 3 AI callers, 1,800 leads/day. More callers = more dials = more appointments. Elite agents can book 3x the meetings."
+      answer: "Starter ($499/mo + $0.30/min): 1 AI caller, 600 leads/day. Pro ($899/mo + $0.25/min): 2 AI callers, 1,200 leads/day. Elite ($1,499/mo + $0.20/min): 3 AI callers, 2,000 leads/day. More callers = more dials = more appointments. Elite agents can book 3x the meetings and save the most per call."
     },
     {
       question: "Still chasing new leads when you haven't worked the old ones?",
