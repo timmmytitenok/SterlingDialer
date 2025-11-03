@@ -85,18 +85,19 @@ CREATE POLICY "Service role can update referrals" ON referrals
 -- PART 5: FREE TRIAL MANAGEMENT FUNCTIONS
 -- ============================================================================
 
--- Drop triggers FIRST (they depend on functions)
-DROP TRIGGER IF EXISTS trg_calculate_trial_days_remaining ON profiles;
-DROP TRIGGER IF EXISTS trg_extend_referrer_trial_on_completion ON referrals;
+-- Drop everything with CASCADE to force remove all dependencies
+DROP TRIGGER IF EXISTS trg_calculate_trial_days_remaining ON profiles CASCADE;
+DROP TRIGGER IF EXISTS update_trial_days_remaining ON profiles CASCADE;
+DROP TRIGGER IF EXISTS trg_extend_referrer_trial_on_completion ON referrals CASCADE;
 
--- Now drop functions (order matters!)
-DROP FUNCTION IF EXISTS start_free_trial(UUID, INTEGER);
-DROP FUNCTION IF EXISTS grant_free_access(UUID, INTEGER);
-DROP FUNCTION IF EXISTS extend_trial(UUID, INTEGER);
-DROP FUNCTION IF EXISTS expire_free_trials();
-DROP FUNCTION IF EXISTS calculate_trial_days_remaining();
-DROP FUNCTION IF EXISTS extend_referrer_trial_on_completion();
-DROP FUNCTION IF EXISTS add_to_balance(UUID, DECIMAL);
+-- Drop functions with CASCADE
+DROP FUNCTION IF EXISTS calculate_trial_days_remaining() CASCADE;
+DROP FUNCTION IF EXISTS start_free_trial(UUID, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS grant_free_access(UUID, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS extend_trial(UUID, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS expire_free_trials() CASCADE;
+DROP FUNCTION IF EXISTS extend_referrer_trial_on_completion() CASCADE;
+DROP FUNCTION IF EXISTS add_to_balance(UUID, DECIMAL) CASCADE;
 
 -- Function: Start a free trial for a user
 CREATE OR REPLACE FUNCTION start_free_trial(
