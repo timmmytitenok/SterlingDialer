@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { ReferralDashboard } from '@/components/referral-dashboard';
+import { FreeTrialReferralDashboard } from '@/components/free-trial-referral-dashboard';
 import { Lock, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 
@@ -12,6 +13,13 @@ export default async function ReferralsPage() {
     redirect('/login');
   }
 
+  // Get user profile to check their tier
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_tier')
+    .eq('user_id', user.id)
+    .single();
+
   // Check if user has an active subscription
   const { data: subscription } = await supabase
     .from('subscriptions')
@@ -19,6 +27,20 @@ export default async function ReferralsPage() {
     .eq('user_id', user.id)
     .eq('status', 'active')
     .maybeSingle();
+
+  // If user is on free trial, show free trial referral program
+  if (profile?.subscription_tier === 'free_trial') {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Free Trial Referral Program</h1>
+          <p className="text-gray-400">Extend your trial by inviting friends - earn up to 28 extra days!</p>
+        </div>
+
+        <FreeTrialReferralDashboard userId={user.id} />
+      </div>
+    );
+  }
 
   // If no active subscription, show locked message
   if (!subscription) {

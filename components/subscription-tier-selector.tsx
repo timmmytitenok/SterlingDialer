@@ -394,13 +394,13 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
 
       {/* Free Trial Banner (only show if no current tier AND not hidden) */}
       {(!currentTier || currentTier === 'none' || currentTier === null) && !hideFreeTrial && (
-        <div className="mb-6 md:mb-8 mt-12 md:mt-16">
+        <div className="mb-6 md:mb-8 mt-25 md:mt-28">
           <div className="relative bg-gradient-to-br from-green-600/20 to-emerald-600/20 rounded-xl md:rounded-2xl p-4 md:p-6 border-2 border-green-500/50 hover:border-green-500/70 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/40">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-sm rounded-full shadow-lg whitespace-nowrap">
               🎁 30-DAY FREE TRIAL
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-6">
               {/* Left side - info */}
               <div className="space-y-3">
                 <h3 className="text-xl md:text-2xl font-bold text-white">Try Sterling AI Risk-Free!</h3>

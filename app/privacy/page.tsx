@@ -132,7 +132,7 @@ export default function PrivacyPage() {
                 <p>
                   Questions about privacy? Contact us at:
                   <br />
-                  <a href="mailto:privacy@sterlingai.com" className="text-blue-400 hover:text-blue-300">privacy@sterlingai.com</a>
+                  <a href="mailto:privacy@sterlingai.com" className="text-blue-400 hover:text-blue-300">SterlingDailer@gmail.com</a>
                 </p>
               </section>
             </div>
@@ -140,7 +140,7 @@ export default function PrivacyPage() {
         </div>
 
         {/* CTA */}
-        <div className="mt-12 text-center bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl p-8 border border-blue-500/30 animate-in fade-in duration-700">
+        <div className="mt-24 text-center bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl p-8 border border-blue-500/30 animate-in fade-in duration-700">
           <p className="text-white font-bold text-lg mb-4">Your data is safe with us</p>
           <Link
             href="/login"
@@ -152,7 +152,7 @@ export default function PrivacyPage() {
           </Link>
           <p className="text-sm text-gray-400 mt-4">
             <Zap className="w-4 h-4 inline mr-1 text-green-400" />
-            30 Days Free • Only Pay <span className="text-green-400 font-bold">$0.30/min</span> for Calls
+            30 Days Free • Only Pay <span className="text-green-400 font-bold">$0.30/min</span>
           </p>
         </div>
       </div>

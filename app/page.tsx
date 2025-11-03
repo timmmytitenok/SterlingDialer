@@ -263,7 +263,7 @@ export default function LandingPage() {
                       Upload spreadsheet. You know, the one with 2,000 leads you never called. 
                     </p>
                     <p className="text-gray-600 text-sm">
-                      CSV, Excel, copy/paste. Takes 60 seconds.
+                      CSV, Excel, copy/paste. Takes 60 sec.
                     </p>
                   </div>
                 </div>
@@ -282,7 +282,7 @@ export default function LandingPage() {
                       One button. That's it. Sterling AI starts calling your leads immediately.
                     </p>
                     <p className="text-gray-600 text-sm">
-                      No setup. No configuration. Just launch go.
+                      No setup. No configuration. Just launch.
                     </p>
                   </div>
                 </div>
@@ -296,7 +296,7 @@ export default function LandingPage() {
                     3
                   </div>
                   <div className="relative pt-6">
-                    <h3 className="text-2xl font-bold text-white mb-4">Wake Up to Appointments</h3>
+                    <h3 className="text-xl md:text-xl font-bold text-white mb-4">Wake Up to Appointments!</h3>
                     <p className="text-gray-300 leading-relaxed mb-3">
                       AI calls while you sleep. Appointments book automatically to your calendar.
                     </p>
@@ -397,10 +397,10 @@ export default function LandingPage() {
                 <h2 className="text-2xl sm:text-3xl md:text-6xl lg:text-6xl font-bold text-white mb-4 md:mb-6 leading-tight">
                   Still chasing new leads when you haven't worked the old ones?
                 </h2>
-                <p className="text-base sm:text-lg md:text-2xl text-gray-300 mb-3 md:mb-10 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-base sm:text-lg md:text-2xl text-gray-300 mb-5 md:mb-10 max-w-2xl mx-auto leading-relaxed">
                   Sterling AI does it all for you — automatically calling, and booking your calendar full of appointments.
                 </p>
-                <p className="text-sm sm:text-base md:text-1xl text-gray-400 mb-6 md:mb-8">
+                <p className="text-sm sm:text-base md:text-1xl text-gray-400 mb-8 md:mb-8">
                   <span className="text-green-400 font-bold">$499 a month. 600 dials a day.</span> What's one policy worth to you?
                 </p>
                 <Link

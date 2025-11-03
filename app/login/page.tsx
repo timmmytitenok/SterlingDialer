@@ -140,30 +140,63 @@ function LoginPageContent() {
         // Show success message FIRST - signup worked!
         setError('✅ Check your email to confirm your account!');
         
-        // If there's a referral code, validate it in the background
-        if (referralCode && data.user) {
-          console.log('🎯 Applying referral code:', referralCode);
-          
-          // Don't await - let it run in background
-          fetch('/api/referral/validate-simple', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              code: referralCode, 
-              newUserId: data.user.id 
+        // If there's a referral code or ref parameter, handle it in the background
+        if (data.user) {
+          // Check for old referral code system (for paid users)
+          if (referralCode) {
+            console.log('🎯 Applying referral code:', referralCode);
+            
+            // Don't await - let it run in background
+            fetch('/api/referral/validate-simple', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                code: referralCode, 
+                newUserId: data.user.id 
+              })
             })
-          })
-          .then(async (res) => {
-            const result = await res.json();
-            if (res.ok) {
-              console.log('✅ Referral applied! You will get 30% discount!');
-            } else {
-              console.error('❌ Referral failed:', result.error);
-            }
-          })
-          .catch((err) => {
+            .then(async (res) => {
+              const result = await res.json();
+              if (res.ok) {
+                console.log('✅ Referral applied! You will get 30% discount!');
+              } else {
+                console.error('❌ Referral failed:', result.error);
+              }
+            })
+            .catch((err) => {
             console.error('❌ Referral error:', err);
           });
+          }
+          
+          // Check for new free trial referral system (ref parameter)
+          const urlParams = new URLSearchParams(window.location.search);
+          const referrerId = urlParams.get('ref');
+          
+          if (referrerId) {
+            console.log('🎁 Processing free trial referral from:', referrerId);
+            
+            // Create referral entry in the background
+            fetch('/api/referral/create-from-link', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                referrerId,
+                refereeId: data.user.id,
+                refereeEmail: email
+              })
+            })
+            .then(async (res) => {
+              const result = await res.json();
+              if (res.ok) {
+                console.log('✅ Free trial referral tracked!');
+              } else {
+                console.error('❌ Free trial referral failed:', result.error);
+              }
+            })
+            .catch((err) => {
+              console.error('❌ Free trial referral error:', err);
+            });
+          }
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -206,7 +239,7 @@ function LoginPageContent() {
       {/* Content */}
       <div className="relative z-10 w-full max-w-md mx-4 py-12 md:py-16">
         {/* Logo - Added padding - Secret: Click 5 times for master login */}
-        <div className="text-center mb-8 md:mb-12 pt-8 md:pt-0">
+        <div className="text-center mb-8 md:mb-12 pt-18 md:pt-0">
           <div 
             onClick={handleLogoClick}
             className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/50 cursor-pointer hover:scale-105 transition-transform"

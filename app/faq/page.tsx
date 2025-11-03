@@ -192,7 +192,7 @@ export default function FAQPage() {
               Ready to Revive Your Old Leads?
             </h2>
             <p className="text-sm sm:text-base text-gray-300 mb-7 sm:mb-7 max-w-2xl mx-auto leading-relaxed">
-              $999/month. 600 dials a day. Appointments booked automatically.
+              $499/month. 600 dials a day. Appointments booked automatically.
               What's one policy worth to you? Sterling AI pays for itself by lunch.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
@@ -219,7 +219,7 @@ export default function FAQPage() {
         </div>
 
         {/* Still Have Questions */}
-        <div className="mt-12 text-center animate-in fade-in duration-700" style={{ animationDelay: '0.6s' }}>
+        <div className="mt-16 text-center animate-in fade-in duration-700" style={{ animationDelay: '0.6s' }}>
           <p className="text-gray-400 mb-4">Still have questions?</p>
           <Link
             href="/contact"

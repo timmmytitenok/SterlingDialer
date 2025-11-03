@@ -137,7 +137,7 @@ export default function TermsPage() {
           </div>
           <p className="text-sm text-gray-400 mt-4">
             <Zap className="w-4 h-4 inline mr-1 text-green-400" />
-            30 Days Free • Only Pay <span className="text-green-400 font-bold">$0.30/min</span> for Calls
+            30 Days Free • Only Pay <span className="text-green-400 font-bold">$0.30/min</span>
           </p>
         </div>
       </div>

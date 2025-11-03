@@ -63,7 +63,7 @@ export default async function SubscribePage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 md:py-12">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-14 md:py-12">
           <div className="max-w-7xl w-full">
             {/* Welcome Section */}
             <div className="text-center mb-6 md:mb-12 space-y-3 md:space-y-4">
@@ -76,13 +76,13 @@ export default async function SubscribePage() {
               </div>
 
               {/* Main Heading */}
-              <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-3 md:mb-4 animate-in slide-in-from-bottom duration-700">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 md:mb-4 animate-in slide-in-from-bottom duration-700">
                 Choose Your Plan
               </h1>
               
               {/* Subheading */}
-              <p className="text-sm md:text-lg lg:text-xl text-gray-400 max-w-2xl mx-auto animate-in slide-in-from-bottom duration-700 delay-100">
-                Select the perfect plan to start reviving your old leads and booking more appointments
+              <p className="text-xs md:text-lg lg:text-xl text-gray-400 max-w-2xl mb-18 md:mb-35 mx-auto animate-in slide-in-from-bottom duration-700 delay-100">
+                Select the perfect plan to start reviving your old leads!
               </p>
 
             </div>

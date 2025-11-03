@@ -56,6 +56,19 @@ export function CallBalanceCard({
           // Payment method was just added, check if balance needs refilling
           console.log('🔍 Payment method added, checking balance...');
           
+          // Check if this completes a referral sign-up
+          try {
+            const referralResponse = await fetch('/api/referral/complete-signup', {
+              method: 'POST',
+            });
+            const referralData = await referralResponse.json();
+            if (referralData.success && referralData.daysAdded) {
+              console.log(`🎉 Referral completed! ${referralData.daysAdded} days added to referrer's trial`);
+            }
+          } catch (error) {
+            console.log('No referral to complete');
+          }
+          
           if (data.balance !== undefined && data.auto_refill_enabled && data.auto_refill_amount) {
             // If balance is below $10, trigger auto-refill
             if (data.balance < 10) {

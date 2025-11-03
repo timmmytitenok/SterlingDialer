@@ -138,7 +138,7 @@ export default function HowItWorksPage() {
                   direction="top"
                 />
               </div>
-              <div className="text-5xl flex justify-center">
+              <div className="text-6xl flex justify-center">
                 <BlurText
                   text="In Action"
                   delay={120}
@@ -394,31 +394,31 @@ export default function HowItWorksPage() {
 
 
         {/* The Problem/Solution - Hidden on Mobile */}
-        <div className="hidden lg:block max-w-4xl mx-auto px-4 py-18">
+        <div className="hidden lg:block max-w-4xl mx-auto px-4 py-12">
           <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-12 border border-gray-800 text-center animate-in fade-in zoom-in duration-700">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
               Still chasing new leads when you haven't even worked the old ones?
             </h2>
             <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-              Sterling AI does it all — automatically calling, following up, and booking your calendar full. 
+              Sterling AI does it all — automatically calling, and booking your calendar full. 
               You already paid for those leads. Let's make sure you get your money's worth.
             </p>
             <div className="inline-flex items-center gap-2 px-6 py-3 bg-green-600/20 border border-green-500/40 rounded-xl">
               <CheckCircle className="w-5 h-5 text-green-400" />
-              <span className="text-green-400 font-bold">$999/month. 600 dials a day. What's one policy worth to you?</span>
+              <span className="text-green-400 font-bold">$499/month. 600 dials a day. What's one policy worth to you?</span>
             </div>
           </div>
         </div>
 
         {/* Final CTA */}
-        <div className="max-w-4xl mx-auto px-2 sm:px-4 py-15 text-center">
+        <div className="max-w-4xl mx-auto px-2 sm:px-4 py-30 text-center">
           <div className="relative overflow-hidden bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-xl sm:rounded-2xl p-6 sm:p-10 md:p-12 border-2 border-blue-500/30 group hover:border-blue-500/50 transition-all animate-in fade-in zoom-in duration-700">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse" />
             <div className="relative">
-              <h2 className="text-3xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4 leading-tight">
+              <h2 className="text-4xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-4 leading-tight">
                 Ready to Revive Those Old Leads?
               </h2>
-              <p className="text-gray-300 mb-6 sm:mb-8 text-sm sm:text-base md:text-lg leading-relaxed">
+              <p className="text-gray-300 mb-6 sm:mb-8 text-xl sm:text-base md:text-lg leading-relaxed">
                 Sterling AI pays for itself by lunch. What are you waiting for?
               </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">

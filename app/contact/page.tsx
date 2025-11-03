@@ -67,7 +67,7 @@ export default function ContactPage() {
             <Mail className="w-4 h-4 text-blue-400 animate-pulse" />
             <span className="text-blue-400 font-semibold">Get In Touch</span>
           </div>
-          <h1 className="text-6xl md:text-7xl font-bold mb-6 text-center">
+          <h1 className="text-6xl md:text-8xl font-bold mb-6 text-center">
             <div className="flex justify-center">
               <BlurText
                 text="Contact"
@@ -229,12 +229,12 @@ export default function ContactPage() {
 
         {/* Bottom CTA - Hidden on Mobile */}
         <div className="hidden sm:block mt-16 text-center bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl sm:rounded-2xl p-6 sm:p-10 md:p-12 border border-gray-800 animate-in fade-in duration-700" style={{ animationDelay: '0.3s' }}>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-5 sm:mb-5 leading-tight">
+          <h2 className="text-2xl sm:text-4xl font-bold text-white mb-5 sm:mb-5 leading-tight">
             Have thousands of old leads collecting dust?
           </h2>
           <p className="text-sm sm:text-base text-gray-300 mb-7 sm:mb-8 max-w-2xl mx-auto leading-relaxed">
             Let Sterling AI revive them into booked appointments — automatically. You already paid for those leads. 
-            Sterling AI just makes sure you get your money's worth — by calling and booking them on autopilot.
+            Sterling AI just makes sure you get your money's worth.
           </p>
           <Link
             href="/pricing"

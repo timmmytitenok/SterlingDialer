@@ -61,7 +61,7 @@ export function PublicFooter() {
             © 2025 Sterling AI. All rights reserved.
           </p>
           <p className="text-gray-500 text-sm">
-            Start your 30-day free trial today • Pay only for minutes used
+            Start your <span className="text-gray-300 font-bold">30 day</span> free trial today
           </p>
         </div>
       </div>

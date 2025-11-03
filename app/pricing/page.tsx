@@ -35,7 +35,7 @@ export default function PricingPage() {
                   🚀 Start Your 30-Day FREE Trial!
                 </p>
                 <p className="text-gray-300 text-xs sm:text-base lg:text-lg mb-3 lg:mb-4">
-                  Only pay <span className="text-green-400 font-bold text-sm sm:text-lg lg:text-xl px-1.5 sm:px-3 py-0.5 sm:py-1 bg-green-500/20 rounded">$0.30/minute</span> for calls you make
+                  Only pay <span className="text-green-400 font-bold text-sm sm:text-lg lg:text-xl px-1.5 sm:px-3 py-0.5 sm:py-1 bg-green-500/20 rounded">$0.30/minute</span> for calls <span className="text-white font-bold">YOU</span> make
                 </p>
                 <p className="hidden sm:block text-gray-400 text-sm leading-relaxed">
                   1 AI Caller • 600 Leads Per Day • Cancel Anytime
@@ -70,11 +70,11 @@ export default function PricingPage() {
                 />
               </div>
             </h1>
-            <p className="text-1xl md:text-xl text-gray-400 mb-4">
+            <p className="text-1xl md:text-1xl text-gray-400 mb-4">
               You already paid for those leads. Let's make sure you get your money's worth.
             </p>
-            <p className="hidden sm:block text-lg text-gray-500">
-              Try it FREE for 30 days. 600 dials a day. What's one policy worth to you?
+            <p className="hidden sm:block md:text-xs text-lg text-gray-500">
+              
             </p>
           </div>
 
@@ -92,10 +92,10 @@ export default function PricingPage() {
                     <span className="text-5xl font-bold text-white">$499</span>
                     <span className="text-xl text-gray-400">/mo</span>
                   </div>
-                  <p className="text-green-400 text-sm font-semibold mb-4">+ $0.30/min for calls</p>
+                  <p className="text-green-400 text-sm font-semibold mb-4">+ $0.30/min</p>
                 </div>
 
-                <div className="space-y-3 mb-8">
+                <div className="space-y-4 mb-13">
                   <div className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-300 text-sm">1 AI Caller</span>
@@ -151,7 +151,7 @@ export default function PricingPage() {
                     <span className="text-5xl font-bold text-white">$899</span>
                     <span className="text-xl text-gray-400">/mo</span>
                   </div>
-                  <p className="text-green-400 text-sm font-semibold mb-4">+ $0.25/min for calls</p>
+                  <p className="text-green-400 text-sm font-semibold mb-4">+ $0.25/min</p>
                 </div>
 
                 <div className="space-y-3 mb-8">
@@ -213,17 +213,17 @@ export default function PricingPage() {
                     <span className="text-5xl font-bold text-white">$1,499</span>
                     <span className="text-xl text-gray-400">/mo</span>
                   </div>
-                  <p className="text-green-400 text-sm font-semibold mb-4">+ $0.20/min for calls</p>
+                  <p className="text-green-400 text-sm font-semibold mb-4">+ $0.20/min</p>
                 </div>
 
                 <div className="space-y-3 mb-8">
                   <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-white font-semibold text-sm">3 AI Callers</span>
+                    <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-300 text-sm">3 AI Callers</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-white font-semibold text-sm">1,800 leads per day</span>
+                    <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-300 text-sm">1,800 leads per day</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
@@ -322,16 +322,15 @@ export default function PricingPage() {
             <div className="relative overflow-hidden bg-gradient-to-br from-blue-600/10 to-purple-600/10 rounded-xl sm:rounded-2xl p-5 sm:p-8 md:p-12 border border-blue-500/30">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-purple-500/0 animate-pulse" />
               <div className="relative text-center">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-white mb-4 sm:mb-5 md:mb-6 leading-tight">
+                <h2 className="text-2xl sm:text-4xl md:text-4xl lg:text-6xl font-bold text-white mb-4 sm:mb-5 md:mb-6 leading-tight">
                   Have thousands of old leads collecting dust?
                 </h2>
-                <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 mb-4 sm:mb-5 md:mb-6 leading-relaxed">
-                  Let Sterling AI revive them into booked appointments — automatically. 
-                  Those leads from 6 months, 1 year, even 2 years ago? We'll call them ALL.
+                <p className="text-sm sm:text-base md:text-base lg:text-2xl text-gray-300 mb-4 sm:mb-5 md:mb-8 leading-relaxed">
+                  Let Sterling AI revive them into booked appointments, automatically. 
+                  Those leads from 6 months, 1 year, even 2 years ago? We'll call them ALL!
                 </p>
-                <p className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-400 mb-5 sm:mb-6 md:mb-8 leading-relaxed">
-                  You already paid for those leads. Sterling AI just makes sure you get your money's worth — 
-                  by calling and booking them on autopilot.
+                <p className="text-xs sm:text-sm md:text-base lg:text-1xs text-gray-400 mb-5 sm:mb-6 md:mb-10 leading-relaxed">
+                  You already paid for those leads. Sterling AI just makes sure you get your money's worth.
                 </p>
                 <div className="inline-flex items-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-6 sm:py-3 bg-green-600/20 border border-green-500/40 rounded-lg sm:rounded-xl">
                   <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
@@ -351,25 +350,25 @@ export default function PricingPage() {
               <div className="group bg-[#1A2647] rounded-xl p-6 border border-gray-800 hover:border-blue-500/50 transition-all hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20">
                 <Phone className="w-10 h-10 text-blue-400 mb-4 group-hover:scale-110 transition-transform" />
                 <h3 className="text-lg font-bold text-white mb-2">Natural AI Voice</h3>
-                <p className="text-gray-400 text-sm">Sounds human, handles objections smoothly</p>
+                <p className="text-gray-400 text-sm">Sounds human, handles objections like a human</p>
               </div>
 
               <div className="group bg-[#1A2647] rounded-xl p-6 border border-gray-800 hover:border-indigo-500/50 transition-all hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/20">
                 <Calendar className="w-10 h-10 text-indigo-400 mb-4 group-hover:scale-110 transition-transform" />
                 <h3 className="text-lg font-bold text-white mb-2">Auto Scheduling</h3>
-                <p className="text-gray-400 text-sm">Books directly to your calendar</p>
+                <p className="text-gray-400 text-sm">Books directly to your Goggle calendar.</p>
               </div>
 
               <div className="group bg-[#1A2647] rounded-xl p-6 border border-gray-800 hover:border-purple-500/50 transition-all hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20">
                 <BarChart3 className="w-10 h-10 text-purple-400 mb-4 group-hover:scale-110 transition-transform" />
                 <h3 className="text-lg font-bold text-white mb-2">Deep Analytics</h3>
-                <p className="text-gray-400 text-sm">Track every call, conversion, and dollar</p>
+                <p className="text-gray-400 text-sm">Track every call, conversion, and dollar earned</p>
               </div>
 
               <div className="group bg-[#1A2647] rounded-xl p-6 border border-gray-800 hover:border-green-500/50 transition-all hover:scale-105 hover:shadow-xl hover:shadow-green-500/20">
                 <Clock className="w-10 h-10 text-green-400 mb-4 group-hover:scale-110 transition-transform" />
                 <h3 className="text-lg font-bold text-white mb-2">24/7 Uptime</h3>
-                <p className="text-gray-400 text-sm">Works while you sleep, eat, and vacation</p>
+                <p className="text-gray-400 text-sm">Works while you sleep, eat, book other polcies and vacation</p>
               </div>
             </div>
           </div>
@@ -384,7 +383,7 @@ export default function PricingPage() {
               <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
                 <h3 className="text-lg font-bold text-white mb-2">How do I get started?</h3>
                 <p className="text-gray-400">
-                  Create an account, choose your package, set up billing. Then give the team 12 to 24 hours to configure your AI Agent. You will then be able to access your dashboard and start calling your leads right away!
+                  Create an account, choose your package, set up billing. Then give the team 24 to 72 hours to configure your AI Agent. You will then be able to access your dashboard and start calling your leads right away!
                 </p>
               </div>
 
@@ -405,7 +404,7 @@ export default function PricingPage() {
               <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
                 <h3 className="text-lg font-bold text-white mb-2">How much does it cost per call?</h3>
                 <p className="text-gray-400">
-                  $0.10 per minute. Not all calls get picked up, but on average to book an appointment it takes about a 2-3 minute a conversation.
+                   Call costs vary by plan: Starter is $0.30 per minute, Pro is $0.25 per minute, and Elite is $0.20 per minute. Not all calls get picked up, but on average it takes about 1-2 minutes of conversation to book an appointment.
                 </p>
               </div>
             </div>
@@ -417,14 +416,14 @@ export default function PricingPage() {
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse" />
               
               <div className="relative z-10">
-                <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4 md:mb-6 leading-tight">
+              <h2 className="text-2xl sm:text-3xl md:text-6xl lg:text-6xl font-bold text-white mb-4 md:mb-6 leading-tight">
                   Still chasing new leads when you haven't worked the old ones?
                 </h2>
-                <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-3 md:mb-4 max-w-2xl mx-auto leading-relaxed">
-                  Sterling AI does it for you — automatically calling, following up, and booking your calendar full.
+                <p className="text-base sm:text-lg md:text-2xl text-gray-300 mb-4 md:mb-10 max-w-2xl mx-auto leading-relaxed">
+                  Sterling AI does it all for you — automatically calling, and booking your calendar full of appointments.
                 </p>
-                <p className="text-sm sm:text-base md:text-lg text-gray-400 mb-6 md:mb-8">
-                  <span className="text-green-400 font-bold">$999/month. 600 dials a day.</span> What's one policy worth to you?
+                <p className="text-sm sm:text-base md:text-1xl text-gray-400 mb-7 md:mb-8">
+                  <span className="text-green-400 font-bold">$499 a month. 600 dials a day.</span> What's one policy worth to you?
                 </p>
                 <Link
                   href="/login"
