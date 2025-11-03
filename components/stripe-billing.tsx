@@ -97,13 +97,39 @@ export function StripeBilling({ userEmail, hasSubscription, currentTier = 'none'
           </div>
 
           {/* Subscription Status & Actions */}
-          {hasSubscription ? (
+          {currentTier === 'free_trial' ? (
             <>
-              {/* Active Status Badge */}
+              {/* Free Trial Status Badge */}
               <div className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg mb-4 md:mb-6">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                 <span className="text-green-400 font-semibold text-xs md:text-sm">
-                  {currentTier === 'free_trial' ? 'Active Free Trial' : 'Active Subscription'}
+                  30-Day Free Trial
+                </span>
+                <Zap className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
+              </div>
+
+              {/* Manage Subscription Button (for free trial) */}
+              <button
+                onClick={handleManageBilling}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-bold rounded-lg md:rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group text-sm md:text-base"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 translate-x-[-100%] group-hover:translate-x-[100%]" style={{ transitionProperty: 'transform', transitionDuration: '1s' }} />
+                <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="relative z-10">{loading ? 'Opening Portal...' : 'Manage Subscription'}</span>
+              </button>
+
+              <p className="text-[10px] md:text-xs text-center text-gray-500 mt-2 md:mt-3">
+                Update payment method • View payment history
+              </p>
+            </>
+          ) : hasSubscription ? (
+            <>
+              {/* Active Paid Subscription Status Badge */}
+              <div className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg mb-4 md:mb-6">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                <span className="text-green-400 font-semibold text-xs md:text-sm">
+                  Active Subscription
                 </span>
                 <Zap className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
               </div>
