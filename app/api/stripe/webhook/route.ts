@@ -582,6 +582,7 @@ export async function POST(req: Request) {
         const setupStatus = 'pending_setup'; // 🔥 ALWAYS pending_setup for ANY tier change
         
         console.log(`🔧 Setting AI setup status to: ${setupStatus} (${isTierChange ? 'tier change detected' : 'new subscription'})`);
+        console.log(`🔍 Updating profile for user_id: ${userProfile2.user_id}`);
         
         const { error: profileUpdateError2 } = await supabase
           .from('profiles')
@@ -594,9 +595,14 @@ export async function POST(req: Request) {
 
         if (profileUpdateError2) {
           console.error('❌ Error updating setup status:', profileUpdateError2);
+          console.error('❌ Full error details:', JSON.stringify(profileUpdateError2, null, 2));
         } else {
           console.log(`✅ AI setup status set to ${setupStatus} - admin needs to configure N8N workflows`);
+          console.log(`✅ User ${userProfile2.user_id} should now see pending_setup status`);
         }
+      } else {
+        console.log(`ℹ️ No tier change detected - keeping existing AI setup status`);
+        console.log(`ℹ️ isNewSubscription: ${isNewSubscription}, isTierChange: ${isTierChange}`);
       }
 
       // Check if this user was referred and credit the referrer (for subscription.created only)
