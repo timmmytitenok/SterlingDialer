@@ -7,7 +7,7 @@ import { CreditCard, ExternalLink, Sparkles, CheckCircle, Zap } from 'lucide-rea
 interface StripeBillingProps {
   userEmail: string;
   hasSubscription: boolean;
-  currentTier?: 'none' | 'starter' | 'pro' | 'elite';
+  currentTier?: 'none' | 'starter' | 'pro' | 'elite' | 'free_trial';
 }
 
 export function StripeBilling({ userEmail, hasSubscription, currentTier = 'none' }: StripeBillingProps) {
@@ -102,7 +102,9 @@ export function StripeBilling({ userEmail, hasSubscription, currentTier = 'none'
               {/* Active Status Badge */}
               <div className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg mb-4 md:mb-6">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-green-400 font-semibold text-xs md:text-sm">Active Subscription</span>
+                <span className="text-green-400 font-semibold text-xs md:text-sm">
+                  {currentTier === 'free_trial' ? 'Active Free Trial' : 'Active Subscription'}
+                </span>
                 <Zap className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
               </div>
 
@@ -165,7 +167,17 @@ export function StripeBilling({ userEmail, hasSubscription, currentTier = 'none'
             // All tiers have the same core features now
             
             // Add remaining features based on tier
-            if (currentTier === 'starter') {
+            if (currentTier === 'free_trial') {
+              baseFeatures.push(
+                '1 AI Caller',
+                'Up to 600 leads per day',
+                '$0.30 per minute calling',
+                'Live call transfer',
+                'Call recordings & analytics',
+                'Appointment scheduling',
+                'Calendar integration'
+              );
+            } else if (currentTier === 'starter') {
               baseFeatures.push(
                 '1 AI Caller',
                 'Up to 600 leads per day',
