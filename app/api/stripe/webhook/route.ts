@@ -297,33 +297,15 @@ export async function POST(req: Request) {
           const previousTier = existingProfile?.previous_tier;
           const hasCompletedOnboarding = existingProfile?.onboarding_completed === true;
           
-          // Determine if we need maintenance mode
-          let setupStatus = 'ready';
+          // 🔥 ALWAYS set to pending_setup for ANY subscription purchase/change
+          const setupStatus = 'pending_setup';
           
           if (!hasCompletedOnboarding) {
-            // Brand new user - needs onboarding and setup
-            setupStatus = 'pending_setup';
-            console.log('🆕 New user - setting to pending_setup (needs onboarding)');
+            console.log('🆕 New user - setting to pending_setup (needs onboarding and AI setup)');
           } else if (isUpgradeFromTrial) {
-            // Upgrading from free trial
-            if (tier === 'starter') {
-              // Free trial → Starter: Same 1 AI, no maintenance needed
-              setupStatus = 'ready';
-              console.log('🎁 Upgrade from trial to Starter - AI stays ready (same 1 AI)');
-            } else if (tier === 'pro' || tier === 'elite') {
-              // Free trial → Pro/Elite: Need to activate 2nd/3rd AI
-              setupStatus = 'maintenance';
-              console.log(`🎁 Upgrade from trial to ${tier.toUpperCase()} - setting to maintenance (need to enable extra AIs)`);
-            }
+            console.log(`🎁 Upgrade from trial to ${tier.toUpperCase()} - setting to pending_setup (AI needs reconfiguration)`);
           } else {
-            // Existing paid user upgrading/downgrading
-            if (tier === 'pro' || tier === 'elite') {
-              setupStatus = 'maintenance';
-              console.log(`🔄 Upgrade to ${tier.toUpperCase()} - setting to maintenance (need to enable extra AIs)`);
-            } else {
-              setupStatus = 'ready';
-              console.log('✅ Downgrade or same tier - AI stays ready');
-            }
+            console.log(`🔄 Subscription change to ${tier.toUpperCase()} - setting to pending_setup (AI needs reconfiguration)`);
           }
           
           console.log(`🔧 Setting AI setup status to: ${setupStatus}`);
@@ -332,10 +314,8 @@ export async function POST(req: Request) {
             .from('profiles')
             .update({ 
               ai_setup_status: setupStatus,
-              ...(setupStatus === 'pending_setup' || setupStatus === 'maintenance' ? {
-                setup_requested_at: new Date().toISOString(),
-                setup_completed_at: null
-              } : {})
+              setup_requested_at: new Date().toISOString(),
+              setup_completed_at: null
             })
             .eq('user_id', userProfile.user_id);
 
@@ -579,7 +559,7 @@ export async function POST(req: Request) {
         console.log('✅ Profile updated with subscription tier, cost_per_minute, and customer ID');
       }
 
-      // Check if this is an upgrade (tier change) or new subscription
+      // Check if this is a tier change (upgrade/downgrade) or new subscription
       const { data: existingSubscription } = await supabase
         .from('subscriptions')
         .select('subscription_tier')
@@ -588,18 +568,20 @@ export async function POST(req: Request) {
         .single();
 
       const isNewSubscription = event.type === 'customer.subscription.created';
-      const isUpgrade = !isNewSubscription && existingSubscription && existingSubscription.subscription_tier !== tier;
-      const isDowngrade = !isNewSubscription && existingSubscription && 
-        ((existingSubscription.subscription_tier === 'elite' && (tier === 'pro' || tier === 'starter')) ||
-         (existingSubscription.subscription_tier === 'pro' && tier === 'starter'));
+      const isTierChange = !isNewSubscription && existingSubscription && existingSubscription.subscription_tier !== tier;
+      
+      console.log(`📊 Subscription change:`, { 
+        isNewSubscription, 
+        isTierChange,
+        oldTier: existingSubscription?.subscription_tier,
+        newTier: tier
+      });
 
-      console.log(`📊 Subscription change type:`, { isNewSubscription, isUpgrade, isDowngrade });
-
-      // Set AI setup status: new subscriptions and upgrades need setup, downgrades don't
-      if (isNewSubscription || isUpgrade) {
-        const setupStatus = isUpgrade ? 'maintenance' : 'pending_setup';
+      // ALWAYS set AI to pending_setup for ANY subscription change (new, upgrade, or downgrade)
+      if (isNewSubscription || isTierChange) {
+        const setupStatus = 'pending_setup'; // 🔥 ALWAYS pending_setup for ANY tier change
         
-        console.log(`🔧 Setting AI setup status to: ${setupStatus}`);
+        console.log(`🔧 Setting AI setup status to: ${setupStatus} (${isTierChange ? 'tier change detected' : 'new subscription'})`);
         
         const { error: profileUpdateError2 } = await supabase
           .from('profiles')
@@ -615,9 +597,6 @@ export async function POST(req: Request) {
         } else {
           console.log(`✅ AI setup status set to ${setupStatus} - admin needs to configure N8N workflows`);
         }
-      } else if (isDowngrade) {
-        console.log('⬇️ Downgrade detected - user can continue using AI until manually downgraded');
-        // Don't change setup status - let them keep using it
       }
 
       // Check if this user was referred and credit the referrer (for subscription.created only)
