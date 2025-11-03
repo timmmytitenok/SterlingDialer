@@ -49,6 +49,38 @@ export function CallBalanceCard({
           setRefillAmount(data.auto_refill_amount);
           setHasConfigured(data.auto_refill_enabled);
         }
+
+        // Check if returning from payment setup (success=true in URL)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('success') === 'true') {
+          // Payment method was just added, check if balance needs refilling
+          console.log('🔍 Payment method added, checking balance...');
+          
+          if (data.balance !== undefined && data.auto_refill_enabled && data.auto_refill_amount) {
+            // If balance is below $10, trigger auto-refill
+            if (data.balance < 10) {
+              console.log('💳 Balance is low, triggering auto-refill...');
+              
+              // Trigger auto-refill API
+              const refillResponse = await fetch('/api/balance/auto-refill-check', {
+                method: 'POST',
+              });
+              
+              const refillData = await refillResponse.json();
+              if (refillData.success) {
+                console.log('✅ Auto-refill triggered successfully');
+                // Refresh balance after a short delay
+                setTimeout(async () => {
+                  const refreshResponse = await fetch('/api/balance/get');
+                  const refreshData = await refreshResponse.json();
+                  if (refreshData.balance !== undefined) {
+                    setBalance(refreshData.balance);
+                  }
+                }, 2000);
+              }
+            }
+          }
+        }
       } catch (error) {
         console.error('Failed to fetch user data:', error);
       }
