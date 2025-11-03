@@ -42,7 +42,7 @@ export default function TermsPage() {
                   <li>Subscriptions are billed monthly at the selected tier price (Starter: $499, Pro: $899, Elite: $1,499) plus per-minute calling costs</li>
                   <li>Payment is processed through Stripe on a recurring basis</li>
                   <li>You may cancel your subscription at any time through the billing portal</li>
-                  <li>No refunds. All sales are final.</li>
+                  <li>No refunds. <span className="font-bold">All sales are final.</span></li>
                   <li>Free trial includes 30 days of access with pay-per-minute calling ($0.30/min for Starter tier)</li>
                 </ul>
               </section>
@@ -50,11 +50,10 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-bold text-white mb-4">3. Call Balance & Credits</h2>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>Calls cost $0.10 per minute, charged from your prepaid call balance</li>
+                  <li>Calls cost between $0.20 and $0.30 per minute, charged from your prepaid call balance</li>
                   <li>You must maintain sufficient balance to use the AI calling service</li>
                   <li>Auto-refill can be enabled to automatically add funds when balance drops below $10</li>
                   <li>All refills are final and non-refundable</li>
-                  <li>Referral credits ($200 per successful referral) are added to call balance and can be used for calls</li>
                 </ul>
               </section>
 
@@ -72,7 +71,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-bold text-white mb-4">5. AI Agent Setup</h2>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>New subscriptions and upgrades require 12-24 hours for AI configuration</li>
+                  <li>New subscriptions and upgrades require 24-72 hours for AI configuration</li>
                   <li>During setup, access to AI Control Center will be temporarily restricted</li>
                   <li>We will notify you via email when your AI agent is ready to launch</li>
                   <li>Configuration includes dedicated N8N workflows specific to your account</li>
@@ -116,7 +115,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-bold text-white mb-4">10. Contact</h2>
                 <p>
-                  For questions about these terms, contact us at support@sterlingai.com
+                  For questions about these terms, contact us at SterlingDailer@gmail.com
                 </p>
               </section>
             </div>
@@ -124,7 +123,7 @@ export default function TermsPage() {
         </div>
 
         {/* CTA */}
-        <div className="mt-12 text-center bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-2xl p-8 border border-purple-500/30 animate-in fade-in duration-700">
+        <div className="mt-24 text-center bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-2xl p-8 border border-purple-500/30 animate-in fade-in duration-700">
           <p className="text-white font-bold text-lg mb-4">Ready to get started?</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
