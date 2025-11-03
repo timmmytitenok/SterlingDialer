@@ -184,38 +184,38 @@ export function CallBalanceCard({
         </div>
 
         {/* Header */}
-        <div className="relative z-10 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-600/20 flex items-center justify-center border-2 border-green-500/50 shadow-lg">
-                <Wallet className="w-6 h-6 md:w-7 md:h-7 text-green-400" />
+        <div className="relative z-10 mb-4 md:mb-6">
+          <div className="flex items-start md:items-center justify-between gap-2 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+              <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg md:rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-600/20 flex items-center justify-center border-2 border-green-500/50 shadow-lg flex-shrink-0">
+                <Wallet className="w-5 h-5 md:w-7 md:h-7 text-green-400" />
               </div>
-              <div>
-                <h3 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
-                  Call Balance
-                  <Sparkles className="w-5 h-5 text-yellow-400 animate-pulse" />
+              <div className="min-w-0">
+                <h3 className="text-base md:text-2xl font-bold text-white flex items-center gap-1.5 md:gap-2">
+                  <span className="truncate">Call Balance</span>
+                  <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-yellow-400 animate-pulse flex-shrink-0" />
                 </h3>
-                <p className="text-sm text-gray-400">Prepaid minutes for AI calls</p>
+                <p className="text-xs md:text-sm text-gray-400 truncate">Prepaid minutes for AI calls</p>
               </div>
             </div>
             {/* Auto-Refill Status Badge */}
-            <div className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg border ${
+            <div className={`px-2 md:px-4 py-1 md:py-1.5 rounded-md md:rounded-lg border flex-shrink-0 ${
               hasConfigured 
                 ? 'bg-green-500/20 border-green-500/50' 
                 : 'bg-gray-500/20 border-gray-500/50'
             }`}>
-              <span className={`font-bold text-xs md:text-sm flex items-center gap-1 ${
+              <span className={`font-bold text-[10px] md:text-sm flex items-center gap-1 whitespace-nowrap ${
                 hasConfigured ? 'text-green-400' : 'text-gray-400'
               }`}>
                 {hasConfigured ? (
                   <>
-                    <CheckCircle className="w-4 h-4" />
-                    AUTO-REFILL ON
+                    <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="hidden xs:inline">AUTO-REFILL</span> ON
                   </>
                 ) : (
                   <>
-                    <AlertCircle className="w-4 h-4" />
-                    AUTO-REFILL OFF
+                    <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="hidden xs:inline">AUTO-REFILL</span> OFF
                   </>
                 )}
               </span>
