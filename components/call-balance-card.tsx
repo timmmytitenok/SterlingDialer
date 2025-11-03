@@ -224,17 +224,17 @@ export function CallBalanceCard({
         </div>
 
         {/* Balance Display */}
-        <div className="relative z-10 bg-[#0B1437]/50 rounded-xl p-6 md:p-8 border-2 border-green-500/40 mb-6">
+        <div className="relative z-10 bg-[#0B1437]/50 rounded-xl p-4 md:p-8 border-2 border-green-500/40 mb-4 md:mb-6">
           <div className="text-center">
-            <p className="text-sm text-gray-400 mb-3 flex items-center justify-center gap-2">
-              <Sparkles className="w-4 h-4 text-green-400" />
+            <p className="text-xs md:text-sm text-gray-400 mb-2 md:mb-3 flex items-center justify-center gap-2">
+              <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
               Current Balance
             </p>
-            <div className="flex items-baseline justify-center gap-3 mb-4">
-              <span className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
+            <div className="flex items-baseline justify-center gap-2 md:gap-3 mb-3 md:mb-4 flex-wrap">
+              <span className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
                 ${balance.toFixed(2)}
               </span>
-              <div className={`px-4 py-2 rounded-full text-sm font-bold ${
+              <div className={`px-3 py-1 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-bold ${
                 balanceStatus === 'low' ? 'bg-red-500/20 text-red-400 border-2 border-red-500/40 animate-pulse' :
                 balanceStatus === 'medium' ? 'bg-yellow-500/20 text-yellow-400 border-2 border-yellow-500/40' :
                 'bg-green-500/20 text-green-400 border-2 border-green-500/40'
@@ -246,16 +246,16 @@ export function CallBalanceCard({
             </div>
 
             {/* Minutes Display */}
-            <div className="flex items-center justify-center gap-2 text-gray-300 mb-3">
-              <Clock className="w-5 h-5 text-blue-400" />
-              <span className="text-lg">
-                ≈ <strong className="text-white text-2xl">{minutesRemaining.toLocaleString()}</strong> <span className="text-gray-400">minutes</span>
+            <div className="flex items-center justify-center gap-1.5 md:gap-2 text-gray-300 mb-2 md:mb-3">
+              <Clock className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+              <span className="text-sm md:text-lg">
+                ≈ <strong className="text-white text-lg md:text-2xl">{minutesRemaining.toLocaleString()}</strong> <span className="text-gray-400 text-xs md:text-base">minutes</span>
               </span>
             </div>
 
             {/* Cost Info */}
-            <div className="text-sm text-gray-500">
-              <DollarSign className="w-4 h-4 inline" />
+            <div className="text-xs md:text-sm text-gray-500">
+              <DollarSign className="w-3 h-3 md:w-4 md:h-4 inline" />
               <strong className="text-gray-300">${costPerMinute.toFixed(2)}/min</strong>
             </div>
           </div>
@@ -263,12 +263,12 @@ export function CallBalanceCard({
 
         {/* Auto-Refill Required Notice */}
         {!hasConfigured && (
-          <div className="mb-6 p-4 bg-amber-500/10 border-2 border-amber-500/40 rounded-xl animate-pulse">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="mb-4 md:mb-6 p-3 md:p-4 bg-amber-500/10 border-2 border-amber-500/40 rounded-lg md:rounded-xl animate-pulse">
+            <div className="flex items-start gap-2 md:gap-3">
+              <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-amber-400 flex-shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-amber-300 font-bold mb-1">⚠️ Auto-Refill Required</h4>
-                <p className="text-sm text-amber-200/90">
+                <h4 className="text-amber-300 font-bold mb-1 text-sm md:text-base">⚠️ Auto-Refill Required</h4>
+                <p className="text-xs md:text-sm text-amber-200/90">
                   Please set up auto-refill below. This ensures your AI never stops due to low balance.
                 </p>
               </div>
@@ -278,12 +278,12 @@ export function CallBalanceCard({
 
         {/* Low Balance Warning */}
         {balance < 10 && (
-          <div className="mb-6 p-4 bg-red-500/10 border-2 border-red-500/40 rounded-xl">
-            <div className="flex items-start gap-3">
-              <Zap className="w-6 h-6 text-red-400 flex-shrink-0 animate-pulse" />
+          <div className="mb-4 md:mb-6 p-3 md:p-4 bg-red-500/10 border-2 border-red-500/40 rounded-lg md:rounded-xl">
+            <div className="flex items-start gap-2 md:gap-3">
+              <Zap className="w-5 h-5 md:w-6 md:h-6 text-red-400 flex-shrink-0 animate-pulse" />
               <div>
-                <h4 className="text-red-400 font-bold mb-1 text-base">Low Balance Alert!</h4>
-                <p className="text-sm text-gray-300">
+                <h4 className="text-red-400 font-bold mb-1 text-sm md:text-base">Low Balance Alert!</h4>
+                <p className="text-xs md:text-sm text-gray-300">
                   Auto-refill will trigger when balance drops below $10. Your card will be charged ${refillAmount}.
                 </p>
               </div>
@@ -368,7 +368,7 @@ export function CallBalanceCard({
                   <button
                     key={amount}
                     onClick={() => setRefillAmount(amount)}
-                    className={`group p-4 md:p-6 rounded-xl md:rounded-2xl border-2 transition-all duration-300 hover:scale-110 hover:shadow-xl relative overflow-hidden ${
+                    className={`group p-3 md:p-6 rounded-lg md:rounded-2xl border-2 transition-all duration-300 md:hover:scale-110 hover:shadow-xl relative overflow-hidden active:scale-95 ${
                       isSelected
                         ? `${colors.borderSelected} bg-gradient-to-br ${colors.bgSelected} ${colors.shadow} ring-2 ring-offset-2 ring-offset-[#1A2647] ${colors.borderSelected.replace('border-', 'ring-')}`
                         : `${colors.border} bg-gradient-to-br ${colors.bg} hover:bg-gradient-to-br hover:${colors.bgHover} ${colors.borderHover}`
@@ -379,20 +379,20 @@ export function CallBalanceCard({
                     
                     {/* Content */}
                     <div className="relative text-center">
-                      {/* Icon */}
-                      <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl mx-auto mb-2 flex items-center justify-center ${
+                      {/* Icon - smaller on mobile */}
+                      <div className={`w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl mx-auto mb-1 md:mb-2 flex items-center justify-center ${
                         isSelected ? colors.bgSelected : `bg-gray-800/50`
-                      } border ${colors.border} group-hover:scale-110 transition-transform`}>
-                        <DollarSign className={`w-5 h-5 md:w-6 md:h-6 ${isSelected ? colors.text : 'text-gray-500'} group-hover:${colors.text}`} />
+                      } border ${colors.border} md:group-hover:scale-110 transition-transform`}>
+                        <DollarSign className={`w-4 h-4 md:w-6 md:h-6 ${isSelected ? colors.text : 'text-gray-500'} group-hover:${colors.text}`} />
                       </div>
                       
-                      {/* Amount */}
-                      <div className={`text-2xl md:text-3xl font-bold mb-1 ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-white'} transition-colors`}>
+                      {/* Amount - optimized size for mobile */}
+                      <div className={`text-xl md:text-3xl font-bold mb-0.5 md:mb-1 ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-white'} transition-colors`}>
                         ${amount}
                       </div>
                       
-                      {/* Minutes */}
-                      <div className={`text-xs ${isSelected ? colors.text : 'text-gray-500'} group-hover:${colors.text} transition-colors`}>
+                      {/* Minutes - smaller text on mobile */}
+                      <div className={`text-[10px] md:text-xs ${isSelected ? colors.text : 'text-gray-500'} group-hover:${colors.text} transition-colors`}>
                         ≈ {minutes} min
                       </div>
                       
