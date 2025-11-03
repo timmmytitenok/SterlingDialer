@@ -23,11 +23,11 @@ export default function FAQPage() {
     },
     {
       question: "What happens after I subscribe?",
-      answer: "After you subscribe, we need 12-24 hours to configure your dedicated AI agents and calling workflows. We'll email you the moment everything is ready. Then you log in, 'Launch AI Agent,' and watch your calendar fill up. Simple as that."
+      answer: "After you subscribe, we need 24-72 hours to configure your dedicated AI agents and calling workflows. We'll email you the moment everything is ready. Then you log in, 'Launch AI Agent,' and watch your calendar fill up. Simple as that."
     },
     {
       question: "How much does it cost per call?",
-      answer: "$0.10 per minute. Average call is 2-3 minutes = $0.20-$0.30 per conversation. With the Starter plan at $999/month, you can make 600 dials/day. That's ONE policy and Sterling AI has paid for itself. Every booking after that is pure profit."
+      answer: "Call costs vary by plan: Starter is $0.30 per minute, Pro is $0.25 per minute, and Elite is $0.20 per minute. Not all calls get picked up, but on average it takes about 2-3 minutes of conversation to book an appointment."
     },
     {
       question: "Do I need to provide my own leads?",
@@ -39,11 +39,11 @@ export default function FAQPage() {
     },
     {
       question: "How does the free trial work?",
-      answer: "Start with a 30-day free trial! You get 1 AI Caller and can make up to 600 calls per day. You only pay $0.30 per minute for calls you make. No credit card required to start, cancel anytime."
+      answer: "Start with a 30-day free trial! You get 1 AI Caller and can make up to 600 calls per day. You only pay $0.30 per minute for calls you make. Cancel anytime with no questions asked."
     },
     {
       question: "What if I run out of calling credits?",
-      answer: "Sterling AI uses a prepaid system ($0.10/min). When your balance drops below $10, you can enable auto-refill or add funds manually. Starter users can add $50-$100, Pro users $100-$200, Elite users $200-$400. You're always in control of your spend."
+      answer: "Sterling AI uses a prepaid system with auto-refill required to run your AI Agent. Call costs are $0.30/min for Starter, $0.25/min for Pro, and $0.20/min for Elite. You can set your auto-refill amount to $25, $50, $100, or $200. When your balance drops below $10, we'll automatically refill it so your AI never stops working."
     },
     {
       question: "What's the difference between Starter, Pro, and Elite?",
@@ -138,7 +138,7 @@ export default function FAQPage() {
               </div>
               <div>
                 <p className="text-white font-bold text-lg">Start Your 30-Day Free Trial!</p>
-                <p className="text-gray-400 text-sm">Only pay <span className="text-green-400 font-bold">$0.30/min</span> for calls you make</p>
+                <p className="text-gray-400 text-sm">Only pay <span className="text-green-400 font-bold">$0.30/min</span> for calls <span className="text-white font-bold">YOU</span> make</p>
               </div>
             </div>
             <Link
