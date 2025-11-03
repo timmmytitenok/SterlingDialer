@@ -201,42 +201,42 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
         {/* Grid Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
 
-        <main className="container mx-auto px-4 lg:px-8 py-8 relative z-10">
+        <main className="container mx-auto px-4 lg:px-8 py-4 md:py-8 relative z-10">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">AI Control Center</h1>
-            <p className="text-gray-400">Your AI agent is being configured</p>
+          <div className="mb-4 md:mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2">AI Control Center</h1>
+            <p className="text-sm md:text-base text-gray-400">Your AI agent is being configured</p>
           </div>
 
           {/* Setup In Progress */}
           <div className="max-w-3xl mx-auto">
-            <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl border-2 border-blue-500/40 p-20 min-h-[600px] flex flex-col justify-center">
+            <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl md:rounded-2xl border-2 border-blue-500/40 p-6 md:p-20 min-h-[500px] md:min-h-[600px] flex flex-col justify-center">
               {/* Animated Icon */}
-              <div className="text-center mb-8">
-                <div className="inline-block mb-6 relative">
+              <div className="text-center mb-6 md:mb-8">
+                <div className="inline-block mb-4 md:mb-6 relative">
                   {/* Spinning gear icon */}
-                  <div className="relative w-32 h-32 rounded-3xl flex items-center justify-center border-4 bg-blue-900/30 border-blue-500/50">
-                    <Activity className="w-16 h-16 text-blue-400 animate-pulse" />
+                  <div className="relative w-20 h-20 md:w-32 md:h-32 rounded-2xl md:rounded-3xl flex items-center justify-center border-2 md:border-4 bg-blue-900/30 border-blue-500/50">
+                    <Activity className="w-10 h-10 md:w-16 md:h-16 text-blue-400 animate-pulse" />
                   </div>
-                  {/* Orbiting dots */}
-                  <div className="absolute top-1/2 left-1/2 w-40 h-40 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                  {/* Orbiting dots - hidden on mobile */}
+                  <div className="hidden md:block absolute top-1/2 left-1/2 w-40 h-40 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
                     <div className="absolute top-0 left-1/2 w-3 h-3 bg-blue-400 rounded-full shadow-lg shadow-blue-500/50 animate-spin" style={{ animationDuration: '3s', transformOrigin: '0 80px' }} />
                   </div>
-                  <div className="absolute top-1/2 left-1/2 w-48 h-48 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                  <div className="hidden md:block absolute top-1/2 left-1/2 w-48 h-48 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
                     <div className="absolute top-0 left-1/2 w-2 h-2 bg-purple-400 rounded-full shadow-lg shadow-purple-500/50 animate-spin" style={{ animationDuration: '4s', animationDelay: '0.5s', transformOrigin: '0 96px' }} />
                   </div>
                 </div>
 
                 {/* Status Text */}
-                <h2 className="text-4xl font-bold text-white mb-4">
+                <h2 className="text-2xl md:text-4xl font-bold text-white mb-3 md:mb-4 px-4">
                   {isPending ? '🚧 AI Setup In Progress' : '🔧 Maintenance Mode'}
                 </h2>
-                <p className="text-xl text-gray-400 mb-2">
+                <p className="text-base md:text-xl text-gray-400 mb-1 md:mb-2 px-4">
                   {isPending 
                     ? 'Our team is configuring your AI calling agent' 
                     : 'Upgrading your AI system with new workflows'}
                 </p>
-                <p className="text-gray-500 mb-8">
+                <p className="text-sm md:text-base text-gray-500 mb-6 md:mb-8 px-4">
                   {isPending 
                     ? 'This typically takes 12-24 hours' 
                     : 'Setting up additional AI agents for your account'}
@@ -244,34 +244,34 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
               </div>
 
               {/* Info Box */}
-              <div className="bg-[#0B1437]/50 rounded-xl p-8 border border-blue-500/30 mb-8 max-w-lg mx-auto backdrop-blur-sm">
-                <h3 className="text-xl font-bold text-white mb-6 text-center">What We're Setting Up:</h3>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4 bg-[#1A2647]/50 rounded-lg p-4 border border-gray-800">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-blue-400 text-lg">1</span>
+              <div className="bg-[#0B1437]/50 rounded-lg md:rounded-xl p-4 md:p-8 border border-blue-500/30 mb-6 md:mb-8 max-w-lg mx-auto backdrop-blur-sm">
+                <h3 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6 text-center">What We're Setting Up:</h3>
+                <div className="space-y-3 md:space-y-4">
+                  <div className="flex items-start gap-3 md:gap-4 bg-[#1A2647]/50 rounded-lg p-3 md:p-4 border border-gray-800">
+                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-blue-400 text-base md:text-lg font-bold">1</span>
                     </div>
                     <div>
-                      <p className="text-white font-semibold mb-1">Deploying Calling Infrastructure</p>
-                      <p className="text-gray-400 text-sm">Setting up your personalized calling system and conversation logic</p>
+                      <p className="text-white font-semibold mb-0.5 md:mb-1 text-sm md:text-base">Deploying Calling Infrastructure</p>
+                      <p className="text-gray-400 text-xs md:text-sm">Setting up your personalized calling system and conversation logic</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4 bg-[#1A2647]/50 rounded-lg p-4 border border-gray-800">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-blue-400 text-lg">2</span>
+                  <div className="flex items-start gap-3 md:gap-4 bg-[#1A2647]/50 rounded-lg p-3 md:p-4 border border-gray-800">
+                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-blue-400 text-base md:text-lg font-bold">2</span>
                     </div>
                     <div>
-                      <p className="text-white font-semibold mb-1">Configuring AI Agents</p>
-                      <p className="text-gray-400 text-sm">Training your {subscriptionFeatures?.aiCallerCount || 1} AI caller{(subscriptionFeatures?.aiCallerCount || 1) > 1 ? 's' : ''} for optimal performance</p>
+                      <p className="text-white font-semibold mb-0.5 md:mb-1 text-sm md:text-base">Configuring AI Agents</p>
+                      <p className="text-gray-400 text-xs md:text-sm">Training your {subscriptionFeatures?.aiCallerCount || 1} AI caller{(subscriptionFeatures?.aiCallerCount || 1) > 1 ? 's' : ''} for optimal performance</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4 bg-[#1A2647]/50 rounded-lg p-4 border border-gray-800">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-blue-400 text-lg">3</span>
+                  <div className="flex items-start gap-3 md:gap-4 bg-[#1A2647]/50 rounded-lg p-3 md:p-4 border border-gray-800">
+                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-blue-400 text-base md:text-lg font-bold">3</span>
                     </div>
                     <div>
-                      <p className="text-white font-semibold mb-1">Testing & Validation</p>
-                      <p className="text-gray-400 text-sm">Ensuring everything works perfectly before launch</p>
+                      <p className="text-white font-semibold mb-0.5 md:mb-1 text-sm md:text-base">Testing & Validation</p>
+                      <p className="text-gray-400 text-xs md:text-sm">Ensuring everything works perfectly before launch</p>
                     </div>
                   </div>
                 </div>
@@ -279,30 +279,30 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
 
               {/* Timeline */}
               {setupDate && (
-                <div className="text-center mb-8">
-                  <p className="text-gray-400 text-sm mb-2">
+                <div className="text-center mb-6 md:mb-8 px-4">
+                  <p className="text-gray-400 text-xs md:text-sm mb-1 md:mb-2">
                     {isPending ? 'Setup Requested' : 'Maintenance Started'}
                   </p>
-                  <p className="text-white font-semibold text-lg">{setupDate.toLocaleString('en-US', { 
+                  <p className="text-white font-semibold text-base md:text-lg">{setupDate.toLocaleString('en-US', { 
                     month: 'short', 
                     day: 'numeric', 
                     hour: 'numeric', 
                     minute: '2-digit',
                     hour12: true 
                   })}</p>
-                  <p className="text-gray-500 text-xs mt-1">({hoursWaiting} hour{hoursWaiting !== 1 ? 's' : ''} ago)</p>
+                  <p className="text-gray-500 text-xs mt-0.5 md:mt-1">({hoursWaiting} hour{hoursWaiting !== 1 ? 's' : ''} ago)</p>
                 </div>
               )}
 
               {/* Email Notification Notice */}
-              <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl p-6 border border-blue-500/30 max-w-lg mx-auto">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">📧</span>
+              <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg md:rounded-xl p-4 md:p-6 border border-blue-500/30 max-w-lg mx-auto">
+                <div className="flex items-start gap-3 md:gap-4">
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xl md:text-2xl">📧</span>
                   </div>
                   <div>
-                    <p className="text-white font-semibold mb-2">We'll Email You When Ready</p>
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-white font-semibold mb-1 md:mb-2 text-sm md:text-base">We'll Email You When Ready</p>
+                    <p className="text-gray-400 text-xs md:text-sm">
                       You'll receive an email notification as soon as your AI agent is configured and ready to launch. 
                       {isPending ? ' Expected within 12-24 hours.' : ' Should be ready soon.'}
                     </p>
