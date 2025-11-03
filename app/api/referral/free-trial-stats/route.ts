@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { headers } from 'next/headers';
 
 export async function GET() {
   try {
@@ -10,8 +11,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Generate referral link with user ID
-    const referralLink = `${process.env.NEXT_PUBLIC_APP_URL}/login?ref=${user.id}`;
+    // Get the actual domain from request headers
+    const headersList = headers();
+    const host = headersList.get('host') || 'localhost:3000';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    
+    // Generate referral link with actual domain
+    const referralLink = `${protocol}://${host}/login?ref=${user.id}`;
 
     // Get all referrals made by this user
     const { data: referrals, error: referralsError } = await supabase
