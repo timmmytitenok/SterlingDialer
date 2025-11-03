@@ -87,11 +87,11 @@ export default function TrialExpiredPage() {
               </div>
             </div>
 
-            <h1 className="text-3xl md:text-6xl font-bold text-white">
+            <h1 className="text-4xl md:text-6xl font-bold text-white">
               Continue Reviving Your Leads
             </h1>
             
-            <p className="text-base md:text-xl text-gray-300 max-w-2xl mx-auto">
+            <p className="text-sm md:text-xl text-gray-300 max-w-2xl mx-auto">
               Choose a plan below to keep your AI working for you 24/7
             </p>
           </div>
