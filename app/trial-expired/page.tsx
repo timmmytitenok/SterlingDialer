@@ -74,7 +74,7 @@ export default function TrialExpiredPage() {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)] pointer-events-none"></div>
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-8 md:py-20">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-18 md:py-20">
         <div className="max-w-7xl w-full">
           {/* Header */}
           <div className="text-center mb-12 md:mb-18 space-y-4 md:space-y-6">
@@ -88,10 +88,10 @@ export default function TrialExpiredPage() {
             </div>
 
             <h1 className="text-4xl md:text-6xl font-bold text-white">
-              Continue Reviving Your Leads
+              Continue Reviving Your Leads!
             </h1>
             
-            <p className="text-sm md:text-xl text-gray-300 max-w-2xl mx-auto">
+            <p className="text-xs md:text-xl text-gray-300 max-w-2xl mx-auto">
               Choose a plan below to keep your AI working for you 24/7
             </p>
           </div>
