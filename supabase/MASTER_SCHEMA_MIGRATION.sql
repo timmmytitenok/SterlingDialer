@@ -320,11 +320,11 @@ CREATE INDEX IF NOT EXISTS idx_profiles_subscription_tier ON profiles(subscripti
 CREATE INDEX IF NOT EXISTS idx_profiles_free_trial_ends_at ON profiles(free_trial_ends_at);
 CREATE INDEX IF NOT EXISTS idx_profiles_stripe_customer_id ON profiles(stripe_customer_id);
 
--- Indexes on subscriptions table
-CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_tier ON subscriptions(tier);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_trial_ends_at ON subscriptions(trial_ends_at);
+-- Indexes on subscriptions table (COMMENTED OUT - table may not have these columns)
+-- CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_subscriptions_tier ON subscriptions(tier);
+-- CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
+-- CREATE INDEX IF NOT EXISTS idx_subscriptions_trial_ends_at ON subscriptions(trial_ends_at);
 
 -- ============================================================================
 -- PART 9: COMMENTS FOR DOCUMENTATION
@@ -338,10 +338,11 @@ COMMENT ON COLUMN profiles.free_trial_days_remaining IS 'Days remaining in the t
 COMMENT ON COLUMN profiles.upgraded_from_trial IS 'TRUE if user upgraded from a free trial to a paid plan';
 COMMENT ON COLUMN profiles.previous_tier IS 'Previous subscription tier before upgrade/downgrade';
 
-COMMENT ON COLUMN subscriptions.cost_per_minute IS 'Per-minute calling cost for this subscription tier';
-COMMENT ON COLUMN subscriptions.exclude_from_cost_graph IS 'If TRUE, exclude this subscription from AI cost graphs (for free_access tier)';
-COMMENT ON COLUMN subscriptions.trial_ends_at IS 'End date for trial or free access period';
-COMMENT ON COLUMN subscriptions.free_access_duration_days IS 'Duration of free access in days (NULL = permanent)';
+-- COMMENTS ON SUBSCRIPTIONS TABLE (COMMENTED OUT - table may not have these columns)
+-- COMMENT ON COLUMN subscriptions.cost_per_minute IS 'Per-minute calling cost for this subscription tier';
+-- COMMENT ON COLUMN subscriptions.exclude_from_cost_graph IS 'If TRUE, exclude this subscription from AI cost graphs (for free_access tier)';
+-- COMMENT ON COLUMN subscriptions.trial_ends_at IS 'End date for trial or free access period';
+-- COMMENT ON COLUMN subscriptions.free_access_duration_days IS 'Duration of free access in days (NULL = permanent)';
 
 COMMENT ON TABLE referrals IS 'Tracks free trial referrals for extending trial periods';
 COMMENT ON COLUMN referrals.referral_type IS 'Type of referral reward (free_trial_extension, etc.)';
