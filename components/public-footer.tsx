@@ -23,9 +23,9 @@ export function PublicFooter() {
               <Link href="/pricing" className="block text-gray-400 hover:text-white transition-colors text-sm">
                 Pricing
               </Link>
-              <Link href="/case-studies" className="block text-gray-400 hover:text-white transition-colors text-sm">
+              {/* <Link href="/case-studies" className="block text-gray-400 hover:text-white transition-colors text-sm">
                 Case Studies
-              </Link>
+              </Link> */}
             </div>
           </div>
 
@@ -61,7 +61,7 @@ export function PublicFooter() {
             © 2025 Sterling AI. All rights reserved.
           </p>
           <p className="text-gray-500 text-sm">
-            Use code <span className="text-purple-400 font-mono font-bold">STERLING</span> for 30% off
+            Start your 30-day free trial today • Pay only for minutes used
           </p>
         </div>
       </div>
