@@ -57,7 +57,7 @@ export function MobilePublicNav() {
     { name: 'Home', href: '/', icon: Sparkles },
     { name: 'Pricing', href: '/pricing', icon: DollarSign },
     { name: 'How It Works', href: '/how-it-works', icon: TrendingUp },
-    { name: 'Case Studies', href: '/case-studies', icon: TrendingUp },
+    // { name: 'Case Studies', href: '/case-studies', icon: TrendingUp }, // Hidden for now
     { name: 'FAQ', href: '/faq', icon: HelpCircle },
     { name: 'Contact', href: '/contact', icon: Mail },
   ];
@@ -207,16 +207,16 @@ export function MobilePublicNav() {
 
           {/* CTA Section */}
           <div className="p-4 border-t border-gray-800/50 space-y-3">
-            {/* STERLING Code Banner */}
+            {/* Free Trial Banner */}
             <div 
               className="bg-gradient-to-r from-green-600/20 to-emerald-600/20 border border-green-500/30 rounded-xl p-3 text-center"
               style={{
                 animation: isOpen ? 'fadeInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both' : 'none'
               }}
             >
-              <p className="text-xs text-green-400 font-semibold mb-1">🎁 LIMITED OFFER</p>
-              <p className="text-sm text-white font-bold mb-1">Use code: <span className="text-green-400">STERLING</span></p>
-              <p className="text-xs text-gray-400">Save 30% your first month</p>
+              <p className="text-xs text-green-400 font-semibold mb-1">🚀 FREE TRIAL</p>
+              <p className="text-sm text-white font-bold mb-1">Start your 30 Days Free Trial!</p>
+              <p className="text-xs text-gray-400">Only pay $0.30/min for calls</p>
             </div>
 
             {/* Get Started Button */}

@@ -259,8 +259,8 @@ export default function CaseStudiesPage() {
             </Link>
           </div>
           <p className="text-sm text-gray-400 mt-6">
-            <Gift className="w-4 h-4 inline mr-1 text-purple-400 animate-pulse" />
-            Use code <span className="text-purple-400 font-mono font-bold">STERLING</span> for 30% off your first month
+            <Zap className="w-4 h-4 inline mr-1 text-green-400 animate-pulse" />
+            30 Days Free • Only Pay <span className="text-green-400 font-bold">$0.30/min</span> for Calls
           </p>
         </div>
       </div>

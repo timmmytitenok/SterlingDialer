@@ -40,6 +40,36 @@ export async function POST(req: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       console.log('🛒 Checkout completed:', session.id);
       
+      // Handle payment method setup (for auto-refill)
+      if (session.mode === 'setup' && session.setup_intent) {
+        console.log('💳 Payment method setup completed');
+        
+        try {
+          const setupIntent = await stripe.setupIntents.retrieve(
+            typeof session.setup_intent === 'string' ? session.setup_intent : session.setup_intent.id
+          );
+          
+          const customerId = session.customer as string;
+          const paymentMethodId = setupIntent.payment_method as string;
+          
+          if (paymentMethodId && customerId) {
+            // Set this payment method as the default for invoices (auto-refill)
+            await stripe.customers.update(customerId, {
+              invoice_settings: {
+                default_payment_method: paymentMethodId,
+              },
+            });
+            
+            console.log('✅ Payment method set as default for customer:', customerId);
+          }
+        } catch (error: any) {
+          console.error('❌ Error setting up payment method:', error.message);
+        }
+        
+        // Don't continue to subscription/payment processing
+        return NextResponse.json({ received: true });
+      }
+      
       // If this is a subscription checkout, fetch the subscription
       if (session.mode === 'subscription' && session.subscription) {
         const subscriptionId = typeof session.subscription === 'string' 
@@ -198,6 +228,14 @@ export async function POST(req: Request) {
 
           console.log('🎯 Determined tier:', { tier, maxCalls, hasChecker, callerCount });
 
+          // Determine cost_per_minute based on tier
+          let costPerMinute = 0.30; // Default (Starter)
+          if (tier === 'pro') {
+            costPerMinute = 0.25;
+          } else if (tier === 'elite') {
+            costPerMinute = 0.20;
+          }
+
           // Upsert subscription
           const { error: upsertError } = await supabase
             .from('subscriptions')
@@ -207,6 +245,7 @@ export async function POST(req: Request) {
               stripe_subscription_id: subscription.id,
               stripe_price_id: priceId,
               subscription_tier: tier,
+              cost_per_minute: costPerMinute, // Set cost per minute
               max_daily_calls: maxCalls,
               has_appointment_checker: hasChecker,
               ai_caller_count: callerCount,
@@ -227,12 +266,14 @@ export async function POST(req: Request) {
           }
 
           console.log('✅ Subscription created from checkout for user:', userProfile.user_id, `Tier: ${tier}`);
+          console.log(`💰 Setting cost_per_minute to $${costPerMinute} for ${tier} tier`);
 
           // 🚨 CRITICAL: Update profiles table with subscription info (for middleware checks)
           const { error: profileSubError } = await supabase
             .from('profiles')
             .update({
               subscription_tier: tier,
+              cost_per_minute: costPerMinute, // 🔥 SET COST PER MINUTE
               stripe_customer_id: customerId,
               subscription_status: subscription.status,
               has_active_subscription: true // 🔥 SIMPLE BOOLEAN FLAG
@@ -242,37 +283,66 @@ export async function POST(req: Request) {
           if (profileSubError) {
             console.error('❌ Error updating profile subscription info:', profileSubError);
           } else {
-            console.log('✅ Profile updated with subscription tier and customer ID');
+            console.log('✅ Profile updated with subscription tier, cost_per_minute, and customer ID');
           }
 
-          // Check if user had existing subscription (upgrade) or is new subscriber
+          // Check if user is upgrading from free trial
           const { data: existingProfile } = await supabase
             .from('profiles')
-            .select('ai_setup_status')
+            .select('ai_setup_status, upgraded_from_trial, previous_tier, onboarding_completed')
             .eq('user_id', userProfile.user_id)
             .single();
 
-          const isUpgrade = existingProfile?.ai_setup_status !== null;
+          const isUpgradeFromTrial = existingProfile?.upgraded_from_trial === true;
+          const previousTier = existingProfile?.previous_tier;
+          const hasCompletedOnboarding = existingProfile?.onboarding_completed === true;
           
-          // Set AI setup status: new subscribers or upgrades need setup
-          // Only set to pending if subscribing or upgrading, not downgrading
-          const setupStatus = 'pending_setup'; // They need N8N workflows created
+          // Determine if we need maintenance mode
+          let setupStatus = 'ready';
           
-          console.log(`🔧 Setting AI setup status to: ${setupStatus} (${isUpgrade ? 'upgrade' : 'new subscription'})`);
+          if (!hasCompletedOnboarding) {
+            // Brand new user - needs onboarding and setup
+            setupStatus = 'pending_setup';
+            console.log('🆕 New user - setting to pending_setup (needs onboarding)');
+          } else if (isUpgradeFromTrial) {
+            // Upgrading from free trial
+            if (tier === 'starter') {
+              // Free trial → Starter: Same 1 AI, no maintenance needed
+              setupStatus = 'ready';
+              console.log('🎁 Upgrade from trial to Starter - AI stays ready (same 1 AI)');
+            } else if (tier === 'pro' || tier === 'elite') {
+              // Free trial → Pro/Elite: Need to activate 2nd/3rd AI
+              setupStatus = 'maintenance';
+              console.log(`🎁 Upgrade from trial to ${tier.toUpperCase()} - setting to maintenance (need to enable extra AIs)`);
+            }
+          } else {
+            // Existing paid user upgrading/downgrading
+            if (tier === 'pro' || tier === 'elite') {
+              setupStatus = 'maintenance';
+              console.log(`🔄 Upgrade to ${tier.toUpperCase()} - setting to maintenance (need to enable extra AIs)`);
+            } else {
+              setupStatus = 'ready';
+              console.log('✅ Downgrade or same tier - AI stays ready');
+            }
+          }
+          
+          console.log(`🔧 Setting AI setup status to: ${setupStatus}`);
           
           const { error: profileUpdateError } = await supabase
             .from('profiles')
             .update({ 
               ai_setup_status: setupStatus,
-              setup_requested_at: new Date().toISOString(),
-              setup_completed_at: null
+              ...(setupStatus === 'pending_setup' || setupStatus === 'maintenance' ? {
+                setup_requested_at: new Date().toISOString(),
+                setup_completed_at: null
+              } : {})
             })
             .eq('user_id', userProfile.user_id);
 
           if (profileUpdateError) {
             console.error('❌ Error updating setup status:', profileUpdateError);
           } else {
-            console.log('✅ AI setup status set to pending - admin needs to configure N8N workflows');
+            console.log('✅ AI setup status updated');
           }
 
           // Check if this user was referred and credit the referrer

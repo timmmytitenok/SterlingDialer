@@ -42,10 +42,34 @@ export async function GET() {
         return NextResponse.json({ error: createError.message }, { status: 500 });
       }
 
-      return NextResponse.json(newBalance);
+      // Get cost_per_minute and subscription_tier from profiles
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('cost_per_minute, subscription_tier')
+        .eq('user_id', user.id)
+        .single();
+
+      return NextResponse.json({
+        ...newBalance,
+        cost_per_minute: profile?.cost_per_minute || 0.30,
+        subscription_tier: profile?.subscription_tier || 'none',
+      });
     }
 
-    return NextResponse.json(balance);
+    // Get cost_per_minute and subscription_tier from profiles
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('cost_per_minute, subscription_tier')
+      .eq('user_id', user.id)
+      .single();
+
+    console.log('🔍 Fetched cost_per_minute from profiles:', profile?.cost_per_minute);
+
+    return NextResponse.json({
+      ...balance,
+      cost_per_minute: profile?.cost_per_minute || 0.30,
+      subscription_tier: profile?.subscription_tier || 'none',
+    });
   } catch (error: any) {
     console.error('Balance get error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -52,14 +52,6 @@ function LoginPageContent() {
     }, 2000);
   };
 
-  // Handle referral code input change
-  const handleReferralCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); // Only allow alphanumeric
-    if (value.length <= 8) { // Max 8 characters
-      setReferralCode(value || null);
-    }
-  };
-
   // Handle phone number formatting
   const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, ''); // Remove all non-digits
@@ -212,9 +204,9 @@ function LoginPageContent() {
       </Link>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-md mx-4 pt-32 md:pt-0">
+      <div className="relative z-10 w-full max-w-md mx-4 py-12 md:py-16">
         {/* Logo - Added padding - Secret: Click 5 times for master login */}
-        <div className="text-center mb-6 md:mb-8 md:pt-12 lg:pt-16">
+        <div className="text-center mb-8 md:mb-12">
           <div 
             onClick={handleLogoClick}
             className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/50 cursor-pointer hover:scale-105 transition-transform"
@@ -228,12 +220,12 @@ function LoginPageContent() {
         </div>
 
         {/* Auth Card */}
-        <div className="bg-[#1A2647] rounded-2xl p-8 border border-gray-800 shadow-2xl backdrop-blur-sm">
-          <h2 className="text-2xl font-bold text-white mb-6">
+        <div className="bg-[#1A2647] rounded-2xl p-8 md:p-10 border border-gray-800 shadow-2xl backdrop-blur-sm">
+          <h2 className="text-2xl font-bold text-white mb-8">
             {isSignUp ? 'Sign Up' : 'Sign In'}
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {isSignUp && (
               <>
                 <div>
@@ -322,30 +314,6 @@ function LoginPageContent() {
               </p>
             </div>
 
-            {/* Referral Code Input (Only for Sign Up) */}
-            {isSignUp && (
-              <div>
-                <label htmlFor="referralCode" className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-purple-400" />
-                  Referral Code (Optional)
-                </label>
-                <input
-                  id="referralCode"
-                  type="text"
-                  placeholder="Enter code (e.g ABCDE123)"
-                  value={referralCode || ''}
-                  onChange={handleReferralCodeChange}
-                  maxLength={8}
-                  className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition uppercase tracking-wider font-mono"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {referralCode 
-                    ? `✓ Using referral code: ${referralCode} - Get 30% off!` 
-                    : 'Have a referral code? Get 30% off your first month!'}
-                </p>
-              </div>
-            )}
-
             {error && (
               <div className={`p-4 rounded-lg text-sm ${
                 error.includes('✅')
@@ -375,7 +343,7 @@ function LoginPageContent() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-8 text-center">
             <button
               type="button"
               onClick={() => {
@@ -397,7 +365,7 @@ function LoginPageContent() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-500 text-sm mt-8">
+        <p className="text-center text-gray-500 text-sm mt-10 mb-8">
           © 2025 Sterling AI. All rights reserved.
         </p>
       </div>

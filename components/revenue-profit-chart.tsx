@@ -27,7 +27,7 @@ export function RevenueProfitChart({ monthlyData, totalRevenue, totalCosts, tota
           
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-lg p-4 border border-orange-500/20 transition-all duration-200 hover:scale-[1.02] hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/10">
-              <p className="text-gray-300 text-sm mb-1 font-medium">Total AI Costs</p>
+              <p className="text-gray-300 text-sm mb-1 font-medium">AI Costs (Last 30 Days)</p>
               <p className="text-2xl font-bold text-orange-400">${totalCosts.toFixed(3)}</p>
             </div>
             <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-lg p-4 border border-green-500/20 transition-all duration-200 hover:scale-[1.02] hover:border-green-500/40 hover:shadow-lg hover:shadow-green-500/10">

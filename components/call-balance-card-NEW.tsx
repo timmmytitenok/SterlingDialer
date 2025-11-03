@@ -94,28 +94,6 @@ export function CallBalanceCard({
       if (data.success) {
         alert('✅ Auto-refill amount updated!');
         setHasConfigured(true);
-      } else if (data.needsPaymentMethod) {
-        // No payment method on file - redirect to setup
-        const setupConfirm = confirm(
-          '💳 You need to add a payment method first.\n\n' +
-          'Click OK to add your card for auto-refill.'
-        );
-        
-        if (setupConfirm) {
-          // Call setup payment method API
-          const setupResponse = await fetch('/api/stripe/setup-payment-method', {
-            method: 'POST',
-          });
-          
-          const setupData = await setupResponse.json();
-          
-          if (setupData.success && setupData.url) {
-            // Redirect to Stripe Checkout
-            window.location.href = setupData.url;
-          } else {
-            alert(`Failed to set up payment method: ${setupData.error}`);
-          }
-        }
       } else {
         alert(`Failed to update settings: ${data.error}`);
       }
@@ -153,26 +131,11 @@ export function CallBalanceCard({
                 <p className="text-sm text-gray-400">Prepaid minutes for AI calls</p>
               </div>
             </div>
-            {/* Auto-Refill Status Badge */}
-            <div className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg border ${
-              hasConfigured 
-                ? 'bg-green-500/20 border-green-500/50' 
-                : 'bg-gray-500/20 border-gray-500/50'
-            }`}>
-              <span className={`font-bold text-xs md:text-sm flex items-center gap-1 ${
-                hasConfigured ? 'text-green-400' : 'text-gray-400'
-              }`}>
-                {hasConfigured ? (
-                  <>
-                    <CheckCircle className="w-4 h-4" />
-                    AUTO-REFILL ON
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="w-4 h-4" />
-                    AUTO-REFILL OFF
-                  </>
-                )}
+            {/* Always Enabled Badge */}
+            <div className="px-3 md:px-4 py-1.5 md:py-2 bg-green-500/20 border border-green-500/50 rounded-lg">
+              <span className="text-green-400 font-bold text-xs md:text-sm flex items-center gap-1">
+                <CheckCircle className="w-4 h-4" />
+                AUTO-REFILL ON
               </span>
             </div>
           </div>
@@ -261,107 +224,31 @@ export function CallBalanceCard({
             <p className="text-white font-medium mb-3 text-sm md:text-base">Select Auto-Refill Amount:</p>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-              {refillOptions.map((amount, index) => {
+              {refillOptions.map((amount) => {
                 const minutes = Math.floor(amount / costPerMinute);
                 const isSelected = refillAmount === amount;
-                
-                // Different gradient for each card
-                const gradients = [
-                  { 
-                    bg: 'from-blue-600/20 to-cyan-600/20',
-                    bgHover: 'from-blue-600/30 to-cyan-600/30',
-                    border: 'border-blue-500/40',
-                    borderHover: 'hover:border-blue-400',
-                    borderSelected: 'border-blue-500',
-                    bgSelected: 'bg-blue-500/15',
-                    shadow: 'shadow-blue-500/30',
-                    text: 'text-blue-400',
-                    badge: 'bg-blue-500',
-                    glow: 'from-blue-500/0 group-hover:from-blue-500/10 group-hover:to-cyan-500/10'
-                  },
-                  { 
-                    bg: 'from-emerald-600/20 to-green-600/20',
-                    bgHover: 'from-emerald-600/30 to-green-600/30',
-                    border: 'border-emerald-500/40',
-                    borderHover: 'hover:border-emerald-400',
-                    borderSelected: 'border-emerald-500',
-                    bgSelected: 'bg-emerald-500/15',
-                    shadow: 'shadow-emerald-500/30',
-                    text: 'text-emerald-400',
-                    badge: 'bg-emerald-500',
-                    glow: 'from-emerald-500/0 group-hover:from-emerald-500/10 group-hover:to-green-500/10'
-                  },
-                  { 
-                    bg: 'from-purple-600/20 to-pink-600/20',
-                    bgHover: 'from-purple-600/30 to-pink-600/30',
-                    border: 'border-purple-500/40',
-                    borderHover: 'hover:border-purple-400',
-                    borderSelected: 'border-purple-500',
-                    bgSelected: 'bg-purple-500/15',
-                    shadow: 'shadow-purple-500/30',
-                    text: 'text-purple-400',
-                    badge: 'bg-purple-500',
-                    glow: 'from-purple-500/0 group-hover:from-purple-500/10 group-hover:to-pink-500/10'
-                  },
-                  { 
-                    bg: 'from-amber-600/20 to-orange-600/20',
-                    bgHover: 'from-amber-600/30 to-orange-600/30',
-                    border: 'border-amber-500/40',
-                    borderHover: 'hover:border-amber-400',
-                    borderSelected: 'border-amber-500',
-                    bgSelected: 'bg-amber-500/15',
-                    shadow: 'shadow-amber-500/30',
-                    text: 'text-amber-400',
-                    badge: 'bg-amber-500',
-                    glow: 'from-amber-500/0 group-hover:from-amber-500/10 group-hover:to-orange-500/10'
-                  },
-                ];
-                
-                const colors = gradients[index];
                 
                 return (
                   <button
                     key={amount}
                     onClick={() => setRefillAmount(amount)}
-                    className={`group p-4 md:p-6 rounded-xl md:rounded-2xl border-2 transition-all duration-300 hover:scale-110 hover:shadow-xl relative overflow-hidden ${
+                    className={`group p-4 md:p-5 rounded-xl border-2 transition-all duration-300 hover:scale-105 relative overflow-hidden ${
                       isSelected
-                        ? `${colors.borderSelected} bg-gradient-to-br ${colors.bgSelected} ${colors.shadow} ring-2 ring-offset-2 ring-offset-[#1A2647] ${colors.borderSelected.replace('border-', 'ring-')}`
-                        : `${colors.border} bg-gradient-to-br ${colors.bg} hover:bg-gradient-to-br hover:${colors.bgHover} ${colors.borderHover}`
+                        ? 'border-green-500 bg-green-500/10 shadow-green-500/20'
+                        : 'border-gray-700 bg-gray-800/50 hover:border-green-500/50'
                     }`}
                   >
-                    {/* Animated Glow on Hover */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${colors.glow} transition-all duration-300`} />
-                    
-                    {/* Content */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 group-hover:from-green-500/5 group-hover:to-green-500/10 transition-all duration-300" />
                     <div className="relative text-center">
-                      {/* Icon */}
-                      <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl mx-auto mb-2 flex items-center justify-center ${
-                        isSelected ? colors.bgSelected : `bg-gray-800/50`
-                      } border ${colors.border} group-hover:scale-110 transition-transform`}>
-                        <DollarSign className={`w-5 h-5 md:w-6 md:h-6 ${isSelected ? colors.text : 'text-gray-500'} group-hover:${colors.text}`} />
-                      </div>
-                      
-                      {/* Amount */}
-                      <div className={`text-2xl md:text-3xl font-bold mb-1 ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-white'} transition-colors`}>
+                      <div className={`text-2xl md:text-3xl font-bold mb-1 ${isSelected ? 'text-white' : 'text-gray-400'}`}>
                         ${amount}
                       </div>
-                      
-                      {/* Minutes */}
-                      <div className={`text-xs ${isSelected ? colors.text : 'text-gray-500'} group-hover:${colors.text} transition-colors`}>
+                      <div className={`text-xs ${isSelected ? 'text-green-300' : 'text-gray-500'}`}>
                         ≈ {minutes} min
                       </div>
-                      
-                      {/* Selected Checkmark */}
                       {isSelected && (
-                        <div className={`absolute -top-2 -right-2 w-7 h-7 ${colors.badge} rounded-full flex items-center justify-center shadow-lg animate-bounce`}>
-                          <CheckCircle className="w-5 h-5 text-white" />
-                        </div>
-                      )}
-                      
-                      {/* Sparkle Effect on Selected */}
-                      {isSelected && (
-                        <div className="absolute -top-1 -left-1">
-                          <Sparkles className={`w-4 h-4 ${colors.text} animate-pulse`} />
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                          <CheckCircle className="w-4 h-4 text-white" />
                         </div>
                       )}
                     </div>

@@ -66,13 +66,6 @@ export function PublicNav() {
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
             </Link>
             <Link 
-              href="/how-it-works" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-medium group"
-            >
-              <span className="relative z-10">How It Works</span>
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-            </Link>
-            <Link 
               href="/pricing" 
               className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-medium group"
             >
@@ -80,12 +73,20 @@ export function PublicNav() {
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
             </Link>
             <Link 
+              href="/how-it-works" 
+              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-medium group"
+            >
+              <span className="relative z-10">How It Works</span>
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+            </Link>
+            {/* Case Studies - Hidden for now */}
+            {/* <Link 
               href="/case-studies" 
               className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-medium group"
             >
               <span className="relative z-10">Case Studies</span>
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-            </Link>
+            </Link> */}
             <Link 
               href="/faq" 
               className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-medium group"

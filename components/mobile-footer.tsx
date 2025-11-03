@@ -27,37 +27,6 @@ export function MobileFooter() {
           </p>
         </div>
 
-        {/* Quick Links */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Quick Links</h3>
-          <div className="grid grid-cols-2 gap-2">
-            <Link 
-              href="/pricing" 
-              className="py-2.5 px-3 bg-gray-800/30 hover:bg-gray-800/50 border border-gray-800 hover:border-gray-700 rounded-lg text-center text-sm text-gray-300 hover:text-white transition-all duration-200 active:scale-95"
-            >
-              Pricing
-            </Link>
-            <Link 
-              href="/how-it-works" 
-              className="py-2.5 px-3 bg-gray-800/30 hover:bg-gray-800/50 border border-gray-800 hover:border-gray-700 rounded-lg text-center text-sm text-gray-300 hover:text-white transition-all duration-200 active:scale-95"
-            >
-              How It Works
-            </Link>
-            <Link 
-              href="/case-studies" 
-              className="py-2.5 px-3 bg-gray-800/30 hover:bg-gray-800/50 border border-gray-800 hover:border-gray-700 rounded-lg text-center text-sm text-gray-300 hover:text-white transition-all duration-200 active:scale-95"
-            >
-              Case Studies
-            </Link>
-            <Link 
-              href="/faq" 
-              className="py-2.5 px-3 bg-gray-800/30 hover:bg-gray-800/50 border border-gray-800 hover:border-gray-700 rounded-lg text-center text-sm text-gray-300 hover:text-white transition-all duration-200 active:scale-95"
-            >
-              FAQ
-            </Link>
-          </div>
-        </div>
-
         {/* Contact Info */}
         <div className="space-y-3">
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Contact</h3>

@@ -7,12 +7,14 @@ import { FinalConfirmationModal } from './final-confirmation-modal';
 
 interface SubscriptionTierSelectorProps {
   currentTier?: 'starter' | 'pro' | 'elite' | 'none' | null;
+  hideFreeTrial?: boolean; // Hide free trial option (for trial-expired page)
 }
 
-export function SubscriptionTierSelector({ currentTier }: SubscriptionTierSelectorProps) {
+export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }: SubscriptionTierSelectorProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const [pendingTier, setPendingTier] = useState<'starter' | 'pro' | 'elite' | null>(null);
   const [showFinalConfirmation, setShowFinalConfirmation] = useState(false);
+  const [trialLoading, setTrialLoading] = useState(false);
 
   const handleSubscribeClick = (tier: 'starter' | 'pro' | 'elite') => {
     // If user already has a subscription, show first confirmation modal
@@ -41,6 +43,43 @@ export function SubscriptionTierSelector({ currentTier }: SubscriptionTierSelect
     // Cancel everything and reset
     setPendingTier(null);
     setShowFinalConfirmation(false);
+  };
+
+  const handleStartFreeTrial = async () => {
+    setTrialLoading(true);
+    try {
+      console.log('🎁 Starting free trial...');
+      
+      const response = await fetch('/api/trial/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      console.log('📡 Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ API Error:', errorData);
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('📦 Response data:', data);
+
+      if (data.success) {
+        console.log('✅ Free trial started! Redirecting to onboarding...');
+        // Redirect to onboarding page
+        window.location.href = '/onboarding';
+      } else {
+        console.error('❌ No success in response:', data);
+        alert(`Failed to start trial: ${data.error || 'Unknown error'}`);
+        setTrialLoading(false);
+      }
+    } catch (error) {
+      console.error('❌ Free trial error:', error);
+      alert(`Error starting free trial: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setTrialLoading(false);
+    }
   };
 
   const handleSubscribe = async (tier: 'starter' | 'pro' | 'elite') => {
@@ -141,6 +180,72 @@ export function SubscriptionTierSelector({ currentTier }: SubscriptionTierSelect
           {currentTier && currentTier !== 'none' ? 'Switch plans anytime' : 'Start reviving old leads and booking appointments automatically'}
         </p>
       </div>
+
+      {/* Free Trial Banner (only show if no current tier AND not hidden) */}
+      {(!currentTier || currentTier === 'none' || currentTier === null) && !hideFreeTrial && (
+        <div className="mb-6 md:mb-8">
+          <div className="relative bg-gradient-to-br from-green-600/20 to-emerald-600/20 rounded-xl md:rounded-2xl p-4 md:p-6 border-2 border-green-500/50 hover:border-green-500/70 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/40">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-sm rounded-full shadow-lg whitespace-nowrap">
+              🎁 30-DAY FREE TRIAL
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4">
+              {/* Left side - info */}
+              <div className="space-y-3">
+                <h3 className="text-xl md:text-2xl font-bold text-white">Try Sterling AI Risk-Free!</h3>
+                <p className="text-sm md:text-base text-gray-300">
+                  Get full access to all features for 30 days. No credit card required.
+                </p>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-xs md:text-sm text-gray-300">1 AI Caller • 600 dials per day</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-xs md:text-sm text-gray-300">$0.30/minute calling costs</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-xs md:text-sm text-gray-300">All core features included</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-xs md:text-sm text-gray-300">Cancel anytime, no commitment</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right side - CTA */}
+              <div className="flex flex-col justify-center items-center">
+                <div className="text-center mb-4">
+                  <div className="text-4xl md:text-5xl font-bold text-white mb-2">FREE</div>
+                  <p className="text-sm md:text-base text-gray-400">for 30 days</p>
+                </div>
+                <button
+                  onClick={handleStartFreeTrial}
+                  disabled={trialLoading}
+                  className="w-full md:w-auto px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {trialLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Starting Trial...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" />
+                      Start Free Trial
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+                <p className="text-xs text-gray-500 mt-3 text-center">No credit card • Instant setup</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mt-6 md:mt-8">

@@ -113,7 +113,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if user already has an active subscription
+    // Check if user already has an active PAID subscription (not free trial or free access)
     console.log('🔍 Checking for existing subscription...');
     const { data: existingSubscription } = await supabase
       .from('subscriptions')
@@ -122,9 +122,14 @@ export async function POST(req: Request) {
       .eq('status', 'active')
       .single();
 
-    // If user has existing subscription, upgrade/downgrade it (with proration)
-    if (existingSubscription?.stripe_subscription_id) {
-      console.log('🔄 Existing subscription found:', existingSubscription.stripe_subscription_id);
+    // Check if this is a real Stripe subscription (not free_trial or free_access)
+    const isRealStripeSubscription = existingSubscription?.stripe_subscription_id && 
+      !existingSubscription.stripe_subscription_id.startsWith('free_trial_') &&
+      !existingSubscription.stripe_subscription_id.startsWith('free_access_');
+
+    // If user has existing PAID subscription, upgrade/downgrade it (with proration)
+    if (existingSubscription && isRealStripeSubscription) {
+      console.log('🔄 Existing PAID subscription found:', existingSubscription.stripe_subscription_id);
       console.log('📊 Current tier:', existingSubscription.subscription_tier, '→ New tier:', tier);
       
       try {
@@ -168,6 +173,29 @@ export async function POST(req: Request) {
           error: 'Failed to update subscription: ' + error.message 
         }, { status: 500 });
       }
+    }
+
+    // Handle upgrade from free trial or free access
+    if (existingSubscription && !isRealStripeSubscription) {
+      console.log('🎁 Upgrading from free tier:', existingSubscription.subscription_tier, '→', tier);
+      
+      // Mark that user is upgrading from trial (to skip onboarding and set maintenance appropriately)
+      await supabase
+        .from('profiles')
+        .update({
+          upgraded_from_trial: true,
+          previous_tier: existingSubscription.subscription_tier,
+        })
+        .eq('user_id', user.id);
+      
+      // Cancel the free tier subscription in database (will create new one via webhook)
+      await supabase
+        .from('subscriptions')
+        .update({ status: 'canceled' })
+        .eq('user_id', user.id)
+        .eq('stripe_subscription_id', existingSubscription.stripe_subscription_id);
+      
+      console.log('✅ Free tier canceled, proceeding to create new paid subscription');
     }
 
     // No existing subscription - create new checkout session

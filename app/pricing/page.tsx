@@ -26,19 +26,19 @@ export default function PricingPage() {
 
       <main className="relative z-10 pt-32 lg:pt-32 pb-20">
         <div className="container mx-auto px-6">
-          {/* 30% OFF BANNER */}
+          {/* FREE TRIAL BANNER */}
           <div className="max-w-4xl mx-auto mb-8 lg:mb-12 animate-in fade-in slide-in-from-top duration-700 px-2 sm:px-4 lg:px-0">
-            <div className="relative group overflow-hidden bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-purple-600/20 border-2 border-purple-500/50 rounded-xl lg:rounded-2xl p-4 sm:p-5 lg:p-6 hover:border-purple-500/70 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/40">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/10 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative group overflow-hidden bg-gradient-to-r from-green-600/20 via-emerald-600/20 to-green-600/20 border-2 border-green-500/50 rounded-xl lg:rounded-2xl p-4 sm:p-5 lg:p-6 hover:border-green-500/70 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/40">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-500/0 via-green-500/10 to-green-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="relative text-center">
-                <p className="text-white font-bold text-[17px] sm:text-xl lg:text-2xl mb-2 leading-tight whitespace-nowrap">
-                  🎁 Get 30% OFF Your First Month!
+                <p className="text-white font-bold text-[17px] sm:text-xl lg:text-2xl mb-3 leading-tight">
+                  🚀 Start Your 30-Day FREE Trial!
                 </p>
-                <p className="text-gray-300 text-sm sm:text-base lg:text-lg mb-3 lg:mb-4">
-                  Use code <span className="text-purple-400 font-mono font-bold text-base sm:text-lg lg:text-xl px-2 sm:px-3 py-0.5 sm:py-1 bg-purple-500/20 rounded">STERLING</span> at signup
+                <p className="text-gray-300 text-xs sm:text-base lg:text-lg mb-3 lg:mb-4">
+                  Only pay <span className="text-green-400 font-bold text-sm sm:text-lg lg:text-xl px-1.5 sm:px-3 py-0.5 sm:py-1 bg-green-500/20 rounded">$0.30/minute</span> for calls you make
                 </p>
-                <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
-                  Limited time offer • Works on all plans
+                <p className="hidden sm:block text-gray-400 text-sm leading-relaxed">
+                  1 AI Caller • 600 Leads Per Day • Cancel Anytime
                 </p>
               </div>
             </div>
@@ -50,7 +50,7 @@ export default function PricingPage() {
               <Sparkles className="w-4 h-4 text-blue-400 animate-pulse" />
               <span className="text-sm text-blue-400 font-semibold">Simple, Transparent Pricing</span>
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-center">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-center">
               <div className="flex justify-center">
                 <BlurText
                   text="Revive Old Leads."
@@ -74,7 +74,7 @@ export default function PricingPage() {
               You already paid for those leads. Let's make sure you get your money's worth.
             </p>
             <p className="hidden sm:block text-lg text-gray-500">
-              $999/month. 600 dials a day. What's one policy worth to you?
+              Try it FREE for 30 days. 600 dials a day. What's one policy worth to you?
             </p>
           </div>
 
@@ -88,10 +88,11 @@ export default function PricingPage() {
                   <h3 className="text-2xl font-bold text-white mb-2">Starter</h3>
                   <p className="text-gray-400 text-sm mb-4">Perfect for getting started</p>
                   
-                  <div className="flex items-baseline justify-center gap-1 mb-6">
-                    <span className="text-5xl font-bold text-white">$999</span>
+                  <div className="flex items-baseline justify-center gap-1 mb-2">
+                    <span className="text-5xl font-bold text-white">$499</span>
                     <span className="text-xl text-gray-400">/mo</span>
                   </div>
+                  <p className="text-green-400 text-sm font-semibold mb-4">+ $0.30/min for calls</p>
                 </div>
 
                 <div className="space-y-3 mb-8">
@@ -129,8 +130,8 @@ export default function PricingPage() {
                   href="/login"
                   className="group/btn w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/50"
                 >
-                  <Zap className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
-                  Activate AI
+                  <Rocket className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                  Start Free Trial
                   <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
                 </Link>
               </div>
@@ -146,10 +147,11 @@ export default function PricingPage() {
                   <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
                   <p className="text-gray-400 text-sm mb-4">For serious closers</p>
                   
-                  <div className="flex items-baseline justify-center gap-1 mb-6">
-                    <span className="text-5xl font-bold text-white">$1,399</span>
+                  <div className="flex items-baseline justify-center gap-1 mb-2">
+                    <span className="text-5xl font-bold text-white">$899</span>
                     <span className="text-xl text-gray-400">/mo</span>
                   </div>
+                  <p className="text-green-400 text-sm font-semibold mb-4">+ $0.25/min for calls</p>
                 </div>
 
                 <div className="space-y-3 mb-8">
@@ -207,10 +209,11 @@ export default function PricingPage() {
                   <h3 className="text-2xl font-bold text-white mb-2">Elite</h3>
                   <p className="text-gray-400 text-sm mb-4">Maximum volume & automation</p>
                   
-                  <div className="flex items-baseline justify-center gap-1 mb-6">
-                    <span className="text-5xl font-bold text-white">$1,999</span>
+                  <div className="flex items-baseline justify-center gap-1 mb-2">
+                    <span className="text-5xl font-bold text-white">$1,499</span>
                     <span className="text-xl text-gray-400">/mo</span>
                   </div>
+                  <p className="text-green-400 text-sm font-semibold mb-4">+ $0.20/min for calls</p>
                 </div>
 
                 <div className="space-y-3 mb-8">
@@ -296,7 +299,7 @@ export default function PricingPage() {
                     <div className="text-white font-bold mb-2 sm:mb-3 text-sm sm:text-lg">The Math:</div>
                     <div className="space-y-2 sm:space-y-2.5">
                       <p className="text-gray-300 text-[10px] sm:text-sm leading-relaxed whitespace-nowrap overflow-x-auto">
-                        4 appointments/day × 20 business days = <span className="text-white font-semibold">80 appointments</span>
+                        4 appointments/day × 20 business days = <span className="text-white font-semibold">80 appt.</span>
                       </p>
                       <p className="text-gray-300 text-[10px] sm:text-sm leading-relaxed whitespace-nowrap">
                         Close 1 in 10 appointments = <span className="text-white font-semibold">8 policies</span>
@@ -428,12 +431,12 @@ export default function PricingPage() {
                   className="group/cta inline-flex items-center justify-center gap-2 md:gap-3 px-8 py-4 md:px-12 md:py-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold text-lg md:text-xl rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/50 w-full sm:w-auto"
                 >
                   <Rocket className="w-5 h-5 md:w-7 md:h-7 group-hover/cta:translate-y-[-4px] transition-transform" />
-                  Subscribe Now
+                  Start Free Trial
                   <ArrowRight className="w-5 h-5 md:w-7 md:h-7 group-hover/cta:translate-x-2 transition-transform" />
                 </Link>
                 <p className="text-gray-400 text-xs sm:text-sm mt-4 md:mt-6">
-                  <Gift className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-purple-400 animate-pulse" />
-                  Code <span className="text-purple-400 font-mono font-bold">STERLING</span> for 30% off your first month
+                  <Zap className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-green-400 animate-pulse" />
+                  30 Days Free • Only Pay <span className="text-green-400 font-bold">$0.30/min</span> for Calls
                 </p>
               </div>
             </div>

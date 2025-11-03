@@ -48,13 +48,15 @@ export default function OnboardingFormPage() {
         throw new Error('Failed to send onboarding data');
       }
 
-      // Update profile with onboarding completion
+      // Update profile with onboarding completion and trigger AI setup
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
           full_name: `${formData.firstName} ${formData.lastName}`,
           onboarding_completed: true,
           onboarding_completed_at: new Date().toISOString(),
+          ai_setup_status: 'maintenance', // Set to maintenance so AI shows "being configured"
+          setup_requested_at: new Date().toISOString(),
         })
         .eq('user_id', user.id);
 
@@ -65,7 +67,7 @@ export default function OnboardingFormPage() {
         return;
       }
 
-      // Redirect to dashboard
+      // Redirect to dashboard (AI Control Center will show "AI Setup In Progress")
       router.push('/dashboard');
       router.refresh();
     } catch (err: any) {

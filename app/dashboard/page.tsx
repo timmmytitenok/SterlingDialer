@@ -4,6 +4,7 @@ import { SimpleStatCard } from '@/components/simple-stat-card';
 import { RevenueProfitChart } from '@/components/revenue-profit-chart';
 import { CallActivityChart } from '@/components/call-activity-chart';
 import { DashboardStatsGrid } from '@/components/dashboard-stats-grid';
+import { TrialCountdownBanner } from '@/components/trial-countdown-banner';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -181,10 +182,11 @@ export default async function DashboardPage() {
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     let monthlyPrice = 0;
     
+    // Updated pricing (November 2024)
     switch (subscription.subscription_tier) {
-      case 'starter': monthlyPrice = 999; break;
-      case 'pro': monthlyPrice = 1399; break;
-      case 'elite': monthlyPrice = 1999; break;
+      case 'starter': monthlyPrice = 499; break;
+      case 'pro': monthlyPrice = 899; break;
+      case 'elite': monthlyPrice = 1499; break;
     }
     
     dailyBaseCost = monthlyPrice / daysInMonth;
@@ -255,8 +257,14 @@ export default async function DashboardPage() {
     });
   }
 
+  // Calculate costs for LAST 30 DAYS only (to match the chart period)
+  const costs30Days = revenueData?.filter(r => {
+    const revDate = new Date(r.date);
+    return revDate >= startOf30Days;
+  }).reduce((sum, r) => sum + (r.total_ai_cost || 0), 0) || 0;
+
   const totalRevenue = revenueData?.reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;
-  const totalCosts = revenueData?.reduce((sum, r) => sum + (r.total_ai_cost || 0), 0) || 0;
+  const totalCosts = costs30Days; // Only last 30 days, not all-time
   const totalProfit = totalRevenue - totalCosts;
 
   // Calculate revenue for different periods
@@ -319,6 +327,9 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#0B1437]">
       <main className="container mx-auto px-4 lg:px-8 py-8">
+        {/* Free Trial Countdown Banner */}
+        <TrialCountdownBanner />
+
         {/* Welcome */}
         <div className="mb-8">
           {/* Mobile: Just "Welcome back" */}

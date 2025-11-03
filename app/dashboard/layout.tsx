@@ -25,6 +25,17 @@ export default async function DashboardLayout({
     .eq('user_id', user.id)
     .single();
 
+  // Check if trial has expired
+  if (profile?.subscription_tier === 'free_trial' && profile.free_trial_ends_at) {
+    const trialEndsAt = new Date(profile.free_trial_ends_at);
+    const now = new Date();
+    
+    if (trialEndsAt < now) {
+      // Trial expired - redirect to trial-expired page
+      redirect('/trial-expired');
+    }
+  }
+
   return (
     <div className="flex h-screen bg-[#0B1437] text-white overflow-hidden relative">
       {/* Animated Background Effects */}

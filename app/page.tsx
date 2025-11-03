@@ -107,10 +107,10 @@ export default function LandingPage() {
               Have thousands of old life insurance leads collecting dust? Let Sterling AI revive them into booked appointments.
             </p>
 
-            {/* 30% Off Badge */}
-            <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-purple-600/20 border-2 border-purple-500/50 rounded-full mb-12 lg:mb-20 hover:scale-105 transition-transform cursor-pointer animate-slide-up mx-auto" style={{ animationDelay: '0.2s' }}>
-              <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 animate-pulse flex-shrink-0" />
-              <span className="text-sm sm:text-base text-white font-bold text-center">Code <span className="text-purple-400 font-mono">STERLING</span> for 30% off first month!</span>
+            {/* Free Trial Badge */}
+            <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-green-600/20 border-2 border-green-500/50 rounded-full mb-12 lg:mb-20 hover:scale-105 transition-transform cursor-pointer animate-slide-up mx-auto" style={{ animationDelay: '0.2s' }}>
+              <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 animate-pulse flex-shrink-0" />
+              <span className="text-sm sm:text-base text-white font-bold text-center">30-Day Free Trial • Only Pay <span className="text-green-400">$0.30/min</span> for Calls!</span>
             </div>
 
             {/* CTA Buttons */}
@@ -121,7 +121,7 @@ export default function LandingPage() {
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   <Rocket className="w-5 h-5 lg:w-6 lg:h-6 group-hover:translate-y-[-4px] transition-transform" />
-                  Subscribe Now
+                  Start Free Trial
                   <ArrowRight className="w-5 h-5 lg:w-6 lg:h-6 group-hover:translate-x-1 transition-transform" />
                 </span>
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
@@ -259,7 +259,7 @@ export default function LandingPage() {
                     <p className="text-gray-300 leading-relaxed mb-3">
                       Upload spreadsheet. You know, the one with 2,000 leads you never called. 
                     </p>
-                    <p className="text-gray-600 text-sm">ß
+                    <p className="text-gray-600 text-sm">
                       CSV, Excel, copy/paste. Takes 60 seconds.
                     </p>
                   </div>
@@ -398,19 +398,19 @@ export default function LandingPage() {
                   Sterling AI does it for you — automatically calling, following up, and booking your calendar full.
                 </p>
                 <p className="text-sm sm:text-base md:text-lg text-gray-400 mb-6 md:mb-8">
-                  <span className="text-green-400 font-bold">$999/month. 600 dials a day.</span> What's one policy worth to you?
+                  <span className="text-green-400 font-bold">Try it FREE for 30 days. 600 dials a day.</span> What's one policy worth to you?
                 </p>
                 <Link
                   href="/login"
                   className="group/cta inline-flex items-center justify-center gap-2 md:gap-3 px-8 py-4 md:px-12 md:py-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold text-lg md:text-xl rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/50 w-full sm:w-auto"
                 >
                   <Rocket className="w-5 h-5 md:w-7 md:h-7 group-hover/cta:translate-y-[-4px] transition-transform" />
-                  Subscribe Now
+                  Start Free Trial
                   <ArrowRight className="w-5 h-5 md:w-7 md:h-7 group-hover/cta:translate-x-2 transition-transform" />
                 </Link>
                 <p className="text-gray-400 text-xs sm:text-sm mt-4 md:mt-6">
-                  <Gift className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-purple-400 animate-pulse" />
-                  Code <span className="text-purple-400 font-mono font-bold">STERLING</span> for 30% off your first month
+                  <Zap className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-green-400 animate-pulse" />
+                  30 Days Free • Only Pay <span className="text-green-400 font-bold">$0.30/min</span> for Calls
                 </p>
               </div>
             </div>
@@ -561,7 +561,7 @@ export default function LandingPage() {
               © 2025 Sterling AI. All rights reserved.
             </p>
             <p className="text-gray-500 text-sm">
-              Use code <span className="text-purple-400 font-mono font-bold">STERLING</span> for 30% off
+              Start your 30-day free trial today • Pay only for minutes used
             </p>
           </div>
         </div>
