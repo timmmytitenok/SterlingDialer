@@ -541,6 +541,15 @@ export async function POST(req: Request) {
 
       console.log(`💰 Setting cost_per_minute to $${costPerMinute} for ${tier} tier`);
 
+      // 🔍 FIRST: Check current tier BEFORE updating (to detect tier changes)
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('subscription_tier')
+        .eq('user_id', userProfile2.user_id)
+        .single();
+
+      console.log(`📊 Current profile tier BEFORE update: ${currentProfile?.subscription_tier}`);
+
       // 🚨 CRITICAL: Update profiles table with subscription info (for middleware checks)
       const { error: profileSubError2 } = await supabase
         .from('profiles')
@@ -559,22 +568,15 @@ export async function POST(req: Request) {
         console.log('✅ Profile updated with subscription tier, cost_per_minute, and customer ID');
       }
 
-      // Check if this is a tier change (upgrade/downgrade) or new subscription
-      const { data: existingSubscription } = await supabase
-        .from('subscriptions')
-        .select('subscription_tier')
-        .eq('user_id', userProfile2.user_id)
-        .eq('status', 'active')
-        .single();
-
       const isNewSubscription = event.type === 'customer.subscription.created';
-      const isTierChange = !isNewSubscription && existingSubscription && existingSubscription.subscription_tier !== tier;
+      const isTierChange = !isNewSubscription && currentProfile && currentProfile.subscription_tier !== tier;
       
       console.log(`📊 Subscription change:`, { 
         isNewSubscription, 
         isTierChange,
-        oldTier: existingSubscription?.subscription_tier,
-        newTier: tier
+        oldTier: currentProfile?.subscription_tier,
+        newTier: tier,
+        eventType: event.type
       });
 
       // ALWAYS set AI to pending_setup for ANY subscription change (new, upgrade, or downgrade)
