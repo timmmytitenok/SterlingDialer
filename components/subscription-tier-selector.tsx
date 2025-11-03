@@ -15,6 +15,8 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
   const [pendingTier, setPendingTier] = useState<'starter' | 'pro' | 'elite' | null>(null);
   const [showFinalConfirmation, setShowFinalConfirmation] = useState(false);
   const [trialLoading, setTrialLoading] = useState(false);
+  const [showTrialConfirmation, setShowTrialConfirmation] = useState(false);
+  const [trialAgreed, setTrialAgreed] = useState(false);
 
   const handleSubscribeClick = (tier: 'starter' | 'pro' | 'elite') => {
     // If user already has a subscription, show first confirmation modal
@@ -45,7 +47,17 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
     setShowFinalConfirmation(false);
   };
 
-  const handleStartFreeTrial = async () => {
+  const handleStartFreeTrial = () => {
+    setShowTrialConfirmation(true);
+  };
+
+  const confirmStartFreeTrial = async () => {
+    if (!trialAgreed) {
+      alert('Please agree to the terms to start your free trial.');
+      return;
+    }
+
+    setShowTrialConfirmation(false);
     setTrialLoading(true);
     try {
       console.log('🎁 Starting free trial...');
@@ -169,10 +181,6 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
     <div className="space-y-6 md:space-y-8">
       {/* Header */}
       <div className="text-center">
-        <div className="inline-flex items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 bg-blue-500/10 border border-blue-500/20 rounded-full mb-3 md:mb-4">
-          <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
-          <span className="text-sm md:text-base text-blue-400 font-semibold">Choose Your Plan</span>
-        </div>
         <h2 className="text-xl md:text-3xl font-bold text-white mb-1 md:mb-2">
           {currentTier && currentTier !== 'none' ? 'Upgrade or Change Your Plan' : 'Choose Package '}
         </h2>
@@ -386,7 +394,7 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
 
       {/* Free Trial Banner (only show if no current tier AND not hidden) */}
       {(!currentTier || currentTier === 'none' || currentTier === null) && !hideFreeTrial && (
-        <div className="mb-6 md:mb-8">
+        <div className="mb-6 md:mb-8 mt-12 md:mt-16">
           <div className="relative bg-gradient-to-br from-green-600/20 to-emerald-600/20 rounded-xl md:rounded-2xl p-4 md:p-6 border-2 border-green-500/50 hover:border-green-500/70 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/40">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-sm rounded-full shadow-lg whitespace-nowrap">
               🎁 30-DAY FREE TRIAL
@@ -443,7 +451,7 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
                     </>
                   )}
                 </button>
-                <p className="text-xs text-gray-500 mt-3 text-center">No credit card • Instant setup</p>
+                <p className="text-xs text-gray-500 mt-3 text-center">Instant setup • Cancel anytime</p>
               </div>
             </div>
           </div>
@@ -473,6 +481,83 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
           onConfirm={handleFinalConfirmation}
           onCancel={() => setShowFinalConfirmation(false)}
         />
+      )}
+
+      {/* Free Trial Confirmation Modal */}
+      {showTrialConfirmation && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-6 md:p-8 max-w-md w-full border-2 border-green-500/30 shadow-2xl shadow-green-500/20 animate-in zoom-in duration-300">
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/50">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                Start Your Free Trial?
+              </h3>
+              <p className="text-gray-400 text-sm md:text-base">
+                Activate your 30-day free trial and start reviving old leads today!
+              </p>
+            </div>
+
+            {/* Benefits */}
+            <div className="space-y-3 mb-6 bg-green-500/5 border border-green-500/20 rounded-xl p-4">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                <span className="text-gray-300 text-sm">30 days of full access</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                <span className="text-gray-300 text-sm">1 AI Caller • 600 dials per day</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                <span className="text-gray-300 text-sm">Only pay $0.30/min for calls</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                <span className="text-gray-300 text-sm">Cancel anytime, no commitment</span>
+              </div>
+            </div>
+
+            {/* Agreement Checkbox */}
+            <div className="mb-6">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={trialAgreed}
+                  onChange={(e) => setTrialAgreed(e.target.checked)}
+                  className="w-5 h-5 mt-0.5 rounded border-2 border-gray-600 bg-gray-800 text-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900 cursor-pointer"
+                />
+                <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
+                  I understand that I will be charged <span className="text-green-400 font-bold">$0.30 per minute</span> for calls made during my trial period
+                </span>
+              </label>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => {
+                  setShowTrialConfirmation(false);
+                  setTrialAgreed(false);
+                }}
+                className="flex-1 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-all duration-300 border border-gray-700 hover:border-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmStartFreeTrial}
+                disabled={!trialAgreed}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-5 h-5" />
+                Start Free Trial
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
