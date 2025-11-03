@@ -11,8 +11,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get the actual domain from request headers
-    const headersList = headers();
+    // Get the actual domain from request headers (await in Next.js 15)
+    const headersList = await headers();
     const host = headersList.get('host') || 'localhost:3000';
     const protocol = host.includes('localhost') ? 'http' : 'https';
     
