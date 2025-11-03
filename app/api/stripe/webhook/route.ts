@@ -268,30 +268,47 @@ export async function POST(req: Request) {
           console.log('✅ Subscription created from checkout for user:', userProfile.user_id, `Tier: ${tier}`);
           console.log(`💰 Setting cost_per_minute to $${costPerMinute} for ${tier} tier`);
 
+          // Check if user is upgrading from free trial BEFORE updating
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('ai_setup_status, subscription_tier, upgraded_from_trial, previous_tier, onboarding_completed')
+            .eq('user_id', userProfile.user_id)
+            .single();
+
+          const wasOnFreeTrial = existingProfile?.subscription_tier === 'free_trial';
+
           // 🚨 CRITICAL: Update profiles table with subscription info (for middleware checks)
+          const profileUpdate: any = {
+            subscription_tier: tier,
+            cost_per_minute: costPerMinute, // 🔥 SET COST PER MINUTE
+            stripe_customer_id: customerId,
+            subscription_status: subscription.status,
+            has_active_subscription: true // 🔥 SIMPLE BOOLEAN FLAG
+          };
+
+          // 🎁 If upgrading from free trial, clear free trial data
+          if (wasOnFreeTrial) {
+            console.log('🎁 User is upgrading from FREE TRIAL - clearing trial data');
+            profileUpdate.free_trial_started_at = null;
+            profileUpdate.free_trial_ends_at = null;
+            profileUpdate.free_trial_days_remaining = null;
+            profileUpdate.upgraded_from_trial = true;
+            profileUpdate.previous_tier = 'free_trial';
+          }
+
           const { error: profileSubError } = await supabase
             .from('profiles')
-            .update({
-              subscription_tier: tier,
-              cost_per_minute: costPerMinute, // 🔥 SET COST PER MINUTE
-              stripe_customer_id: customerId,
-              subscription_status: subscription.status,
-              has_active_subscription: true // 🔥 SIMPLE BOOLEAN FLAG
-            })
+            .update(profileUpdate)
             .eq('user_id', userProfile.user_id);
 
           if (profileSubError) {
             console.error('❌ Error updating profile subscription info:', profileSubError);
           } else {
             console.log('✅ Profile updated with subscription tier, cost_per_minute, and customer ID');
+            if (wasOnFreeTrial) {
+              console.log('✅ Free trial data cleared - upgraded to paid subscription');
+            }
           }
-
-          // Check if user is upgrading from free trial
-          const { data: existingProfile } = await supabase
-            .from('profiles')
-            .select('ai_setup_status, upgraded_from_trial, previous_tier, onboarding_completed')
-            .eq('user_id', userProfile.user_id)
-            .single();
 
           const isUpgradeFromTrial = existingProfile?.upgraded_from_trial === true;
           const previousTier = existingProfile?.previous_tier;
