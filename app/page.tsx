@@ -183,7 +183,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl lg:text-2xl font-bold text-white mb-3 lg:mb-4">Massive Daily Volume</h3>
                 <p className="text-base text-gray-300 leading-relaxed">
-                  Dial 600 to 1,800 leads PER DAY. In one day, you'll make more calls than most agents make in a month. Scale like never before.
+                  Dial 600 to 1,800 leads PER DAY. In one day, you'll make more calls than most agents make in a month.
                 </p>
               </div>
 
@@ -325,7 +325,7 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <p className="text-gray-300 mb-6 leading-relaxed">
-                  "Sterling AI tripled my appointments in the first month. I'm booking 3-5 meetings per day on autopilot."
+                  "Sterling AI tripled my appointments in the first month. I'm booking 3-5 meetings per day now."
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
@@ -367,7 +367,7 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <p className="text-gray-300 mb-6 leading-relaxed">
-                  "Game changer. I went from 100 calls a day to 600. My revenue has increased by 400% in 3 months."
+                  "Game changer. I went from 100 calls a day to 600. My revenue has increased by 300% in 2 months. I actully recommend SterlingAI."
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold">
@@ -391,14 +391,14 @@ export default function LandingPage() {
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse" />
               
               <div className="relative z-10 text-center">
-                <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4 md:mb-6 leading-tight">
+                <h2 className="text-2xl sm:text-3xl md:text-6xl lg:text-6xl font-bold text-white mb-4 md:mb-6 leading-tight">
                   Still chasing new leads when you haven't worked the old ones?
                 </h2>
-                <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-3 md:mb-4 max-w-2xl mx-auto leading-relaxed">
-                  Sterling AI does it for you — automatically calling, following up, and booking your calendar full.
+                <p className="text-base sm:text-lg md:text-2xl text-gray-300 mb-3 md:mb-10 max-w-2xl mx-auto leading-relaxed">
+                  Sterling AI does it all for you — automatically calling, and booking your calendar full of appointments.
                 </p>
-                <p className="text-sm sm:text-base md:text-lg text-gray-400 mb-6 md:mb-8">
-                  <span className="text-green-400 font-bold">Try it FREE for 30 days. 600 dials a day.</span> What's one policy worth to you?
+                <p className="text-sm sm:text-base md:text-1xl text-gray-400 mb-6 md:mb-8">
+                  <span className="text-green-400 font-bold">$499 a month. 600 dials a day.</span> What's one policy worth to you?
                 </p>
                 <Link
                   href="/login"
@@ -561,7 +561,7 @@ export default function LandingPage() {
               © 2025 Sterling AI. All rights reserved.
             </p>
             <p className="text-gray-500 text-sm">
-              Start your 30-day free trial today • Pay only for minutes used
+              Start your <span className="text-gray-300 font-bold">30 day</span> free trial today • Pay only for minutes used
             </p>
           </div>
         </div>
