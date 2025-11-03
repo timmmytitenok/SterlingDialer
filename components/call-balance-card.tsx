@@ -50,13 +50,12 @@ export function CallBalanceCard({
           setHasConfigured(data.auto_refill_enabled);
         }
 
-        // Check if returning from payment setup (success=true in URL)
+        // Check if returning from balance refill (balance_success=true in URL)
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('success') === 'true') {
-          // Payment method was just added, check if balance needs refilling
-          console.log('🔍 Payment method added, checking balance...');
+        if (urlParams.get('balance_success') === 'true') {
+          console.log('✅ Returned from successful balance refill');
           
-          // Check if this completes a referral sign-up
+          // Check if this completes a referral sign-up (first refill = account setup complete)
           try {
             const referralResponse = await fetch('/api/referral/complete-signup', {
               method: 'POST',
@@ -64,35 +63,14 @@ export function CallBalanceCard({
             const referralData = await referralResponse.json();
             if (referralData.success && referralData.daysAdded) {
               console.log(`🎉 Referral completed! ${referralData.daysAdded} days added to referrer's trial`);
+              alert(`🎉 Thank you! Your referrer just received ${referralData.daysAdded} bonus days!`);
             }
           } catch (error) {
             console.log('No referral to complete');
           }
           
-          if (data.balance !== undefined && data.auto_refill_enabled && data.auto_refill_amount) {
-            // If balance is below $10, trigger auto-refill
-            if (data.balance < 10) {
-              console.log('💳 Balance is low, triggering auto-refill...');
-              
-              // Trigger auto-refill API
-              const refillResponse = await fetch('/api/balance/auto-refill-check', {
-                method: 'POST',
-              });
-              
-              const refillData = await refillResponse.json();
-              if (refillData.success) {
-                console.log('✅ Auto-refill triggered successfully');
-                // Refresh balance after a short delay
-                setTimeout(async () => {
-                  const refreshResponse = await fetch('/api/balance/get');
-                  const refreshData = await refreshResponse.json();
-                  if (refreshData.balance !== undefined) {
-                    setBalance(refreshData.balance);
-                  }
-                }, 2000);
-              }
-            }
-          }
+          // Clean up URL
+          window.history.replaceState({}, document.title, window.location.pathname);
         }
       } catch (error) {
         console.error('Failed to fetch user data:', error);
@@ -125,44 +103,55 @@ export function CallBalanceCard({
   const handleSaveAutoRefill = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/balance/update-settings', {
+      // First check if they have a payment method
+      const checkResponse = await fetch('/api/balance/update-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          auto_refill_enabled: true, // Always true now
+          auto_refill_enabled: true,
           auto_refill_amount: refillAmount,
         }),
       });
 
-      const data = await response.json();
+      const checkData = await checkResponse.json();
 
-      if (data.success) {
+      if (checkData.success) {
+        // Already has payment method - just update settings
         alert('✅ Auto-refill amount updated!');
         setHasConfigured(true);
-      } else if (data.needsPaymentMethod) {
-        // No payment method on file - redirect to setup
-        const setupConfirm = confirm(
-          '💳 You need to add a payment method first.\n\n' +
-          'Click OK to add your card for auto-refill.'
+      } else if (checkData.needsPaymentMethod) {
+        // No payment method - need to purchase first refill
+        const purchaseConfirm = confirm(
+          `💳 Add Card & Purchase First Refill\n\n` +
+          `You'll be charged $${refillAmount} to:\n` +
+          `• Add your card for auto-refill\n` +
+          `• Credit your account with $${refillAmount}\n\n` +
+          `Future refills will happen automatically when balance < $10.\n\n` +
+          `Click OK to proceed to checkout.`
         );
         
-        if (setupConfirm) {
-          // Call setup payment method API
-          const setupResponse = await fetch('/api/stripe/setup-payment-method', {
+        if (purchaseConfirm) {
+          // Create checkout session for first refill
+          const refillResponse = await fetch('/api/balance/refill', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              amount: refillAmount,
+              isFirstRefill: true // Flag to save auto-refill settings after payment
+            }),
           });
           
-          const setupData = await setupResponse.json();
+          const refillData = await refillResponse.json();
           
-          if (setupData.success && setupData.url) {
+          if (refillData.success && refillData.url) {
             // Redirect to Stripe Checkout
-            window.location.href = setupData.url;
+            window.location.href = refillData.url;
           } else {
-            alert(`Failed to set up payment method: ${setupData.error}`);
+            alert(`Failed to create checkout: ${refillData.error}`);
           }
         }
       } else {
-        alert(`Failed to update settings: ${data.error}`);
+        alert(`Failed to update settings: ${checkData.error}`);
       }
     } catch (error) {
       alert('Error updating settings');

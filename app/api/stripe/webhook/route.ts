@@ -686,8 +686,10 @@ export async function POST(req: Request) {
       if (session.mode === 'payment' && session.metadata?.type === 'balance_refill') {
         const userId = session.metadata.user_id;
         const amount = parseFloat(session.metadata.amount);
+        const isFirstRefill = session.metadata.is_first_refill === 'true';
+        const autoRefillAmount = session.metadata.auto_refill_amount;
         
-        console.log('💰 Balance refill payment completed:', { userId, amount });
+        console.log('💰 Balance refill payment completed:', { userId, amount, isFirstRefill });
 
         try {
           // Get current balance
@@ -700,14 +702,23 @@ export async function POST(req: Request) {
           const balanceBefore = currentBalance?.balance || 0;
           const balanceAfter = balanceBefore + amount;
 
-          // Update balance
+          // Update balance (and auto-refill settings if this is first refill)
+          const updateData: any = {
+            user_id: userId,
+            balance: balanceAfter,
+            last_refill_at: new Date().toISOString(),
+          };
+
+          // If this is the first refill, enable auto-refill with the selected amount
+          if (isFirstRefill && autoRefillAmount) {
+            updateData.auto_refill_enabled = true;
+            updateData.auto_refill_amount = parseFloat(autoRefillAmount);
+            console.log('💳 Enabling auto-refill with amount:', autoRefillAmount);
+          }
+
           const { error: updateError } = await supabase
             .from('call_balance')
-            .upsert({
-              user_id: userId,
-              balance: balanceAfter,
-              last_refill_at: new Date().toISOString(),
-            }, {
+            .upsert(updateData, {
               onConflict: 'user_id'
             });
 
@@ -715,6 +726,9 @@ export async function POST(req: Request) {
             console.error('❌ Error updating balance:', updateError);
           } else {
             console.log('✅ Balance updated successfully:', balanceAfter);
+            if (isFirstRefill) {
+              console.log('✅ Auto-refill enabled with amount:', autoRefillAmount);
+            }
           }
 
           // Record transaction
@@ -723,14 +737,16 @@ export async function POST(req: Request) {
             .insert({
               user_id: userId,
               amount: amount,
-              type: 'credit',
-              description: `Balance refill: $${amount}`,
+              type: isFirstRefill ? 'first_refill' : 'credit',
+              description: isFirstRefill ? `First refill + card saved: $${amount}` : `Balance refill: $${amount}`,
               balance_before: balanceBefore,
               balance_after: balanceAfter,
               stripe_payment_intent_id: session.payment_intent as string,
               metadata: {
                 session_id: session.id,
                 amount_cents: session.amount_total,
+                is_first_refill: isFirstRefill,
+                auto_refill_enabled: isFirstRefill,
               },
             });
 
