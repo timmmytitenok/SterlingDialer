@@ -10,6 +10,8 @@ export default function OnboardingFormPage() {
     firstName: '',
     lastName: '',
     email: '',
+    agencyName: '',
+    nicheDescription: '',
     calApiKey: '',
     calEventId: '',
     googleSheetConfirmed: false
@@ -82,7 +84,7 @@ export default function OnboardingFormPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B1437] relative overflow-hidden flex items-center justify-center">
+    <div className="min-h-screen bg-[#0B1437] relative overflow-hidden md:flex md:items-center md:justify-center">
       {/* Animated Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -top-20 -left-20 animate-pulse"></div>
@@ -93,281 +95,300 @@ export default function OnboardingFormPage() {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)] pointer-events-none"></div>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-3xl mx-auto px-4 py-6 md:py-10 overflow-y-auto max-h-screen">
+      <div className="relative z-10 w-full max-w-3xl mx-auto px-3 py-4 md:px-4 md:py-10 overflow-y-auto max-h-screen scrollbar-hide">
         {/* Card */}
-        <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl md:rounded-2xl p-4 md:p-8 border border-gray-800 shadow-2xl">
+        <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-lg md:rounded-2xl p-3 md:p-8 border border-gray-800 shadow-2xl">
           {/* Header */}
-          <div className="text-center mb-4 md:mb-6">
-            <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-3 shadow-lg">
-              <span className="text-xl md:text-2xl font-bold text-white">SA</span>
+          <div className="text-center mb-3 md:mb-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-2 md:mb-3 shadow-lg">
+              <span className="text-lg md:text-2xl font-bold text-white">SA</span>
             </div>
-            <h1 className="text-xl md:text-3xl font-bold text-white mb-2">AI Onboarding Setup</h1>
+            <h1 className="text-lg md:text-3xl font-bold text-white mb-1 md:mb-2">AI Onboarding Setup</h1>
             <p className="text-xs md:text-base text-gray-400">Complete these steps to activate your Sterling AI</p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-6">
             
             {/* SECTION 1: Personal Information */}
-            <div className="bg-gray-800/30 rounded-lg p-3 md:p-5 border border-gray-700/50">
-              <h2 className="text-base md:text-lg font-bold text-white mb-3 md:mb-4 flex items-center gap-2">
-                <span className="bg-blue-600 text-white w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-xs md:text-sm font-bold">1</span>
-                Your Information
+            <div className="bg-gray-800/30 rounded-lg p-2.5 md:p-5 border border-gray-700/50">
+              <h2 className="text-sm md:text-lg font-bold text-white mb-2.5 md:mb-4 flex items-center gap-2">
+                <span className="bg-blue-600 text-white w-5 h-5 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[10px] md:text-sm font-bold">1</span>
+                <span className="text-sm md:text-lg">Your Information</span>
               </h2>
               
-              <div className="space-y-3 md:space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+              <div className="space-y-2.5 md:space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 md:gap-4">
                   <div>
-                    <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1.5">First Name *</label>
+                    <label className="block text-[11px] md:text-sm font-medium text-gray-300 mb-1">First Name *</label>
                     <input
                       type="text"
                       required
                       value={formData.firstName}
                       onChange={(e) => handleInputChange('firstName', e.target.value)}
                       placeholder="John"
-                      className="w-full px-3 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xs md:text-sm"
+                      className="w-full px-2.5 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm md:text-sm"
                       disabled={loading}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1.5">Last Name *</label>
+                    <label className="block text-[11px] md:text-sm font-medium text-gray-300 mb-1">Last Name *</label>
                     <input
                       type="text"
                       required
                       value={formData.lastName}
                       onChange={(e) => handleInputChange('lastName', e.target.value)}
                       placeholder="Smith"
-                      className="w-full px-3 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xs md:text-sm"
+                      className="w-full px-2.5 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm md:text-sm"
                       disabled={loading}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1.5">Email Address *</label>
+                  <label className="block text-[11px] md:text-sm font-medium text-gray-300 mb-1">Email Address *</label>
                   <input
                     type="email"
                     required
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     placeholder="john@agency.com"
-                    className="w-full px-3 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xs md:text-sm"
+                    className="w-full px-2.5 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm md:text-sm"
                     disabled={loading}
                   />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] md:text-sm font-medium text-gray-300 mb-1">Agency Name (Optional)</label>
+                  <input
+                    type="text"
+                    value={formData.agencyName}
+                    onChange={(e) => handleInputChange('agencyName', e.target.value)}
+                    placeholder="e.g., ABC Insurance Group"
+                    className="w-full px-2.5 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm md:text-sm"
+                    disabled={loading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] md:text-sm font-medium text-gray-300 mb-1">Niche & Products Description *</label>
+                  <textarea
+                    required
+                    value={formData.nicheDescription}
+                    onChange={(e) => handleInputChange('nicheDescription', e.target.value)}
+                    placeholder="Describe your niche and products (e.g., 'Final expense insurance for seniors aged 50-85')"
+                    rows={3}
+                    className="w-full px-2.5 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm md:text-sm resize-none"
+                    disabled={loading}
+                  />
+                  <p className="text-[10px] md:text-xs text-gray-500 mt-1">Helps AI understand your business</p>
                 </div>
               </div>
             </div>
 
             {/* SECTION 2: Cal.ai Setup */}
-            <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-lg p-3 md:p-5 border border-purple-500/30">
-              <h2 className="text-base md:text-lg font-bold text-white mb-3 md:mb-4 flex items-center gap-2">
-                <span className="bg-purple-600 text-white w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-xs md:text-sm font-bold">2</span>
-                <Calendar className="w-4 h-4 md:w-5 md:h-5" />
-                Cal.ai Calendar Setup
+            <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-lg p-2.5 md:p-5 border border-purple-500/30">
+              <h2 className="text-sm md:text-lg font-bold text-white mb-2.5 md:mb-4 flex items-center gap-2">
+                <span className="bg-purple-600 text-white w-5 h-5 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[10px] md:text-sm font-bold">2</span>
+                <Calendar className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                <span className="text-sm md:text-lg">Cal.ai Calendar Setup</span>
               </h2>
 
               {/* Instructions */}
-              <div className="bg-gray-900/50 rounded-lg p-3 md:p-4 mb-3 md:mb-4 space-y-4 md:space-y-5">
-                <p className="text-xs md:text-sm text-gray-300 font-semibold">Follow these steps:</p>
+              <div className="bg-gray-900/50 rounded-lg p-2.5 md:p-4 mb-2.5 md:mb-4 space-y-3 md:space-y-5">
+                <p className="text-[11px] md:text-sm text-gray-300 font-semibold">Follow these steps:</p>
                 
                 {/* Step 1 */}
-                <div className="space-y-2">
-                  <h3 className="text-sm md:text-base font-bold text-white">Step 1:</h3>
-                  <ul className="space-y-1.5 text-xs md:text-sm text-gray-400 ml-4 list-disc list-inside">
+                <div className="space-y-1.5">
+                  <h3 className="text-xs md:text-base font-bold text-white">Step 1:</h3>
+                  <ul className="space-y-1 text-[10px] md:text-sm text-gray-400 ml-3 md:ml-4 list-disc list-inside">
                     <li>
                       <a 
                         href="https://app.cal.com/signup" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-1"
+                        className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-0.5"
                       >
-                        Create a Cal.com account <ExternalLink className="w-3 h-3 md:w-4 md:h-4 inline" />
-                      </a> (if you don't have one)
+                        Create Cal.com account <ExternalLink className="w-2.5 h-2.5 md:w-4 md:h-4 inline" />
+                      </a> (if needed)
                     </li>
                     <li>
                       <a 
                         href="https://app.cal.com/settings/my-account/calendars" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-1"
+                        className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-0.5"
                       >
-                        Connect your Google Calendar <ExternalLink className="w-3 h-3 md:w-4 md:h-4 inline" />
+                        Connect Google Calendar <ExternalLink className="w-2.5 h-2.5 md:w-4 md:h-4 inline" />
                       </a>
                     </li>
-                    <li>Configure your <strong className="text-white">timezone</strong> correctly</li>
+                    <li>Set <strong className="text-white">timezone</strong> correctly</li>
                   </ul>
                 </div>
 
                 {/* Step 2 */}
-                <div className="space-y-2">
-                  <h3 className="text-sm md:text-base font-bold text-white">Step 2:</h3>
-                  <ul className="space-y-1.5 text-xs md:text-sm text-gray-400 ml-4 list-disc list-inside">
+                <div className="space-y-1.5">
+                  <h3 className="text-xs md:text-base font-bold text-white">Step 2:</h3>
+                  <ul className="space-y-1 text-[10px] md:text-sm text-gray-400 ml-3 md:ml-4 list-disc list-inside">
                     <li>
                       <a 
                         href="https://app.cal.com/event-types" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-1"
+                        className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-0.5"
                       >
-                        Create a new event <ExternalLink className="w-3 h-3 md:w-4 md:h-4 inline" />
+                        Create new event <ExternalLink className="w-2.5 h-2.5 md:w-4 md:h-4 inline" />
                       </a>
                     </li>
-                    <li><strong className="text-white">Event Name:</strong> "Life Insurance" or similar</li>
-                    <li><strong className="text-red-400">⚠️ IMPORTANT - Set Duration: 20 minutes (DO NOT set anything else!)</strong></li>
-                    <li>Fill out basic event info (description, etc.)</li>
-                    <li className="mt-2 pt-2 border-t border-gray-800">
-                      <strong className="text-white">Get your Event ID:</strong>
-                      <ul className="ml-4 mt-1 space-y-1 list-disc list-inside">
-                        <li>While editing your event, look at the URL</li>
-                        <li>Copy the <strong className="text-amber-400">7-digit number</strong> from the URL</li>
-                        <li className="text-xs text-gray-500">Example: app.cal.com/event-types/<span className="text-amber-400 font-mono">3685354</span>?tabName=setup</li>
-                        <li className="text-green-400 font-semibold">Paste Event ID in the field below (we need this!)</li>
+                    <li><strong className="text-white">Name:</strong> "Life Insurance"</li>
+                    <li><strong className="text-red-400">⚠️ Set Duration: 20 minutes</strong></li>
+                    <li className="mt-1.5 pt-1.5 border-t border-gray-800">
+                      <strong className="text-white">Get Event ID:</strong>
+                      <ul className="ml-3 mt-0.5 space-y-0.5 list-disc list-inside">
+                        <li>Look at URL while editing event</li>
+                        <li>Copy <strong className="text-amber-400">7-digit number</strong></li>
+                        <li className="text-[9px] md:text-xs text-gray-500">app.cal.com/event-types/<span className="text-amber-400 font-mono">3685354</span></li>
                       </ul>
                     </li>
                   </ul>
                 </div>
 
                 {/* Step 3 */}
-                <div className="space-y-2">
-                  <h3 className="text-sm md:text-base font-bold text-white">Step 3:</h3>
-                  <p className="text-xs md:text-sm text-gray-400 ml-4 mb-2">Create an API Key:</p>
-                  <ul className="space-y-1.5 text-xs md:text-sm text-gray-400 ml-4 list-disc list-inside">
+                <div className="space-y-1.5">
+                  <h3 className="text-xs md:text-base font-bold text-white">Step 3: Create API Key</h3>
+                  <ul className="space-y-1 text-[10px] md:text-sm text-gray-400 ml-3 md:ml-4 list-disc list-inside">
                     <li>
                       Go to{' '}
                       <a 
                         href="https://app.cal.com/settings/developer/api-keys" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-1"
+                        className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-0.5"
                       >
-                        API Keys page <ExternalLink className="w-3 h-3 md:w-4 md:h-4 inline" />
+                        API Keys <ExternalLink className="w-2.5 h-2.5 md:w-4 md:h-4 inline" />
                       </a>
                     </li>
                     <li>Click "Add API Key"</li>
-                    <li>Name it "Life Insurance" or "Sterling AI"</li>
-                    <li><strong className="text-red-400">Set expiry to "Never Expire"</strong></li>
-                    <li>Copy the API key immediately (you won't see it again!)</li>
-                    <li className="text-green-400 font-semibold">Paste in the field below (we need this!)</li>
+                    <li>Name: "Sterling AI"</li>
+                    <li><strong className="text-red-400">Set "Never Expire"</strong></li>
+                    <li>Copy immediately (won't see again!)</li>
                   </ul>
                 </div>
 
                 {/* Step 4 */}
-                <div className="space-y-2">
-                  <h3 className="text-sm md:text-base font-bold text-white">Step 4:</h3>
-                  <p className="text-xs md:text-sm text-gray-400 ml-4 mb-2">Create On-Booking Webhook:</p>
-                  <ul className="space-y-1.5 text-xs md:text-sm text-gray-400 ml-4 list-disc list-inside">
+                <div className="space-y-1.5">
+                  <h3 className="text-xs md:text-base font-bold text-white">Step 4: Setup Webhook</h3>
+                  <ul className="space-y-1 text-[10px] md:text-sm text-gray-400 ml-3 md:ml-4 list-disc list-inside">
                     <li>
                       Go to{' '}
                       <a 
                         href="https://app.cal.com/settings/developer/webhooks" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-1"
+                        className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-0.5"
                       >
-                        Webhooks page <ExternalLink className="w-3 h-3 md:w-4 md:h-4 inline" />
+                        Webhooks <ExternalLink className="w-2.5 h-2.5 md:w-4 md:h-4 inline" />
                       </a>
                     </li>
                     <li>Click "New Webhook"</li>
-                    <li>Paste this URL: <span className="text-green-400 font-mono text-xs">https://sterlingdailer.com/api/appointments/cal-webhook</span></li>
-                    <li>Select trigger: <strong className="text-white">"Booking Created"</strong></li>
-                    <li>Enable the webhook toggle</li>
-                    <li>Click "Create Webhook"</li>
+                    <li className="break-all">Paste URL: <span className="text-green-400 font-mono text-[9px] md:text-xs">sterlingdialer.com/api/appointments/cal-webhook</span></li>
+                    <li>Trigger: <strong className="text-white">"Booking Created"</strong></li>
+                    <li>Enable & save</li>
                   </ul>
                 </div>
               </div>
 
               {/* Cal.ai Inputs */}
-              <div className="space-y-3 md:space-y-4">
+              <div className="space-y-2.5 md:space-y-4">
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1.5 flex items-center gap-2">
+                  <label className="block text-[11px] md:text-sm font-medium text-gray-300 mb-1 flex items-center gap-1.5">
                     <Key className="w-3 h-3 md:w-4 md:h-4" />
-                    Cal.ai API Key *
+                    <span>Cal.ai API Key *</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.calApiKey}
                     onChange={(e) => handleInputChange('calApiKey', e.target.value)}
-                    placeholder="cal_live_xxxxxxxxxxxxxxxxxxxx"
-                    className="w-full px-3 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all text-xs md:text-sm font-mono"
+                    placeholder="cal_live_xxxxxxxx"
+                    className="w-full px-2.5 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all text-xs md:text-sm font-mono"
                     disabled={loading}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1.5">Event ID (7 digits) *</label>
+                  <label className="block text-[11px] md:text-sm font-medium text-gray-300 mb-1">Event ID (7 digits) *</label>
                   <input
                     type="text"
                     required
                     value={formData.calEventId}
                     onChange={(e) => handleInputChange('calEventId', e.target.value)}
                     placeholder="3685354"
-                    className="w-full px-3 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all text-xs md:text-sm font-mono"
+                    className="w-full px-2.5 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all text-sm md:text-sm font-mono"
                     disabled={loading}
                     maxLength={7}
                   />
-                  <p className="text-xs text-gray-500 mt-1">From your event URL: app.cal.com/event-types/<span className="text-amber-400">XXXXXXX</span></p>
+                  <p className="text-[10px] md:text-xs text-gray-500 mt-1">From event URL</p>
                 </div>
               </div>
             </div>
 
             {/* SECTION 3: Google Sheets */}
-            <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg p-3 md:p-5 border border-green-500/30">
-              <h2 className="text-base md:text-lg font-bold text-white mb-3 md:mb-4 flex items-center gap-2">
-                <span className="bg-green-600 text-white w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-xs md:text-sm font-bold">3</span>
-                <FileSpreadsheet className="w-4 h-4 md:w-5 md:h-5" />
-                Share Your Leads
+            <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg p-2.5 md:p-5 border border-green-500/30">
+              <h2 className="text-sm md:text-lg font-bold text-white mb-2.5 md:mb-4 flex items-center gap-2">
+                <span className="bg-green-600 text-white w-5 h-5 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[10px] md:text-sm font-bold">3</span>
+                <FileSpreadsheet className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                <span className="text-sm md:text-lg">Share Your Leads</span>
               </h2>
 
               {/* Instructions */}
-              <div className="bg-gray-900/50 rounded-lg p-3 md:p-4 mb-3 md:mb-4">
-                <p className="text-xs md:text-sm text-gray-300 font-semibold mb-2">Share your Google Sheet:</p>
+              <div className="bg-gray-900/50 rounded-lg p-2.5 md:p-4 mb-2.5 md:mb-4">
+                <p className="text-[11px] md:text-sm text-gray-300 font-semibold mb-2">Share your Google Sheet:</p>
                 
-                <ol className="space-y-2 text-xs md:text-sm text-gray-400 list-decimal list-inside">
-                  <li>Open your Google Sheet with all your leads</li>
-                  <li>Click the <strong className="text-white">"Share"</strong> button (top right)</li>
+                <ol className="space-y-1.5 text-[10px] md:text-sm text-gray-400 list-decimal list-inside ml-3 md:ml-0">
+                  <li>Open your Google Sheet with leads</li>
+                  <li>Click <strong className="text-white">"Share"</strong> button</li>
                   <li>
-                    Add this email: <span className="text-green-400 font-semibold">SterlingDailer@gmail.com</span>
+                    Add: <span className="text-green-400 font-semibold break-all">SterlingDailer@gmail.com</span>
                   </li>
                   <li>
                     Grant <strong className="text-white">"Editor"</strong> access
-                    <span className="block text-xs text-gray-500 ml-6 mt-1">(You can change to "Viewer" after AI is confirmed working)</span>
                   </li>
                 </ol>
               </div>
 
               {/* Confirmation Checkbox */}
-              <div className="bg-gray-800/50 rounded-lg p-3 md:p-4 border border-green-500/50">
-                <label className="flex items-start gap-3 cursor-pointer">
+              <div className="bg-gray-800/50 rounded-lg p-2.5 md:p-4 border border-green-500/50">
+                <label className="flex items-start gap-2 md:gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     required
                     checked={formData.googleSheetConfirmed}
                     onChange={(e) => handleInputChange('googleSheetConfirmed', e.target.checked)}
-                    className="mt-0.5 w-5 h-5 rounded border-gray-600 text-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-0 bg-gray-700"
+                    className="mt-0.5 w-4 h-4 md:w-5 md:h-5 rounded border-gray-600 text-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-0 bg-gray-700 flex-shrink-0"
                     disabled={loading}
                   />
-                  <span className="text-xs md:text-sm text-gray-300">
-                    <strong className="text-white">✓ I confirm</strong> that I have shared my Google Sheet with <span className="text-green-400 font-semibold">SterlingDailer@gmail.com</span> and granted <strong className="text-white">Editor</strong> access.
+                  <span className="text-[10px] md:text-sm text-gray-300 leading-tight">
+                    <strong className="text-white">✓ Confirmed:</strong> Shared Google Sheet with <span className="text-green-400 font-semibold break-all">SterlingDailer@gmail.com</span> as <strong className="text-white">Editor</strong>
                   </span>
                 </label>
               </div>
             </div>
 
             {/* Important Notice */}
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 md:p-4 flex gap-2 md:gap-3">
-              <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5 md:p-4 flex gap-2 md:gap-3">
+              <AlertCircle className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs md:text-sm text-amber-300 font-semibold mb-1">Important!</p>
-                <p className="text-xs md:text-sm text-amber-200">
-                  Double-check all information before submitting. Our team will use these details to set up your AI agent. Incorrect information will delay your setup.
+                <p className="text-[10px] md:text-sm text-amber-300 font-semibold mb-0.5 md:mb-1">Important!</p>
+                <p className="text-[10px] md:text-sm text-amber-200 leading-tight">
+                  Double-check all info before submitting. Incorrect details will delay setup.
                 </p>
               </div>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 md:p-4">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-2.5 md:p-4">
                 <p className="text-xs md:text-sm text-red-400">{error}</p>
               </div>
             )}
@@ -375,22 +396,22 @@ export default function OnboardingFormPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading || !formData.firstName || !formData.lastName || !formData.email || !formData.calApiKey || !formData.calEventId || !formData.googleSheetConfirmed}
-              className={`w-full px-4 py-3 md:px-6 md:py-4 font-bold rounded-lg transition-all duration-300 flex items-center justify-center gap-2 text-sm md:text-base ${
-                loading || !formData.firstName || !formData.lastName || !formData.email || !formData.calApiKey || !formData.calEventId || !formData.googleSheetConfirmed
+              disabled={loading || !formData.firstName || !formData.lastName || !formData.email || !formData.nicheDescription || !formData.calApiKey || !formData.calEventId || !formData.googleSheetConfirmed}
+              className={`w-full px-3 py-2.5 md:px-6 md:py-4 font-bold rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 md:gap-2 text-xs md:text-base ${
+                loading || !formData.firstName || !formData.lastName || !formData.email || !formData.nicheDescription || !formData.calApiKey || !formData.calEventId || !formData.googleSheetConfirmed
                   ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                   : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white hover:scale-105 active:scale-95 shadow-lg hover:shadow-blue-500/50'
               }`}
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
-                  Submitting Setup...
+                  <Loader2 className="w-3.5 h-3.5 md:w-5 md:h-5 animate-spin" />
+                  <span>Submitting...</span>
                 </>
               ) : (
                 <>
-                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
-                  Complete Setup & Activate AI
+                  <CheckCircle className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                  <span>Complete Setup & Activate AI</span>
                   <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
                 </>
               )}
@@ -401,17 +422,17 @@ export default function OnboardingFormPage() {
               type="button"
               onClick={() => router.push('/dashboard')}
               disabled={loading}
-              className="w-full text-xs md:text-sm text-gray-400 hover:text-white transition-colors text-center disabled:opacity-50 py-2"
+              className="w-full text-[10px] md:text-sm text-gray-400 hover:text-white transition-colors text-center disabled:opacity-50 py-1.5 md:py-2"
             >
               I'll complete this later
             </button>
           </form>
 
           {/* Help Text */}
-          <div className="text-center text-xs md:text-sm text-gray-500 mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-800">
-            <p className="mb-1">Need help with setup?</p>
-            <a href="mailto:SterlingDailer@gmail.com" className="text-blue-400 hover:text-blue-300 underline font-semibold">
-              Email SterlingDailer@gmail.com
+          <div className="text-center text-[10px] md:text-sm text-gray-500 mt-3 md:mt-6 pt-3 md:pt-6 border-t border-gray-800">
+            <p className="mb-1">Need help?</p>
+            <a href="mailto:SterlingDailer@gmail.com" className="text-blue-400 hover:text-blue-300 underline font-semibold break-all">
+              SterlingDailer@gmail.com
             </a>
           </div>
         </div>

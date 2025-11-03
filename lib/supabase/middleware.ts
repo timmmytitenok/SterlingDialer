@@ -47,7 +47,7 @@ export async function updateSession(request: NextRequest) {
 
   // 🔥 BRAND NEW SIMPLE LOGIC - ONE CHECK
   if (user) {
-    // Check if user has EVER completed a checkout (subscription record exists)
+    // Check if user has EVER completed a checkout (subscription record exists) OR has active free trial
     const { data: subscription } = await supabase
       .from('subscriptions')
       .select('stripe_subscription_id')
@@ -55,34 +55,43 @@ export async function updateSession(request: NextRequest) {
       .limit(1)
       .maybeSingle();
 
+    // Also check if user has an active free trial
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('user_id', user.id)
+      .single();
+
     const hasEverSubscribed = !!subscription;
+    const hasFreeTrial = profile?.subscription_tier === 'free_trial';
+    const hasAccess = hasEverSubscribed || hasFreeTrial;
 
     // RULE 1: Trying to access DASHBOARD
     if (request.nextUrl.pathname.startsWith('/dashboard')) {
-      if (!hasEverSubscribed) {
-        // Never subscribed → Must subscribe first
+      if (!hasAccess) {
+        // Never subscribed AND no free trial → Must subscribe first
         const url = request.nextUrl.clone();
         url.pathname = '/subscribe';
         return NextResponse.redirect(url);
       }
-      // Has subscribed before → FULL ACCESS
+      // Has subscribed before OR has free trial → FULL ACCESS
     }
 
     // RULE 2: Trying to access /subscribe
     if (request.nextUrl.pathname === '/subscribe') {
-      if (hasEverSubscribed) {
-        // Already subscribed → Go to dashboard
+      if (hasAccess) {
+        // Already has access (subscribed or free trial) → Go to dashboard
         const url = request.nextUrl.clone();
         url.pathname = '/dashboard';
         return NextResponse.redirect(url);
       }
-      // Never subscribed → Show them subscribe page
+      // No access → Show them subscribe page
     }
 
     // RULE 3: Logged in user trying to access /login
     if (request.nextUrl.pathname === '/login') {
       const url = request.nextUrl.clone();
-      url.pathname = hasEverSubscribed ? '/dashboard' : '/subscribe';
+      url.pathname = hasAccess ? '/dashboard' : '/subscribe';
       return NextResponse.redirect(url);
     }
   }

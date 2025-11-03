@@ -11,6 +11,8 @@ export async function POST(request: Request) {
       firstName,
       lastName,
       email,
+      agencyName,
+      nicheDescription,
       calApiKey,
       calEventId,
       googleSheetConfirmed,
@@ -166,6 +168,21 @@ export async function POST(request: Request) {
                 <div class="info-label">User ID (Supabase):</div>
                 <div class="info-value"><span class="highlight">${userId}</span></div>
               </div>
+              ${agencyName ? `
+              <div class="info-row">
+                <div class="info-label">Agency Name:</div>
+                <div class="info-value"><strong>${agencyName}</strong></div>
+              </div>
+              ` : `
+              <div class="info-row">
+                <div class="info-label">Agency Name:</div>
+                <div class="info-value"><em style="color: #999;">Not provided (AI will reference as individual agent)</em></div>
+              </div>
+              `}
+              <div class="info-row">
+                <div class="info-label">Niche & Products:</div>
+                <div class="info-value" style="white-space: pre-wrap;">${nicheDescription}</div>
+              </div>
             </div>
 
             <!-- Section 2: Cal.ai Setup -->
@@ -183,8 +200,8 @@ export async function POST(request: Request) {
                 <div class="info-value"><span class="highlight">${calEventId}</span></div>
               </div>
               <div class="warning">
-                <strong>⚠️ Cal.ai Webhook URL:</strong> Give the user this URL to paste into their Cal.ai webhook settings:<br/>
-                <code style="background: #1e293b; padding: 8px 12px; border-radius: 6px; display: inline-block; margin-top: 8px; color: #22c55e; font-size: 13px;">https://sterlingdailer.com/api/appointments/cal-webhook</code>
+                <strong>⚠️ Cal.ai Webhook URL:</strong> User should have already pasted this URL into their Cal.ai webhook settings:<br/>
+                <code style="background: #1e293b; padding: 8px 12px; border-radius: 6px; display: inline-block; margin-top: 8px; color: #22c55e; font-size: 13px;">https://sterlingdialer.com/api/appointments/cal-webhook</code>
               </div>
             </div>
 
@@ -213,8 +230,8 @@ export async function POST(request: Request) {
               </div>
               <ol style="margin: 0; padding-left: 20px;">
                 <li style="margin-bottom: 10px;">Verify Cal.ai API key and Event ID are valid</li>
+                <li style="margin-bottom: 10px;">Verify Cal.ai webhook is configured with: <strong>https://sterlingdialer.com/api/appointments/cal-webhook</strong></li>
                 <li style="margin-bottom: 10px;">Create N8N workflow for this user and get webhook URL</li>
-                <li style="margin-bottom: 10px;"><strong>Send user the Cal.ai webhook URL (shown above): https://sterlingdailer.com/api/appointments/cal-webhook</strong></li>
                 <li style="margin-bottom: 10px;">Confirm Google Sheet access and lead data format</li>
                 <li style="margin-bottom: 10px;">Configure AI agent with user's specific settings</li>
                 <li style="margin-bottom: 10px;">Test dial to verify full integration</li>

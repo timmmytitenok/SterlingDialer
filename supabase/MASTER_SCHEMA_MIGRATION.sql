@@ -62,6 +62,12 @@ CREATE INDEX IF NOT EXISTS idx_referrals_created_at ON referrals(created_at);
 
 ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies first to avoid conflicts
+DROP POLICY IF EXISTS "Users can view their own referrals" ON referrals;
+DROP POLICY IF EXISTS "Users can view referrals where they are referee" ON referrals;
+DROP POLICY IF EXISTS "Users can insert their own referrals" ON referrals;
+DROP POLICY IF EXISTS "Service role can update referrals" ON referrals;
+
 -- Policy: Users can view their own referrals (as referrer)
 CREATE POLICY "Users can view their own referrals" ON referrals
   FOR SELECT
@@ -104,8 +110,8 @@ DROP FUNCTION IF EXISTS add_to_balance(UUID, DECIMAL) CASCADE;
 
 -- Function: Start a free trial for a user
 CREATE OR REPLACE FUNCTION start_free_trial(
-  p_user_id UUID,
-  p_duration_days INTEGER DEFAULT 30
+  user_id_param UUID,
+  trial_duration_days INTEGER DEFAULT 30
 ) RETURNS VOID AS $$
 DECLARE
   v_trial_start TIMESTAMPTZ;
@@ -113,7 +119,7 @@ DECLARE
   v_days_remaining INTEGER;
 BEGIN
   v_trial_start := NOW();
-  v_trial_end := v_trial_start + (p_duration_days || ' days')::INTERVAL;
+  v_trial_end := v_trial_start + (trial_duration_days || ' days')::INTERVAL;
   
   -- Calculate days remaining using CEIL for accurate rounding
   v_days_remaining := CEIL(EXTRACT(EPOCH FROM (v_trial_end - NOW())) / 86400)::INTEGER;
@@ -125,15 +131,15 @@ BEGIN
     cost_per_minute = 0.30,
     free_trial_started_at = v_trial_start,
     free_trial_ends_at = v_trial_end,
-    free_trial_total_days = p_duration_days,
+    free_trial_total_days = trial_duration_days,
     free_trial_days_remaining = v_days_remaining
-  WHERE user_id = p_user_id;
+  WHERE user_id = user_id_param;
 
   -- Create or update subscription record (if subscriptions table exists)
   -- Note: Adjust columns based on your actual subscriptions table schema
   -- This is a placeholder - modify based on your table structure
 
-  RAISE NOTICE 'Free trial started for user % (% days, ends at %)', p_user_id, p_duration_days, v_trial_end;
+  RAISE NOTICE 'Free trial started for user % (% days, ends at %)', user_id_param, trial_duration_days, v_trial_end;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
