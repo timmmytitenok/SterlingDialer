@@ -21,14 +21,15 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS upgraded_from_trial BOOLEAN DEFAUL
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS previous_tier TEXT;
 
 -- ============================================================================
--- PART 2: SUBSCRIPTIONS TABLE EXTENSIONS
+-- PART 2: SUBSCRIPTIONS TABLE EXTENSIONS (OPTIONAL)
 -- ============================================================================
--- Add columns for custom pricing and free access tracking
+-- Note: Only run these if you have a subscriptions table
+-- Comment out if your app doesn't use a separate subscriptions table
 
-ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS cost_per_minute DECIMAL(10, 2);
-ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS exclude_from_cost_graph BOOLEAN DEFAULT FALSE;
-ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
-ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS free_access_duration_days INTEGER;
+-- ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS cost_per_minute DECIMAL(10, 2);
+-- ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS exclude_from_cost_graph BOOLEAN DEFAULT FALSE;
+-- ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
+-- ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS free_access_duration_days INTEGER;
 
 -- ============================================================================
 -- PART 3: REFERRALS TABLE
@@ -126,28 +127,9 @@ BEGIN
     free_trial_days_remaining = v_days_remaining
   WHERE user_id = p_user_id;
 
-  -- Create or update subscription record
-  INSERT INTO subscriptions (
-    user_id,
-    tier,
-    status,
-    cost_per_minute,
-    trial_ends_at,
-    stripe_subscription_id
-  ) VALUES (
-    p_user_id,
-    'free_trial',
-    'active',
-    0.30,
-    v_trial_end,
-    'free_trial_' || p_user_id
-  )
-  ON CONFLICT (user_id) DO UPDATE SET
-    tier = EXCLUDED.tier,
-    status = EXCLUDED.status,
-    cost_per_minute = EXCLUDED.cost_per_minute,
-    trial_ends_at = EXCLUDED.trial_ends_at,
-    stripe_subscription_id = EXCLUDED.stripe_subscription_id;
+  -- Create or update subscription record (if subscriptions table exists)
+  -- Note: Adjust columns based on your actual subscriptions table schema
+  -- This is a placeholder - modify based on your table structure
 
   RAISE NOTICE 'Free trial started for user % (% days, ends at %)', p_user_id, p_duration_days, v_trial_end;
 END;
@@ -174,34 +156,8 @@ BEGIN
     cost_per_minute = 0.30
   WHERE user_id = p_user_id;
 
-  -- Create or update subscription record
-  INSERT INTO subscriptions (
-    user_id,
-    tier,
-    status,
-    cost_per_minute,
-    exclude_from_cost_graph,
-    trial_ends_at,
-    free_access_duration_days,
-    stripe_subscription_id
-  ) VALUES (
-    p_user_id,
-    'free_access',
-    'active',
-    0.30,
-    TRUE, -- Exclude from AI cost graph
-    v_end_date,
-    p_duration_days,
-    'free_access_' || p_user_id
-  )
-  ON CONFLICT (user_id) DO UPDATE SET
-    tier = EXCLUDED.tier,
-    status = EXCLUDED.status,
-    cost_per_minute = EXCLUDED.cost_per_minute,
-    exclude_from_cost_graph = EXCLUDED.exclude_from_cost_graph,
-    trial_ends_at = EXCLUDED.trial_ends_at,
-    free_access_duration_days = EXCLUDED.free_access_duration_days,
-    stripe_subscription_id = EXCLUDED.stripe_subscription_id;
+  -- Create or update subscription record (if subscriptions table exists)
+  -- Note: Adjust columns based on your actual subscriptions table schema
 
   RAISE NOTICE 'Free access granted to user %', p_user_id;
 END;
@@ -245,10 +201,8 @@ BEGIN
     free_trial_days_remaining = v_days_remaining
   WHERE user_id = p_user_id;
 
-  -- Update subscription record
-  UPDATE subscriptions
-  SET trial_ends_at = v_new_end
-  WHERE user_id = p_user_id;
+  -- Update subscription record (if subscriptions table exists)
+  -- Note: Adjust based on your actual table structure
 
   RAISE NOTICE 'Trial extended for user % by % days (new end: %)', p_user_id, p_additional_days, v_new_end;
 END;
@@ -266,12 +220,8 @@ BEGIN
     AND free_trial_ends_at IS NOT NULL
     AND free_trial_ends_at < NOW();
 
-  UPDATE subscriptions
-  SET status = 'expired'
-  WHERE
-    tier = 'free_trial'
-    AND trial_ends_at IS NOT NULL
-    AND trial_ends_at < NOW();
+  -- Update subscriptions table (if it exists and has these columns)
+  -- Note: Adjust based on your actual table structure
 
   RAISE NOTICE 'Expired free trials processed';
 END;
