@@ -206,7 +206,7 @@ function LoginPageContent() {
       {/* Content */}
       <div className="relative z-10 w-full max-w-md mx-4 py-12 md:py-16">
         {/* Logo - Added padding - Secret: Click 5 times for master login */}
-        <div className="text-center mb-8 md:mb-12">
+        <div className="text-center mb-8 md:mb-12 pt-8 md:pt-0">
           <div 
             onClick={handleLogoClick}
             className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/50 cursor-pointer hover:scale-105 transition-transform"
