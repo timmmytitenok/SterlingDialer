@@ -4,7 +4,7 @@ import { PublicNav } from '@/components/public-nav';
 import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
-import { Shield, Lock, Eye, Database, Gift, Rocket, ArrowRight } from 'lucide-react';
+import { Shield, Lock, Eye, Database, Gift, Rocket, ArrowRight, Zap } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PrivacyPage() {
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
                   <li>To provide and improve the AI calling service</li>
                   <li>To process payments and manage subscriptions</li>
                   <li>To send service notifications and updates</li>
-                  <li>To track referrals and apply credits/discounts</li>
+                  <li>To manage free trials and track referrals</li>
                   <li>To provide customer support</li>
                   <li>To comply with legal obligations</li>
                 </ul>
@@ -147,12 +147,12 @@ export default function PrivacyPage() {
             className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold rounded-xl transition-all hover:scale-105 hover:shadow-xl hover:shadow-blue-500/50"
           >
             <Rocket className="w-5 h-5" />
-            Activate My AI Caller
+            Start Free Trial
             <ArrowRight className="w-5 h-5" />
           </Link>
           <p className="text-sm text-gray-400 mt-4">
-            <Gift className="w-4 h-4 inline mr-1 text-purple-400" />
-            Use code <span className="text-purple-400 font-mono font-bold">STERLING</span> for 30% off
+            <Zap className="w-4 h-4 inline mr-1 text-green-400" />
+            30 Days Free • Only Pay <span className="text-green-400 font-bold">$0.30/min</span> for Calls
           </p>
         </div>
       </div>

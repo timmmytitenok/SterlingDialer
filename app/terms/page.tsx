@@ -4,7 +4,7 @@ import { PublicNav } from '@/components/public-nav';
 import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
-import { Shield, FileText, Gift, Rocket, ArrowRight } from 'lucide-react';
+import { Shield, FileText, Gift, Rocket, ArrowRight, Zap } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TermsPage() {
@@ -39,11 +39,11 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-bold text-white mb-4">2. Subscription & Billing</h2>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>Subscriptions are billed monthly at the selected tier price (Starter: $999, Pro: $1,399, Elite: $1,999)</li>
+                  <li>Subscriptions are billed monthly at the selected tier price (Starter: $499, Pro: $899, Elite: $1,499) plus per-minute calling costs</li>
                   <li>Payment is processed through Stripe on a recurring basis</li>
                   <li>You may cancel your subscription at any time through the billing portal</li>
                   <li>No refunds. All sales are final.</li>
-                  <li>Referral discounts (30% off with code STERLING) apply to the first month only</li>
+                  <li>Free trial includes 30 days of access with pay-per-minute calling ($0.30/min for Starter tier)</li>
                 </ul>
               </section>
 
@@ -132,13 +132,13 @@ export default function TermsPage() {
               className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold rounded-xl transition-all hover:scale-105 hover:shadow-xl hover:shadow-blue-500/50 flex items-center justify-center gap-2"
             >
               <Rocket className="w-5 h-5 group-hover:translate-y-[-2px] transition-transform" />
-              Activate My AI Caller
+              Start Free Trial
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
           <p className="text-sm text-gray-400 mt-4">
-            <Gift className="w-4 h-4 inline mr-1 text-purple-400" />
-            Use code <span className="text-purple-400 font-mono font-bold">STERLING</span> for 30% off
+            <Zap className="w-4 h-4 inline mr-1 text-green-400" />
+            30 Days Free • Only Pay <span className="text-green-400 font-bold">$0.30/min</span> for Calls
           </p>
         </div>
       </div>
