@@ -57,7 +57,7 @@ export default async function BillingPage() {
           <BillingManagementContent
             userEmail={user.email!}
             hasSubscription={!!subscription}
-            currentTier={subscriptionFeatures.tier as 'none' | 'starter' | 'pro' | 'elite'}
+            currentTier={subscriptionFeatures.tier as 'none' | 'free_trial' | 'starter' | 'pro' | 'elite'}
           />
         </div>
       )}

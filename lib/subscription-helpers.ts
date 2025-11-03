@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 
-export type SubscriptionTier = 'starter' | 'pro' | 'elite' | 'none' | null;
+export type SubscriptionTier = 'starter' | 'pro' | 'elite' | 'free_trial' | 'none' | null;
 
 export interface SubscriptionFeatures {
   tier: SubscriptionTier;
@@ -15,6 +15,7 @@ export interface SubscriptionFeatures {
 export async function getSubscriptionFeatures(userId: string): Promise<SubscriptionFeatures> {
   const supabase = await createClient();
 
+  // First check for paid subscription
   const { data: subscription } = await supabase
     .from('subscriptions')
     .select('*')
@@ -22,22 +23,39 @@ export async function getSubscriptionFeatures(userId: string): Promise<Subscript
     .eq('status', 'active')
     .single();
 
-  // No active subscription - return defaults
-  if (!subscription) {
+  // If paid subscription exists, return it
+  if (subscription) {
     return {
-      tier: null,
-      maxDailyCalls: 0,
-      aiCallerCount: 0,
-      hasActiveSubscription: false,
+      tier: subscription.subscription_tier as SubscriptionTier,
+      maxDailyCalls: subscription.max_daily_calls || getTierDefaults(subscription.subscription_tier).maxDailyCalls,
+      aiCallerCount: subscription.ai_caller_count || getTierDefaults(subscription.subscription_tier).aiCallerCount,
+      hasActiveSubscription: true,
     };
   }
 
-  // Return features based on subscription
+  // No paid subscription - check for free trial in profiles
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_tier')
+    .eq('user_id', userId)
+    .single();
+
+  // If free trial exists, return free trial features
+  if (profile?.subscription_tier === 'free_trial') {
+    return {
+      tier: 'free_trial',
+      maxDailyCalls: getTierDefaults('free_trial').maxDailyCalls,
+      aiCallerCount: getTierDefaults('free_trial').aiCallerCount,
+      hasActiveSubscription: true, // Free trial counts as active subscription
+    };
+  }
+
+  // No subscription or free trial - return defaults
   return {
-    tier: subscription.subscription_tier as SubscriptionTier,
-    maxDailyCalls: subscription.max_daily_calls || getTierDefaults(subscription.subscription_tier).maxDailyCalls,
-    aiCallerCount: subscription.ai_caller_count || getTierDefaults(subscription.subscription_tier).aiCallerCount,
-    hasActiveSubscription: true,
+    tier: null,
+    maxDailyCalls: 0,
+    aiCallerCount: 0,
+    hasActiveSubscription: false,
   };
 }
 
@@ -46,6 +64,11 @@ export async function getSubscriptionFeatures(userId: string): Promise<Subscript
  */
 export function getTierDefaults(tier: string | null) {
   switch (tier) {
+    case 'free_trial':
+      return {
+        maxDailyCalls: 600,
+        aiCallerCount: 1,
+      };
     case 'starter':
       return {
         maxDailyCalls: 600,
@@ -84,6 +107,8 @@ export function hasFeatureAccess(features: SubscriptionFeatures, featureName: st
  */
 export function getTierDisplayName(tier: SubscriptionTier): string {
   switch (tier) {
+    case 'free_trial':
+      return 'Free Trial';
     case 'starter':
       return 'Starter Plan';
     case 'pro':
@@ -100,6 +125,8 @@ export function getTierDisplayName(tier: SubscriptionTier): string {
  */
 export function getTierColor(tier: SubscriptionTier): string {
   switch (tier) {
+    case 'free_trial':
+      return 'green';
     case 'starter':
       return 'blue';
     case 'pro':
