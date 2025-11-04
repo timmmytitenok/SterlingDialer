@@ -91,7 +91,7 @@ export async function GET() {
       .from('revenue_tracking')
       .select('*');
     
-    const totalUserRevenue = revenueData?.reduce((sum, r) => sum + (r.ai_costs || 0), 0) || 0;
+    const totalUserRevenue = revenueData?.reduce((sum: number, r: any) => sum + (r.ai_costs || 0), 0) || 0;
 
     // Calculate MRR (from active subscriptions)
     const { data: activeSubscriptions } = await supabase
@@ -105,12 +105,12 @@ export async function GET() {
       elite: 1499,
     };
 
-    const mrr = activeSubscriptions?.reduce((sum, sub) => {
+    const mrr = activeSubscriptions?.reduce((sum: number, sub: any) => {
       return sum + (tierPrices[sub.subscription_tier] || 0);
     }, 0) || 0;
 
     // 4. SYSTEM HEALTH
-    const pendingSetups = allProfiles?.filter(p => p.ai_setup_status === 'pending_setup').length || 0;
+    const pendingSetups = allProfiles?.filter((p: any) => p.ai_setup_status === 'pending_setup').length || 0;
     
     // Get call balances
     const { data: callBalances } = await supabase
@@ -151,20 +151,20 @@ export async function GET() {
       .from('admin_profit_tracking')
       .select('date, minutes_profit, total_minutes_sold, total_minutes_cost');
     
-    const totalMinutesProfit = allProfitData?.reduce((sum, d) => sum + (d.minutes_profit || 0), 0) || 0;
-    const totalMinutesSold = allProfitData?.reduce((sum, d) => sum + (d.total_minutes_sold || 0), 0) || 0;
-    const totalMinutesCost = allProfitData?.reduce((sum, d) => sum + (d.total_minutes_cost || 0), 0) || 0;
+    const totalMinutesProfit = allProfitData?.reduce((sum: number, d: any) => sum + (d.minutes_profit || 0), 0) || 0;
+    const totalMinutesSold = allProfitData?.reduce((sum: number, d: any) => sum + (d.total_minutes_sold || 0), 0) || 0;
+    const totalMinutesCost = allProfitData?.reduce((sum: number, d: any) => sum + (d.total_minutes_cost || 0), 0) || 0;
     
     // Get today's minutes profit
     const todayStr = today.toISOString().split('T')[0];
-    const todayProfitData = allProfitData?.find(p => p.date === todayStr);
+    const todayProfitData = allProfitData?.find((p: any) => p.date === todayStr);
     const minutesProfitToday = todayProfitData?.minutes_profit || 0;
     
     // Calculate total expenses (your call costs = $0.12/min)
     const totalExpenses = totalMinutesCost;
     
     // Calculate total call balances (money sitting in user accounts)
-    const totalCallBalances = callBalances?.reduce((sum, cb) => sum + (cb.balance || 0), 0) || 0;
+    const totalCallBalances = callBalances?.reduce((sum: number, cb: any) => sum + (cb.balance || 0), 0) || 0;
     
     console.log(`✅ Minutes Profit (from tracking table): $${totalMinutesProfit.toFixed(2)}`);
     console.log(`   Today's Minutes Profit: $${minutesProfitToday.toFixed(2)}`);
