@@ -142,37 +142,14 @@ function LoginPageContent() {
         
         // If there's a referral code or ref parameter, handle it in the background
         if (data.user) {
-          // Check for old referral code system (for paid users)
-          if (referralCode) {
-            console.log('🎯 Applying referral code:', referralCode);
-            
-            // Don't await - let it run in background
-            fetch('/api/referral/validate-simple', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                code: referralCode, 
-                newUserId: data.user.id 
-              })
-            })
-            .then(async (res) => {
-              const result = await res.json();
-              if (res.ok) {
-                console.log('✅ Referral applied! You will get 30% discount!');
-              } else {
-                console.error('❌ Referral failed:', result.error);
-              }
-            })
-            .catch((err) => {
-            console.error('❌ Referral error:', err);
-          });
-          }
-          
-          // Check for new free trial referral system (ref parameter)
+          // Check for new free trial referral system (ref parameter - UUID format)
           const urlParams = new URLSearchParams(window.location.search);
           const referrerId = urlParams.get('ref');
           
-          if (referrerId) {
+          // UUID regex to check if ref is a user ID (new system)
+          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(referrerId || '');
+          
+          if (referrerId && isUUID) {
             console.log('🎁 Processing free trial referral from:', referrerId);
             
             // Create referral entry in the background
@@ -195,6 +172,29 @@ function LoginPageContent() {
             })
             .catch((err) => {
               console.error('❌ Free trial referral error:', err);
+            });
+          } else if (referralCode && !isUUID) {
+            // Old referral code system (for paid users with custom codes like "ABC123")
+            console.log('🎯 Applying old referral code:', referralCode);
+            
+            fetch('/api/referral/validate-simple', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                code: referralCode, 
+                newUserId: data.user.id 
+              })
+            })
+            .then(async (res) => {
+              const result = await res.json();
+              if (res.ok) {
+                console.log('✅ Referral applied! You will get 30% discount!');
+              } else {
+                console.error('❌ Referral failed:', result.error);
+              }
+            })
+            .catch((err) => {
+              console.error('❌ Referral error:', err);
             });
           }
         }
