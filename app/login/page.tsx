@@ -23,16 +23,25 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const supabase = createClient();
 
-  // Check for referral code in URL
+  // Check for referral code in URL and store in localStorage
   useEffect(() => {
     const refCode = searchParams.get('ref');
     console.log('🔍 useEffect - Checking URL for ref parameter:', refCode);
+    
     if (refCode) {
       console.log('✅ Ref parameter found:', refCode);
+      // Store in localStorage so it survives page reloads
+      localStorage.setItem('pending_referral', refCode);
       setReferralCode(refCode);
       setIsSignUp(true); // Auto-switch to sign up mode if there's a referral code
     } else {
       console.log('❌ No ref parameter in URL');
+      // Check localStorage for pending referral
+      const storedRef = localStorage.getItem('pending_referral');
+      if (storedRef) {
+        console.log('📦 Found stored referral in localStorage:', storedRef);
+        setReferralCode(storedRef);
+      }
     }
   }, [searchParams]);
 
@@ -147,8 +156,19 @@ function LoginPageContent() {
         // If there's a referral code or ref parameter, handle it in the background
         if (data.user) {
           // Check for new free trial referral system (ref parameter - UUID format)
+          // Try URL first, then localStorage, then referralCode state
           const urlParams = new URLSearchParams(window.location.search);
-          const referrerId = urlParams.get('ref');
+          let referrerId = urlParams.get('ref');
+          
+          if (!referrerId) {
+            referrerId = localStorage.getItem('pending_referral');
+            console.log('📦 Retrieved from localStorage:', referrerId);
+          }
+          
+          if (!referrerId && referralCode) {
+            referrerId = referralCode;
+            console.log('📋 Using referralCode state:', referrerId);
+          }
           
           console.log('🔍 DEBUG: Checking for referral parameter');
           console.log('  - URL search params:', window.location.search);
@@ -161,6 +181,9 @@ function LoginPageContent() {
           
           if (referrerId && isUUID) {
             console.log('🎁 Processing free trial referral from:', referrerId);
+            
+            // Clear localStorage after using it
+            localStorage.removeItem('pending_referral');
             
             // Create referral entry in the background
             fetch('/api/referral/create-from-link', {
