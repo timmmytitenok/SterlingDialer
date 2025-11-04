@@ -146,8 +146,14 @@ function LoginPageContent() {
           const urlParams = new URLSearchParams(window.location.search);
           const referrerId = urlParams.get('ref');
           
+          console.log('🔍 DEBUG: Checking for referral parameter');
+          console.log('  - URL search params:', window.location.search);
+          console.log('  - referrerId:', referrerId);
+          console.log('  - referralCode (old system):', referralCode);
+          
           // UUID regex to check if ref is a user ID (new system)
           const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(referrerId || '');
+          console.log('  - Is UUID?:', isUUID);
           
           if (referrerId && isUUID) {
             console.log('🎁 Processing free trial referral from:', referrerId);
