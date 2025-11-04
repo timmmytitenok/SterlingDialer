@@ -25,23 +25,31 @@ function LoginPageContent() {
 
   // Check for referral code in URL and store in localStorage
   useEffect(() => {
-    const refCode = searchParams.get('ref');
-    console.log('🔍 useEffect - Checking URL for ref parameter:', refCode);
-    
-    if (refCode) {
-      console.log('✅ Ref parameter found:', refCode);
-      // Store in localStorage so it survives page reloads
-      localStorage.setItem('pending_referral', refCode);
-      setReferralCode(refCode);
-      setIsSignUp(true); // Auto-switch to sign up mode if there's a referral code
-    } else {
-      console.log('❌ No ref parameter in URL');
-      // Check localStorage for pending referral
-      const storedRef = localStorage.getItem('pending_referral');
-      if (storedRef) {
-        console.log('📦 Found stored referral in localStorage:', storedRef);
-        setReferralCode(storedRef);
+    try {
+      const refCode = searchParams.get('ref');
+      console.log('🔍 useEffect - Checking URL for ref parameter:', refCode);
+      
+      if (refCode) {
+        console.log('✅ Ref parameter found:', refCode);
+        // Store in localStorage so it survives page reloads
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('pending_referral', refCode);
+        }
+        setReferralCode(refCode);
+        setIsSignUp(true); // Auto-switch to sign up mode if there's a referral code
+      } else {
+        console.log('❌ No ref parameter in URL');
+        // Check localStorage for pending referral
+        if (typeof window !== 'undefined') {
+          const storedRef = localStorage.getItem('pending_referral');
+          if (storedRef) {
+            console.log('📦 Found stored referral in localStorage:', storedRef);
+            setReferralCode(storedRef);
+          }
+        }
       }
+    } catch (error) {
+      console.error('❌ Error in referral useEffect:', error);
     }
   }, [searchParams]);
 
@@ -157,33 +165,38 @@ function LoginPageContent() {
         if (data.user) {
           // Check for new free trial referral system (ref parameter - UUID format)
           // Try URL first, then localStorage, then referralCode state
-          const urlParams = new URLSearchParams(window.location.search);
-          let referrerId = urlParams.get('ref');
+          let referrerId: string | null = null;
           
-          if (!referrerId) {
-            referrerId = localStorage.getItem('pending_referral');
-            console.log('📦 Retrieved from localStorage:', referrerId);
-          }
-          
-          if (!referrerId && referralCode) {
-            referrerId = referralCode;
-            console.log('📋 Using referralCode state:', referrerId);
-          }
-          
-          console.log('🔍 DEBUG: Checking for referral parameter');
-          console.log('  - URL search params:', window.location.search);
-          console.log('  - referrerId:', referrerId);
-          console.log('  - referralCode (old system):', referralCode);
-          
-          // UUID regex to check if ref is a user ID (new system)
-          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(referrerId || '');
-          console.log('  - Is UUID?:', isUUID);
-          
-          if (referrerId && isUUID) {
-            console.log('🎁 Processing free trial referral from:', referrerId);
+          try {
+            const urlParams = new URLSearchParams(window.location.search);
+            referrerId = urlParams.get('ref');
             
-            // Clear localStorage after using it
-            localStorage.removeItem('pending_referral');
+            if (!referrerId && typeof window !== 'undefined') {
+              referrerId = localStorage.getItem('pending_referral');
+              console.log('📦 Retrieved from localStorage:', referrerId);
+            }
+            
+            if (!referrerId && referralCode) {
+              referrerId = referralCode;
+              console.log('📋 Using referralCode state:', referrerId);
+            }
+            
+            console.log('🔍 DEBUG: Checking for referral parameter');
+            console.log('  - URL search params:', window.location.search);
+            console.log('  - referrerId:', referrerId);
+            console.log('  - referralCode (old system):', referralCode);
+            
+            // UUID regex to check if ref is a user ID (new system)
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(referrerId || '');
+            console.log('  - Is UUID?:', isUUID);
+            
+            if (referrerId && isUUID) {
+              console.log('🎁 Processing free trial referral from:', referrerId);
+              
+              // Clear localStorage after using it
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem('pending_referral');
+              }
             
             // Create referral entry in the background
             fetch('/api/referral/create-from-link', {
@@ -196,17 +209,33 @@ function LoginPageContent() {
               })
             })
             .then(async (res) => {
-              const result = await res.json();
-              if (res.ok) {
-                console.log('✅ Free trial referral tracked!');
+              console.log('📡 API Response status:', res.status);
+              const contentType = res.headers.get('content-type');
+              console.log('📡 Content-Type:', contentType);
+              
+              if (contentType && contentType.includes('application/json')) {
+                const result = await res.json();
+                if (res.ok) {
+                  console.log('✅ Free trial referral tracked!', result);
+                } else {
+                  console.error('❌ Free trial referral failed:', result);
+                }
               } else {
-                console.error('❌ Free trial referral failed:', result.error);
+                // API returned HTML instead of JSON
+                const text = await res.text();
+                console.error('❌ API returned HTML instead of JSON');
+                console.error('Response:', text.substring(0, 500));
               }
             })
             .catch((err) => {
               console.error('❌ Free trial referral error:', err);
             });
-          } else if (referralCode && !isUUID) {
+            }
+          } catch (refError) {
+            console.error('❌ Error processing referral:', refError);
+          }
+          
+          if (referralCode && referrerId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(referrerId)) {
             // Old referral code system (for paid users with custom codes like "ABC123")
             console.log('🎯 Applying old referral code:', referralCode);
             
