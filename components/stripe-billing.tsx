@@ -29,7 +29,20 @@ export function StripeBilling({ userEmail, hasSubscription, currentTier = 'none'
         window.location.href = data.url;
       } else {
         console.error('❌ No URL in response:', data);
-        alert(data.error || 'Failed to open billing portal');
+        
+        // Check if it's an inactive price error
+        if (data.needsResubscribe) {
+          alert(
+            `⚠️ Your subscription uses an outdated pricing plan.\n\n` +
+            `Please contact support at support@sterlingdialer.com or subscribe to a new plan.\n\n` +
+            `Your old subscription has been canceled.`
+          );
+          
+          // Reload the page to reflect canceled status
+          setTimeout(() => window.location.reload(), 2000);
+        } else {
+          alert(data.error || 'Failed to open billing portal');
+        }
       }
     } catch (error) {
       console.error('❌ Error opening billing portal:', error);

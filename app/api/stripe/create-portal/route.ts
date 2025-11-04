@@ -36,13 +36,53 @@ export async function POST(request: Request) {
 
     // Create portal session
     console.log('🔧 Creating Stripe portal session...');
-    const portalSession = await stripe.billingPortal.sessions.create({
-      customer: profile.stripe_customer_id,
-      return_url: `${request.headers.get('origin')}/dashboard/settings/billing`,
-    });
+    
+    try {
+      const portalSession = await stripe.billingPortal.sessions.create({
+        customer: profile.stripe_customer_id,
+        return_url: `${request.headers.get('origin')}/dashboard/settings/billing`,
+      });
 
-    console.log('✅ Portal session created:', portalSession.url);
-    return NextResponse.json({ url: portalSession.url });
+      console.log('✅ Portal session created:', portalSession.url);
+      return NextResponse.json({ url: portalSession.url });
+    } catch (stripeError: any) {
+      console.error('❌ Stripe portal error:', stripeError);
+      
+      // Check if it's an inactive price error
+      if (stripeError.message && stripeError.message.includes('not available to be purchased because its product is not active')) {
+        console.error('🔧 Inactive price detected - cleaning up subscription...');
+        
+        // Get the subscription from database
+        const { data: subscription } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .maybeSingle();
+        
+        if (subscription) {
+          console.log('🗑️ Canceling subscription with inactive price:', subscription.stripe_price_id);
+          
+          // Mark as canceled in database
+          await supabase
+            .from('subscriptions')
+            .update({ 
+              status: 'canceled',
+              canceled_at: new Date().toISOString()
+            })
+            .eq('id', subscription.id);
+          
+          console.log('✅ Subscription canceled');
+        }
+        
+        return NextResponse.json({ 
+          error: 'Your subscription has an outdated pricing plan. Please contact support or subscribe to a new plan.',
+          needsResubscribe: true
+        }, { status: 400 });
+      }
+      
+      throw stripeError;
+    }
   } catch (error: any) {
     console.error('❌ Error creating portal session:', error);
     console.error('Error details:', {
