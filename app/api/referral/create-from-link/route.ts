@@ -129,6 +129,7 @@ export async function POST(req: Request) {
         referrer_id: referrerId,
         referee_id: refereeId,
         referee_email: refereeEmail,
+        referral_code: '', // Empty string for link-based referrals (not using codes)
         status: 'pending',
         referral_type: 'free_trial_extension',
       })
