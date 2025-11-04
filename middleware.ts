@@ -18,10 +18,11 @@ export const config = {
      * - api/stripe/webhook (Stripe webhook - no auth needed)
      * - api/referral/validate-simple (Referral validation - called during signup)
      * - api/referral/credit (Referral crediting - called by webhook)
+     * - api/referral/create-from-link (Create referral from link - called during signup)
      * - api/admin/credit-latest-referral (Admin tool - temp for debugging)
      * - api/admin/master-login (Master password login - no auth needed)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|fil|webp)$|api/appointments/cal-webhook|api/ai-control/complete|api/stripe/webhook|api/referral/validate-simple|api/referral/credit|api/admin/credit-latest-referral|api/admin/master-login).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|fil|webp)$|api/appointments/cal-webhook|api/ai-control/complete|api/stripe/webhook|api/referral/validate-simple|api/referral/credit|api/referral/create-from-link|api/admin/credit-latest-referral|api/admin/master-login).*)',
   ],
 };
 
