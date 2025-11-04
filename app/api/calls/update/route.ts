@@ -107,8 +107,18 @@ export async function POST(request: Request) {
       console.log(`💰 Processing balance deduction: ${duration}s = ${durationMinutes.toFixed(2)} minutes`);
       
       try {
+        // Get user's cost per minute from profile
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('cost_per_minute')
+          .eq('user_id', userId)
+          .single();
+        
+        const costPerMinute = userProfile?.cost_per_minute || 0.30; // Default to $0.30 if not set
+        console.log(`💰 User's cost per minute: $${costPerMinute}`);
+        
         // DIRECT DEDUCTION - Don't use fetch, do it here directly
-        const cost = durationMinutes * 0.10;
+        const cost = durationMinutes * costPerMinute;
         
         // Get current balance
         const { data: balanceData } = await supabase
@@ -163,9 +173,69 @@ export async function POST(request: Request) {
     // UPDATE AI COSTS: Track daily AI costs in revenue_tracking
     try {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-      const callCost = duration ? (duration / 60) * 0.10 : 0; // Calculate actual call cost
       
-      console.log(`📊 Updating AI costs for ${today}: +$${callCost.toFixed(4)}`);
+      // Get user's cost per minute from profile
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('cost_per_minute')
+        .eq('user_id', userId)
+        .single();
+      
+      const costPerMinute = userProfile?.cost_per_minute || 0.30; // Default to $0.30 if not set
+      const callCost = duration ? (duration / 60) * costPerMinute : 0; // Calculate actual call cost using user's rate
+      
+      console.log(`📊 Updating AI costs for ${today}: +$${callCost.toFixed(4)} (at $${costPerMinute}/min)`);
+      
+      // 💰 CALCULATE YOUR PROFIT from this call
+      const YOUR_COST_PER_MINUTE = 0.12; // Your actual cost is $0.12/min
+      const callMinutes = duration ? (duration / 60) : 0;
+      const yourCost = callMinutes * YOUR_COST_PER_MINUTE;
+      const yourProfit = callCost - yourCost; // User paid $X, your cost was $Y, profit = X - Y
+      
+      console.log(`💰 YOUR PROFIT: User paid $${callCost.toFixed(4)}, Your cost $${yourCost.toFixed(4)} = Profit: $${yourProfit.toFixed(4)}`);
+      
+      // 💎 UPDATE ADMIN PROFIT TRACKING TABLE
+      // Get or create today's admin profit record
+      const { data: profitData } = await supabase
+        .from('admin_profit_tracking')
+        .select('*')
+        .eq('date', today)
+        .single();
+      
+      if (profitData) {
+        // Update existing record - add this call's profit
+        const newMinutesProfit = (profitData.minutes_profit || 0) + yourProfit;
+        const newTotalMinutesSold = (profitData.total_minutes_sold || 0) + callCost;
+        const newTotalMinutesCost = (profitData.total_minutes_cost || 0) + yourCost;
+        
+        await supabase
+          .from('admin_profit_tracking')
+          .update({
+            minutes_profit: newMinutesProfit,
+            total_minutes_sold: newTotalMinutesSold,
+            total_minutes_cost: newTotalMinutesCost,
+            total_daily_profit: (profitData.subscription_profit || 0) + newMinutesProfit,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('date', today);
+        
+        console.log(`✅ Admin profit updated: +$${yourProfit.toFixed(4)} | Total today: $${newMinutesProfit.toFixed(2)}`);
+      } else {
+        // Create new record for today
+        await supabase
+          .from('admin_profit_tracking')
+          .insert({
+            date: today,
+            minutes_profit: yourProfit,
+            total_minutes_sold: callCost,
+            total_minutes_cost: yourCost,
+            total_daily_profit: yourProfit, // subscription_profit will be updated separately
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        
+        console.log(`✅ Admin profit tracking created for ${today}: $${yourProfit.toFixed(4)}`);
+      }
       
       // Get user's subscription tier to calculate base cost
       const { data: subscription, error: subError } = await supabase

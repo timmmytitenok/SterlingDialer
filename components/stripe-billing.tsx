@@ -7,7 +7,7 @@ import { CreditCard, ExternalLink, Sparkles, CheckCircle, Zap } from 'lucide-rea
 interface StripeBillingProps {
   userEmail: string;
   hasSubscription: boolean;
-  currentTier?: 'none' | 'starter' | 'pro' | 'elite' | 'free_trial';
+  currentTier?: 'none' | 'starter' | 'pro' | 'elite' | 'free_trial' | 'free_access';
 }
 
 export function StripeBilling({ userEmail, hasSubscription, currentTier = 'none' }: StripeBillingProps) {
@@ -97,7 +97,43 @@ export function StripeBilling({ userEmail, hasSubscription, currentTier = 'none'
           </div>
 
           {/* Subscription Status & Actions */}
-          {currentTier === 'free_trial' ? (
+          {currentTier === 'free_access' ? (
+            <>
+              {/* VIP Access Status Badge */}
+              <div className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30 rounded-lg mb-4 md:mb-6">
+                <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+                <span className="text-amber-400 font-semibold text-xs md:text-sm">
+                  VIP Access
+                </span>
+                <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-amber-400" />
+              </div>
+
+              {/* VIP Access Card */}
+              <div className="relative bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-orange-500/10 rounded-lg md:rounded-xl p-4 md:p-6 border-2 border-amber-500/30 overflow-hidden group mb-4">
+                {/* Animated shine effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 translate-x-[-100%] group-hover:translate-x-[100%]" style={{ transitionProperty: 'transform', transitionDuration: '1.5s' }} />
+                
+                {/* Content */}
+                <div className="relative z-10 text-center">
+                  <div className="flex justify-center mb-3">
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-amber-400/20 to-yellow-500/20 flex items-center justify-center border border-amber-400/30">
+                      <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-amber-400" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-amber-400 via-yellow-300 to-orange-400 bg-clip-text text-transparent mb-2">
+                    FULL VIP ACCESS
+                  </h3>
+                  <p className="text-xs md:text-sm text-amber-400/80">
+                    Unlimited access with custom pricing
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-[10px] md:text-xs text-center text-gray-500">
+                🎉 You have exclusive VIP access to all features
+              </p>
+            </>
+          ) : currentTier === 'free_trial' ? (
             <>
               {/* Free Trial Status Badge */}
               <div className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg mb-4 md:mb-6">
@@ -193,7 +229,18 @@ export function StripeBilling({ userEmail, hasSubscription, currentTier = 'none'
             // All tiers have the same core features now
             
             // Add remaining features based on tier
-            if (currentTier === 'free_trial') {
+            if (currentTier === 'free_access') {
+              baseFeatures.push(
+                '1 AI Caller',
+                'Up to 600 leads per day',
+                'Custom pricing per minute',
+                'Live call transfer',
+                'Call recordings & analytics',
+                'Appointment scheduling',
+                'Revenue tracking',
+                'VIP Priority Support'
+              );
+            } else if (currentTier === 'free_trial') {
               baseFeatures.push(
                 '1 AI Caller',
                 'Up to 600 leads per day',

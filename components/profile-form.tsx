@@ -27,6 +27,19 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
   useEffect(() => {
     const fetchSubscription = async () => {
       try {
+        // First check if user has free_access in their profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('subscription_tier')
+          .eq('user_id', user.id)
+          .single();
+        
+        // Don't show Current Plan component for free_access users
+        if (profileData?.subscription_tier === 'free_access') {
+          setSubscriptionInfo(null);
+          return;
+        }
+
         const { data: sub } = await supabase
           .from('subscriptions')
           .select('subscription_tier, status')

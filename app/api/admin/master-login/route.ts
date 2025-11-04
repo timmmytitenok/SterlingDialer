@@ -3,18 +3,52 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { email, masterPassword } = await request.json();
+    const { email, masterPassword, adminDashboard } = await request.json();
 
     // Verify master password
     if (masterPassword !== process.env.MASTER_ADMIN_PASSWORD) {
-      console.log('❌ Invalid master password attempt for:', email);
+      console.log('❌ Invalid master password attempt');
       return NextResponse.json(
         { error: 'Invalid master password' },
         { status: 401 }
       );
     }
 
-    console.log('✅ Master password verified, logging in as:', email);
+    console.log('✅ Master password verified');
+
+    // If adminDashboard mode, just set the cookie and return success
+    if (adminDashboard) {
+      console.log('✅ Admin Dashboard mode - setting admin_mode cookie only');
+      console.log('🍪 Cookie settings:', {
+        name: 'admin_mode',
+        value: 'true',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24,
+        path: '/',
+      });
+      
+      const response = NextResponse.json({
+        success: true,
+        adminDashboard: true,
+      });
+
+      // Set admin mode cookie (expires in 24 hours)
+      response.cookies.set('admin_mode', 'true', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24, // 24 hours
+        path: '/',
+      });
+
+      console.log('✅ Cookie set on response, returning success');
+      return response;
+    }
+
+    // Regular master login with user impersonation
+    console.log('✅ User impersonation mode, logging in as:', email);
 
     // Use service role client to bypass RLS
     const supabase = createServiceRoleClient();
@@ -62,13 +96,24 @@ export async function POST(request: Request) {
     // The hashed_token can be used to verify and create a session
     const token = linkData.properties.hashed_token;
 
-    // Return the token so the client can verify it
-    return NextResponse.json({
+    // Create response with admin mode cookie
+    const response = NextResponse.json({
       success: true,
       token: token,
       email: targetUser.email,
       type: 'magiclink'
     });
+
+    // Set admin mode cookie (expires in 24 hours)
+    response.cookies.set('admin_mode', 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24, // 24 hours
+      path: '/',
+    });
+
+    return response;
 
   } catch (error: any) {
     console.error('❌ Master login error:', error);

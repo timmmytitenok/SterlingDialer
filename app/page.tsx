@@ -4,7 +4,7 @@ import { PublicNav } from '@/components/public-nav';
 import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { Phone, Zap, TrendingUp, Calendar, Clock, BarChart3, CheckCircle2, ArrowRight, Sparkles, Rocket, Gift } from 'lucide-react';
+import { Phone, Zap, TrendingUp, Calendar, Clock, BarChart3, CheckCircle2, ArrowRight, Sparkles, Rocket, Gift, Smartphone, Apple } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
@@ -108,11 +108,19 @@ export default function LandingPage() {
             </p>
 
             {/* Free Trial Badge */}
-            <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-green-600/20 border-2 border-green-500/50 rounded-full mb-12 lg:mb-20 hover:scale-105 transition-transform cursor-pointer animate-slide-up mx-auto" style={{ animationDelay: '0.2s' }}>
+            <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-green-600/20 border-2 border-green-500/50 rounded-full mb-6 lg:mb-20 hover:scale-105 transition-transform cursor-pointer animate-slide-up mx-auto" style={{ animationDelay: '0.2s' }}>
               <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 animate-pulse flex-shrink-0" />
               <span className="text-sm sm:text-base text-white font-bold text-center">
                 <span className="sm:hidden">30-Day Free Trial On Us!</span>
                 <span className="hidden sm:inline">30-Day Free Trial • Only Pay <span className="text-green-400">$0.30/min</span> for Calls!</span>
+              </span>
+            </div>
+
+            {/* Mobile App Badge - COMING SOON (MOBILE ONLY) */}
+            <div className="lg:hidden inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-2 border-purple-500/50 rounded-full mb-12 lg:mb-20 hover:scale-105 transition-transform cursor-pointer animate-slide-up mx-auto" style={{ animationDelay: '0.25s' }}>
+              <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 animate-pulse flex-shrink-0" />
+              <span className="text-xs sm:text-sm text-white font-bold text-center">
+                <span className="text-purple-400">iOS & Android Apps</span> Coming Soon! 📱
               </span>
             </div>
 
@@ -223,14 +231,29 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              {/* Feature 6 */}
-              <div className="group bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-2xl p-6 lg:p-8 border border-orange-500/20 hover:border-orange-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-orange-500/20">
+              {/* Feature 6 - HIDDEN ON DESKTOP (shows on mobile/tablet only) */}
+              <div className="lg:hidden group bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-2xl p-6 lg:p-8 border border-orange-500/20 hover:border-orange-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-orange-500/20">
                 <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-orange-500/20 flex items-center justify-center mb-4 lg:mb-6 group-hover:scale-110 transition-transform">
                   <BarChart3 className="w-6 h-6 lg:w-7 lg:h-7 text-orange-400" />
                 </div>
                 <h3 className="text-xl lg:text-2xl font-bold text-white mb-3 lg:mb-4">Deep Analytics</h3>
                 <p className="text-base text-gray-300 leading-relaxed">
                   Call recordings, transcripts, sentiment analysis, and performance metrics at your fingertips.
+                </p>
+              </div>
+
+              {/* Feature 7 - Mobile Apps */}
+              <div className="group bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-2xl p-6 lg:p-8 border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20 relative">
+                {/* Coming Soon Badge */}
+                <div className="absolute top-3 right-3 px-2 py-1 bg-purple-600/80 text-white text-[10px] font-bold rounded-full backdrop-blur-sm">
+                  COMING SOON
+                </div>
+                <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4 lg:mb-6 group-hover:scale-110 transition-transform">
+                  <Smartphone className="w-6 h-6 lg:w-7 lg:h-7 text-purple-400" />
+                </div>
+                <h3 className="text-xl lg:text-2xl font-bold text-white mb-3 lg:mb-4">Mobile Apps</h3>
+                <p className="text-base text-gray-300 leading-relaxed">
+                  Manage your AI, check appointments, and track sales on the go. iOS & Android apps launching soon.
                 </p>
               </div>
             </div>
@@ -386,6 +409,71 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Mobile Apps Teaser Section */}
+        <section className="container mx-auto px-6 py-20 fade-in-section opacity-0">
+          <div className="max-w-6xl mx-auto">
+            <div className="relative bg-gradient-to-br from-purple-600/10 to-pink-600/10 rounded-3xl p-6 md:p-12 border-2 border-purple-500/30 overflow-hidden group hover:border-purple-500/50 transition-all">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/10 to-pink-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              
+              <div className="relative z-10">
+                <div className="text-center mb-8">
+                  {/* Coming Soon Badge */}
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600/30 border border-purple-500/50 rounded-full mb-4 animate-pulse">
+                    <Sparkles className="w-4 h-4 text-purple-400" />
+                    <span className="text-sm text-purple-300 font-bold">COMING SOON</span>
+                  </div>
+                  
+                  <h2 className="text-4xl sm:text-3xl md:text-6xl font-bold text-white mb-6 leading-tight">
+                    Sterling AI is Going Mobile 📱
+                  </h2>
+                  <p className="text-base sm:text-lg md:text-1xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+                    Manage your AI dialer, track appointments, and monitor sales.
+                  </p>
+                </div>
+
+                {/* App Store Badges (Grayed out) */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+                  {/* iOS App Store */}
+                  <div className="relative group/badge w-full sm:w-auto">
+                    <div className="opacity-40 grayscale hover:opacity-60 transition-all duration-300">
+                      <div className="flex items-center gap-3 px-6 py-3 bg-black/30 rounded-xl border border-white/20 justify-center">
+                        <Apple className="w-8 h-8 text-white flex-shrink-0" />
+                        <div className="text-left">
+                          <div className="text-[10px] text-gray-400">Download on the</div>
+                          <div className="text-lg font-semibold text-white">App Store</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/badge:opacity-100 transition-opacity pointer-events-none">
+                      <span className="text-xs text-purple-400 font-bold bg-[#0B1437]/80 px-3 py-1 rounded-full backdrop-blur-sm">Coming Soon!</span>
+                    </div>
+                  </div>
+
+                  {/* Google Play */}
+                  <div className="relative group/badge w-full sm:w-auto">
+                    <div className="opacity-40 grayscale hover:opacity-60 transition-all duration-300">
+                      <div className="flex items-center gap-3 px-6 py-3 bg-black/30 rounded-xl border border-white/20 justify-center">
+                        <Smartphone className="w-8 h-8 text-white flex-shrink-0" />
+                        <div className="text-left">
+                          <div className="text-[10px] text-gray-400">GET IT ON</div>
+                          <div className="text-lg font-semibold text-white">Google Play</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/badge:opacity-100 transition-opacity pointer-events-none">
+                      <span className="text-xs text-purple-400 font-bold bg-[#0B1437]/80 px-3 py-1 rounded-full backdrop-blur-sm">Coming Soon!</span>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-center text-gray-400 text-xs sm:text-sm">
+                  Coming very soon...
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Final CTA */}
         <section className="container mx-auto px-6 py-20 fade-in-section opacity-0">
           <div className="max-w-4xl mx-auto">
@@ -507,7 +595,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="hidden lg:block relative z-10 border-t border-gray-800 bg-[#0A1129]/50 backdrop-blur-sm">
         <div className="container mx-auto px-6 py-12">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+          <div className="grid grid-cols-5 gap-6 lg:gap-8 xl:gap-12 mb-8">
             {/* Company */}
             <div>
               <h3 className="text-white font-bold mb-4">Sterling AI</h3>
@@ -552,6 +640,21 @@ export default function LandingPage() {
                 <Link href="/privacy" className="block text-gray-400 hover:text-white transition-colors text-sm">
                   Privacy Policy
                 </Link>
+              </div>
+            </div>
+
+            {/* Mobile Apps - FAR RIGHT */}
+            <div>
+              <h4 className="text-white font-semibold mb-4">Mobile Apps</h4>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-gray-400 text-sm">
+                  <Smartphone className="w-4 h-4 text-purple-400" />
+                  <span>iOS App (Coming Soon)</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-400 text-sm">
+                  <Smartphone className="w-4 h-4 text-purple-400" />
+                  <span>Android App (Coming Soon)</span>
+                </div>
               </div>
             </div>
           </div>

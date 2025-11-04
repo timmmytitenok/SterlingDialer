@@ -18,6 +18,7 @@ function LoginPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [isMasterLogin, setIsMasterLogin] = useState(false);
+  const [isAdminDashboardMode, setIsAdminDashboardMode] = useState(false);
   const [logoClickCount, setLogoClickCount] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -53,7 +54,7 @@ function LoginPageContent() {
     }
   }, [searchParams]);
 
-  // Secret master login trigger - click logo 5 times (only works on sign in page)
+  // Secret master login trigger - click logo 5/10 times (only works on sign in page)
   const handleLogoClick = () => {
     // Don't allow in sign up mode
     if (isSignUp) return;
@@ -61,15 +62,22 @@ function LoginPageContent() {
     const newCount = logoClickCount + 1;
     setLogoClickCount(newCount);
     
-    if (newCount >= 5) {
-      // Toggle master login mode (5 clicks = enable, 5 more clicks = disable)
-      setIsMasterLogin(!isMasterLogin);
+    if (newCount === 5 && !isMasterLogin && !isAdminDashboardMode) {
+      // First 5 clicks = Master Login Mode (user impersonation)
+      setIsMasterLogin(true);
+      setIsAdminDashboardMode(false);
+    } else if (newCount === 10) {
+      // 10 clicks total = Admin Dashboard Mode (no email, direct to admin dashboard)
+      setIsMasterLogin(false);
+      setIsAdminDashboardMode(true);
       setLogoClickCount(0); // Reset counter
     }
     
     // Reset counter after 2 seconds of no clicks
     setTimeout(() => {
-      setLogoClickCount(0);
+      if (logoClickCount < 5) {
+        setLogoClickCount(0);
+      }
     }, 2000);
   };
 
@@ -97,7 +105,33 @@ function LoginPageContent() {
     setError(null);
 
     try {
-      // MASTER PASSWORD LOGIN (only works in sign in mode)
+      // ADMIN DASHBOARD MODE (password only, no email)
+      if (isAdminDashboardMode && !isSignUp) {
+        const response = await fetch('/api/admin/master-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: '', // No email needed for admin dashboard
+            masterPassword: password,
+            adminDashboard: true, // Flag to indicate this is for admin dashboard
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Admin login failed');
+        }
+
+        setError('✅ Admin access granted! Redirecting to admin dashboard...');
+        setTimeout(() => {
+          // Force a full page reload to ensure cookie is picked up
+          window.location.href = '/admin/dashboard';
+        }, 1000);
+        return;
+      }
+
+      // MASTER PASSWORD LOGIN (user impersonation - requires email)
       if (isMasterLogin && !isSignUp) {
         const response = await fetch('/api/admin/master-login', {
           method: 'POST',
@@ -310,14 +344,14 @@ function LoginPageContent() {
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">Sterling AI</h1>
           <p className="text-gray-400">
-            {isSignUp ? 'Create your account' : isMasterLogin ? 'Admin Access' : 'Welcome back'}
+            {isSignUp ? 'Create your account' : isAdminDashboardMode ? '🔒 Admin Dashboard' : isMasterLogin ? 'Admin Access' : 'Welcome back'}
           </p>
         </div>
 
         {/* Auth Card */}
         <div className="bg-[#1A2647] rounded-2xl p-8 md:p-10 border border-gray-800 shadow-2xl backdrop-blur-sm">
           <h2 className="text-2xl font-bold text-white mb-8">
-            {isSignUp ? 'Sign Up' : 'Sign In'}
+            {isSignUp ? 'Sign Up' : isAdminDashboardMode ? '🔒 Admin Login' : 'Sign In'}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -371,42 +405,51 @@ function LoginPageContent() {
               </>
             )}
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              />
-            </div>
+            {/* Hide email field in Admin Dashboard Mode */}
+            {!isAdminDashboardMode && (
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+            )}
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                Password
+                {isAdminDashboardMode ? 'Admin Password' : 'Password'}
               </label>
               <input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder={isAdminDashboardMode ? 'Enter admin password' : '••••••••'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
                 className={`w-full px-4 py-3 bg-[#0B1437] border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition ${
-                  isMasterLogin 
-                    ? 'border-purple-500/50 focus:ring-purple-500' 
+                  isMasterLogin || isAdminDashboardMode
+                    ? 'border-red-500/50 focus:ring-red-500' 
                     : 'border-gray-700 focus:ring-blue-500'
                 }`}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Must be at least 6 characters
-              </p>
+              {isAdminDashboardMode ? (
+                <p className="text-xs text-red-400 mt-1">
+                  🔒 Admin access only
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  Must be at least 6 characters
+                </p>
+              )}
             </div>
 
             {error && (

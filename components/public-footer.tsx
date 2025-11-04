@@ -1,10 +1,11 @@
 import Link from 'next/link';
+import { Smartphone } from 'lucide-react';
 
 export function PublicFooter() {
   return (
     <footer className="hidden lg:block relative z-10 border-t border-gray-800 bg-[#0A1129]/50 backdrop-blur-sm">
       <div className="container mx-auto px-6 py-12">
-        <div className="grid md:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-5 gap-6 lg:gap-8 xl:gap-12 mb-8">
           {/* Company */}
           <div>
             <h3 className="text-white font-bold mb-4">Sterling AI</h3>
@@ -23,9 +24,6 @@ export function PublicFooter() {
               <Link href="/pricing" className="block text-gray-400 hover:text-white transition-colors text-sm">
                 Pricing
               </Link>
-              {/* <Link href="/case-studies" className="block text-gray-400 hover:text-white transition-colors text-sm">
-                Case Studies
-              </Link> */}
             </div>
           </div>
 
@@ -52,6 +50,21 @@ export function PublicFooter() {
               <Link href="/privacy" className="block text-gray-400 hover:text-white transition-colors text-sm">
                 Privacy Policy
               </Link>
+            </div>
+          </div>
+
+          {/* Mobile Apps - FAR RIGHT */}
+          <div>
+            <h4 className="text-white font-semibold mb-4">Mobile Apps</h4>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-gray-400 text-sm">
+                <Smartphone className="w-4 h-4 text-purple-400" />
+                <span>iOS App (Coming Soon)</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-400 text-sm">
+                <Smartphone className="w-4 h-4 text-purple-400" />
+                <span>Android App (Coming Soon)</span>
+              </div>
             </div>
           </div>
         </div>

@@ -60,6 +60,10 @@ export default function FAQPage() {
     {
       question: "What if my leads are really old — like 1-2 years?",
       answer: "Even better. Old leads cost you ZERO now (you already paid), and people's situations change. Someone who said 'no' 18 months ago might be ready NOW. Sterling AI will find out — automatically. You have nothing to lose and appointments to gain."
+    },
+    {
+      question: "Will there be a mobile app?",
+      answer: "Yes! iOS and Android apps are launching soon. You'll be able to manage your AI dialer, check appointments, and track sales right from your phone."
     }
   ];
 

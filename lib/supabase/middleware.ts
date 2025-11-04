@@ -29,20 +29,53 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect routes (except webhooks from N8N)
+  // Check for admin mode
+  const adminMode = request.cookies.get('admin_mode')?.value === 'true';
+  
+  console.log('🔍 Middleware Check:', {
+    path: request.nextUrl.pathname,
+    adminMode,
+    allCookies: request.cookies.getAll().map(c => ({ name: c.name, value: c.value }))
+  });
+
+  // 🔒 ADMIN ROUTE PROTECTION (both /admin pages and /api/admin APIs)
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    console.log('🔒 Admin route detected:', request.nextUrl.pathname, 'Admin mode:', adminMode);
+    if (!adminMode) {
+      console.log('❌ NO ADMIN MODE - Redirecting to dashboard');
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
+    // Admin mode active → Allow access
+    console.log('✅ ADMIN MODE ACTIVE - Allowing access');
+    return supabaseResponse;
+  }
+
+  // Protect routes (except webhooks from N8N and admin APIs)
   const isWebhookRoute = 
     request.nextUrl.pathname === '/api/ai-control/update-queue' ||
     request.nextUrl.pathname === '/api/calls/update';
+  const isAdminApiRoute = request.nextUrl.pathname.startsWith('/api/admin');
   const isProtectedRoute =
     request.nextUrl.pathname.startsWith('/dashboard') ||
     (request.nextUrl.pathname.startsWith('/api') &&
       !request.nextUrl.pathname.startsWith('/api/auth') &&
-      !isWebhookRoute);
+      !isWebhookRoute &&
+      !isAdminApiRoute); // Don't require user auth for admin API routes
 
   if (isProtectedRoute && !user) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
+  }
+
+  // Admin API routes - check admin mode (no user required)
+  if (isAdminApiRoute && !adminMode) {
+    return NextResponse.json(
+      { error: 'Unauthorized - Admin mode required' },
+      { status: 401 }
+    );
   }
 
   // 🔥 BRAND NEW SIMPLE LOGIC - ONE CHECK
@@ -64,7 +97,8 @@ export async function updateSession(request: NextRequest) {
 
     const hasEverSubscribed = !!subscription;
     const hasFreeTrial = profile?.subscription_tier === 'free_trial';
-    const hasAccess = hasEverSubscribed || hasFreeTrial;
+    const hasVIPAccess = profile?.subscription_tier === 'free_access';
+    const hasAccess = hasEverSubscribed || hasFreeTrial || hasVIPAccess;
 
     // RULE 1: Trying to access DASHBOARD
     if (request.nextUrl.pathname.startsWith('/dashboard')) {

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 
-export type SubscriptionTier = 'starter' | 'pro' | 'elite' | 'free_trial' | 'none' | null;
+export type SubscriptionTier = 'starter' | 'pro' | 'elite' | 'free_trial' | 'free_access' | 'none' | null;
 
 export interface SubscriptionFeatures {
   tier: SubscriptionTier;
@@ -33,20 +33,35 @@ export async function getSubscriptionFeatures(userId: string): Promise<Subscript
     };
   }
 
-  // No paid subscription - check for free trial in profiles
+  // No paid subscription - check for free trial or free access in profiles
   const { data: profile } = await supabase
     .from('profiles')
     .select('subscription_tier')
     .eq('user_id', userId)
-    .single();
+    .single()
+    .limit(1); // Force fresh query
+  
+  console.log('🔍 Subscription Helper - Profile tier:', profile?.subscription_tier);
 
   // If free trial exists, return free trial features
   if (profile?.subscription_tier === 'free_trial') {
+    console.log('✅ Returning FREE TRIAL features');
     return {
       tier: 'free_trial',
       maxDailyCalls: getTierDefaults('free_trial').maxDailyCalls,
       aiCallerCount: getTierDefaults('free_trial').aiCallerCount,
       hasActiveSubscription: true, // Free trial counts as active subscription
+    };
+  }
+
+  // If VIP free access exists, return VIP features
+  if (profile?.subscription_tier === 'free_access') {
+    console.log('✅ Returning VIP FREE ACCESS features');
+    return {
+      tier: 'free_access',
+      maxDailyCalls: getTierDefaults('free_access').maxDailyCalls,
+      aiCallerCount: getTierDefaults('free_access').aiCallerCount,
+      hasActiveSubscription: true, // VIP access counts as active subscription
     };
   }
 
@@ -68,6 +83,11 @@ export function getTierDefaults(tier: string | null) {
       return {
         maxDailyCalls: 600,
         aiCallerCount: 1,
+      };
+    case 'free_access':
+      return {
+        maxDailyCalls: 600, // VIP gets 600 calls/day
+        aiCallerCount: 1, // 1 AI caller
       };
     case 'starter':
       return {
@@ -109,6 +129,8 @@ export function getTierDisplayName(tier: SubscriptionTier): string {
   switch (tier) {
     case 'free_trial':
       return 'Free Trial';
+    case 'free_access':
+      return 'VIP Access';
     case 'starter':
       return 'Starter Plan';
     case 'pro':
@@ -127,6 +149,8 @@ export function getTierColor(tier: SubscriptionTier): string {
   switch (tier) {
     case 'free_trial':
       return 'green';
+    case 'free_access':
+      return 'amber'; // Gold/VIP color
     case 'starter':
       return 'blue';
     case 'pro':

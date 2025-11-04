@@ -42,8 +42,18 @@ export async function POST(request: Request) {
 
     console.log(`💰 Processing call ${callId}: ${durationMinutes} minutes`);
 
-    // Calculate cost: $0.10 per minute
-    const cost = durationMinutes * 0.10;
+    // Get user's cost per minute from profile
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('cost_per_minute')
+      .eq('user_id', userId)
+      .single();
+    
+    const costPerMinute = userProfile?.cost_per_minute || 0.30; // Default to $0.30 if not set
+    console.log(`💰 User's cost per minute: $${costPerMinute}`);
+
+    // Calculate cost using user's specific rate
+    const cost = durationMinutes * costPerMinute;
 
     // Get current balance
     const { data: balanceData, error: balanceError } = await supabase

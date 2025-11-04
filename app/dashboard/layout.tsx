@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import { DashboardMobileNav } from '@/components/dashboard-mobile-nav';
+import { AdminTestPanel } from '@/components/admin-test-panel';
+import { isAdminMode } from '@/lib/admin-check';
 
 export default async function DashboardLayout({
   children,
@@ -17,6 +19,9 @@ export default async function DashboardLayout({
   if (!user) {
     redirect('/login');
   }
+
+  // Check if logged in via master password
+  const showAdminPanel = await isAdminMode();
 
   // Get user profile
   const { data: profile } = await supabase
@@ -53,6 +58,17 @@ export default async function DashboardLayout({
       <main className="flex-1 overflow-y-auto relative z-10 pt-14 md:pt-0">
         {children}
       </main>
+      
+      {/* Admin Test Panel - Only visible when logged in via master password */}
+      {showAdminPanel && profile && (
+        <AdminTestPanel
+          userId={user.id}
+          userEmail={user.email || ''}
+          userName={profile.full_name || user.email?.split('@')[0] || 'User'}
+          subscriptionTier={profile.subscription_tier || 'none'}
+          aiSetupStatus={profile.ai_setup_status || 'ready'}
+        />
+      )}
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { SubscriptionTierSelector } from './subscription-tier-selector';
 interface BillingManagementContentProps {
   userEmail: string;
   hasSubscription: boolean;
-  currentTier: 'none' | 'free_trial' | 'starter' | 'pro' | 'elite';
+  currentTier: 'none' | 'free_trial' | 'starter' | 'pro' | 'elite' | 'free_access';
 }
 
 export function BillingManagementContent({
@@ -29,16 +29,18 @@ export function BillingManagementContent({
                 <p className="text-sm md:text-base text-gray-400 mb-4 md:mb-8">Manage your payment methods and invoices</p>
               </div>
               
-              {/* Upgrade Button - Always show for free trial and paid users */}
-              <button
-                onClick={() => setShowUpgrade(true)}
-                className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2.5 md:py-2 bg-gradient-to-r from-blue-600/10 to-indigo-600/10 hover:from-blue-600/20 hover:to-indigo-600/20 border border-blue-500/30 hover:border-blue-500/50 text-blue-400 rounded-lg transition-all duration-200 hover:scale-105"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                </svg>
-                <span className="text-sm font-medium">Upgrade Plan</span>
-              </button>
+              {/* Upgrade Button - Hide for VIP users */}
+              {currentTier !== 'free_access' && (
+                <button
+                  onClick={() => setShowUpgrade(true)}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2.5 md:py-2 bg-gradient-to-r from-blue-600/10 to-indigo-600/10 hover:from-blue-600/20 hover:to-indigo-600/20 border border-blue-500/30 hover:border-blue-500/50 text-blue-400 rounded-lg transition-all duration-200 hover:scale-105"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                  </svg>
+                  <span className="text-sm font-medium">Upgrade Plan</span>
+                </button>
+              )}
             </div>
             
             <StripeBilling 

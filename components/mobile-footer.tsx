@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, Smartphone } from 'lucide-react';
 
 export function MobileFooter() {
   return (
@@ -25,6 +25,21 @@ export function MobileFooter() {
           <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">
             Revive old leads and book appointments automatically with AI-powered calling.
           </p>
+        </div>
+
+        {/* Mobile Apps */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Mobile Apps</h3>
+          <div className="space-y-2">
+            <div className="flex items-center justify-center gap-2 py-2.5 px-3 bg-purple-600/10 border border-purple-500/20 rounded-lg">
+              <Smartphone className="w-4 h-4 text-purple-400" />
+              <span className="text-xs text-purple-300">iOS App (Coming Soon)</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 py-2.5 px-3 bg-purple-600/10 border border-purple-500/20 rounded-lg">
+              <Smartphone className="w-4 h-4 text-purple-400" />
+              <span className="text-xs text-purple-300">Android App (Coming Soon)</span>
+            </div>
+          </div>
         </div>
 
         {/* Contact Info */}
