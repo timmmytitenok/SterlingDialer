@@ -34,11 +34,11 @@ export async function GET() {
     console.log('✅ Profiles fetched:', allProfiles?.length || 0);
 
     const totalUsers = allProfiles?.length || 0;
-    const freeTrialUsers = allProfiles?.filter(p => p.subscription_tier === 'free_trial').length || 0;
-    const starterUsers = allProfiles?.filter(p => p.subscription_tier === 'starter').length || 0;
-    const proUsers = allProfiles?.filter(p => p.subscription_tier === 'pro').length || 0;
-    const eliteUsers = allProfiles?.filter(p => p.subscription_tier === 'elite').length || 0;
-    const vipUsers = allProfiles?.filter(p => p.subscription_tier === 'free_access').length || 0;
+    const freeTrialUsers = allProfiles?.filter((p: any) => p.subscription_tier === 'free_trial').length || 0;
+    const starterUsers = allProfiles?.filter((p: any) => p.subscription_tier === 'starter').length || 0;
+    const proUsers = allProfiles?.filter((p: any) => p.subscription_tier === 'pro').length || 0;
+    const eliteUsers = allProfiles?.filter((p: any) => p.subscription_tier === 'elite').length || 0;
+    const vipUsers = allProfiles?.filter((p: any) => p.subscription_tier === 'free_access').length || 0;
     
     console.log('👥 User Breakdown:', { totalUsers, freeTrialUsers, starterUsers, proUsers, eliteUsers, vipUsers });
 
@@ -62,29 +62,29 @@ export async function GET() {
     console.log('✅ Calls fetched:', allCalls?.length || 0);
 
     // Filter by time periods
-    const callsToday = allCalls?.filter(c => new Date(c.created_at) >= today).length || 0;
-    const calls7d = allCalls?.filter(c => new Date(c.created_at) >= sevenDaysAgo).length || 0;
-    const calls30d = allCalls?.filter(c => new Date(c.created_at) >= thirtyDaysAgo).length || 0;
+    const callsToday = allCalls?.filter((c: any) => new Date(c.created_at) >= today).length || 0;
+    const calls7d = allCalls?.filter((c: any) => new Date(c.created_at) >= sevenDaysAgo).length || 0;
+    const calls30d = allCalls?.filter((c: any) => new Date(c.created_at) >= thirtyDaysAgo).length || 0;
     const callsAllTime = allCalls?.length || 0;
 
     // Appointments (outcome = 'booked' or similar)
-    const appointmentsToday = allCalls?.filter(c => 
+    const appointmentsToday = allCalls?.filter((c: any) => 
       new Date(c.created_at) >= today && c.outcome === 'booked'
     ).length || 0;
-    const appointments7d = allCalls?.filter(c => 
+    const appointments7d = allCalls?.filter((c: any) => 
       new Date(c.created_at) >= sevenDaysAgo && c.outcome === 'booked'
     ).length || 0;
-    const appointments30d = allCalls?.filter(c => 
+    const appointments30d = allCalls?.filter((c: any) => 
       new Date(c.created_at) >= thirtyDaysAgo && c.outcome === 'booked'
     ).length || 0;
-    const appointmentsAllTime = allCalls?.filter(c => c.outcome === 'booked').length || 0;
+    const appointmentsAllTime = allCalls?.filter((c: any) => c.outcome === 'booked').length || 0;
 
     // Connected rate (answered calls)
-    const answeredCalls = allCalls?.filter(c => c.outcome === 'answered').length || 0;
+    const answeredCalls = allCalls?.filter((c: any) => c.outcome === 'answered').length || 0;
     const connectedRate = callsAllTime > 0 ? ((answeredCalls / callsAllTime) * 100).toFixed(1) : '0.0';
 
     // Total policies sold (you'll need to add this field to calls table)
-    const policiesSold = allCalls?.filter(c => c.policy_sold === true).length || 0;
+    const policiesSold = allCalls?.filter((c: any) => c.policy_sold === true).length || 0;
 
     // 3. REVENUE STATS
     const { data: revenueData } = await supabase
@@ -117,12 +117,12 @@ export async function GET() {
       .from('call_balance')
       .select('user_id, balance');
     
-    const lowBalanceUsers = callBalances?.filter(cb => (cb.balance || 0) < 10).length || 0;
+    const lowBalanceUsers = callBalances?.filter((cb: any) => (cb.balance || 0) < 10).length || 0;
     
     // Expiring trials (next 3 days)
     const threeDaysFromNow = new Date();
     threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
-    const expiringTrials = allProfiles?.filter(p => {
+    const expiringTrials = allProfiles?.filter((p: any) => {
       if (p.subscription_tier !== 'free_trial' || !p.free_trial_ends_at) return false;
       const expiresAt = new Date(p.free_trial_ends_at);
       return expiresAt <= threeDaysFromNow && expiresAt > new Date();
@@ -195,13 +195,13 @@ export async function GET() {
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
       
-      const dayCalls = allCalls?.filter(c => c.created_at.startsWith(dateStr)).length || 0;
-      const dayAppointments = allCalls?.filter(c => 
+      const dayCalls = allCalls?.filter((c: any) => c.created_at.startsWith(dateStr)).length || 0;
+      const dayAppointments = allCalls?.filter((c: any) => 
         c.created_at.startsWith(dateStr) && c.outcome === 'booked'
       ).length || 0;
       
       // Get profit data for this day
-      const dayProfit = allProfitData?.find(p => p.date === dateStr);
+      const dayProfit = allProfitData?.find((p: any) => p.date === dateStr);
       
       last30Days.push({
         date: dateStr,
@@ -217,14 +217,14 @@ export async function GET() {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthStr = date.toISOString().slice(0, 7); // YYYY-MM
       
-      const monthCalls = allCalls?.filter(c => c.created_at.startsWith(monthStr)).length || 0;
-      const monthAppointments = allCalls?.filter(c => 
+      const monthCalls = allCalls?.filter((c: any) => c.created_at.startsWith(monthStr)).length || 0;
+      const monthAppointments = allCalls?.filter((c: any) => 
         c.created_at.startsWith(monthStr) && c.outcome === 'booked'
       ).length || 0;
       
       // Sum up all profit data for this month
-      const monthProfitData = allProfitData?.filter(p => p.date?.startsWith(monthStr)) || [];
-      const monthMinutesProfit = monthProfitData.reduce((sum, p) => sum + (p.minutes_profit || 0), 0);
+      const monthProfitData = allProfitData?.filter((p: any) => p.date?.startsWith(monthStr)) || [];
+      const monthMinutesProfit = monthProfitData.reduce((sum: number, p: any) => sum + (p.minutes_profit || 0), 0);
       
       last12Months.push({
         month: monthStr,
