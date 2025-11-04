@@ -751,25 +751,46 @@ export async function POST(req: Request) {
           // 🎁 If this is first refill, check if this completes a referral sign-up
           if (isFirstRefill) {
             console.log('🎁 First refill detected - checking for referral completion');
+            console.log('🔍 Looking for pending referral for user:', userId);
             
             try {
               // Check if user was referred
-              const { data: referral } = await supabase
+              const { data: referral, error: referralQueryError } = await supabase
                 .from('referrals')
                 .select('*, profiles!referrals_referrer_id_fkey(subscription_tier, free_trial_ends_at, free_trial_total_days)')
                 .eq('referee_id', userId)
                 .eq('status', 'pending')
                 .maybeSingle();
 
+              if (referralQueryError) {
+                console.error('❌ Error querying referrals:', referralQueryError);
+              }
+
+              console.log('📊 Referral query result:', referral ? 'FOUND' : 'NOT FOUND');
+
               if (referral) {
-                console.log('🎉 Valid referral found! Referrer:', referral.referrer_id);
+                console.log('🎉 Valid referral found!');
+                console.log('  - Referral ID:', referral.id);
+                console.log('  - Referrer ID:', referral.referrer_id);
+                console.log('  - Referee ID:', referral.referee_id);
+                console.log('  - Status:', referral.status);
+                console.log('  - Type:', referral.referral_type);
 
                 // Get user's email verification status
-                const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+                console.log('📧 Checking email verification for user:', userId);
+                const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
+                
+                if (authError) {
+                  console.error('❌ Error getting auth user:', authError);
+                }
+
+                console.log('📧 Email confirmed at:', authUser?.user?.email_confirmed_at || 'NOT CONFIRMED');
                 
                 if (!authUser?.user?.email_confirmed_at) {
                   console.log('⚠️ Email not verified yet - skipping referral completion');
                 } else {
+                  console.log('✅ Email verified! Proceeding with referral completion...');
+                  
                   // Mark referral as completed
                   const { error: refUpdateError } = await supabase
                     .from('referrals')
@@ -786,15 +807,27 @@ export async function POST(req: Request) {
 
                     // Check if referrer is still on free trial
                     const referrerProfile = referral.profiles;
+                    console.log('👤 Referrer profile:', {
+                      tier: referrerProfile?.subscription_tier,
+                      trial_ends: referrerProfile?.free_trial_ends_at,
+                      total_days: referrerProfile?.free_trial_total_days
+                    });
+
                     if (referrerProfile?.subscription_tier === 'free_trial' && referrerProfile.free_trial_ends_at) {
                       // Count completed referrals (including this one)
-                      const { data: completedReferrals } = await supabase
+                      console.log('🔢 Counting completed referrals for referrer:', referral.referrer_id);
+                      const { data: completedReferrals, error: countError } = await supabase
                         .from('referrals')
                         .select('id')
                         .eq('referrer_id', referral.referrer_id)
                         .eq('status', 'completed');
 
+                      if (countError) {
+                        console.error('❌ Error counting referrals:', countError);
+                      }
+
                       const totalCompleted = completedReferrals?.length || 0;
+                      console.log(`📊 Total completed referrals: ${totalCompleted} (max: 4)`);
 
                       if (totalCompleted <= 4) {
                         // Add 7 days to referrer's trial
@@ -803,6 +836,12 @@ export async function POST(req: Request) {
                         newTrialEnd.setDate(newTrialEnd.getDate() + 7);
 
                         const newTotalDays = (referrerProfile.free_trial_total_days || 30) + 7;
+
+                        console.log('📅 Trial extension calculation:');
+                        console.log('  - Current end date:', currentTrialEnd.toISOString());
+                        console.log('  - New end date:', newTrialEnd.toISOString());
+                        console.log('  - Current total days:', referrerProfile.free_trial_total_days);
+                        console.log('  - New total days:', newTotalDays);
 
                         const { error: extendError } = await supabase
                           .from('profiles')
@@ -814,16 +853,26 @@ export async function POST(req: Request) {
 
                         if (extendError) {
                           console.error('❌ Error extending trial:', extendError);
+                          console.error('Error details:', JSON.stringify(extendError, null, 2));
                         } else {
-                          console.log(`🎉 Added 7 days to referrer's trial! New end: ${newTrialEnd.toISOString()}`);
+                          console.log(`🎉 SUCCESS! Added 7 days to referrer's trial!`);
+                          console.log(`   New end date: ${newTrialEnd.toISOString()}`);
+                          console.log(`   New total days: ${newTotalDays}`);
 
                           // Recalculate days remaining
-                          await supabase.rpc('calculate_trial_days_remaining', {
+                          console.log('🔄 Recalculating days remaining...');
+                          const { error: rpcError } = await supabase.rpc('calculate_trial_days_remaining', {
                             p_user_id: referral.referrer_id
                           });
+
+                          if (rpcError) {
+                            console.error('❌ Error recalculating days:', rpcError);
+                          } else {
+                            console.log('✅ Days remaining recalculated successfully');
+                          }
                         }
                       } else {
-                        console.log('⚠️ Referrer has reached max 4 referrals');
+                        console.log('⚠️ Referrer has reached max 4 referrals - no reward granted');
                       }
                     } else {
                       console.log('ℹ️ Referrer is not on free trial - no days added');
