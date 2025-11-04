@@ -26,9 +26,13 @@ function LoginPageContent() {
   // Check for referral code in URL
   useEffect(() => {
     const refCode = searchParams.get('ref');
+    console.log('🔍 useEffect - Checking URL for ref parameter:', refCode);
     if (refCode) {
+      console.log('✅ Ref parameter found:', refCode);
       setReferralCode(refCode);
       setIsSignUp(true); // Auto-switch to sign up mode if there's a referral code
+    } else {
+      console.log('❌ No ref parameter in URL');
     }
   }, [searchParams]);
 
