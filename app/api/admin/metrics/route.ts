@@ -284,7 +284,7 @@ export async function GET() {
         lowBalanceUsers,
         expiringTrials,
       },
-      recentActivity: recentCallsWithProfiles?.map(call => ({
+      recentActivity: recentCallsWithProfiles?.map((call: any) => ({
         id: call.id,
         userName: call.profiles?.full_name || 'Unknown',
         userTier: call.profiles?.subscription_tier || 'none',
