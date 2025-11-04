@@ -38,8 +38,7 @@ export async function getSubscriptionFeatures(userId: string): Promise<Subscript
     .from('profiles')
     .select('subscription_tier')
     .eq('user_id', userId)
-    .single()
-    .limit(1); // Force fresh query
+    .single();
   
   console.log('🔍 Subscription Helper - Profile tier:', profile?.subscription_tier);
 
