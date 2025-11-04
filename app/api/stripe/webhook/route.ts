@@ -707,6 +707,9 @@ export async function POST(req: Request) {
         const autoRefillAmount = session.metadata.auto_refill_amount;
         
         console.log('💰 Balance refill payment completed:', { userId, amount, isFirstRefill });
+        console.log('💰 Session metadata:', session.metadata);
+        console.log('💰 is_first_refill value:', session.metadata.is_first_refill);
+        console.log('💰 isFirstRefill boolean:', isFirstRefill);
 
         try {
           // Get current balance
