@@ -754,10 +754,10 @@ export async function POST(req: Request) {
             console.log('🔍 Looking for pending referral for user:', userId);
             
             try {
-              // Check if user was referred
+              // Check if user was referred (simple query without foreign key hint)
               const { data: referral, error: referralQueryError } = await supabase
                 .from('referrals')
-                .select('*, profiles!referrals_referrer_id_fkey(subscription_tier, free_trial_ends_at, free_trial_total_days)')
+                .select('*')
                 .eq('referee_id', userId)
                 .eq('status', 'pending')
                 .maybeSingle();
@@ -805,8 +805,18 @@ export async function POST(req: Request) {
                   } else {
                     console.log('✅ Referral marked as completed');
 
-                    // Check if referrer is still on free trial
-                    const referrerProfile = referral.profiles;
+                    // Get referrer's profile separately
+                    console.log('👤 Fetching referrer profile...');
+                    const { data: referrerProfile, error: profileFetchError } = await supabase
+                      .from('profiles')
+                      .select('subscription_tier, free_trial_ends_at, free_trial_total_days')
+                      .eq('user_id', referral.referrer_id)
+                      .single();
+
+                    if (profileFetchError) {
+                      console.error('❌ Error fetching referrer profile:', profileFetchError);
+                    }
+
                     console.log('👤 Referrer profile:', {
                       tier: referrerProfile?.subscription_tier,
                       trial_ends: referrerProfile?.free_trial_ends_at,
