@@ -748,6 +748,97 @@ export async function POST(req: Request) {
             }
           }
 
+          // 🎁 If this is first refill, check if this completes a referral sign-up
+          if (isFirstRefill) {
+            console.log('🎁 First refill detected - checking for referral completion');
+            
+            try {
+              // Check if user was referred
+              const { data: referral } = await supabase
+                .from('referrals')
+                .select('*, profiles!referrals_referrer_id_fkey(subscription_tier, free_trial_ends_at, free_trial_total_days)')
+                .eq('referee_id', userId)
+                .eq('status', 'pending')
+                .maybeSingle();
+
+              if (referral) {
+                console.log('🎉 Valid referral found! Referrer:', referral.referrer_id);
+
+                // Get user's email verification status
+                const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+                
+                if (!authUser?.user?.email_confirmed_at) {
+                  console.log('⚠️ Email not verified yet - skipping referral completion');
+                } else {
+                  // Mark referral as completed
+                  const { error: refUpdateError } = await supabase
+                    .from('referrals')
+                    .update({
+                      status: 'completed',
+                      completed_at: new Date().toISOString()
+                    })
+                    .eq('id', referral.id);
+
+                  if (refUpdateError) {
+                    console.error('❌ Error updating referral:', refUpdateError);
+                  } else {
+                    console.log('✅ Referral marked as completed');
+
+                    // Check if referrer is still on free trial
+                    const referrerProfile = referral.profiles;
+                    if (referrerProfile?.subscription_tier === 'free_trial' && referrerProfile.free_trial_ends_at) {
+                      // Count completed referrals (including this one)
+                      const { data: completedReferrals } = await supabase
+                        .from('referrals')
+                        .select('id')
+                        .eq('referrer_id', referral.referrer_id)
+                        .eq('status', 'completed');
+
+                      const totalCompleted = completedReferrals?.length || 0;
+
+                      if (totalCompleted <= 4) {
+                        // Add 7 days to referrer's trial
+                        const currentTrialEnd = new Date(referrerProfile.free_trial_ends_at);
+                        const newTrialEnd = new Date(currentTrialEnd);
+                        newTrialEnd.setDate(newTrialEnd.getDate() + 7);
+
+                        const newTotalDays = (referrerProfile.free_trial_total_days || 30) + 7;
+
+                        const { error: extendError } = await supabase
+                          .from('profiles')
+                          .update({
+                            free_trial_ends_at: newTrialEnd.toISOString(),
+                            free_trial_total_days: newTotalDays
+                          })
+                          .eq('user_id', referral.referrer_id);
+
+                        if (extendError) {
+                          console.error('❌ Error extending trial:', extendError);
+                        } else {
+                          console.log(`🎉 Added 7 days to referrer's trial! New end: ${newTrialEnd.toISOString()}`);
+
+                          // Recalculate days remaining
+                          await supabase.rpc('calculate_trial_days_remaining', {
+                            p_user_id: referral.referrer_id
+                          });
+                        }
+                      } else {
+                        console.log('⚠️ Referrer has reached max 4 referrals');
+                      }
+                    } else {
+                      console.log('ℹ️ Referrer is not on free trial - no days added');
+                    }
+                  }
+                }
+              } else {
+                console.log('ℹ️ No pending referral found for this user');
+              }
+            } catch (refError: any) {
+              console.error('❌ Error processing referral completion:', refError);
+              // Don't fail the whole webhook if referral processing fails
+            }
+          }
+
           // Record transaction
           await supabase
             .from('balance_transactions')
