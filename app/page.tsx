@@ -120,7 +120,7 @@ export default function LandingPage() {
             <div className="lg:hidden inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-2 border-purple-500/50 rounded-full mb-12 lg:mb-20 hover:scale-105 transition-transform cursor-pointer animate-slide-up mx-auto" style={{ animationDelay: '0.25s' }}>
               <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 animate-pulse flex-shrink-0" />
               <span className="text-xs sm:text-sm text-white font-bold text-center">
-                <span className="text-purple-400">iOS & Android Apps</span> Coming Soon! 📱
+                <span className="text-purple-400">iOS & Android App</span> Coming Soon! 📱
               </span>
             </div>
 
@@ -242,7 +242,7 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              {/* Feature 7 - Mobile Apps */}
+              {/* Feature 7 - Mobile App */}
               <div className="group bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-2xl p-6 lg:p-8 border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20 relative">
                 {/* Coming Soon Badge */}
                 <div className="absolute top-3 right-3 px-2 py-1 bg-purple-600/80 text-white text-[10px] font-bold rounded-full backdrop-blur-sm">
@@ -251,9 +251,9 @@ export default function LandingPage() {
                 <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4 lg:mb-6 group-hover:scale-110 transition-transform">
                   <Smartphone className="w-6 h-6 lg:w-7 lg:h-7 text-purple-400" />
                 </div>
-                <h3 className="text-xl lg:text-2xl font-bold text-white mb-3 lg:mb-4">Mobile Apps</h3>
+                <h3 className="text-xl lg:text-2xl font-bold text-white mb-3 lg:mb-4">Mobile App</h3>
                 <p className="text-base text-gray-300 leading-relaxed">
-                  Manage your AI, check appointments, and track sales on the go. iOS & Android apps launching soon.
+                  Manage your AI, check appointments, and track sales on the go. iOS & Android app launching soon.
                 </p>
               </div>
             </div>
@@ -643,9 +643,9 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Mobile Apps - FAR RIGHT */}
+            {/* Mobile App - FAR RIGHT */}
             <div>
-              <h4 className="text-white font-semibold mb-4">Mobile Apps</h4>
+              <h4 className="text-white font-semibold mb-4">Mobile App</h4>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-gray-400 text-sm">
                   <Smartphone className="w-4 h-4 text-purple-400" />

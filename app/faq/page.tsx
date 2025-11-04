@@ -63,7 +63,7 @@ export default function FAQPage() {
     },
     {
       question: "Will there be a mobile app?",
-      answer: "Yes! iOS and Android apps are launching soon. You'll be able to manage your AI dialer, check appointments, and track sales right from your phone."
+      answer: "Yes! iOS and Android app is launching soon. You'll be able to manage your AI dialer, check appointments, and track sales right from your phone."
     }
   ];
 

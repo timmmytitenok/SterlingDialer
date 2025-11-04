@@ -27,9 +27,9 @@ export function MobileFooter() {
           </p>
         </div>
 
-        {/* Mobile Apps */}
+        {/* Mobile App */}
         <div className="space-y-3">
-          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Mobile Apps</h3>
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Mobile App</h3>
           <div className="space-y-2">
             <div className="flex items-center justify-center gap-2 py-2.5 px-3 bg-purple-600/10 border border-purple-500/20 rounded-lg">
               <Smartphone className="w-4 h-4 text-purple-400" />

@@ -53,9 +53,9 @@ export function PublicFooter() {
             </div>
           </div>
 
-          {/* Mobile Apps - FAR RIGHT */}
+          {/* Mobile App - FAR RIGHT */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Mobile Apps</h4>
+            <h4 className="text-white font-semibold mb-4">Mobile App</h4>
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-gray-400 text-sm">
                 <Smartphone className="w-4 h-4 text-purple-400" />
