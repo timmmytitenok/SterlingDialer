@@ -6,8 +6,22 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
  * URL format: /login?ref=USER_ID
  */
 export async function POST(req: Request) {
+  console.log('📥 Referral API called');
+  
   try {
-    const { referrerId, refereeId, refereeEmail } = await req.json();
+    // Parse request body
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError);
+      return NextResponse.json({ 
+        error: 'Invalid request body',
+        details: 'Could not parse JSON'
+      }, { status: 400 });
+    }
+
+    const { referrerId, refereeId, refereeEmail } = body;
 
     console.log('🎁 Creating referral:', { referrerId, refereeId, refereeEmail });
 
@@ -19,8 +33,17 @@ export async function POST(req: Request) {
     }
 
     // Use service role client to bypass RLS
-    const supabase = createServiceRoleClient();
-    console.log('✅ Using service role client');
+    let supabase;
+    try {
+      supabase = createServiceRoleClient();
+      console.log('✅ Using service role client');
+    } catch (clientError: any) {
+      console.error('❌ Failed to create service role client:', clientError);
+      return NextResponse.json({ 
+        error: 'Database configuration error',
+        details: clientError.message
+      }, { status: 500 });
+    }
 
     // Verify the referrer exists and is on free trial
     console.log('🔍 Looking up referrer profile...');
@@ -132,9 +155,12 @@ export async function POST(req: Request) {
       message: 'Referral tracked successfully'
     });
   } catch (error: any) {
-    console.error('Error in create-from-link:', error);
+    console.error('❌ CRITICAL ERROR in create-from-link:', error);
+    console.error('Error stack:', error.stack);
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Internal server error',
+      details: error.message,
+      type: error.name
     }, { status: 500 });
   }
 }
