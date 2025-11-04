@@ -8,7 +8,7 @@ interface CallBalanceCardProps {
   initialBalance?: number;
   initialAutoRefill?: boolean;
   initialRefillAmount?: number;
-  currentTier?: 'none' | 'free_trial' | 'starter' | 'pro' | 'elite';
+  currentTier?: 'none' | 'free_trial' | 'starter' | 'pro' | 'elite' | 'free_access';
 }
 
 export function CallBalanceCard({ 
