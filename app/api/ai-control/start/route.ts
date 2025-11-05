@@ -18,7 +18,8 @@ export async function POST(request: Request) {
       dailyCallLimit,
       executionMode,      // 'leads' or 'time'
       targetLeadCount,    // For leads mode
-      targetTime          // For time mode
+      targetTime,         // For time mode
+      adminTestPhone      // For admin testing with real leads
     } = await request.json();
 
     // Live transfer is always enabled - no longer a user choice
@@ -122,6 +123,13 @@ export async function POST(request: Request) {
           subscriptionTier: subscriptionTier,  // starter, pro, elite, or none
           timestamp: new Date().toISOString(),
         };
+
+        // Add admin test phone if provided
+        if (adminTestPhone) {
+          payload.adminTestPhone = adminTestPhone;
+          payload.adminTest = true;
+          console.log('🧪 Admin test mode: Will call', adminTestPhone);
+        }
 
         // Add execution parameters based on mode
         if (executionMode === 'leads') {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Phone, Settings, X, Loader2 } from 'lucide-react';
+import { Phone, Settings, X, Loader2, Zap } from 'lucide-react';
 
 interface AdminTestPanelProps {
   userId: string;
@@ -21,7 +21,9 @@ export function AdminTestPanel({
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [realCallLoading, setRealCallLoading] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState<string>('Loading...');
+  const [adminPhone, setAdminPhone] = useState<string>('');
   const [result, setResult] = useState<{
     success: boolean;
     message: string;
@@ -78,6 +80,70 @@ export function AdminTestPanel({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRealCallTest = async () => {
+    if (!adminPhone || adminPhone.length < 10) {
+      setResult({
+        success: false,
+        message: 'Please enter a valid phone number',
+      });
+      return;
+    }
+
+    setRealCallLoading(true);
+    setResult(null);
+
+    try {
+      const response = await fetch('/api/ai-control/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId,
+          dailyCallLimit: 1,
+          executionMode: 'leads',
+          targetLeadCount: 1,
+          adminTestPhone: adminPhone,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to start AI');
+      }
+
+      setResult({
+        success: true,
+        message: '🎯 AI Agent Launched! Calling first lead (you) now...',
+        details: data,
+      });
+    } catch (error: any) {
+      setResult({
+        success: false,
+        message: error.message || 'Failed to launch AI agent',
+      });
+    } finally {
+      setRealCallLoading(false);
+    }
+  };
+
+  // Format phone number as user types
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    let formatted = '';
+
+    if (input.length > 0) {
+      formatted = '(' + input.substring(0, 3);
+    }
+    if (input.length >= 4) {
+      formatted += ') ' + input.substring(3, 6);
+    }
+    if (input.length >= 7) {
+      formatted += '-' + input.substring(6, 10);
+    }
+
+    setAdminPhone(formatted);
   };
 
   return (
@@ -152,7 +218,55 @@ export function AdminTestPanel({
                 </div>
               </div>
 
-              {/* Test Call Button */}
+              {/* Admin Phone Number Input */}
+              <div className="bg-[#0B1437] rounded-lg p-3 border border-blue-500/30">
+                <label className="block text-xs text-gray-400 mb-2">
+                  📱 Screen Your Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={adminPhone}
+                  onChange={handlePhoneChange}
+                  placeholder="(555) 123-4567"
+                  maxLength={14}
+                  className="w-full px-3 py-2 bg-[#1A2647] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+                <div className="text-xs text-gray-500 mt-2">
+                  💡 Enter your number to receive a real AI test call
+                </div>
+              </div>
+
+              {/* Test Real Call Button - New Feature */}
+              <div className="space-y-2">
+                <button
+                  onClick={handleRealCallTest}
+                  disabled={realCallLoading || !adminPhone || adminPhone.length < 10}
+                  className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+                    realCallLoading 
+                      ? 'bg-gray-600 cursor-not-allowed' 
+                      : !adminPhone || adminPhone.length < 10
+                      ? 'bg-gray-700 cursor-not-allowed opacity-50'
+                      : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-blue-500/50'
+                  }`}
+                >
+                  {realCallLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Launching AI...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-5 h-5" />
+                      <span>🎯 Launch AI - Call Me</span>
+                    </>
+                  )}
+                </button>
+                <div className="text-xs text-center text-gray-500">
+                  Reads 1 lead (you) from actual lead list
+                </div>
+              </div>
+
+              {/* Test Call Button - Original */}
               <div className="space-y-2">
                 <button
                   onClick={handleTestCall}
@@ -171,10 +285,13 @@ export function AdminTestPanel({
                   ) : (
                     <>
                       <Phone className="w-5 h-5" />
-                      <span>📞 Test AI Call</span>
+                      <span>📞 Quick Test (ENV)</span>
                     </>
                   )}
                 </button>
+                <div className="text-xs text-center text-gray-500">
+                  Uses ADMIN_TEST_PHONE_NUMBER from env
+                </div>
               </div>
 
               {/* Result Message */}
