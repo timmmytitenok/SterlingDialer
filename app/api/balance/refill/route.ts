@@ -10,8 +10,8 @@ export async function POST(req: Request) {
   try {
     const { amount, isFirstRefill } = await req.json();
 
-    if (!amount || ![25, 50, 100, 200].includes(amount)) {
-      return NextResponse.json({ error: 'Invalid amount. Must be 25, 50, 100, or 200' }, { status: 400 });
+    if (!amount || ![50, 100].includes(amount)) {
+      return NextResponse.json({ error: 'Invalid amount. Must be 50 or 100' }, { status: 400 });
     }
 
     const supabase = await createClient();

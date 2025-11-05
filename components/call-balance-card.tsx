@@ -27,8 +27,8 @@ export function CallBalanceCard({
   // Auto-refill is now ALWAYS enabled (required for AI operation)
   const autoRefillEnabled = true;
 
-  // New refill options: $25, $50, $100, $200
-  const refillOptions = [25, 50, 100, 200];
+  // Refill options: $50, $100
+  const refillOptions = [50, 100];
 
   // Calculate estimated minutes remaining
   const minutesRemaining = Math.floor(balance / costPerMinute);
@@ -290,11 +290,11 @@ export function CallBalanceCard({
             <p className="text-sm text-gray-400">Required for AI operation • Triggers when balance drops below $10</p>
           </div>
 
-          {/* Refill Amount Selection: $25, $50, $100, $200 */}
+          {/* Refill Amount Selection: $50, $100 */}
           <div className="mb-6">
             <p className="text-white font-medium mb-3 text-sm md:text-base">Select Auto-Refill Amount:</p>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+            <div className="grid grid-cols-2 gap-2 md:gap-3">
               {refillOptions.map((amount, index) => {
                 const minutes = Math.floor(amount / costPerMinute);
                 const isSelected = refillAmount === amount;
