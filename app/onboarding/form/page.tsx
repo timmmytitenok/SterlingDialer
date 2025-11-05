@@ -10,6 +10,8 @@ export default function OnboardingFormPage() {
     firstName: '',
     lastName: '',
     email: '',
+    phoneNumber: '',
+    timezone: '',
     agencyName: '',
     nicheDescription: '',
     calApiKey: '',
@@ -156,6 +158,54 @@ export default function OnboardingFormPage() {
                     className="w-full px-2.5 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm md:text-sm"
                     disabled={loading}
                   />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 md:gap-4">
+                  <div>
+                    <label className="block text-[11px] md:text-sm font-medium text-gray-300 mb-1">Phone Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={formData.phoneNumber}
+                      onChange={(e) => {
+                        const input = e.target.value.replace(/\D/g, '');
+                        let formatted = '';
+                        if (input.length > 0) {
+                          formatted = '(' + input.substring(0, 3);
+                        }
+                        if (input.length >= 4) {
+                          formatted += ') ' + input.substring(3, 6);
+                        }
+                        if (input.length >= 7) {
+                          formatted += '-' + input.substring(6, 10);
+                        }
+                        handleInputChange('phoneNumber', formatted);
+                      }}
+                      placeholder="(555) 123-4567"
+                      maxLength={14}
+                      className="w-full px-2.5 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm md:text-sm"
+                      disabled={loading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] md:text-sm font-medium text-gray-300 mb-1">Time Zone *</label>
+                    <select
+                      required
+                      value={formData.timezone}
+                      onChange={(e) => handleInputChange('timezone', e.target.value)}
+                      className="w-full px-2.5 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm md:text-sm"
+                      disabled={loading}
+                    >
+                      <option value="">Select timezone...</option>
+                      <option value="America/New_York">Eastern (ET)</option>
+                      <option value="America/Chicago">Central (CT)</option>
+                      <option value="America/Denver">Mountain (MT)</option>
+                      <option value="America/Phoenix">Arizona (MST)</option>
+                      <option value="America/Los_Angeles">Pacific (PT)</option>
+                      <option value="America/Anchorage">Alaska (AKT)</option>
+                      <option value="Pacific/Honolulu">Hawaii (HST)</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div>
