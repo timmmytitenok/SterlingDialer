@@ -116,6 +116,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   const [syncProgress, setSyncProgress] = useState(0);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [sheetToDelete, setSheetToDelete] = useState<{ id: string; name: string; leadCount: number } | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     const initializeAndSync = async () => {
@@ -291,11 +292,16 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
 
   const handleSelectTab = async (tabName: string) => {
     setSelectedTabName(tabName);
-    setShowTabSelector(false);
     
     if (!currentSheet) return;
     
-    setLoading(true);
+    setIsTransitioning(true);
+    
+    // Fade out tab selector smoothly
+    setTimeout(() => {
+      setShowTabSelector(false);
+    }, 200);
+    
     try {
       const headersResponse = await fetch('/api/google-sheets/headers', {
         method: 'POST',
@@ -310,17 +316,21 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
 
       if (!headersResponse.ok || !headersData.success) {
         setMessage({ type: 'error', text: 'Failed to read sheet headers' });
-        setLoading(false);
+        setIsTransitioning(false);
         return;
       }
 
       setSheetHeaders(headersData.headers);
       setColumnDetections(headersData.detections);
-      setShowColumnMapper(true);
+      
+      // Wait for data to load, then show column mapper with smooth fade-in
+      setTimeout(() => {
+        setShowColumnMapper(true);
+        setIsTransitioning(false);
+      }, 400);
     } catch (error) {
       setMessage({ type: 'error', text: 'Error reading sheet' });
-    } finally {
-      setLoading(false);
+      setIsTransitioning(false);
     }
   };
 
@@ -810,7 +820,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                               Give it: <strong className="text-white">Editor Access</strong> (so the AI can read/update lead statuses)."
                             </p>
                             <p className="text-yellow-300 text-xs italic bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2">
-                              (Include a small tooltip: "We do NOT change your sheet except updating status/attempts.")
+                              Disclaimer: We do NOT change your sheet at all. It is only used to read data
                             </p>
                           </div>
                         </div>
@@ -1174,6 +1184,21 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
           )}
         </div>
       </main>
+
+      {/* Transition Loading Overlay */}
+      {isTransitioning && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-[#1A2647] rounded-2xl border border-blue-500/40 p-8 shadow-2xl shadow-blue-500/20">
+            <div className="flex flex-col items-center gap-4">
+              <svg className="w-12 h-12 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p className="text-white font-semibold">Reading sheet headers...</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tab Selector Modal */}
       {showTabSelector && availableTabs.length > 0 && (

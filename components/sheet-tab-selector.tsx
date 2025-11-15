@@ -20,8 +20,8 @@ export function SheetTabSelector({ tabs, onSelect, onCancel }: SheetTabSelectorP
   const [selectedTab, setSelectedTab] = useState<string | null>(null);
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="bg-[#1A2647] rounded-2xl border border-gray-800 max-w-lg w-full shadow-2xl animate-in zoom-in duration-300">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-500">
+      <div className="bg-[#1A2647] rounded-2xl border border-gray-800 max-w-lg w-full shadow-2xl animate-in slide-in-from-bottom duration-500">
         <div className="p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-white mb-2">Select Sheet/Tab</h2>

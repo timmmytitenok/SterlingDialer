@@ -92,10 +92,10 @@ export function ColumnMapperRedesigned({
   const isValid = mapping.name !== -1 && mapping.phone !== -1;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="bg-[#1A2647] rounded-2xl border border-gray-800 max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-500">
+      <div className="bg-[#1A2647] rounded-2xl border border-gray-800 max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-500">
         {/* Header */}
-        <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+        <div className="p-6 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
           <div>
             <h2 className="text-2xl font-bold text-white mb-1">Map Your Columns</h2>
             <p className="text-gray-400 text-sm">{sheetName}</p>
@@ -109,17 +109,17 @@ export function ColumnMapperRedesigned({
         </div>
 
         {/* Info Banner */}
-        <div className="p-5 mx-6 mt-5 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-          <p className="text-white font-semibold mb-1">
-            <span className="text-red-400">*</span> Name and Phone Number are required
+        <div className="p-4 mx-6 mt-4 bg-blue-500/10 border border-blue-500/30 rounded-xl flex-shrink-0">
+          <p className="text-blue-300 font-semibold text-sm mb-1">
+            ✨ Our smart auto-detection tried mapping the columns by itself
           </p>
-          <p className="text-gray-400 text-sm">
-            Email, Age, and State are optional — use them to store more data
+          <p className="text-gray-300 text-sm">
+            But it is YOUR job to verify and confirm the columns match up so the data is correct!
           </p>
         </div>
 
         {/* Column Mapping */}
-        <div className="p-6 space-y-4 overflow-y-auto max-h-[calc(90vh-280px)]">
+        <div className="p-6 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(85vh - 280px)' }}>
           {fields.map((field) => (
             <div
               key={field.key}
@@ -165,7 +165,7 @@ export function ColumnMapperRedesigned({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-800 flex items-center justify-between gap-4">
+        <div className="p-6 border-t border-gray-800 flex items-center justify-between gap-4 flex-shrink-0">
           <div className="flex items-center gap-3">
             {isValid ? (
               <>
