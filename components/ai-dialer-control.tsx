@@ -101,9 +101,8 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
   };
 
   const handleBudgetConfirm = async (budget: number, unlimited: boolean) => {
-    const finalBudget = unlimited ? 999999 : budget;
     setShowBudgetModal(false);
-    await handleLaunch(finalBudget);
+    await handleLaunch(budget);
   };
 
   const handleLaunch = async (budgetOverride?: number) => {
@@ -230,11 +229,28 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
     if (status?.reason) return status.reason;
     switch (status?.status) {
       case 'running': return 'AI is actively dialing leads';
-      case 'idle': return 'AI is ready to launch';
+      case 'idle': 
+        // Don't show subtext when auto-schedule is on (message shown below button instead)
+        if (autoScheduleEnabled) {
+          return '';
+        }
+        return 'AI is ready to launch';
       case 'paused-budget': return "You've hit today's spend limit. The AI paused automatically to protect your budget.";
       case 'paused-balance': return 'Call balance too low';
       case 'no-leads': return 'No pending leads to call';
       default: return '';
+    }
+  };
+
+  const formatTime = (time: string) => {
+    try {
+      return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        hour12: true 
+      });
+    } catch {
+      return time;
     }
   };
 
@@ -333,6 +349,73 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
         </div>
 
         <div className="max-w-5xl mx-auto space-y-6">
+          {/* DAILY SPEND PROGRESS - FIRST AT THE TOP */}
+          {isRunning && (
+            <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-6 border-2 border-gray-800 shadow-xl overflow-hidden animate-in slide-in-from-top duration-500">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/5 to-purple-500/0 animate-pulse" />
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="w-6 h-6 text-green-400" />
+                    <h3 className="text-xl font-bold text-white">Daily Spend</h3>
+                  </div>
+                  <div className={`px-4 py-1.5 rounded-full text-sm font-bold ${
+                    noBudgetSet ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' :
+                    spendPercent >= 100 ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                    spendPercent >= 75 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                    'bg-green-500/20 text-green-400 border border-green-500/30'
+                  }`}>
+                    {noBudgetSet ? 'NO BUDGET SET' :
+                     spendPercent >= 100 ? 'LIMIT REACHED' :
+                     spendPercent >= 75 ? 'APPROACHING' :
+                     'ON TRACK'}
+                  </div>
+                </div>
+
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-3xl font-bold text-white">
+                    ${((status?.todaySpendCents || 0) / 100).toFixed(2)}
+                  </span>
+                  <span className="text-gray-400">/ ${((status?.dailyBudgetCents || 0) / 100).toFixed(2)}</span>
+                </div>
+
+                {!noBudgetSet && (
+                  <p className="text-sm text-gray-400 mb-3">
+                    Remaining today: <span className="text-green-400 font-semibold">
+                      ${(((status?.dailyBudgetCents || 0) - (status?.todaySpendCents || 0)) / 100).toFixed(2)}
+                    </span>
+                  </p>
+                )}
+
+                <div className="relative w-full h-3 bg-gray-900/50 rounded-full overflow-hidden border border-gray-800">
+                  <div 
+                    className={`absolute inset-0 blur-md transition-all duration-500 ${
+                      spendPercent >= 100 ? 'bg-red-500/30' :
+                      spendPercent >= 75 ? 'bg-yellow-500/30' :
+                      'bg-purple-500/30'
+                    }`}
+                    style={{ width: `${spendPercent}%` }}
+                  />
+                  <div
+                    className={`relative h-full transition-all duration-500 ${
+                      spendPercent >= 100 ? 'bg-gradient-to-r from-red-500 to-red-600' :
+                      spendPercent >= 75 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
+                      'bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500'
+                    } shadow-lg ${
+                      spendPercent >= 100 ? 'shadow-red-500/50' :
+                      spendPercent >= 75 ? 'shadow-yellow-500/50' :
+                      'shadow-purple-500/50'
+                    }`}
+                    style={{ width: `${spendPercent}%` }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* STATUS HEADER */}
           <div className={`relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl border-2 p-12 shadow-xl overflow-hidden ${
             color === 'green' ? 'border-green-500/40 animate-breathing-border' :
@@ -395,57 +478,63 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
               {/* Subtext */}
               <p className="text-gray-400 mb-8">{getStatusSubtext()}</p>
 
-              {/* Main Button */}
-              <button
-                onClick={() => {
-                  if (isRunning) {
-                    handleStop();
-                  } else if (autoScheduleEnabled && isPausedBudget) {
-                    setShowOverrideModal(true); // Open confirmation modal
-                  } else if (!autoScheduleEnabled) {
-                    // Manual launch - show budget modal first
-                    setShowBudgetModal(true);
-                  } else {
-                    handleLaunch();
-                  }
-                }}
-                disabled={actionLoading || isButtonDisabled}
-                className={`group relative overflow-hidden px-12 py-5 rounded-xl font-bold text-xl transition-all duration-300 ${
-                  isRunning
-                    ? 'bg-red-600 hover:bg-red-700 text-white hover:shadow-2xl hover:shadow-red-500/50'
-                    : (autoScheduleEnabled && isPausedBudget)
-                    ? 'bg-gradient-to-r from-yellow-600 via-orange-600 to-red-600 hover:from-yellow-500 hover:via-orange-500 hover:to-red-500 text-white hover:shadow-2xl hover:shadow-yellow-500/50'
-                    : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white hover:shadow-2xl hover:shadow-blue-500/50'
-                } hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                <span className="relative z-10 flex items-center gap-3">
-                  {isRunning ? (
-                    <>
-                      <Square className="w-6 h-6" />
-                      Stop AI Dialer
-                    </>
-                  ) : (autoScheduleEnabled && isPausedBudget) ? (
-                    <>
-                      <Play className="w-6 h-6" />
-                      Run {overrideLeads} More Leads (~${overrideCostDollars})
-                    </>
-                  ) : (
-                    <>
-                      <Rocket className="w-6 h-6" />
-                      Launch AI Dialer
-                    </>
+              {/* Main Button - Hide when auto-schedule is enabled and idle */}
+              {!isButtonDisabled && (
+                <button
+                  onClick={() => {
+                    if (isRunning) {
+                      handleStop();
+                    } else if (autoScheduleEnabled && isPausedBudget) {
+                      setShowOverrideModal(true);
+                    } else if (!autoScheduleEnabled) {
+                      setShowBudgetModal(true);
+                    } else {
+                      handleLaunch();
+                    }
+                  }}
+                  disabled={actionLoading}
+                  className={`group relative overflow-hidden px-12 py-5 rounded-xl font-bold text-xl transition-all duration-300 ${
+                    isRunning
+                      ? 'bg-red-600 hover:bg-red-700 text-white hover:shadow-2xl hover:shadow-red-500/50'
+                      : (autoScheduleEnabled && isPausedBudget)
+                      ? 'bg-gradient-to-r from-yellow-600 via-orange-600 to-red-600 hover:from-yellow-500 hover:via-orange-500 hover:to-red-500 text-white hover:shadow-2xl hover:shadow-yellow-500/50'
+                      : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white hover:shadow-2xl hover:shadow-blue-500/50'
+                  } hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <span className="relative z-10 flex items-center gap-3">
+                    {isRunning ? (
+                      <>
+                        <Square className="w-6 h-6" />
+                        Stop AI Dialer
+                      </>
+                    ) : (autoScheduleEnabled && isPausedBudget) ? (
+                      <>
+                        <Play className="w-6 h-6" />
+                        Run {overrideLeads} More Leads (~${overrideCostDollars})
+                      </>
+                    ) : (
+                      <>
+                        <Rocket className="w-6 h-6" />
+                        Launch AI Dialer
+                      </>
+                    )}
+                  </span>
+                  {!isRunning && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
                   )}
-                </span>
-                {!isRunning && !isButtonDisabled && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
-                )}
-              </button>
+                </button>
+              )}
 
-              {/* Auto-schedule fine print */}
+              {/* Auto-schedule info */}
               {isButtonDisabled && (
-                <p className="text-sm text-blue-400 mt-3">
-                  ℹ️ AI will auto-run at {autoStartTime} — manual launch disabled
-                </p>
+                <div className="text-center">
+                  <p className="text-blue-400 font-semibold mb-1">
+                    ✓ Automation Enabled
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    AI will auto-run at {formatTime(autoStartTime)} on scheduled days
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -485,77 +574,6 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
               </div>
             </div>
           )}
-
-          {/* DAILY SPEND PROGRESS */}
-          <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-6 border-2 border-gray-800 shadow-xl overflow-hidden">
-            {/* Animated Background Glow */}
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/5 to-purple-500/0 animate-pulse" />
-            
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <DollarSign className="w-6 h-6 text-green-400" />
-                  <h3 className="text-xl font-bold text-white">Daily Spend</h3>
-                </div>
-              <div className={`px-4 py-1.5 rounded-full text-sm font-bold ${
-                noBudgetSet ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' :
-                spendPercent >= 100 ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                spendPercent >= 75 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                'bg-green-500/20 text-green-400 border border-green-500/30'
-              }`}>
-                {noBudgetSet ? 'NO BUDGET SET' :
-                 spendPercent >= 100 ? 'LIMIT REACHED' :
-                 spendPercent >= 75 ? 'APPROACHING' :
-                 'ON TRACK'}
-              </div>
-              </div>
-
-              <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl font-bold text-white">
-                  ${((status?.todaySpendCents || 0) / 100).toFixed(2)}
-                </span>
-                <span className="text-gray-400">/ ${((status?.dailyBudgetCents || 0) / 100).toFixed(2)}</span>
-              </div>
-
-              {/* Remaining Budget */}
-              {!noBudgetSet && (
-                <p className="text-sm text-gray-400 mb-3">
-                  Remaining today: <span className="text-green-400 font-semibold">
-                    ${(((status?.dailyBudgetCents || 0) - (status?.todaySpendCents || 0)) / 100).toFixed(2)}
-                  </span>
-                </p>
-              )}
-
-              <div className="relative w-full h-3 bg-gray-900/50 rounded-full overflow-hidden border border-gray-800">
-                {/* Glow effect behind progress bar */}
-                <div 
-                  className={`absolute inset-0 blur-md transition-all duration-500 ${
-                    spendPercent >= 100 ? 'bg-red-500/30' :
-                    spendPercent >= 75 ? 'bg-yellow-500/30' :
-                    'bg-purple-500/30'
-                  }`}
-                  style={{ width: `${spendPercent}%` }}
-                />
-                
-                {/* Actual progress bar with gradient */}
-                <div
-                  className={`relative h-full transition-all duration-500 ${
-                    spendPercent >= 100 ? 'bg-gradient-to-r from-red-500 to-red-600' :
-                    spendPercent >= 75 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
-                    'bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500'
-                  } shadow-lg ${
-                    spendPercent >= 100 ? 'shadow-red-500/50' :
-                    spendPercent >= 75 ? 'shadow-yellow-500/50' :
-                    'shadow-purple-500/50'
-                  }`}
-                  style={{ width: `${spendPercent}%` }}
-                >
-                  {/* Shine effect on progress bar */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* MINI METRICS GRID */}
           <div className="grid grid-cols-3 gap-4">
@@ -740,102 +758,12 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
         </div>
       )}
 
-      {/* Daily Budget Modal (for manual launch) */}
+      {/* Daily Budget Modal (for manual launch) - NEW GLOWY VERSION */}
       {showBudgetModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-[#1A2647] rounded-2xl border border-gray-800 max-w-lg w-full shadow-2xl animate-in slide-in-from-bottom duration-500">
-            {/* Header */}
-            <div className="p-6 border-b border-gray-800">
-              <div className="flex items-center gap-4 mb-2">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-green-600 flex items-center justify-center shadow-lg">
-                  <DollarSign className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-white">Set Daily Budget</h2>
-                  <p className="text-gray-400 text-sm">Choose your spending limit for today</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Budget Display */}
-              <div className="text-center">
-                <p className="text-5xl font-bold text-emerald-400 mb-2">
-                  {isUnlimitedBudget ? 'Unlimited' : `$${dailyBudget}`}
-                </p>
-                <p className="text-sm text-gray-400">
-                  {isUnlimitedBudget 
-                    ? 'AI will run until calling hours end'
-                    : `AI stops when $${dailyBudget} is spent today`
-                  }
-                </p>
-              </div>
-
-              {/* Slider */}
-              <div className="space-y-3">
-                <input
-                  type="range"
-                  min="0"
-                  max="101"
-                  value={isUnlimitedBudget ? 101 : dailyBudget}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value);
-                    if (value > 100) {
-                      setIsUnlimitedBudget(true);
-                      setDailyBudget(100);
-                    } else {
-                      setIsUnlimitedBudget(false);
-                      setDailyBudget(value);
-                    }
-                  }}
-                  className="w-full h-3 rounded-full appearance-none cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, #10B981 0%, #10B981 ${isUnlimitedBudget ? 100 : (dailyBudget / 100) * 100}%, #1F2937 ${isUnlimitedBudget ? 100 : (dailyBudget / 100) * 100}%, #1F2937 100%)`
-                  }}
-                />
-                <div className="flex items-center justify-between text-xs text-gray-400">
-                  <span>$0</span>
-                  <span>$25</span>
-                  <span>$50</span>
-                  <span>$75</span>
-                  <span>$100</span>
-                  <span className="text-purple-400 font-semibold">∞</span>
-                </div>
-              </div>
-
-              {/* Info Box */}
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                <p className="text-blue-300 text-sm font-semibold mb-2">💡 How Daily Budget Works</p>
-                <ul className="text-gray-300 text-xs space-y-1.5 leading-relaxed">
-                  <li>• Spend will <strong className="text-white">NOT go over</strong> your budget</li>
-                  <li>• If budget is not met and calling hours end, AI will stop</li>
-                  <li>• Unlimited runs AI until calling hours are over</li>
-                </ul>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowBudgetModal(false);
-                    setDailyBudget(25);
-                    setIsUnlimitedBudget(false);
-                  }}
-                  className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleLaunch(isUnlimitedBudget ? 999999 : dailyBudget)}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white rounded-xl font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2"
-                >
-                  <Check className="w-5 h-5" />
-                  Launch AI Dialer
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DailyBudgetSelector
+          onConfirm={handleBudgetConfirm}
+          onCancel={() => setShowBudgetModal(false)}
+        />
       )}
 
       {/* Override Confirmation Modal */}

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { AutomationSettingsSimple } from '@/components/automation-settings-simple';
+import { AutomationSettingsRefactored } from '@/components/automation-settings-refactored';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,12 +22,17 @@ export default async function DialerAutomationPage() {
     .eq('user_id', user.id)
     .single();
 
-  return (
-    <div className="min-h-screen bg-[#0B1437]">
-      <main className="container mx-auto px-4 lg:px-8 py-8">
-        <AutomationSettingsSimple userId={user.id} initialSettings={settings} />
-      </main>
-    </div>
-  );
+  // Convert database format to component format
+  const convertedSettings = settings ? {
+    schedule_enabled: settings.auto_start_enabled,
+    schedule_time: settings.auto_start_time,
+    schedule_days: settings.auto_start_days?.map((day: string) => {
+      const dayMap: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+      return dayMap[day.toLowerCase()];
+    }).filter((d: number) => d !== undefined) || [1, 2, 3, 4, 5],
+    daily_spend_limit: Math.round((settings.daily_budget_cents || 2500) / 100),
+  } : null;
+
+  return <AutomationSettingsRefactored userId={user.id} initialSettings={convertedSettings} />;
 }
 

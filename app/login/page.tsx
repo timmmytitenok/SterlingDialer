@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Gift, ArrowLeft } from 'lucide-react';
+import { Gift, ArrowLeft, Mail, Lock, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 function LoginPageContent() {
@@ -311,50 +311,49 @@ function LoginPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B1437] relative overflow-hidden flex items-center justify-center">
-      {/* Animated Background Effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -top-20 -left-20 animate-pulse"></div>
-        <div className="absolute w-96 h-96 bg-purple-500/10 rounded-full blur-3xl -bottom-20 -right-20 animate-pulse delay-700"></div>
-        <div className="absolute w-96 h-96 bg-pink-500/10 rounded-full blur-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse delay-1000"></div>
+    <div className="min-h-screen bg-[#0B1437] relative overflow-hidden flex items-center justify-center p-4 py-16">
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-3xl top-20 -left-40 animate-pulse" />
+        <div className="absolute w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-3xl bottom-20 -right-40 animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
-      {/* Grid Pattern Overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]"></div>
+      {/* Grid Pattern */}
+      <div className="fixed inset-0 bg-[linear-gradient(rgba(59,130,246,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
 
-
-      {/* Back Button - Top Left */}
+      {/* Back Button */}
       <Link 
         href="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white transition-all duration-300 backdrop-blur-sm group"
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-800 border border-gray-700 hover:border-gray-600 text-gray-400 hover:text-white rounded-lg transition-all hover:scale-105 group"
       >
-        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" />
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
         <span className="text-sm font-medium">Back to Home</span>
       </Link>
 
-      {/* Content */}
-      <div className="relative z-10 w-full max-w-md mx-4 py-12 md:py-16">
-        {/* Logo - Added padding - Secret: Click 5 times for master login */}
-        <div className="text-center mb-8 md:mb-12 pt-18 md:pt-0">
+      <div className="relative z-10 w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-4 sm:mb-6">
           <div 
             onClick={handleLogoClick}
-            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/50 cursor-pointer hover:scale-105 transition-transform"
+            className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-3 sm:mb-4 shadow-lg cursor-pointer hover:scale-105 transition-transform"
           >
-            <span className="text-3xl font-bold text-white">SA</span>
+            <span className="text-xl sm:text-2xl font-bold text-white">SA</span>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">Sterling AI</h1>
-          <p className="text-gray-400">
-            {isSignUp ? 'Create your account' : isAdminDashboardMode ? '🔒 Admin Dashboard' : isMasterLogin ? 'Admin Access' : 'Welcome back'}
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 sm:mb-3">
+            {isSignUp ? 'Create Account' : isAdminDashboardMode ? '🔒 Admin Dashboard' : isMasterLogin ? 'Admin Access' : 'Sterling AI'}
+          </h1>
+          <p className="text-gray-300 text-base sm:text-lg">
+            {isSignUp ? 'Join thousands of agents' : isAdminDashboardMode ? 'Admin login' : isMasterLogin ? 'Master access' : 'Welcome back'}
           </p>
         </div>
 
         {/* Auth Card */}
-        <div className="bg-[#1A2647] rounded-2xl p-8 md:p-10 border border-gray-800 shadow-2xl backdrop-blur-sm">
-          <h2 className="text-2xl font-bold text-white mb-8">
+        <div className="bg-[#1A2647] rounded-2xl p-6 sm:p-8 border border-gray-800 shadow-2xl backdrop-blur-sm">
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-5 sm:mb-8">
             {isSignUp ? 'Sign Up' : isAdminDashboardMode ? '🔒 Admin Login' : 'Sign In'}
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             {isSignUp && (
               <>
                 <div>
@@ -411,15 +410,18 @@ function LoginPageContent() {
                 <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                   Email Address
                 </label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                />
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full pl-11 pr-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  />
+                </div>
               </div>
             )}
 
@@ -427,29 +429,23 @@ function LoginPageContent() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 {isAdminDashboardMode ? 'Admin Password' : 'Password'}
               </label>
-              <input
-                id="password"
-                type="password"
-                placeholder={isAdminDashboardMode ? 'Enter admin password' : '••••••••'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className={`w-full px-4 py-3 bg-[#0B1437] border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition ${
-                  isMasterLogin || isAdminDashboardMode
-                    ? 'border-red-500/50 focus:ring-red-500' 
-                    : 'border-gray-700 focus:ring-blue-500'
-                }`}
-              />
-              {isAdminDashboardMode ? (
-                <p className="text-xs text-red-400 mt-1">
-                  🔒 Admin access only
-                </p>
-              ) : (
-                <p className="text-xs text-gray-500 mt-1">
-                  Must be at least 6 characters
-                </p>
-              )}
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <input
+                  id="password"
+                  type="password"
+                  placeholder={isAdminDashboardMode ? 'Enter admin password' : 'Minimum 6 characters'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className={`w-full pl-11 pr-4 py-3 bg-[#0B1437] border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition ${
+                    isMasterLogin || isAdminDashboardMode
+                      ? 'border-red-500/50 focus:ring-red-500' 
+                      : 'border-gray-700 focus:ring-blue-500'
+                  }`}
+                />
+              </div>
             </div>
 
             {error && (
@@ -462,43 +458,45 @@ function LoginPageContent() {
               </div>
             )}
 
-            <Button
+            <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-6 text-lg rounded-lg shadow-lg hover:shadow-blue-500/50 transition-all"
+              className="w-full px-6 py-3.5 sm:py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-bold text-base sm:text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-xl hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   {isSignUp ? 'Creating Account...' : 'Signing In...'}
-                </span>
+                </>
               ) : (
-                <span>{isSignUp ? 'Create Account' : 'Sign In'}</span>
+                <>
+                  {isSignUp ? 'Create Account' : 'Sign In'}
+                  <ArrowRight className="w-5 h-5" />
+                </>
               )}
-            </Button>
+            </button>
           </form>
 
-          <div className="mt-8 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                const newIsSignUp = !isSignUp;
-                setIsSignUp(newIsSignUp);
-                setError(null);
-                // Disable master login mode if switching to sign up
-                if (newIsSignUp) {
-                  setIsMasterLogin(false);
-                }
-              }}
-              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              {isSignUp
-                ? 'Already have an account? Sign in'
-                : "Don't have an account? Create one"}
-            </button>
+          <div className="mt-6 sm:mt-8 text-center">
+            {isSignUp ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(false);
+                  setError(null);
+                }}
+                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Already have an account? Sign in
+              </button>
+            ) : (
+              <Link
+                href="/signup"
+                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Don't have an account? Create one
+              </Link>
+            )}
           </div>
         </div>
 

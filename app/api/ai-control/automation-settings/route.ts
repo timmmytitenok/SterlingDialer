@@ -33,7 +33,27 @@ export async function POST(request: Request) {
       );
     }
 
-    // Update settings
+    // Convert day indices to day names for database
+    const dayNamesMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const autoStartDays = scheduleDays.map((index: number) => dayNamesMap[index]);
+    const dailyBudgetCents = Math.round(dailySpendLimit * 100);
+
+    // Update dialer_settings (main table)
+    const { error: dialerError } = await supabase
+      .from('dialer_settings')
+      .upsert({
+        user_id: user.id,
+        auto_start_enabled: scheduleEnabled,
+        auto_start_time: scheduleTime,
+        auto_start_days: autoStartDays,
+        daily_budget_cents: dailyBudgetCents,
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (dialerError) throw dialerError;
+
+    // ALSO update ai_control_settings for backwards compatibility
     const { error } = await supabase
       .from('ai_control_settings')
       .update({
@@ -44,7 +64,10 @@ export async function POST(request: Request) {
       })
       .eq('user_id', user.id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating ai_control_settings:', error);
+      // Don't fail the request, just log it
+    }
 
     return NextResponse.json({ 
       success: true, 

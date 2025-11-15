@@ -2,24 +2,23 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Clock, Calendar, DollarSign, Zap, Check, X, AlertCircle } from 'lucide-react';
+import { Clock, Calendar, DollarSign, Zap, Check, X, AlertCircle, Info, CheckCircle } from 'lucide-react';
 
-interface AutomationSettingsSimpleProps {
+interface AutomationSettingsRefactoredProps {
   userId: string;
   initialSettings: any;
 }
 
-export function AutomationSettingsSimple({ userId, initialSettings }: AutomationSettingsSimpleProps) {
+export function AutomationSettingsRefactored({ userId, initialSettings }: AutomationSettingsRefactoredProps) {
   const [autoScheduleEnabled, setAutoScheduleEnabled] = useState(initialSettings?.schedule_enabled || false);
   const [startTime, setStartTime] = useState(initialSettings?.schedule_time || '09:00');
   const [selectedDays, setSelectedDays] = useState<number[]>(initialSettings?.schedule_days || [1, 2, 3, 4, 5]);
   const [dailyBudget, setDailyBudget] = useState(initialSettings?.daily_spend_limit || 25);
-  const [isUnlimited, setIsUnlimited] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const supabase = createClient();
-
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const toggleDay = (dayIndex: number) => {
@@ -34,9 +33,9 @@ export function AutomationSettingsSimple({ userId, initialSettings }: Automation
     setAutoScheduleEnabled(true);
   };
 
-  const handleTurnOff = () => {
+  const handleDisable = async () => {
     setAutoScheduleEnabled(false);
-    saveSettings(false);
+    await saveSettings(false);
   };
 
   const saveSettings = async (enabled: boolean = autoScheduleEnabled) => {
@@ -57,7 +56,12 @@ export function AutomationSettingsSimple({ userId, initialSettings }: Automation
       });
 
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Settings saved successfully!' });
+        const selectedDayNames = selectedDays.map(d => dayNames[d]).join(', ');
+        const formattedTime = new Date(`2000-01-01T${startTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        setMessage({ 
+          type: 'success', 
+          text: `Automation updated. Your AI will start at ${formattedTime}, ${selectedDayNames}, and stop after $${dailyBudget} of calls.` 
+        });
       } else {
         const error = await response.json();
         setMessage({ type: 'error', text: error.error || 'Failed to save' });
@@ -66,7 +70,25 @@ export function AutomationSettingsSimple({ userId, initialSettings }: Automation
       setMessage({ type: 'error', text: 'Failed to save settings' });
     } finally {
       setSaving(false);
-      setTimeout(() => setMessage(null), 3000);
+      setTimeout(() => setMessage(null), 5000);
+    }
+  };
+
+  const getSelectedDaysText = () => {
+    if (selectedDays.length === 0) return 'No days selected';
+    if (selectedDays.length === 7) return 'Every day';
+    return selectedDays.map(d => dayNames[d]).join(', ');
+  };
+
+  const formatTime = (time: string) => {
+    try {
+      return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        hour12: true 
+      });
+    } catch {
+      return time;
     }
   };
 
@@ -75,10 +97,10 @@ export function AutomationSettingsSimple({ userId, initialSettings }: Automation
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Dialer Automation</h1>
-        <p className="text-gray-400">Automate when and how your AI dials leads</p>
+        <p className="text-gray-400">Set when and how your AI calls leads — fully automatic</p>
       </div>
 
-      {/* Message Banner */}
+      {/* Success/Error Message */}
       {message && (
         <div className={`p-4 rounded-xl border-2 backdrop-blur-sm animate-in slide-in-from-top duration-300 ${
           message.type === 'success' 
@@ -87,18 +109,19 @@ export function AutomationSettingsSimple({ userId, initialSettings }: Automation
         }`}>
           <div className="flex items-center gap-3">
             {message.type === 'success' ? (
-              <Check className="w-5 h-5 flex-shrink-0" />
+              <CheckCircle className="w-5 h-5 flex-shrink-0" />
             ) : (
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
             )}
-            <p>{message.text}</p>
+            <p className="text-sm">{message.text}</p>
           </div>
         </div>
       )}
 
-      {/* Auto-Start Schedule Card */}
+      {/* Main Card */}
       <div className="bg-[#1A2647] rounded-2xl border border-gray-800 overflow-hidden">
         <div className="p-6">
+          {/* Header */}
           <div className="flex items-center gap-4 mb-6">
             <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg" style={{ boxShadow: '0 0 20px rgba(59, 130, 246, 0.2)' }}>
               <Zap className="w-7 h-7 text-white" />
@@ -110,19 +133,19 @@ export function AutomationSettingsSimple({ userId, initialSettings }: Automation
           </div>
 
           {!autoScheduleEnabled ? (
-            /* Turn On Button */
+            /* Enable Button */
             <button
               onClick={handleTurnOn}
               className="w-full px-8 py-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-bold transition-all hover:scale-105 flex items-center justify-center gap-3 text-lg"
               style={{ boxShadow: '0 0 20px rgba(59, 130, 246, 0.3)' }}
             >
               <Zap className="w-6 h-6" />
-              Turn On Auto-Schedule
+              Enable Automation
             </button>
           ) : (
-            /* Configuration Fields */
+            /* Configuration */
             <div className="space-y-6 animate-in slide-in-from-top duration-500">
-              {/* FIELD 1: Schedule Settings */}
+              {/* SECTION 1: Schedule Settings */}
               <div className="p-6 bg-[#0F172A]/50 rounded-2xl border-2 border-blue-500/30">
                 <h4 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                   <Calendar className="w-6 h-6 text-blue-400" />
@@ -131,10 +154,13 @@ export function AutomationSettingsSimple({ userId, initialSettings }: Automation
                 
                 {/* Start Time */}
                 <div className="mb-6">
-                  <label className="block text-white font-semibold mb-3 flex items-center gap-2">
+                  <label className="block text-white font-semibold mb-2 flex items-center gap-2">
                     <Clock className="w-5 h-5 text-blue-400" />
                     Start Time
                   </label>
+                  <p className="text-gray-400 text-sm mb-3">
+                    The AI will begin calling leads at this time
+                  </p>
                   <input
                     type="time"
                     value={startTime}
@@ -143,11 +169,14 @@ export function AutomationSettingsSimple({ userId, initialSettings }: Automation
                   />
                 </div>
 
-                {/* Days Selection */}
+                {/* Days to Run */}
                 <div>
-                  <label className="block text-white font-semibold mb-3">
+                  <label className="block text-white font-semibold mb-2">
                     Days to Run
                   </label>
+                  <p className="text-gray-400 text-sm mb-3">
+                    Select which days the AI should run
+                  </p>
                   <div className="grid grid-cols-7 gap-2">
                     {dayNames.map((day, index) => (
                       <button
@@ -166,28 +195,55 @@ export function AutomationSettingsSimple({ userId, initialSettings }: Automation
                 </div>
               </div>
 
-              {/* FIELD 2: Daily Budget */}
+              {/* SECTION 2: Daily Budget */}
               <div className="p-6 bg-[#0F172A]/50 rounded-2xl border-2 border-green-500/30">
-                <h4 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                <h4 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                   <DollarSign className="w-6 h-6 text-green-400" />
                   2. Set Daily Budget
+                  <button
+                    onMouseEnter={() => setShowTooltip(true)}
+                    onMouseLeave={() => setShowTooltip(false)}
+                    className="relative ml-1"
+                  >
+                    <Info className="w-4 h-4 text-gray-400 hover:text-blue-400 transition-colors cursor-help" />
+                    {showTooltip && (
+                      <div className="absolute left-0 top-6 w-72 p-3 bg-gray-900 border border-blue-500/30 rounded-lg text-xs text-gray-300 z-50 shadow-xl">
+                        The AI uses your call balance. Setting a daily budget prevents overspending and controls how many leads are dialed each day.
+                      </div>
+                    )}
+                  </button>
                 </h4>
                 
                 {/* Budget Display */}
-                <div className="text-center mb-4">
-                  <p className="text-5xl font-bold text-green-400 mb-2" style={{
+                <div className="text-center mb-4 mt-6">
+                  <p className="text-6xl font-bold text-green-400 mb-2" style={{
                     filter: 'drop-shadow(0 0 15px rgba(16, 185, 129, 0.3))'
                   }}>
                     ${dailyBudget}
                   </p>
-                  <p className="text-gray-400 text-sm">
-                    AI stops when budget is reached
+                  <p className="text-gray-400 mb-3">
+                    AI stops when this budget is reached
                   </p>
+                  
+                  {/* Budget Stats */}
+                  <div className="flex items-center justify-center gap-6 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-blue-400">≈</span>
+                      <span className="text-white font-semibold">{Math.round(dailyBudget * 20)}</span>
+                      <span className="text-gray-400">dials</span>
+                    </div>
+                    <div className="w-1 h-1 bg-gray-600 rounded-full" />
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-400">≈</span>
+                      <span className="text-white font-semibold">{Math.round(dailyBudget / 7.5)}</span>
+                      <span className="text-gray-400">appointments</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Slider */}
-                <div className="space-y-3">
-                  <div className="p-4 bg-[#0F172A]/50 rounded-xl border border-gray-700">
+                <div className="space-y-3 mb-4">
+                  <div className="p-4 bg-[#0B1437]/50 rounded-xl border border-gray-700">
                     <input
                       type="range"
                       min="10"
@@ -205,27 +261,80 @@ export function AutomationSettingsSimple({ userId, initialSettings }: Automation
                     <span>$50</span>
                     <span>$100 Max</span>
                   </div>
+                  <p className="text-blue-300 text-xs text-center italic mt-2">
+                    💡 Most users choose $25–$50/day for healthy calling volume
+                  </p>
                 </div>
+              </div>
 
-                {/* Info */}
-                <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                  <p className="text-blue-300 text-sm mb-2">💡 <strong>How it works:</strong></p>
-                  <ul className="text-gray-300 text-xs space-y-1">
-                    <li>• AI will NOT spend over your budget</li>
-                    <li>• If budget reached, AI stops for the day</li>
-                    <li>• If budget NOT met and calling hours end, AI stops</li>
-                  </ul>
-                  <p className="text-gray-500 text-xs mt-2 italic">Calling hours: 8:00 AM - 9:00 PM</p>
+              {/* How It Works Box */}
+              <div className="p-6 bg-blue-500/10 border-2 border-blue-500/30 rounded-xl">
+                <p className="text-white font-bold mb-4 text-lg">
+                  💡 How It Works
+                </p>
+                <ul className="text-gray-300 space-y-2.5 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400 flex-shrink-0 mt-0.5">•</span>
+                    <span>The AI automatically starts at your chosen time</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400 flex-shrink-0 mt-0.5">•</span>
+                    <span>The AI will <strong className="text-white">NOT</strong> spend over your daily budget</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400 flex-shrink-0 mt-0.5">•</span>
+                    <span>When your budget is reached, the AI stops for the day</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400 flex-shrink-0 mt-0.5">•</span>
+                    <span>If the budget is not reached but calling hours end, the AI stops automatically</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400 flex-shrink-0 mt-0.5">•</span>
+                    <span>You can change or disable automation anytime</span>
+                  </li>
+                </ul>
+                <p className="text-gray-500 text-xs mt-4 italic">
+                  Calling hours: 8:00 AM – 9:00 PM (based on lead timezone)
+                </p>
+              </div>
+
+              {/* Daily Automation Summary Card */}
+              <div className="p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/5 border-2 border-green-500/40 rounded-2xl">
+                <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  Your Daily Automation Summary
+                </h4>
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-gray-400 min-w-[140px]">Starts at:</span>
+                    <span className="text-white font-semibold">{formatTime(startTime)}</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-gray-400 min-w-[140px]">Runs on:</span>
+                    <span className="text-white font-semibold">{getSelectedDaysText()}</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-gray-400 min-w-[140px]">Max spend per day:</span>
+                    <span className="text-green-400 font-semibold">${dailyBudget}</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-gray-400 min-w-[140px]">Status:</span>
+                    <span className="text-green-400 font-semibold flex items-center gap-1.5">
+                      <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                      Enabled
+                    </span>
+                  </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-4 pt-4">
+              <div className="flex gap-4 pt-2">
                 <button
-                  onClick={handleTurnOff}
-                  className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold transition-all hover:scale-105"
+                  onClick={handleDisable}
+                  className="flex-1 px-6 py-4 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold transition-all hover:scale-105"
                 >
-                  Turn Off
+                  Disable Automation
                 </button>
                 <button
                   onClick={() => saveSettings(true)}
@@ -249,6 +358,12 @@ export function AutomationSettingsSimple({ userId, initialSettings }: Automation
                   )}
                 </button>
               </div>
+
+              {selectedDays.length === 0 && (
+                <p className="text-yellow-400 text-sm text-center">
+                  ⚠️ Please select at least one day to run
+                </p>
+              )}
             </div>
           )}
         </div>
