@@ -536,8 +536,8 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
           <div className="grid grid-cols-3 gap-4">
             {/* ROW 1 */}
             {/* Dials Today */}
-            <div className={`bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl p-5 border border-blue-500/20 transition-all duration-500 ${
-              hasChanged('todayCalls') ? 'animate-metric-update shadow-lg shadow-blue-500/50' : ''
+            <div className={`bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl p-5 border border-blue-500/20 transition-all duration-300 hover:scale-105 hover:border-blue-500/40 cursor-pointer ${
+              hasChanged('todayCalls') ? 'animate-metric-update' : ''
             }`}>
               <Phone className="w-8 h-8 text-blue-400 mb-2" />
               <p className="text-sm text-gray-400">Dials Today</p>
@@ -554,8 +554,8 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
             </div>
 
             {/* Minutes Used */}
-            <div className={`bg-gradient-to-br from-purple-500/10 to-purple-600/5 rounded-xl p-5 border border-purple-500/20 transition-all duration-500 ${
-              hasChanged('todayMinutes') ? 'animate-metric-update shadow-lg shadow-purple-500/50' : ''
+            <div className={`bg-gradient-to-br from-purple-500/10 to-purple-600/5 rounded-xl p-5 border border-purple-500/20 transition-all duration-300 hover:scale-105 hover:border-purple-500/40 cursor-pointer ${
+              hasChanged('todayMinutes') ? 'animate-metric-update' : ''
             }`}>
               <Clock className="w-8 h-8 text-purple-400 mb-2" />
               <p className="text-sm text-gray-400">Minutes Used</p>
@@ -572,8 +572,8 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
             </div>
 
             {/* Spend Today */}
-            <div className={`bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 rounded-xl p-5 border border-emerald-500/20 transition-all duration-500 ${
-              hasChanged('todaySpendCents') ? 'animate-metric-update shadow-lg shadow-emerald-500/50' : ''
+            <div className={`bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 rounded-xl p-5 border border-emerald-500/20 transition-all duration-300 hover:scale-105 hover:border-emerald-500/40 cursor-pointer ${
+              hasChanged('todaySpendCents') ? 'animate-metric-update' : ''
             }`}>
               <DollarSign className="w-8 h-8 text-emerald-400 mb-2" />
               <p className="text-sm text-gray-400">Spend Today</p>
@@ -584,8 +584,8 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
 
             {/* ROW 2 */}
             {/* Calls Per Appointment */}
-            <div className={`bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-xl p-5 border border-orange-500/20 transition-all duration-500 ${
-              hasChanged('callsPerAppointment') ? 'animate-metric-update shadow-lg shadow-orange-500/50' : ''
+            <div className={`bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-xl p-5 border border-orange-500/20 transition-all duration-300 hover:scale-105 hover:border-orange-500/40 cursor-pointer ${
+              hasChanged('callsPerAppointment') ? 'animate-metric-update' : ''
             }`}>
               <ListChecks className="w-8 h-8 text-orange-400 mb-2" />
               <p className="text-sm text-gray-400">Calls Per Appointment</p>
@@ -604,8 +604,8 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
             </div>
 
             {/* Appointments */}
-            <div className={`bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-xl p-5 border border-green-500/20 transition-all duration-500 ${
-              hasChanged('todayAppointments') ? 'animate-metric-update shadow-lg shadow-green-500/50' : ''
+            <div className={`bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-xl p-5 border border-green-500/20 transition-all duration-300 hover:scale-105 hover:border-green-500/40 cursor-pointer ${
+              hasChanged('todayAppointments') ? 'animate-metric-update' : ''
             }`}>
               <Calendar className="w-8 h-8 text-green-400 mb-2" />
               <p className="text-sm text-gray-400">Appointments</p>
@@ -626,8 +626,12 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
               status?.lowBalance 
                 ? 'from-red-500/10 to-red-600/5 border-red-500/20'
                 : 'from-indigo-500/10 to-indigo-600/5 border-indigo-500/20'
-            } transition-all duration-500 ${
-              hasChanged('callBalanceCents') ? 'animate-metric-update shadow-lg shadow-indigo-500/50' : ''
+            } transition-all duration-300 hover:scale-105 cursor-pointer ${
+              status?.lowBalance 
+                ? 'hover:border-red-500/40'
+                : 'hover:border-indigo-500/40'
+            } ${
+              hasChanged('callBalanceCents') ? 'animate-metric-update' : ''
             }`}>
               <TrendingUp className={`w-8 h-8 mb-2 ${status?.lowBalance ? 'text-red-400' : 'text-indigo-400'}`} />
               <p className="text-sm text-gray-400">Remaining Call Balance</p>
