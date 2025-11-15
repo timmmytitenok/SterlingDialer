@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { 
   Activity, Zap, Phone, Clock, TrendingUp, Rocket, DollarSign, 
-  Target, Calendar, AlertCircle, CheckCircle, Play, Square, RefreshCw, ListChecks, Settings 
+  Target, Calendar, AlertCircle, CheckCircle, Play, Square, RefreshCw, ListChecks, Settings, Check, X 
 } from 'lucide-react';
 import Link from 'next/link';
+import { DailyBudgetSelector } from './daily-budget-selector';
 
 interface AIDialerControlProps {
   userId: string;
@@ -16,6 +17,9 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [showOverrideModal, setShowOverrideModal] = useState(false);
+  const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [dailyBudget, setDailyBudget] = useState(25);
+  const [isUnlimitedBudget, setIsUnlimitedBudget] = useState(false);
   const [errorModal, setErrorModal] = useState<{ show: boolean; title: string; message: string }>({
     show: false,
     title: '',
@@ -96,11 +100,29 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
     setErrorModal({ show: true, title, message });
   };
 
-  const handleLaunch = async () => {
+  const handleBudgetConfirm = async (budget: number, unlimited: boolean) => {
+    const finalBudget = unlimited ? 999999 : budget;
+    setShowBudgetModal(false);
+    await handleLaunch(finalBudget);
+  };
+
+  const handleLaunch = async (budgetOverride?: number) => {
     setActionLoading(true);
     setIsLaunching(true);
     
     try {
+      // If budget was provided, save it to settings first
+      if (budgetOverride !== undefined) {
+        await fetch('/api/ai-control/automation-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            dailySpendLimit: budgetOverride,
+          }),
+        });
+      }
+      
       // Launch sequence animation
       setLaunchStep(1); // Preparing...
       await new Promise(resolve => setTimeout(resolve, 600));
@@ -380,6 +402,9 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                     handleStop();
                   } else if (autoScheduleEnabled && isPausedBudget) {
                     setShowOverrideModal(true); // Open confirmation modal
+                  } else if (!autoScheduleEnabled) {
+                    // Manual launch - show budget modal first
+                    setShowBudgetModal(true);
                   } else {
                     handleLaunch();
                   }
@@ -709,6 +734,104 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                   className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 transition-all duration-500 animate-shimmer-progress"
                   style={{ width: `${launchStep * 25}%` }}
                 />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Daily Budget Modal (for manual launch) */}
+      {showBudgetModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-[#1A2647] rounded-2xl border border-gray-800 max-w-lg w-full shadow-2xl animate-in slide-in-from-bottom duration-500">
+            {/* Header */}
+            <div className="p-6 border-b border-gray-800">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-green-600 flex items-center justify-center shadow-lg">
+                  <DollarSign className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Set Daily Budget</h2>
+                  <p className="text-gray-400 text-sm">Choose your spending limit for today</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Budget Display */}
+              <div className="text-center">
+                <p className="text-5xl font-bold text-emerald-400 mb-2">
+                  {isUnlimitedBudget ? 'Unlimited' : `$${dailyBudget}`}
+                </p>
+                <p className="text-sm text-gray-400">
+                  {isUnlimitedBudget 
+                    ? 'AI will run until calling hours end'
+                    : `AI stops when $${dailyBudget} is spent today`
+                  }
+                </p>
+              </div>
+
+              {/* Slider */}
+              <div className="space-y-3">
+                <input
+                  type="range"
+                  min="0"
+                  max="101"
+                  value={isUnlimitedBudget ? 101 : dailyBudget}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    if (value > 100) {
+                      setIsUnlimitedBudget(true);
+                      setDailyBudget(100);
+                    } else {
+                      setIsUnlimitedBudget(false);
+                      setDailyBudget(value);
+                    }
+                  }}
+                  className="w-full h-3 rounded-full appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #10B981 0%, #10B981 ${isUnlimitedBudget ? 100 : (dailyBudget / 100) * 100}%, #1F2937 ${isUnlimitedBudget ? 100 : (dailyBudget / 100) * 100}%, #1F2937 100%)`
+                  }}
+                />
+                <div className="flex items-center justify-between text-xs text-gray-400">
+                  <span>$0</span>
+                  <span>$25</span>
+                  <span>$50</span>
+                  <span>$75</span>
+                  <span>$100</span>
+                  <span className="text-purple-400 font-semibold">∞</span>
+                </div>
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <p className="text-blue-300 text-sm font-semibold mb-2">💡 How Daily Budget Works</p>
+                <ul className="text-gray-300 text-xs space-y-1.5 leading-relaxed">
+                  <li>• Spend will <strong className="text-white">NOT go over</strong> your budget</li>
+                  <li>• If budget is not met and calling hours end, AI will stop</li>
+                  <li>• Unlimited runs AI until calling hours are over</li>
+                </ul>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowBudgetModal(false);
+                    setDailyBudget(25);
+                    setIsUnlimitedBudget(false);
+                  }}
+                  className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleLaunch(isUnlimitedBudget ? 999999 : dailyBudget)}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white rounded-xl font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2"
+                >
+                  <Check className="w-5 h-5" />
+                  Launch AI Dialer
+                </button>
               </div>
             </div>
           </div>
