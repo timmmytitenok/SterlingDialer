@@ -41,6 +41,7 @@ type GoogleSheet = {
   last_sync_at?: string;
   lead_count?: number;
   qualified_count?: number;
+  unqualified_count?: number;
   source_type: 'google_sheet';
 };
 
@@ -182,10 +183,18 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
             .eq('user_id', userId)
             .eq('is_qualified', true);
           
+          const { count: unqualifiedCount } = await supabase
+            .from('leads')
+            .select('*', { count: 'exact', head: true })
+            .eq('google_sheet_id', sheet.id)
+            .eq('user_id', userId)
+            .eq('is_qualified', false);
+          
           return { 
             ...sheet, 
             lead_count: totalCount || 0,
             qualified_count: qualifiedCount || 0,
+            unqualified_count: unqualifiedCount || 0,
             source_type: 'google_sheet' as const
           };
         })
@@ -960,6 +969,15 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                                 {sheet.qualified_count || 0} Leads
                               </span>
                             </div>
+                            
+                            {(sheet.unqualified_count || 0) > 0 && (
+                              <div className="flex items-center gap-2 px-4 py-2 bg-yellow-500/10 backdrop-blur-sm rounded-xl border border-yellow-500/30">
+                                <div className="w-2 h-2 rounded-full bg-yellow-400" />
+                                <span className="text-yellow-300 font-semibold text-sm whitespace-nowrap">
+                                  {sheet.unqualified_count} Unqualified
+                                </span>
+                              </div>
+                            )}
                           </div>
                           
                           {/* Action Buttons */}
