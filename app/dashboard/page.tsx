@@ -5,6 +5,8 @@ import { RevenueProfitChart } from '@/components/revenue-profit-chart';
 import { CallActivityChart } from '@/components/call-activity-chart';
 import { DashboardStatsGrid } from '@/components/dashboard-stats-grid';
 import { TrialCountdownBanner } from '@/components/trial-countdown-banner';
+import { DashboardRefresher } from '@/components/dashboard-refresher';
+import { getStartOfTodayInUserTimezone, getDaysAgoInUserTimezone, getTodayDateString, getDateStringDaysAgo } from '@/lib/timezone-helpers';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -35,13 +37,25 @@ export default async function DashboardPage() {
 
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
 
-  // Get current date ranges
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOf7Days = new Date(now);
-  startOf7Days.setDate(now.getDate() - 7);
-  const startOf30Days = new Date(now);
-  startOf30Days.setDate(now.getDate() - 30);
+  // Get user's timezone for accurate day reset (fixes 7pm reset bug!)
+  const { data: aiSettings } = await supabase
+    .from('ai_control_settings')
+    .select('user_timezone')
+    .eq('user_id', user.id)
+    .single();
+
+  const userTimezone = aiSettings?.user_timezone || 'America/New_York'; // Default to EST if not set
+  console.log(`🌍 User timezone: ${userTimezone} (Day resets at midnight in this timezone, not UTC!)`);
+
+  // Get current date ranges IN USER'S TIMEZONE (not UTC!)
+  // This fixes the bug where day was resetting at 7pm instead of midnight
+  const startOfTodayISO = getStartOfTodayInUserTimezone(userTimezone);
+  const startOf7DaysISO = getDaysAgoInUserTimezone(userTimezone, 7);
+  const startOf30DaysISO = getDaysAgoInUserTimezone(userTimezone, 30);
+  const todayDateString = getTodayDateString(userTimezone);
+
+  console.log(`📅 Today starts at: ${startOfTodayISO} (midnight in ${userTimezone})`);
+  console.log(`📅 Today's date: ${todayDateString}`);
 
   // Fetch all calls data with fresh query
   const { data: allCalls, error: allCallsError } = await supabase
@@ -57,19 +71,19 @@ export default async function DashboardPage() {
     .from('calls')
     .select('*')
     .eq('user_id', user.id)
-    .gte('created_at', startOfToday.toISOString());
+    .gte('created_at', startOfTodayISO);
 
   const { data: last7DaysCalls } = await supabase
     .from('calls')
     .select('*')
     .eq('user_id', user.id)
-    .gte('created_at', startOf7Days.toISOString());
+    .gte('created_at', startOf7DaysISO);
 
   const { data: last30DaysCalls } = await supabase
     .from('calls')
     .select('*')
     .eq('user_id', user.id)
-    .gte('created_at', startOf30Days.toISOString());
+    .gte('created_at', startOf30DaysISO);
 
   // Calculate metrics
   const totalCallsToday = todayCalls?.length || 0;
@@ -85,18 +99,15 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false });
 
   const appointmentsToday = allAppointmentsData?.filter(apt => {
-    const aptDate = new Date(apt.created_at);
-    return aptDate >= startOfToday;
+    return apt.created_at >= startOfTodayISO;
   }).length || 0;
 
   const appointments7Days = allAppointmentsData?.filter(apt => {
-    const aptDate = new Date(apt.created_at);
-    return aptDate >= startOf7Days;
+    return apt.created_at >= startOf7DaysISO;
   }).length || 0;
 
   const appointments30Days = allAppointmentsData?.filter(apt => {
-    const aptDate = new Date(apt.created_at);
-    return aptDate >= startOf30Days;
+    return apt.created_at >= startOf30DaysISO;
   }).length || 0;
 
   // Total calls = ALL calls (answered + not answered)
@@ -139,13 +150,11 @@ export default async function DashboardPage() {
 
   // Calculate stats for different time periods
   const policiesSold7Days = soldPolicies?.filter(p => {
-    const soldDate = new Date(p.sold_at);
-    return soldDate >= startOf7Days;
+    return p.sold_at >= startOf7DaysISO;
   }).length || 0;
 
   const policiesSold30Days = soldPolicies?.filter(p => {
-    const soldDate = new Date(p.sold_at);
-    return soldDate >= startOf30Days;
+    return p.sold_at >= startOf30DaysISO;
   }).length || 0;
 
   // Calculate connected calls for different periods
@@ -165,8 +174,8 @@ export default async function DashboardPage() {
   const transfers7Days = last7DaysCalls?.filter(c => c.outcome === 'live_transfer').length || 0;
   const transfers30Days = last30DaysCalls?.filter(c => c.outcome === 'live_transfer').length || 0;
 
-  // ENSURE TODAY'S REVENUE RECORD EXISTS with base cost
-  const today = new Date().toISOString().split('T')[0];
+  // ENSURE TODAY'S REVENUE RECORD EXISTS with base cost (using user's timezone!)
+  const today = todayDateString; // Use the date string in user's timezone, not UTC
   
   // Get user's subscription to calculate daily base cost
   const { data: subscription } = await supabase
@@ -179,7 +188,9 @@ export default async function DashboardPage() {
   // Calculate daily base cost
   let dailyBaseCost = 0;
   if (subscription) {
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    // Get current date in user's timezone for month calculation
+    const nowInUserTZ = new Date(new Date().toLocaleString('en-US', { timeZone: userTimezone }));
+    const daysInMonth = new Date(nowInUserTZ.getFullYear(), nowInUserTZ.getMonth() + 1, 0).getDate();
     let monthlyPrice = 0;
     
     // Updated pricing (November 2024)
@@ -194,7 +205,7 @@ export default async function DashboardPage() {
     console.log('='.repeat(60));
     console.log(`💰 DAILY BASE COST (${subscription.subscription_tier.toUpperCase()})`);
     console.log(`   Monthly Price: $${monthlyPrice}`);
-    console.log(`   Days in ${new Date().toLocaleString('en-US', { month: 'long' })}: ${daysInMonth}`);
+    console.log(`   Days in ${nowInUserTZ.toLocaleString('en-US', { month: 'long', timeZone: userTimezone })}: ${daysInMonth}`);
     console.log(`   Daily Cost: $${monthlyPrice} ÷ ${daysInMonth} = $${dailyBaseCost.toFixed(2)}/day`);
     console.log('='.repeat(60));
     console.log('');
@@ -240,17 +251,19 @@ export default async function DashboardPage() {
 
   console.log(`📊 Revenue data fetched: ${revenueData?.length || 0} records`);
 
-  // Prepare chart data
+  // Prepare chart data (using user's timezone for accurate date boundaries!)
   const monthlyRevenueData = [];
   for (let i = 29; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getDateStringDaysAgo(userTimezone, i);
     
     const dayRevenue = revenueData?.find(r => r.date === dateStr);
     
+    // Create a date object from the string to format it
+    const [year, month, day] = dateStr.split('-');
+    const displayDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    
     monthlyRevenueData.push({
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      date: displayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       revenue: dayRevenue?.revenue || 0,
       costs: dayRevenue?.total_ai_cost || 0,
       profit: dayRevenue?.profit || 0,
@@ -259,8 +272,7 @@ export default async function DashboardPage() {
 
   // Calculate costs for LAST 30 DAYS only (to match the chart period)
   const costs30Days = revenueData?.filter(r => {
-    const revDate = new Date(r.date);
-    return revDate >= startOf30Days;
+    return r.date >= startOf30DaysISO.split('T')[0]; // Compare date strings
   }).reduce((sum, r) => sum + (r.total_ai_cost || 0), 0) || 0;
 
   const totalRevenue = revenueData?.reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;
@@ -269,13 +281,11 @@ export default async function DashboardPage() {
 
   // Calculate revenue for different periods
   const revenue7Days = revenueData?.filter(r => {
-    const revDate = new Date(r.date);
-    return revDate >= startOf7Days;
+    return r.date >= startOf7DaysISO.split('T')[0]; // Compare date strings
   }).reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;
 
   const revenue30Days = revenueData?.filter(r => {
-    const revDate = new Date(r.date);
-    return revDate >= startOf30Days;
+    return r.date >= startOf30DaysISO.split('T')[0]; // Compare date strings
   }).reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;
 
   // Calculate TODAY's specific stats
@@ -285,23 +295,23 @@ export default async function DashboardPage() {
   const callbacksToday = todayCalls?.filter(c => c.outcome === 'callback_later').length || 0;
   const transfersToday = todayCalls?.filter(c => c.outcome === 'live_transfer').length || 0;
   const policiesSoldToday = soldPolicies?.filter(p => {
-    const soldDate = new Date(p.sold_at);
-    return soldDate >= startOfToday;
+    return p.sold_at >= startOfTodayISO;
   }).length || 0;
   const revenueToday = revenueData?.filter(r => {
-    const revDate = new Date(r.date);
-    return revDate >= startOfToday;
+    return r.date === today; // Compare date strings
   }).reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;
 
-  // Prepare call activity chart data
+  // Prepare call activity chart data (using user's timezone for accurate date boundaries!)
   const callActivityData = [];
   for (let i = 29; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getDateStringDaysAgo(userTimezone, i);
+    
+    // Get start and end of this day in user's timezone
+    const dayStartISO = getDaysAgoInUserTimezone(userTimezone, i);
+    const dayEndISO = i > 0 ? getDaysAgoInUserTimezone(userTimezone, i - 1) : new Date().toISOString();
     
     const dayCalls = allCalls?.filter(call => 
-      call.created_at.startsWith(dateStr)
+      call.created_at >= dayStartISO && call.created_at < dayEndISO
     ) || [];
     
     const answeredCalls = dayCalls.filter(call => call.disposition === 'answered' || call.connected === true).length;
@@ -310,12 +320,15 @@ export default async function DashboardPage() {
     
     // Get policies sold for this day
     const daySoldPolicies = soldPolicies?.filter(policy => {
-      const soldDate = new Date(policy.sold_at);
-      return soldDate.toISOString().split('T')[0] === dateStr;
+      return policy.sold_at >= dayStartISO && policy.sold_at < dayEndISO;
     }).length || 0;
     
+    // Create a date object from the string to format it
+    const [year, month, day] = dateStr.split('-');
+    const displayDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    
     callActivityData.push({
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      date: displayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       totalCalls: dayCalls.length,
       answeredCalls: answeredCalls,
       bookedCalls: bookedCalls,
@@ -325,8 +338,20 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B1437]">
-      <main className="container mx-auto px-4 lg:px-8 py-8">
+    <div className="min-h-screen bg-[#0B1437] relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-3xl -top-40 -left-40 animate-pulse" />
+        <div className="absolute w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-3xl -bottom-40 -right-40 animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+
+      {/* Grid Pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
+
+      {/* Auto-refresh every 5 seconds to show real-time updates */}
+      <DashboardRefresher />
+      
+      <main className="container mx-auto px-4 lg:px-8 py-8 relative z-10">
         {/* Free Trial Countdown Banner */}
         <TrialCountdownBanner />
 

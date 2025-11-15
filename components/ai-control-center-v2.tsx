@@ -7,6 +7,8 @@ import { Activity, Zap, Phone, Clock, TrendingUp, Rocket } from 'lucide-react';
 import { LaunchAIModalV2 } from './launch-ai-modal-v2';
 import { createClient } from '@/lib/supabase/client';
 import type { SubscriptionFeatures } from '@/lib/subscription-helpers';
+import { AutomationSettings } from './automation-settings';
+import { LiveCallStatus } from './live-call-status';
 
 interface AIControlCenterV2Props {
   userId: string;
@@ -16,15 +18,43 @@ interface AIControlCenterV2Props {
   aiSetupStatus?: string;
   setupRequestedAt?: string | null;
   onboardingCompleted?: boolean;
+  callBalance?: number;
+  autoRefillEnabled?: boolean;
+  leadCount?: number;
 }
 
-export function AIControlCenterV2({ userId, initialSettings, hasSubscription, subscriptionFeatures, aiSetupStatus = 'ready', setupRequestedAt, onboardingCompleted = false }: AIControlCenterV2Props) {
+export function AIControlCenterV2({ userId, initialSettings, hasSubscription, subscriptionFeatures, aiSetupStatus = 'ready', setupRequestedAt, onboardingCompleted = false, callBalance = 0, autoRefillEnabled = false, leadCount = 0 }: AIControlCenterV2Props) {
   const [showLaunchModal, setShowLaunchModal] = useState(false);
-  const [showLowBalanceWarning, setShowLowBalanceWarning] = useState(false);
-  const [currentBalance, setCurrentBalance] = useState<number>(0);
   const [aiStatus, setAiStatus] = useState(initialSettings.status);
   const [recentCall, setRecentCall] = useState<any>(null);
   const supabase = createClient();
+
+  // Auto-detect and save user timezone
+  useEffect(() => {
+    const detectAndSaveTimezone = async () => {
+      try {
+        // Get timezone from browser
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        console.log('🌍 Auto-detected timezone:', timezone);
+
+        // Save to database
+        const { error } = await supabase
+          .from('ai_control_settings')
+          .update({ user_timezone: timezone })
+          .eq('user_id', userId);
+
+        if (!error) {
+          console.log('✅ Timezone saved:', timezone);
+        } else {
+          console.error('Error saving timezone:', error);
+        }
+      } catch (error) {
+        console.error('Error detecting timezone:', error);
+      }
+    };
+
+    detectAndSaveTimezone();
+  }, [userId, supabase]);
 
   // Poll for AI status and recent call updates
   useEffect(() => {
@@ -57,6 +87,16 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
   }, [userId, supabase]);
 
   const isRunning = aiStatus === 'running';
+  const autoStartEnabled = initialSettings.schedule_enabled || false;
+  const dailySpendLimit = initialSettings.daily_spend_limit || 0;
+
+  // Check launch requirements
+  const hasSpendLimit = dailySpendLimit > 0;
+  const hasBalance = autoRefillEnabled || callBalance >= 5;
+  const hasLeads = leadCount > 0;
+  
+  // All requirements met
+  const canLaunch = hasSpendLimit && hasBalance && hasLeads && !autoStartEnabled;
 
   // FIRST CHECK: If onboarding is not completed, show onboarding required message
   if (!onboardingCompleted) {
@@ -74,7 +114,7 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
         <main className="container mx-auto px-4 lg:px-8 py-4 md:py-8 relative z-10">
           {/* Header */}
           <div className="mb-4 md:mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2">AI Control Center</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2">AI Dialer</h1>
             <p className="text-sm md:text-base text-gray-400">Complete onboarding to deploy your AI agent</p>
           </div>
 
@@ -204,7 +244,7 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
         <main className="container mx-auto px-4 lg:px-8 py-4 md:py-8 relative z-10">
           {/* Header */}
           <div className="mb-4 md:mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2">AI Control Center</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2">AI Dialer</h1>
             <p className="text-sm md:text-base text-gray-400">Your AI agent is being configured</p>
           </div>
 
@@ -353,7 +393,7 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
         <main className="container mx-auto px-4 lg:px-8 py-8 relative z-10">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">AI Control Center</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">AI Dialer</h1>
             <p className="text-gray-400">Deploy and monitor your AI calling agent</p>
           </div>
 
@@ -459,33 +499,43 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
     setAiStatus('running');
   };
 
-  // Check balance before launching AI
-  const handleLaunchClick = async () => {
+  const handleStop = async () => {
     try {
-      // Fetch current balance
-      const response = await fetch('/api/balance/get');
-      const data = await response.json();
-      
-      if (response.ok && typeof data.balance === 'number') {
-        setCurrentBalance(data.balance);
-        
-        // Check if balance is below $10
-        if (data.balance < 10) {
-          setShowLowBalanceWarning(true);
-          return;
-        }
-        
-        // Balance is sufficient, proceed with launch
-        setShowLaunchModal(true);
-      } else {
-        // If we can't fetch balance, show warning to be safe
-        setShowLowBalanceWarning(true);
+      const response = await fetch('/api/ai-control/stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (response.ok) {
+        setAiStatus('stopped');
       }
     } catch (error) {
-      console.error('Error checking balance:', error);
-      // Show warning if there's an error
-      setShowLowBalanceWarning(true);
+      console.error('Error stopping AI:', error);
     }
+  };
+
+  // Get reason why launch is disabled
+  const getDisabledReason = () => {
+    if (autoStartEnabled) {
+      return 'Disable auto-start to launch manually';
+    }
+    if (!hasSpendLimit) {
+      return 'Set a daily spend limit to launch the AI';
+    }
+    if (!hasBalance) {
+      return 'Add funds or enable auto-refill';
+    }
+    if (!hasLeads) {
+      return 'Upload leads to begin calling';
+    }
+    return '';
+  };
+
+  // Handle launch click - requirements already validated
+  const handleLaunchClick = async () => {
+    if (!canLaunch) return;
+    setShowLaunchModal(true);
   };
 
   // Format outcome for display
@@ -530,65 +580,66 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
       <main className="container mx-auto px-4 lg:px-8 py-4 md:py-8 relative z-10">
         {/* Header */}
         <div className="mb-4 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2">AI Control Center</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2">AI Dialer</h1>
           <p className="text-sm md:text-base text-gray-400">Deploy and monitor your AI calling agent</p>
         </div>
 
         {/* Main Control Panel */}
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {/* Status Display */}
           <div className={`relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl md:rounded-2xl border-2 transition-all duration-500 ${
             isRunning 
               ? 'border-green-500/40 shadow-2xl shadow-green-500/20 p-6 md:p-12' 
-              : 'border-gray-800 p-8 md:p-20 min-h-[400px] md:min-h-[600px] flex flex-col justify-center'
+              : 'border-gray-800 p-8 md:p-12'
           }`}>
-            {/* Status Indicator */}
-            <div className="text-center mb-6 md:mb-8">
+            
+            {/* SECTION 1: Current Status */}
+            <div className="text-center mb-8">
               {/* Animated Icon */}
-              <div className="inline-block mb-4 md:mb-6 relative">
+              <div className="inline-block mb-6 relative">
                 {/* Glow Effect */}
                 {isRunning && (
-                  <div className="absolute inset-0 bg-green-500/30 rounded-2xl md:rounded-3xl blur-2xl md:blur-3xl animate-pulse" />
+                  <div className="absolute inset-0 bg-green-500/30 rounded-3xl blur-3xl animate-pulse" />
                 )}
                 
                 {/* Icon Container */}
-                <div className={`relative w-20 h-20 md:w-32 md:h-32 rounded-2xl md:rounded-3xl flex items-center justify-center border-2 md:border-4 transition-all duration-500 ${
+                <div className={`relative w-24 h-24 md:w-32 md:h-32 rounded-2xl md:rounded-3xl flex items-center justify-center border-4 transition-all duration-500 ${
                   isRunning
                     ? 'bg-gradient-to-br from-green-500/20 to-emerald-600/20 border-green-500 shadow-lg shadow-green-500/30'
                     : 'bg-gray-800/30 border-gray-700'
                 }`}>
                   {isRunning ? (
-                    <Activity className="w-10 h-10 md:w-16 md:h-16 text-green-400 animate-pulse" style={{ animationDuration: '1.5s' }} />
+                    <Activity className="w-12 h-12 md:w-16 md:h-16 text-green-400 animate-pulse" style={{ animationDuration: '1.5s' }} />
                   ) : (
-                    <Zap className="w-10 h-10 md:w-16 md:h-16 text-gray-500" />
+                    <Zap className="w-12 h-12 md:w-16 md:h-16 text-gray-500" />
                   )}
                 </div>
 
-                {/* Orbiting Dots (when running) - hide on mobile */}
+                {/* Orbiting Dots (when running) */}
                 {isRunning && (
                   <>
-                    <div className="hidden md:block absolute top-1/2 left-1/2 w-40 h-40 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                    <div className="absolute top-1/2 left-1/2 w-40 h-40 md:w-48 md:h-48 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
                       <div className="absolute top-0 left-1/2 w-3 h-3 bg-green-400 rounded-full shadow-lg shadow-green-500/50 animate-spin" style={{ animationDuration: '3s', transformOrigin: '0 80px' }} />
                     </div>
-                    <div className="hidden md:block absolute top-1/2 left-1/2 w-48 h-48 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                      <div className="absolute top-0 left-1/2 w-2 h-2 bg-blue-400 rounded-full shadow-lg shadow-blue-500/50 animate-spin" style={{ animationDuration: '4s', animationDelay: '0.5s', transformOrigin: '0 96px' }} />
+                    <div className="absolute top-1/2 left-1/2 w-48 h-48 md:w-56 md:h-56 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                      <div className="absolute top-0 left-1/2 w-2 h-2 bg-blue-400 rounded-full shadow-lg shadow-blue-500/50 animate-spin" style={{ animationDuration: '4s', animationDelay: '0.5s', transformOrigin: '0 112px' }} />
                     </div>
                   </>
                 )}
               </div>
 
               {/* Status Text */}
-              <h2 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">
+              <h2 className="text-3xl md:text-4xl font-bold mb-2">
                 <span className={`transition-colors duration-500 ${
                   isRunning ? 'text-green-400' : 'text-gray-400'
                 }`}>
                   {isRunning ? '🟢 ACTIVE' : '⚪ STANDBY'}
                 </span>
               </h2>
-              <p className={`text-sm md:text-lg transition-colors duration-500 ${
+              <p className={`text-base md:text-lg transition-colors duration-500 ${
                 isRunning ? 'text-green-400/70' : 'text-gray-500'
               }`}>
-                {isRunning ? 'AI Agent is dialing leads' : 'AI Agent ready to deploy'}
+                {isRunning ? 'AI Agent is dialing leads' : 'AI Agent ready'}
               </p>
             </div>
 
@@ -629,27 +680,155 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
               </div>
             )}
 
-            {/* Launch Button (only when stopped) */}
+            {/* SECTION 2: Requirements Checklist (only when stopped) */}
             {!isRunning && (
-              <div className="mt-6 md:mt-8 text-center">
+              <div className="mb-8">
+                <div className="bg-[#0B1437]/60 rounded-xl p-6 border border-gray-700/40">
+                  <h3 className="text-lg font-semibold text-white mb-4 text-center">Requirements Checklist</h3>
+                  <div className="space-y-3">
+                    {/* Daily Spend Limit */}
+                    <div className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                      hasSpendLimit 
+                        ? 'bg-green-500/10 border-green-500/30' 
+                        : 'bg-gray-800/50 border-gray-700/30'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                          hasSpendLimit ? 'bg-green-500' : 'bg-gray-600'
+                        }`}>
+                          {hasSpendLimit ? (
+                            <span className="text-white text-xs font-bold">✓</span>
+                          ) : (
+                            <span className="text-white text-xs font-bold">✗</span>
+                          )}
+                        </div>
+                        <span className={`text-sm font-medium ${hasSpendLimit ? 'text-green-400' : 'text-gray-400'}`}>
+                          Daily spend limit {hasSpendLimit ? 'set' : 'not set'}
+                          {hasSpendLimit && <span className="text-gray-500 ml-2">(${dailySpendLimit})</span>}
+                        </span>
+                      </div>
+                      {!hasSpendLimit && (
+                        <span className="text-xs text-blue-400 hover:text-blue-300 cursor-pointer">
+                          Set limit ↓
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Call Balance */}
+                    <div className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                      hasBalance 
+                        ? 'bg-green-500/10 border-green-500/30' 
+                        : 'bg-gray-800/50 border-gray-700/30'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                          hasBalance ? 'bg-green-500' : 'bg-gray-600'
+                        }`}>
+                          {hasBalance ? (
+                            <span className="text-white text-xs font-bold">✓</span>
+                          ) : (
+                            <span className="text-white text-xs font-bold">✗</span>
+                          )}
+                        </div>
+                        <span className={`text-sm font-medium ${hasBalance ? 'text-green-400' : 'text-gray-400'}`}>
+                          Call balance active
+                          {autoRefillEnabled && <span className="text-gray-500 ml-2">(Auto-refill ON)</span>}
+                          {!autoRefillEnabled && callBalance >= 5 && <span className="text-gray-500 ml-2">(${callBalance.toFixed(2)})</span>}
+                        </span>
+                      </div>
+                      {!hasBalance && (
+                        <Link 
+                          href="/dashboard/settings/balance"
+                          className="text-xs text-blue-400 hover:text-blue-300"
+                        >
+                          Add funds →
+                        </Link>
+                      )}
+                    </div>
+
+                    {/* Leads Uploaded */}
+                    <div className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                      hasLeads 
+                        ? 'bg-green-500/10 border-green-500/30' 
+                        : 'bg-gray-800/50 border-gray-700/30'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                          hasLeads ? 'bg-green-500' : 'bg-gray-600'
+                        }`}>
+                          {hasLeads ? (
+                            <span className="text-white text-xs font-bold">✓</span>
+                          ) : (
+                            <span className="text-white text-xs font-bold">✗</span>
+                          )}
+                        </div>
+                        <span className={`text-sm font-medium ${hasLeads ? 'text-green-400' : 'text-gray-400'}`}>
+                          Leads uploaded
+                          {hasLeads && <span className="text-gray-500 ml-2">({leadCount} pending)</span>}
+                        </span>
+                      </div>
+                      {!hasLeads && (
+                        <Link 
+                          href="/dashboard/leads"
+                          className="text-xs text-blue-400 hover:text-blue-300"
+                        >
+                          Upload →
+                        </Link>
+                      )}
+                    </div>
+
+                    {/* Auto-start (Optional) */}
+                    <div className="flex items-center gap-3 p-3 bg-[#1A2647]/50 rounded-lg border border-gray-700/30">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                        !autoStartEnabled ? 'bg-green-500' : 'bg-blue-500'
+                      }`}>
+                        <span className="text-white text-xs font-bold">{!autoStartEnabled ? '✓' : '✗'}</span>
+                      </div>
+                      <span className={`flex-1 text-sm ${!autoStartEnabled ? 'text-green-400' : 'text-blue-400'}`}>
+                        Auto-start disabled
+                        <span className="text-gray-500 ml-2">(Optional)</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 3: Launch Button (only when stopped) */}
+            {!isRunning && (
+              <div className="text-center">
                 <button
                   onClick={handleLaunchClick}
-                  className="group relative px-8 md:px-12 py-3.5 md:py-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-bold text-lg md:text-xl rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50"
+                  disabled={!canLaunch}
+                  className={`group relative px-12 py-5 rounded-xl font-bold text-xl transition-all duration-300 ${
+                    canLaunch
+                      ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50'
+                      : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                  }`}
+                  title={!canLaunch ? getDisabledReason() : ''}
                 >
-                  <span className="relative z-10 flex items-center gap-2 md:gap-3">
-                    <Rocket className="w-5 h-5 md:w-6 md:h-6" />
-                    {/* Mobile: Just "Launch" */}
-                    <span className="md:hidden">Launch</span>
-                    {/* Desktop: Full text */}
-                    <span className="hidden md:inline">Launch AI Agent</span>
-                    <Zap className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="relative z-10 flex items-center gap-3">
+                    <Rocket className="w-6 h-6" />
+                    🚀 Launch AI Agent
                   </span>
-                  {/* Shine Effect */}
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
+                  {canLaunch && (
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
+                  )}
                 </button>
-                <p className="text-gray-500 text-xs md:text-sm mt-2 md:mt-3">
-                  Configure and deploy your AI calling agent
-                </p>
+                
+                {!canLaunch && (
+                  <p className="text-red-400 text-sm mt-3 font-medium">
+                    {getDisabledReason()}
+                  </p>
+                )}
+
+                {autoStartEnabled && (
+                  <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <p className="text-blue-300 text-sm">
+                      ℹ️ Auto-start is enabled. Manual launch is disabled to avoid confusion.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -720,6 +899,25 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
               </div>
             </div>
           )}
+
+          {/* Live Call Status (only when AI is running) */}
+          {isRunning && (
+            <div className="mt-6">
+              <LiveCallStatus 
+                userId={userId} 
+                aiStatus={aiStatus} 
+                onStop={handleStop}
+              />
+            </div>
+          )}
+
+          {/* Automation Settings (always visible) */}
+          <div className="mt-6">
+            <AutomationSettings 
+              userId={userId} 
+              initialSettings={initialSettings}
+            />
+          </div>
         </div>
       </main>
 
@@ -739,69 +937,6 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
         />
       )}
 
-      {/* Low Balance Warning Modal */}
-      {showLowBalanceWarning && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4 animate-in fade-in duration-300">
-          <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl md:rounded-2xl border-2 border-red-500/40 max-w-lg w-full shadow-2xl shadow-red-500/20 animate-in fade-in zoom-in duration-300 max-h-[95vh] overflow-y-auto">
-            {/* Header */}
-            <div className="p-4 md:p-6 border-b border-gray-800/50 text-center">
-              <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-3 mb-2 md:mb-3">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-red-500/20 flex items-center justify-center border-2 border-red-500/50 animate-pulse">
-                  <Activity className="w-5 h-5 md:w-6 md:h-6 text-red-400" />
-                </div>
-                <h2 className="text-lg md:text-2xl font-bold text-white">⚠️ Low Balance Warning</h2>
-              </div>
-              <p className="text-gray-400 text-xs md:text-sm">Insufficient funds to launch AI</p>
-            </div>
-
-            {/* Warning Content */}
-            <div className="p-4 md:p-6 space-y-3 md:space-y-4">
-              <div className="bg-red-950/30 border-2 border-red-500/30 rounded-lg md:rounded-xl p-4 md:p-5">
-                <p className="text-red-300 font-semibold mb-2 md:mb-3 text-base md:text-lg text-center">
-                  {currentBalance <= 0 
-                    ? '💳 Your Call Balance is $0' 
-                    : `💳 Balance Too Low: $${currentBalance.toFixed(2)}`}
-                </p>
-                <p className="text-gray-300 text-xs md:text-sm leading-relaxed mb-3 md:mb-4 text-center">
-                  You need at least <strong className="text-white">$10.00</strong> in your call balance to launch the AI calling agent.
-                </p>
-                <div className="bg-[#0B1437]/50 rounded-lg p-3 md:p-4 border border-red-500/20">
-                  <p className="text-white font-bold mb-1 text-xs md:text-base text-center">Current Balance:</p>
-                  <p className="text-2xl md:text-3xl font-bold text-red-400 text-center">
-                    ${currentBalance.toFixed(3)}
-                  </p>
-                  <p className="text-[10px] md:text-xs text-gray-400 mt-2 text-center">
-                    Minimum required: $10.00
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-blue-950/20 border border-blue-500/20 rounded-lg p-3 md:p-4">
-                <p className="text-blue-300 text-xs md:text-sm text-center">
-                  💡 <strong>Quick Tip:</strong> Add funds to your call balance to get started. You can set up auto-refill to avoid interruptions.
-                </p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="p-4 md:p-6 border-t border-gray-800/50 flex flex-col md:flex-row gap-2 md:gap-3">
-              <button
-                onClick={() => setShowLowBalanceWarning(false)}
-                className="px-4 md:px-6 py-2.5 md:py-3 border border-gray-700 bg-transparent text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg transition-all duration-200 font-medium text-sm md:text-base"
-              >
-                Cancel
-              </button>
-              <a
-                href="/dashboard/settings/call-balance"
-                className="flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:shadow-green-500/40 flex items-center justify-center gap-2 text-sm md:text-base"
-              >
-                <span>Add Funds Now</span>
-                <Rocket className="w-4 h-4 md:w-5 md:h-5" />
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
 
       <style jsx global>{`
         @keyframes shimmer {

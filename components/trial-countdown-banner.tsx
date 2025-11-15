@@ -33,15 +33,23 @@ export function TrialCountdownBanner() {
         .single();
 
       // Only show banner if user is on free trial
-      if (profile?.subscription_tier === 'free_trial' && profile.free_trial_days_remaining !== null) {
-        setDaysRemaining(profile.free_trial_days_remaining);
+      if (profile?.subscription_tier === 'free_trial' && profile.free_trial_ends_at) {
+        const trialEndDate = new Date(profile.free_trial_ends_at);
+        const now = new Date();
+        
+        // Calculate days remaining dynamically (don't trust the stored value)
+        const msRemaining = trialEndDate.getTime() - now.getTime();
+        const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
+        const calculatedDaysRemaining = Math.max(0, daysRemaining); // Never show negative
+        
+        setDaysRemaining(calculatedDaysRemaining);
         setTotalTrialDays(profile.free_trial_total_days || 30);
         
         // Store dates for reference
-        if (profile.free_trial_started_at && profile.free_trial_ends_at) {
+        if (profile.free_trial_started_at) {
           setTrialStartDate(new Date(profile.free_trial_started_at));
-          setTrialEndDate(new Date(profile.free_trial_ends_at));
         }
+        setTrialEndDate(trialEndDate);
       }
 
       setLoading(false);
@@ -161,9 +169,9 @@ export function TrialCountdownBanner() {
             {/* Message */}
             <p className="text-xs md:text-sm text-gray-400">
               {colors.urgent ? (
-                <>🔥 <strong className="text-white">Act now!</strong> Choose a plan to keep your AI working</>
+                <>🔥 <strong className="text-white">Trial ending soon!</strong> Billing starts automatically in {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'}</>
               ) : (
-                'Enjoying Sterling AI? Subscribe to continue after your trial'
+                'Your card will be charged automatically when the trial ends'
               )}
             </p>
           </div>

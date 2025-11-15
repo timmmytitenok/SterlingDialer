@@ -6,9 +6,10 @@ import { AddAppointmentModal } from './add-appointment-modal';
 
 interface AddAppointmentButtonProps {
   userId: string;
+  existingAppointments?: any[];
 }
 
-export function AddAppointmentButton({ userId }: AddAppointmentButtonProps) {
+export function AddAppointmentButton({ userId, existingAppointments = [] }: AddAppointmentButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -25,6 +26,7 @@ export function AddAppointmentButton({ userId }: AddAppointmentButtonProps) {
         <AddAppointmentModal
           onClose={() => setIsModalOpen(false)}
           userId={userId}
+          existingAppointments={existingAppointments}
         />
       )}
     </>

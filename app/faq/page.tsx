@@ -19,7 +19,7 @@ export default function FAQPage() {
     },
     {
       question: "How does Sterling AI actually work?",
-      answer: "Simple. You upload your leads, set your daily call limit (up to 1,800 with Elite), and launch. Our AI automatically dials each lead, has natural conversations, handles objections, and books appointments directly to your calendar. You wake up to a full calendar. It's like having 3 SDRs working 24/7 — for a fraction of the cost."
+      answer: "Simple. You upload your leads and launch. Our AI automatically dials each lead, has natural conversations, handles objections, and books appointments directly to your calendar. You wake up to a full calendar. It's like having unlimited SDRs working 24/7 — for a fraction of the cost."
     },
     {
       question: "What happens after I subscribe?",
@@ -27,7 +27,7 @@ export default function FAQPage() {
     },
     {
       question: "How much does it cost per call?",
-      answer: "Call costs vary by plan: Starter is $0.30 per minute, Pro is $0.25 per minute, and Elite is $0.20 per minute. Not all calls get picked up, but on average it takes about 2-3 minutes of conversation to book an appointment."
+      answer: "Calls cost $0.30 per minute for everyone. Not all calls get picked up, but on average it takes about 2-3 minutes of conversation to book an appointment. With the $499/month subscription, you get full platform access and unlimited calling capacity."
     },
     {
       question: "Do I need to provide my own leads?",
@@ -39,15 +39,15 @@ export default function FAQPage() {
     },
     {
       question: "How does the free trial work?",
-      answer: "Start with a 30-day free trial! You get 1 AI Caller and can make up to 600 calls per day. You only pay $0.30 per minute for calls you make. Cancel anytime with no questions asked."
+      answer: "Start with a 30-day free trial! You get full access to all features - unlimited AI agents, unlimited leads, and all premium features. You only pay $0.30 per minute for the calls you make. After 30 days, it's $499/month. Cancel anytime with no questions asked."
     },
     {
       question: "What if I run out of calling credits?",
-      answer: "Sterling AI uses a prepaid system with auto-refill required to run your AI Agent. Call costs are $0.30/min for Starter, $0.25/min for Pro, and $0.20/min for Elite. You can set your auto-refill amount to $25, $50, $100, or $200. When your balance drops below $10, we'll automatically refill it so your AI never stops working."
+      answer: "Sterling AI uses a prepaid system with auto-refill to keep your AI running. Calls cost $0.30 per minute. We auto-refill $25 to your balance when it drops below $10, so your AI never stops working. You can manage your balance and payment methods in your dashboard."
     },
     {
-      question: "What's the difference between Starter, Pro, and Elite?",
-      answer: "Starter ($499/mo + $0.30/min): 1 AI caller, 600 leads/day. Pro ($899/mo + $0.25/min): 2 AI callers, 1,200 leads/day. Elite ($1,499/mo + $0.20/min): 3 AI callers, 2,000 leads/day. More callers = more dials = more appointments. Elite agents can book 3x the meetings and save the most per call."
+      question: "What features are included with SterlingAI Pro Access?",
+      answer: "Everything! For $499/month, you get unlimited AI calling agents, unlimited leads per day, live call transfers, Cal.ai appointment booking, Google Sheets integration, call recordings & transcripts, performance dashboard, priority support, and 24/7 AI operation. One simple plan with all features unlocked."
     },
     {
       question: "Still chasing new leads when you haven't worked the old ones?",
@@ -55,7 +55,7 @@ export default function FAQPage() {
     },
     {
       question: "How fast will I see results?",
-      answer: "Most agents see booked appointments within the first 24 hours of launching. With 600 dials/day on Starter, you're making more calls in ONE day than most agents make in a month. More dials = more conversations = more appointments. It's simple math."
+      answer: "Most agents see booked appointments within the first 24 hours of launching. With unlimited calling capacity, you're making more calls in ONE day than most agents make in a month. More dials = more conversations = more appointments. It's simple math."
     },
     {
       question: "What if my leads are really old — like 1-2 years?",
@@ -64,19 +64,67 @@ export default function FAQPage() {
     {
       question: "Will there be a mobile app?",
       answer: "Yes! iOS and Android app is launching soon. You'll be able to manage your AI dialer, check appointments, and track sales right from your phone."
+    },
+    {
+      question: "Can I upload as many leads as I want?",
+      answer: "Yes. You can upload unlimited leads and run unlimited campaigns. Whether you have 500 leads or 50,000 leads, Sterling AI will work through them systematically. Upload your entire database and let the AI do what it does best."
+    },
+    {
+      question: "Can the AI transfer live calls to me?",
+      answer: "Yes. When a lead is interested and wants to speak with you, the AI can instantly transfer the call to your phone in real-time. You only take the hot, qualified calls — the AI handles all the initial conversations, objections, and qualification."
+    },
+    {
+      question: "Can I set a daily budget or daily call limit?",
+      answer: "Yes. You can limit the number of leads called per day or set a maximum budget for call minutes. This gives you complete control over your spending while the AI works within your parameters. Adjust these settings anytime from your dashboard."
+    },
+    {
+      question: "What about Spanish-speaking leads?",
+      answer: "Spanish support is coming soon! We're working on multilingual AI agents that can handle conversations in Spanish and other languages. If you need this feature now, contact our support team — we may be able to accommodate early access."
+    },
+    {
+      question: "Can I pause or stop my campaigns anytime?",
+      answer: "Yes. You have complete control. Pause, stop, or modify campaign settings instantly from your dashboard. Need to take a break? Click pause. Ready to ramp back up? Click resume. You're always in control."
+    },
+    {
+      question: "What if a prospect gets mad or confused?",
+      answer: "The AI is trained to handle objections professionally and politely. All calls are recorded, so you always know exactly what happened. If someone requests to be removed from your list, the AI notes it immediately and they won't be called again. You stay compliant and professional."
+    },
+    {
+      question: "How accurate are the appointment bookings?",
+      answer: "Very accurate. SterlingAI confirms interest, checks availability, and books a time directly onto your calendar. You'll also get a transcript of every booking call so you know exactly what was discussed. No-show rate is typically under 20% — same as manually booked appointments."
+    },
+    {
+      question: "Does this work for life insurance, final expense, mortgage protection, or Medicare?",
+      answer: "Yes. SterlingAI works with all types of insurance leads. Whether you sell final expense, term life, whole life, mortgage protection, annuities, or Medicare — the AI adapts to your script and product. Just upload your leads and configure your pitch."
+    },
+    {
+      question: "Do I need any tech skills?",
+      answer: "No. Setup takes under 10 minutes. If you can upload a CSV and connect your calendar, you're good to go. Our team also handles the initial AI agent configuration for you — all you do is launch when ready."
+    },
+    {
+      question: "Does SterlingAI sound like a real human?",
+      answer: "Yes. The AI uses natural, human-sounding voices with realistic pauses, tone, and conversation flow. Most prospects don't realize they're speaking to AI until the call ends. It sounds professional, friendly, and conversational."
+    },
+    {
+      question: "Is SterlingAI TCPA compliant?",
+      answer: "Yes — when used correctly. SterlingAI only calls opt-in leads that YOU already own. You must follow standard TCPA guidelines and ensure your leads are compliant. The AI respects do-not-call requests immediately and all calls are recorded for your records."
     }
   ];
 
   return (
-    <div className="min-h-screen bg-[#0B1437]">
+    <div className="min-h-screen bg-[#0B1437] relative">
       <PublicNav />
       <MobilePublicNav />
       
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Animated Background - Fixed to cover entire page */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-3xl top-20 -left-40 animate-pulse" />
-        <div className="absolute w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-3xl bottom-20 -right-40 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-3xl top-1/2 -right-40 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute w-[600px] h-[600px] bg-pink-500/10 rounded-full blur-3xl bottom-20 left-1/4 animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
+
+      {/* Grid Pattern - Fixed to cover entire page */}
+      <div className="fixed inset-0 bg-[linear-gradient(rgba(59,130,246,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
 
       {/* Content */}
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-30">
@@ -111,48 +159,6 @@ export default function FAQPage() {
           </p>
         </div>
 
-        {/* Free Trial Banner */}
-        <div className="mb-12 group relative overflow-hidden bg-gradient-to-r from-green-600/20 to-emerald-600/20 border-2 border-green-500/40 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:border-green-500/60 transition-all duration-300 hover:scale-[1.02] animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '0.2s' }}>
-          <div className="absolute inset-0 bg-gradient-to-r from-green-500/0 via-green-500/10 to-green-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          
-          {/* Mobile: Vertical Stack */}
-          <div className="relative flex flex-col sm:hidden gap-3 text-center">
-            <div className="flex items-center justify-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center border border-green-500/30">
-                <Zap className="w-5 h-5 text-green-400" />
-              </div>
-              <div className="text-left">
-                <p className="text-white font-bold text-base">Start Your 30-Day Free Trial!</p>
-                <p className="text-gray-400 text-xs">Only pay <span className="text-green-400 font-bold">$0.30/min</span> for calls</p>
-              </div>
-            </div>
-            <Link
-              href="/login"
-              className="w-full px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold text-sm rounded-lg transition-all hover:scale-105 hover:shadow-xl hover:shadow-green-500/50"
-            >
-              Start Free Trial →
-            </Link>
-          </div>
-          
-          {/* Desktop: Horizontal Layout */}
-          <div className="relative hidden sm:flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center border border-green-500/30 group-hover:scale-110 transition-transform">
-                <Zap className="w-6 h-6 text-green-400" />
-              </div>
-              <div>
-                <p className="text-white font-bold text-lg">Start Your 30-Day Free Trial!</p>
-                <p className="text-gray-400 text-sm">Only pay <span className="text-green-400 font-bold">$0.30/min</span> for calls <span className="text-white font-bold">YOU</span> make</p>
-              </div>
-            </div>
-            <Link
-              href="/login"
-              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-lg transition-all hover:scale-105 hover:shadow-xl hover:shadow-green-500/50"
-            >
-              Start Free Trial →
-            </Link>
-          </div>
-        </div>
 
         {/* FAQ Accordion */}
         <div className="space-y-4 mb-16">
@@ -196,8 +202,7 @@ export default function FAQPage() {
               Ready to Revive Your Old Leads?
             </h2>
             <p className="text-sm sm:text-base text-gray-300 mb-7 sm:mb-7 max-w-2xl mx-auto leading-relaxed">
-              $499/month. 600 dials a day. Appointments booked automatically.
-              What's one policy worth to you? Sterling AI pays for itself by lunch.
+              $499/month. Unlimited leads. Appointments booked automatically.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
               <Link
@@ -217,7 +222,7 @@ export default function FAQPage() {
             </div>
             <p className="text-xs sm:text-sm text-gray-400 mt-4">
               <Zap className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-green-400" />
-              30 Days Free • Only Pay <span className="text-green-400 font-bold">$0.30/min</span> for Calls
+              30-Day Free Trial — Pay Only for Minutes <span className="font-bold">You</span> Use
             </p>
           </div>
         </div>
@@ -229,7 +234,7 @@ export default function FAQPage() {
             href="/contact"
             className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-semibold transition-colors"
           >
-            Contact Support
+            Contact Us
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

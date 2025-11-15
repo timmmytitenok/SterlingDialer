@@ -91,8 +91,8 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto">
         {/* Header - Compact & Sleek */}
         <div className="flex flex-col gap-8 md:gap-3 mb-6 pt-6 md:pt-0">
-          {/* Top Row: Exit Button Only */}
-          <div className="flex items-center justify-start">
+          {/* Top Row: Navigation Buttons */}
+          <div className="flex items-center justify-between">
             <button
               onClick={() => router.push('/dashboard')}
               className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-900/40 to-red-700/40 hover:from-red-800/50 hover:to-red-600/50 rounded-xl transition-all shadow-lg hover:shadow-red-500/30 text-sm font-medium border border-red-500/30"
@@ -100,6 +100,22 @@ export default function AdminDashboard() {
               <ArrowLeft className="w-4 h-4 text-red-400" />
               <span className="text-red-300">Exit Admin</span>
             </button>
+            
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push('/admin/users')}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-900/40 to-purple-700/40 hover:from-blue-800/50 hover:to-purple-600/50 rounded-xl transition-all shadow-lg hover:shadow-blue-500/30 text-sm font-medium border border-blue-500/30"
+              >
+                <span className="text-blue-300">👥 Manage Users</span>
+              </button>
+              
+              <button
+                onClick={() => router.push('/admin/webhooks')}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-900/40 to-emerald-700/40 hover:from-green-800/50 hover:to-emerald-600/50 rounded-xl transition-all shadow-lg hover:shadow-green-500/30 text-sm font-medium border border-green-500/30"
+              >
+                <span className="text-green-300">🔗 Webhooks</span>
+              </button>
+            </div>
           </div>
           
           {/* Title with Glow Effect */}

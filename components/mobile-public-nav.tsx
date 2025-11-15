@@ -3,14 +3,33 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { X, Sparkles, DollarSign, TrendingUp, HelpCircle, Mail, ChevronRight } from 'lucide-react';
+import { X, Sparkles, DollarSign, TrendingUp, HelpCircle, Mail, ChevronRight, Rocket, ChevronDown, Scale } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 export function MobilePublicNav() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [user, setUser] = useState<any>(null);
+  const [legalOpen, setLegalOpen] = useState(false);
   const pathname = usePathname();
+  const supabase = createClient();
+
+  // Check auth state
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    checkUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   // Handle scroll for header style and hide/show behavior
   useEffect(() => {
@@ -56,7 +75,7 @@ export function MobilePublicNav() {
   const navigation = [
     { name: 'Home', href: '/', icon: Sparkles },
     { name: 'Pricing', href: '/pricing', icon: DollarSign },
-    { name: 'How It Works', href: '/how-it-works', icon: TrendingUp },
+    { name: 'Demo', href: '/demo', icon: TrendingUp },
     // { name: 'Case Studies', href: '/case-studies', icon: TrendingUp }, // Hidden for now
     { name: 'FAQ', href: '/faq', icon: HelpCircle },
     { name: 'Contact', href: '/contact', icon: Mail },
@@ -202,37 +221,121 @@ export function MobilePublicNav() {
                   </Link>
                 );
               })}
+
+              {/* Legal Dropdown */}
+              <div className="mt-2">
+                <button
+                  onClick={() => setLegalOpen(!legalOpen)}
+                  className="group w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 bg-gray-800/20 border border-transparent hover:bg-gradient-to-r hover:from-amber-600/20 hover:to-orange-600/20 hover:border-amber-500/30"
+                  style={{
+                    animation: isOpen ? `slideInRightBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${navigation.length * 0.08}s both` : 'none'
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 bg-gray-800/50 group-hover:bg-gradient-to-br group-hover:from-amber-500/20 group-hover:to-orange-600/20">
+                      <Scale className="w-4 h-4 text-gray-400 group-hover:text-amber-400" />
+                    </div>
+                    <span className="font-medium text-base text-gray-300 group-hover:text-white">
+                      Legal
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-600 group-hover:text-amber-400 transition-all duration-300 ${
+                    legalOpen ? 'rotate-180' : ''
+                  }`} />
+                </button>
+
+                {/* Legal Submenu */}
+                <div className={`overflow-hidden transition-all duration-300 ${
+                  legalOpen ? 'max-h-48 mt-1' : 'max-h-0'
+                }`}>
+                  <div className="space-y-1 ml-4 mt-1">
+                    <Link
+                      href="/terms"
+                      onClick={() => setIsOpen(false)}
+                      className="block px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800/30 transition-colors"
+                    >
+                      Terms of Service
+                    </Link>
+                    <Link
+                      href="/privacy"
+                      onClick={() => setIsOpen(false)}
+                      className="block px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800/30 transition-colors"
+                    >
+                      Privacy Policy
+                    </Link>
+                    <Link
+                      href="/refund-policy"
+                      onClick={() => setIsOpen(false)}
+                      className="block px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800/30 transition-colors"
+                    >
+                      Refund & Cancellation
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
           </nav>
 
-          {/* CTA Section */}
+          {/* CTA Section - Conditional */}
           <div className="p-4 border-t border-gray-800/50 space-y-3">
-            {/* Free Trial Banner */}
-            <div 
-              className="bg-gradient-to-r from-green-600/20 to-emerald-600/20 border border-green-500/30 rounded-xl p-3 text-center"
-              style={{
-                animation: isOpen ? 'fadeInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both' : 'none'
-              }}
-            >
-              <p className="text-xs text-green-400 font-semibold mb-1">🚀 FREE TRIAL</p>
-              <p className="text-sm text-white font-bold mb-1">Start your 30 Days Free Trial!</p>
-              <p className="text-xs text-gray-400">Only pay $0.30/min for calls</p>
-            </div>
+            {!user ? (
+              // LOGGED OUT: Show trial banner + Start Free Trial + Sign In
+              <>
+                {/* Free Trial Banner */}
+                <div 
+                  className="bg-gradient-to-r from-green-600/20 to-emerald-600/20 border border-green-500/30 rounded-xl p-3 text-center"
+                  style={{
+                    animation: isOpen ? 'fadeInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both' : 'none'
+                  }}
+                >
+                  <p className="text-xs text-green-400 font-semibold mb-1">🚀 30-DAY FREE TRIAL</p>
+                  <p className="text-sm text-white font-bold mb-1">$499/month after trial</p>
+                  <p className="text-xs text-gray-400">+ $0.30/min for calls</p>
+                </div>
 
-            {/* Get Started Button */}
-            <Link
-              href="/login"
-              onClick={() => setIsOpen(false)}
-              className="block w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/30 active:scale-95 text-center"
-              style={{
-                animation: isOpen ? 'fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both' : 'none'
-              }}
-            >
-              <span className="flex items-center justify-center gap-2">
-                <Sparkles className="w-5 h-5" />
-                Dashboard
-              </span>
-            </Link>
+                {/* Start Free Trial Button */}
+                <Link
+                  href="/signup"
+                  onClick={() => setIsOpen(false)}
+                  className="block w-full py-3.5 px-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white font-bold rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/40 active:scale-95 text-center"
+                  style={{
+                    animation: isOpen ? 'fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both' : 'none'
+                  }}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <Sparkles className="w-5 h-5" />
+                    Start Free Trial
+                  </span>
+                </Link>
+
+                {/* Sign In Link */}
+                <Link
+                  href="/login"
+                  onClick={() => setIsOpen(false)}
+                  className="block w-full py-3 px-4 text-center text-white/70 hover:text-white font-medium transition-colors"
+                  style={{
+                    animation: isOpen ? 'fadeInUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both' : 'none'
+                  }}
+                >
+                  Sign In
+                </Link>
+              </>
+            ) : (
+              // LOGGED IN: Show Dashboard button
+              <Link
+                href="/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="block w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/40 active:scale-95 text-center"
+                style={{
+                  animation: isOpen ? 'fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both' : 'none'
+                }}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <Rocket className="w-5 h-5" />
+                  Go to Dashboard
+                </span>
+              </Link>
+            )}
           </div>
         </div>
       </div>

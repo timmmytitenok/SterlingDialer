@@ -9,8 +9,8 @@ export function PublicFooter() {
           {/* Company */}
           <div>
             <h3 className="text-white font-bold mb-4">Sterling AI</h3>
-            <p className="text-gray-400 text-sm">
-              Revive your old leads into booked appointments — automatically.
+            <p className="text-gray-400 text-sm leading-relaxed">
+              Revive your old leads into booked appointments.
             </p>
           </div>
 
@@ -18,11 +18,11 @@ export function PublicFooter() {
           <div>
             <h4 className="text-white font-semibold mb-4">Product</h4>
             <div className="space-y-2">
-              <Link href="/how-it-works" className="block text-gray-400 hover:text-white transition-colors text-sm">
-                How It Works
-              </Link>
               <Link href="/pricing" className="block text-gray-400 hover:text-white transition-colors text-sm">
                 Pricing
+              </Link>
+              <Link href="/demo" className="block text-gray-400 hover:text-white transition-colors text-sm">
+                Demo
               </Link>
             </div>
           </div>
@@ -31,11 +31,11 @@ export function PublicFooter() {
           <div>
             <h4 className="text-white font-semibold mb-4">Support</h4>
             <div className="space-y-2">
-              <Link href="/faq" className="block text-gray-400 hover:text-white transition-colors text-sm">
-                FAQ
-              </Link>
               <Link href="/contact" className="block text-gray-400 hover:text-white transition-colors text-sm">
                 Contact Us
+              </Link>
+              <Link href="/faq" className="block text-gray-400 hover:text-white transition-colors text-sm">
+                FAQ
               </Link>
             </div>
           </div>
@@ -49,6 +49,9 @@ export function PublicFooter() {
               </Link>
               <Link href="/privacy" className="block text-gray-400 hover:text-white transition-colors text-sm">
                 Privacy Policy
+              </Link>
+              <Link href="/refund-policy" className="block text-gray-400 hover:text-white transition-colors text-sm">
+                Refund & Cancellation
               </Link>
             </div>
           </div>

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Wallet, Zap, CheckCircle, AlertCircle, Clock, Sparkles, DollarSign, RefreshCw } from 'lucide-react';
+import { Wallet, Zap, CheckCircle, AlertCircle, Clock, Sparkles, DollarSign, RefreshCw, Receipt, ExternalLink, Power } from 'lucide-react';
+import Link from 'next/link';
 
 interface CallBalanceCardProps {
   userId: string;
@@ -19,19 +20,19 @@ export function CallBalanceCard({
   currentTier = 'starter'
 }: CallBalanceCardProps) {
   const [balance, setBalance] = useState(initialBalance);
-  const [refillAmount, setRefillAmount] = useState<number>(initialRefillAmount || 50);
   const [loading, setLoading] = useState(false);
   const [costPerMinute, setCostPerMinute] = useState(0.30);
   const [hasConfigured, setHasConfigured] = useState(initialAutoRefill);
+  const [showConsent, setShowConsent] = useState(false);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [autoRefillOn, setAutoRefillOn] = useState(initialAutoRefill);
 
-  // Auto-refill is now ALWAYS enabled (required for AI operation)
-  const autoRefillEnabled = true;
+  // Fixed refill amount: $25
+  const refillAmount = 25;
 
-  // Refill options: $50, $100
-  const refillOptions = [50, 100];
-
-  // Calculate estimated minutes remaining
+  // Calculate estimated minutes
   const minutesRemaining = Math.floor(balance / costPerMinute);
+  const minutesPerRefill = Math.floor(refillAmount / costPerMinute);
 
   // Fetch cost per minute and balance on mount
   useEffect(() => {
@@ -45,17 +46,17 @@ export function CallBalanceCard({
         if (data.cost_per_minute !== undefined) {
           setCostPerMinute(data.cost_per_minute);
         }
-        if (data.auto_refill_enabled !== undefined && data.auto_refill_amount) {
-          setRefillAmount(data.auto_refill_amount);
+        if (data.auto_refill_enabled !== undefined) {
           setHasConfigured(data.auto_refill_enabled);
+          setAutoRefillOn(data.auto_refill_enabled);
         }
 
-        // Check if returning from balance refill (balance_success=true in URL)
+        // Check if returning from balance refill
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('balance_success') === 'true') {
           console.log('✅ Returned from successful balance refill');
           
-          // Check if this completes a referral sign-up (first refill = account setup complete)
+          // Check if this completes a referral sign-up
           try {
             const referralResponse = await fetch('/api/referral/complete-signup', {
               method: 'POST',
@@ -100,58 +101,65 @@ export function CallBalanceCard({
     return () => clearInterval(interval);
   }, []);
 
-  const handleSaveAutoRefill = async () => {
+  // Handle adding first calling credits
+  const handleAddFirstCredits = () => {
+    setShowConsent(true);
+  };
+
+  // Handle consent and proceed to Stripe
+  const handleContinueToStripe = async () => {
+    if (!consentChecked) {
+      alert('Please accept the terms to continue');
+      return;
+    }
+
     setLoading(true);
     try {
-      // First check if they have a payment method
-      const checkResponse = await fetch('/api/balance/update-settings', {
+      // Create checkout session for first refill
+      const refillResponse = await fetch('/api/balance/refill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          amount: refillAmount,
+          isFirstRefill: true
+        }),
+      });
+      
+      const refillData = await refillResponse.json();
+      
+      if (refillData.success && refillData.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = refillData.url;
+      } else {
+        alert(`Failed to create checkout: ${refillData.error}`);
+        setLoading(false);
+      }
+    } catch (error) {
+      alert('Error processing request');
+      setLoading(false);
+    }
+  };
+
+  // Toggle auto-refill on/off
+  const handleToggleAutoRefill = async () => {
+    setLoading(true);
+    try {
+      const newState = !autoRefillOn;
+      const response = await fetch('/api/balance/update-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          auto_refill_enabled: true,
+          auto_refill_enabled: newState,
           auto_refill_amount: refillAmount,
         }),
       });
 
-      const checkData = await checkResponse.json();
-
-      if (checkData.success) {
-        // Already has payment method - just update settings
-        alert('✅ Auto-refill amount updated!');
-        setHasConfigured(true);
-      } else if (checkData.needsPaymentMethod) {
-        // No payment method - need to purchase first refill
-        const purchaseConfirm = confirm(
-          `💳 Add Card & Purchase First Refill\n\n` +
-          `You'll be charged $${refillAmount} to:\n` +
-          `• Add your card for auto-refill\n` +
-          `• Credit your account with $${refillAmount}\n\n` +
-          `Future refills will happen automatically when balance < $10.\n\n` +
-          `Click OK to proceed to checkout.`
-        );
-        
-        if (purchaseConfirm) {
-          // Create checkout session for first refill
-          const refillResponse = await fetch('/api/balance/refill', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              amount: refillAmount,
-              isFirstRefill: true // Flag to save auto-refill settings after payment
-            }),
-          });
-          
-          const refillData = await refillResponse.json();
-          
-          if (refillData.success && refillData.url) {
-            // Redirect to Stripe Checkout
-            window.location.href = refillData.url;
-          } else {
-            alert(`Failed to create checkout: ${refillData.error}`);
-          }
-        }
+      const data = await response.json();
+      if (data.success) {
+        setAutoRefillOn(newState);
+        alert(`✅ Auto-refill ${newState ? 'enabled' : 'disabled'}!`);
       } else {
-        alert(`Failed to update settings: ${checkData.error}`);
+        alert(`Failed to update: ${data.error}`);
       }
     } catch (error) {
       alert('Error updating settings');
@@ -162,318 +170,242 @@ export function CallBalanceCard({
 
   const balanceStatus = balance < 10 ? 'low' : balance < 25 ? 'medium' : 'good';
 
+  // BEFORE FIRST PAYMENT: Show simple "Add First Calling Credits" button
+  if (!hasConfigured) {
+    return (
+      <div className="space-y-6">
+        {/* Balance Display Card */}
+        <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-8 border-2 border-gray-800 shadow-xl">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500/20 to-emerald-600/20 rounded-2xl border-2 border-green-500/40 mb-4">
+              <Wallet className="w-10 h-10 text-green-400" />
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-2">Call Balance</h2>
+            <p className="text-gray-400">Add credits to start making AI calls</p>
+          </div>
+
+          <div className="bg-[#0B1437]/60 rounded-xl p-6 border border-gray-700 mb-6">
+            <p className="text-gray-400 text-sm text-center mb-2">Current Balance</p>
+            <p className="text-5xl font-bold text-white text-center">${balance.toFixed(2)}</p>
+            <p className="text-gray-500 text-sm text-center mt-2">≈ {minutesRemaining} minutes</p>
+          </div>
+
+          {/* Add First Credits Button */}
+          <button
+            onClick={handleAddFirstCredits}
+            disabled={loading}
+            className="group relative overflow-hidden w-full px-8 py-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 border-2 border-blue-500/50 text-white font-bold text-xl rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className="relative z-10 flex items-center justify-center gap-3">
+              <Sparkles className="w-6 h-6" />
+              💳 Add First Calling Credits
+            </span>
+            {/* Shine Effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+          </button>
+        </div>
+
+        {/* Consent Modal */}
+        {showConsent && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto">
+            <div className="min-h-screen flex items-start justify-center p-4 py-8">
+              <div className="bg-[#1A2647] rounded-2xl border-2 border-blue-500/40 max-w-2xl w-full shadow-2xl">
+                {/* Header */}
+                <div className="p-6 border-b border-gray-800">
+                  <h2 className="text-2xl font-bold text-white mb-2">Before You Continue</h2>
+                  <p className="text-gray-400">Please read and accept the terms below</p>
+                </div>
+
+                {/* Consent Content */}
+                <div className="p-6 space-y-4">
+                  <div className="bg-blue-500/10 border-2 border-blue-500/30 rounded-xl p-5">
+                    <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                      <DollarSign className="w-5 h-5 text-blue-400" />
+                      Auto-Refill Terms
+                    </h3>
+                    <div className="space-y-3 text-sm text-gray-300">
+                      <p>
+                        ✓ You'll be charged <strong className="text-white">${refillAmount}</strong> now to add your first calling credits
+                      </p>
+                      <p>
+                        ✓ When your balance drops below <strong className="text-white">$10</strong>, we'll automatically charge your card <strong className="text-white">${refillAmount}</strong>
+                      </p>
+                      <p>
+                        ✓ This ensures your AI never stops calling due to low balance
+                      </p>
+                      <p>
+                        ✓ You can disable auto-refill anytime from the Call Balance settings
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Checkbox */}
+                  <label className="flex items-start gap-3 p-4 bg-[#0B1437] border-2 border-gray-700 hover:border-blue-500/40 rounded-xl cursor-pointer transition-all">
+                    <input
+                      type="checkbox"
+                      checked={consentChecked}
+                      onChange={(e) => setConsentChecked(e.target.checked)}
+                      className="mt-1 w-5 h-5 rounded border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-300">
+                      I understand and agree that Sterling AI will automatically charge ${refillAmount} when my balance drops below $10. I can cancel auto-refill anytime.
+                    </span>
+                  </label>
+                </div>
+
+                {/* Actions */}
+                <div className="p-6 border-t border-gray-800 flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowConsent(false);
+                      setConsentChecked(false);
+                    }}
+                    className="flex-1 px-6 py-3 border-2 border-gray-700 bg-gray-800/20 text-gray-400 hover:text-white hover:bg-gray-800/40 rounded-lg transition-all font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleContinueToStripe}
+                    disabled={!consentChecked || loading}
+                    className="group relative overflow-hidden flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 border-2 border-blue-500/60 text-white font-bold rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      {loading ? (
+                        <>
+                          <RefreshCw className="w-5 h-5 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          Continue to Payment
+                          <Sparkles className="w-5 h-5" />
+                        </>
+                      )}
+                    </span>
+                    {!loading && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // AFTER FIRST PAYMENT: Show balance, auto-refill status, and transactions
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Main Balance Card */}
-      <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl md:rounded-2xl p-4 md:p-8 border border-green-500/20 relative overflow-hidden shadow-2xl">
+    <div className="space-y-6">
+      {/* Balance Display */}
+      <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-8 border-2 border-green-500/20 shadow-xl relative overflow-hidden">
         {/* Animated Background */}
         <div className="hidden md:block absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute w-[300px] h-[300px] bg-green-500/10 rounded-full blur-3xl -top-20 -right-20 animate-pulse" />
           <div className="absolute w-[300px] h-[300px] bg-emerald-500/10 rounded-full blur-3xl -bottom-20 -left-20 animate-pulse" style={{ animationDelay: '1s' }} />
         </div>
 
-        {/* Header */}
-        <div className="relative z-10 mb-4 md:mb-6">
-          <div className="flex items-start md:items-center justify-between gap-2 md:gap-4">
-            <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-              <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg md:rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-600/20 flex items-center justify-center border-2 border-green-500/50 shadow-lg flex-shrink-0">
-                <Wallet className="w-5 h-5 md:w-7 md:h-7 text-green-400" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-base md:text-2xl font-bold text-white flex items-center gap-1.5 md:gap-2">
-                  <span className="truncate">Call Balance</span>
-                  <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-yellow-400 animate-pulse flex-shrink-0" />
-                </h3>
-                <p className="text-xs md:text-sm text-gray-400 truncate">Prepaid minutes for AI calls</p>
-              </div>
-            </div>
-            {/* Auto-Refill Status Badge */}
-            <div className={`px-2 md:px-4 py-1 md:py-1.5 rounded-md md:rounded-lg border flex-shrink-0 ${
-              hasConfigured 
-                ? 'bg-green-500/20 border-green-500/50' 
-                : 'bg-gray-500/20 border-gray-500/50'
-            }`}>
-              <span className={`font-bold text-[10px] md:text-sm flex items-center gap-1 whitespace-nowrap ${
-                hasConfigured ? 'text-green-400' : 'text-gray-400'
-              }`}>
-                {hasConfigured ? (
-                  <>
-                    <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
-                    <span className="hidden xs:inline">AUTO-REFILL</span> ON
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />
-                    <span className="hidden xs:inline">AUTO-REFILL</span> OFF
-                  </>
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-
         {/* Balance Display */}
-        <div className="relative z-10 bg-[#0B1437]/50 rounded-xl p-4 md:p-8 border-2 border-green-500/40 mb-4 md:mb-6">
-          <div className="text-center">
-            <p className="text-xs md:text-sm text-gray-400 mb-2 md:mb-3 flex items-center justify-center gap-2">
-              <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
-              Current Balance
-            </p>
-            <div className="flex items-baseline justify-center gap-2 md:gap-3 mb-3 md:mb-4 flex-wrap">
-              <span className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
-                ${balance.toFixed(2)}
-              </span>
-              <div className={`px-3 py-1 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-bold ${
-                balanceStatus === 'low' ? 'bg-red-500/20 text-red-400 border-2 border-red-500/40 animate-pulse' :
-                balanceStatus === 'medium' ? 'bg-yellow-500/20 text-yellow-400 border-2 border-yellow-500/40' :
-                'bg-green-500/20 text-green-400 border-2 border-green-500/40'
-              }`}>
-                {balanceStatus === 'low' ? '⚠️ LOW' :
-                 balanceStatus === 'medium' ? '⚡ OK' :
-                 '✓ GOOD'}
-              </div>
-            </div>
-
-            {/* Minutes Display */}
-            <div className="flex items-center justify-center gap-1.5 md:gap-2 text-gray-300 mb-2 md:mb-3">
-              <Clock className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
-              <span className="text-sm md:text-lg">
-                ≈ <strong className="text-white text-lg md:text-2xl">{minutesRemaining.toLocaleString()}</strong> <span className="text-gray-400 text-xs md:text-base">minutes</span>
-              </span>
-            </div>
-
-            {/* Cost Info */}
-            <div className="text-xs md:text-sm text-gray-500">
-              <DollarSign className="w-3 h-3 md:w-4 md:h-4 inline" />
-              <strong className="text-gray-300">${costPerMinute.toFixed(2)}/min</strong>
+        <div className="relative z-10 text-center mb-6">
+          <p className="text-gray-400 text-sm mb-4">Current Balance</p>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <span className="text-7xl md:text-8xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
+              ${balance.toFixed(2)}
+            </span>
+            <div className={`px-4 py-2 rounded-full text-sm font-bold ${
+              balanceStatus === 'low' ? 'bg-red-500/20 text-red-400 border-2 border-red-500/40 animate-pulse' :
+              balanceStatus === 'medium' ? 'bg-yellow-500/20 text-yellow-400 border-2 border-yellow-500/40' :
+              'bg-green-500/20 text-green-400 border-2 border-green-500/40'
+            }`}>
+              {balanceStatus === 'low' ? '⚠️ LOW' :
+               balanceStatus === 'medium' ? '⚡ OK' :
+               '✓ GOOD'}
             </div>
           </div>
-        </div>
-
-        {/* Auto-Refill Required Notice */}
-        {!hasConfigured && (
-          <div className="mb-4 md:mb-6 p-3 md:p-4 bg-amber-500/10 border-2 border-amber-500/40 rounded-lg md:rounded-xl animate-pulse">
-            <div className="flex items-start gap-2 md:gap-3">
-              <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-amber-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-amber-300 font-bold mb-1 text-sm md:text-base">⚠️ Auto-Refill Required</h4>
-                <p className="text-xs md:text-sm text-amber-200/90">
-                  Please set up auto-refill below. This ensures your AI never stops due to low balance.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Low Balance Warning */}
-        {balance < 10 && (
-          <div className="mb-4 md:mb-6 p-3 md:p-4 bg-red-500/10 border-2 border-red-500/40 rounded-lg md:rounded-xl">
-            <div className="flex items-start gap-2 md:gap-3">
-              <Zap className="w-5 h-5 md:w-6 md:h-6 text-red-400 flex-shrink-0 animate-pulse" />
-              <div>
-                <h4 className="text-red-400 font-bold mb-1 text-sm md:text-base">Low Balance Alert!</h4>
-                <p className="text-xs md:text-sm text-gray-300">
-                  Auto-refill will trigger when balance drops below $10. Your card will be charged ${refillAmount}.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Auto-Refill Configuration (Always On) */}
-        <div className="relative z-10 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 md:p-6 border-2 border-blue-500/30">
-          <div className="mb-6">
-            <h4 className="text-white font-bold text-lg flex items-center gap-2 mb-2">
-              <Zap className="w-5 h-5 text-green-400" />
-              Auto-Refill Settings
-            </h4>
-            <p className="text-sm text-gray-400">Required for AI operation • Triggers when balance drops below $10</p>
-          </div>
-
-          {/* Refill Amount Selection: $50, $100 */}
-          <div className="mb-6">
-            <p className="text-white font-medium mb-3 text-sm md:text-base">Select Auto-Refill Amount:</p>
-            
-            <div className="grid grid-cols-2 gap-2 md:gap-3">
-              {refillOptions.map((amount, index) => {
-                const minutes = Math.floor(amount / costPerMinute);
-                const isSelected = refillAmount === amount;
-                
-                // Different gradient for each card
-                const gradients = [
-                  { 
-                    bg: 'from-blue-600/20 to-cyan-600/20',
-                    bgHover: 'from-blue-600/30 to-cyan-600/30',
-                    border: 'border-blue-500/40',
-                    borderHover: 'hover:border-blue-400',
-                    borderSelected: 'border-blue-500',
-                    bgSelected: 'bg-blue-500/15',
-                    shadow: 'shadow-blue-500/30',
-                    text: 'text-blue-400',
-                    badge: 'bg-blue-500',
-                    glow: 'from-blue-500/0 group-hover:from-blue-500/10 group-hover:to-cyan-500/10'
-                  },
-                  { 
-                    bg: 'from-emerald-600/20 to-green-600/20',
-                    bgHover: 'from-emerald-600/30 to-green-600/30',
-                    border: 'border-emerald-500/40',
-                    borderHover: 'hover:border-emerald-400',
-                    borderSelected: 'border-emerald-500',
-                    bgSelected: 'bg-emerald-500/15',
-                    shadow: 'shadow-emerald-500/30',
-                    text: 'text-emerald-400',
-                    badge: 'bg-emerald-500',
-                    glow: 'from-emerald-500/0 group-hover:from-emerald-500/10 group-hover:to-green-500/10'
-                  },
-                  { 
-                    bg: 'from-purple-600/20 to-pink-600/20',
-                    bgHover: 'from-purple-600/30 to-pink-600/30',
-                    border: 'border-purple-500/40',
-                    borderHover: 'hover:border-purple-400',
-                    borderSelected: 'border-purple-500',
-                    bgSelected: 'bg-purple-500/15',
-                    shadow: 'shadow-purple-500/30',
-                    text: 'text-purple-400',
-                    badge: 'bg-purple-500',
-                    glow: 'from-purple-500/0 group-hover:from-purple-500/10 group-hover:to-pink-500/10'
-                  },
-                  { 
-                    bg: 'from-amber-600/20 to-orange-600/20',
-                    bgHover: 'from-amber-600/30 to-orange-600/30',
-                    border: 'border-amber-500/40',
-                    borderHover: 'hover:border-amber-400',
-                    borderSelected: 'border-amber-500',
-                    bgSelected: 'bg-amber-500/15',
-                    shadow: 'shadow-amber-500/30',
-                    text: 'text-amber-400',
-                    badge: 'bg-amber-500',
-                    glow: 'from-amber-500/0 group-hover:from-amber-500/10 group-hover:to-orange-500/10'
-                  },
-                ];
-                
-                const colors = gradients[index];
-                
-                return (
-                  <button
-                    key={amount}
-                    onClick={() => setRefillAmount(amount)}
-                    className={`group p-3 md:p-6 rounded-lg md:rounded-2xl border-2 transition-all duration-300 md:hover:scale-110 hover:shadow-xl relative overflow-hidden active:scale-95 ${
-                      isSelected
-                        ? `${colors.borderSelected} bg-gradient-to-br ${colors.bgSelected} ${colors.shadow} ring-2 ring-offset-2 ring-offset-[#1A2647] ${colors.borderSelected.replace('border-', 'ring-')}`
-                        : `${colors.border} bg-gradient-to-br ${colors.bg} hover:bg-gradient-to-br hover:${colors.bgHover} ${colors.borderHover}`
-                    }`}
-                  >
-                    {/* Animated Glow on Hover */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${colors.glow} transition-all duration-300`} />
-                    
-                    {/* Content */}
-                    <div className="relative text-center">
-                      {/* Icon - smaller on mobile */}
-                      <div className={`w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl mx-auto mb-1 md:mb-2 flex items-center justify-center ${
-                        isSelected ? colors.bgSelected : `bg-gray-800/50`
-                      } border ${colors.border} md:group-hover:scale-110 transition-transform`}>
-                        <DollarSign className={`w-4 h-4 md:w-6 md:h-6 ${isSelected ? colors.text : 'text-gray-500'} group-hover:${colors.text}`} />
-                      </div>
-                      
-                      {/* Amount - optimized size for mobile */}
-                      <div className={`text-xl md:text-3xl font-bold mb-0.5 md:mb-1 ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-white'} transition-colors`}>
-                        ${amount}
-                      </div>
-                      
-                      {/* Minutes - smaller text on mobile */}
-                      <div className={`text-[10px] md:text-xs ${isSelected ? colors.text : 'text-gray-500'} group-hover:${colors.text} transition-colors`}>
-                        ≈ {minutes} min
-                      </div>
-                      
-                      {/* Selected Checkmark */}
-                      {isSelected && (
-                        <div className={`absolute -top-2 -right-2 w-7 h-7 ${colors.badge} rounded-full flex items-center justify-center shadow-lg animate-bounce`}>
-                          <CheckCircle className="w-5 h-5 text-white" />
-                        </div>
-                      )}
-                      
-                      {/* Sparkle Effect on Selected */}
-                      {isSelected && (
-                        <div className="absolute -top-1 -left-1">
-                          <Sparkles className={`w-4 h-4 ${colors.text} animate-pulse`} />
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Save Button */}
-          <button
-            onClick={handleSaveAutoRefill}
-            disabled={loading}
-            className={`w-full px-6 py-3 md:py-4 font-bold rounded-xl transition-all duration-300 text-sm md:text-base ${
-              loading
-                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white hover:scale-105 shadow-lg hover:shadow-green-500/50'
-            }`}
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <RefreshCw className="w-5 h-5 animate-spin" />
-                Saving...
-              </span>
-            ) : (
-              <span className="flex items-center justify-center gap-2">
-                <Sparkles className="w-5 h-5" />
-                {hasConfigured ? 'Update Auto-Refill Amount' : 'Save Auto-Refill Settings'}
-              </span>
-            )}
-          </button>
-
-          {/* Info */}
-          <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-            <p className="text-xs text-blue-300 text-center">
-              💳 Auto-refill triggers at $10 • Charged to your payment method
-            </p>
-          </div>
-        </div>
-
-        {/* How It Works */}
-        <div className="relative z-10 mt-6 p-4 md:p-5 bg-gray-800/30 rounded-xl border border-gray-700/50">
-          <h4 className="text-white font-bold mb-3 text-base md:text-lg flex items-center gap-2">
-            <Clock className="w-5 h-5 text-blue-400" />
-            How Auto-Refill Works
-          </h4>
-          <div className="space-y-2 text-xs md:text-sm text-gray-300">
-            <div className="flex items-start gap-2">
-              <span className="text-green-400 font-bold">1.</span>
-              <span>AI makes calls and uses credits from your balance</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-green-400 font-bold">2.</span>
-              <span>When balance drops below <strong className="text-white">$10</strong>, auto-refill triggers</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-green-400 font-bold">3.</span>
-              <span>Your card is charged <strong className="text-white">${refillAmount}</strong> automatically</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-green-400 font-bold">4.</span>
-              <span>Balance topped up instantly — AI keeps running 24/7</span>
-            </div>
-          </div>
+          <p className="text-gray-500 text-sm">≈ {minutesRemaining} minutes at ${costPerMinute}/min</p>
         </div>
       </div>
 
-      {/* Info Footer */}
-      <div className="p-3 md:p-4 bg-blue-500/10 border-2 border-blue-500/30 rounded-xl">
-        <p className="text-xs md:text-sm text-blue-300 text-center flex items-center justify-center gap-2 flex-wrap">
-          <span>💳 Secure payments via Stripe</span>
-          <span className="hidden md:inline w-1 h-1 bg-blue-400 rounded-full" />
-          <span className="hidden md:inline">Funds never expire</span>
-          <span className="hidden md:inline w-1 h-1 bg-blue-400 rounded-full" />
-          <span className="flex items-center gap-1">
-            <Zap className="w-4 h-4" />
-            Instant activation
+      {/* Auto-Refill Status Message */}
+      <div className={`bg-gradient-to-br rounded-2xl p-6 border-2 shadow-lg ${
+        autoRefillOn 
+          ? 'from-green-500/10 to-emerald-500/10 border-green-500/40 shadow-green-500/20'
+          : 'from-gray-800/50 to-gray-900/50 border-gray-700 shadow-gray-900/20'
+      }`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className={`p-3 rounded-xl border-2 ${
+              autoRefillOn 
+                ? 'bg-green-500/20 border-green-500/40'
+                : 'bg-gray-600/20 border-gray-600/40'
+            }`}>
+              <RefreshCw className={`w-6 h-6 ${autoRefillOn ? 'text-green-400' : 'text-gray-400'}`} />
+            </div>
+            <div>
+              <p className={`font-semibold text-lg ${autoRefillOn ? 'text-green-400' : 'text-gray-400'}`}>
+                Auto-Refill {autoRefillOn ? 'Enabled' : 'Disabled'}
+              </p>
+              <p className="text-sm text-gray-400">
+                {autoRefillOn 
+                  ? `Recharge with $${refillAmount} when balance is lower than $10`
+                  : 'Manually add credits when needed'}
+              </p>
+            </div>
+          </div>
+          
+          {/* Toggle Button */}
+          <button
+            onClick={handleToggleAutoRefill}
+            disabled={loading}
+            className={`group relative overflow-hidden px-5 py-2.5 rounded-lg border-2 font-semibold transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed ${
+              autoRefillOn
+                ? 'bg-gray-700/50 border-gray-600 text-gray-400 hover:bg-gray-700 hover:shadow-lg'
+                : 'bg-blue-600/80 border-blue-500 text-white hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-500/50'
+            }`}
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              <Power className="w-4 h-4" />
+              Turn {autoRefillOn ? 'Off' : 'On'}
+            </span>
+            {!autoRefillOn && (
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Transactions Section */}
+      <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-6 border-2 border-gray-800 shadow-xl">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-500/20 rounded-lg border border-blue-500/30">
+              <Receipt className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">Transaction History</h3>
+              <p className="text-sm text-gray-400">View all your payment receipts</p>
+            </div>
+          </div>
+        </div>
+
+        <a
+          href="https://billing.stripe.com/p/login/test_3cs9BGchfcc8fCMdQQ"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group relative overflow-hidden w-full px-6 py-4 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 hover:from-blue-600/30 hover:to-indigo-600/30 border-2 border-blue-500/40 hover:border-blue-500/60 text-blue-400 font-semibold rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/40 flex items-center justify-center gap-3"
+        >
+          <span className="relative z-10 flex items-center gap-2">
+            <Receipt className="w-5 h-5" />
+            View Invoices on Stripe
+            <ExternalLink className="w-4 h-4" />
           </span>
+          {/* Shine Effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+        </a>
+
+        <p className="text-xs text-gray-500 text-center mt-3">
+          View detailed receipts and invoices for all your transactions
         </p>
       </div>
     </div>

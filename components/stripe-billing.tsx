@@ -1,323 +1,276 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from './ui/button';
-import { CreditCard, ExternalLink, Sparkles, CheckCircle, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CreditCard, ExternalLink, Sparkles, CheckCircle, Zap, Calendar, AlertCircle } from 'lucide-react';
 
 interface StripeBillingProps {
+  userId: string;
   userEmail: string;
   hasSubscription: boolean;
   currentTier?: 'none' | 'starter' | 'pro' | 'elite' | 'free_trial' | 'free_access';
+  subscriptionData?: any;
+  accountCreatedAt?: string;
+  referralBonusDays?: number;
+  trialEndsAt?: string;
 }
 
-export function StripeBilling({ userEmail, hasSubscription, currentTier = 'none' }: StripeBillingProps) {
+export function StripeBilling({ userId, userEmail, hasSubscription, currentTier = 'none', subscriptionData, accountCreatedAt, referralBonusDays = 0, trialEndsAt }: StripeBillingProps) {
   const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<any>(null);
+
+  // Fetch payment method
+  useEffect(() => {
+    const fetchBillingData = async () => {
+      try {
+        const pmResponse = await fetch('/api/stripe/get-payment-method');
+        if (pmResponse.ok) {
+          const pmData = await pmResponse.json();
+          setPaymentMethod(pmData.paymentMethod);
+        }
+      } catch (error) {
+        console.error('Error fetching billing data:', error);
+      }
+    };
+
+    if (hasSubscription) {
+      fetchBillingData();
+    }
+  }, [hasSubscription]);
 
   const handleManageBilling = async () => {
     setLoading(true);
     try {
-      console.log('🔧 Requesting billing portal...');
       const response = await fetch('/api/stripe/create-portal', {
         method: 'POST',
       });
 
       const data = await response.json();
-      console.log('📋 Portal response:', data);
 
       if (data.url) {
-        console.log('✅ Redirecting to portal:', data.url);
         window.location.href = data.url;
-      } else {
-        console.error('❌ No URL in response:', data);
-        
-        // Check if it's an inactive price error
-        if (data.needsResubscribe) {
-          alert(
-            `⚠️ Your subscription uses an outdated pricing plan.\n\n` +
-            `Please contact support at support@sterlingdialer.com or subscribe to a new plan.\n\n` +
-            `Your old subscription has been canceled.`
-          );
-          
-          // Reload the page to reflect canceled status
-          setTimeout(() => window.location.reload(), 2000);
         } else {
           alert(data.error || 'Failed to open billing portal');
-        }
       }
     } catch (error) {
-      console.error('❌ Error opening billing portal:', error);
       alert('Error opening billing portal. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubscribe = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/stripe/create-checkout', {
-        method: 'POST',
-      });
-
-      const data = await response.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert('Failed to create checkout session');
-      }
-    } catch (error) {
-      alert('Error creating checkout');
-    } finally {
-      setLoading(false);
-    }
+  const getTierInfo = () => {
+    const tiers = {
+      starter: { name: 'Starter Plan', price: 499, color: 'blue' },
+      pro: { name: 'Pro Plan', price: 499, color: 'purple' },
+      elite: { name: 'Elite Plan', price: 1499, color: 'amber' },
+      free_trial: { name: 'Free Trial', price: 0, color: 'green' },
+      free_access: { name: 'VIP Access', price: 0, color: 'amber' },
+    };
+    return tiers[currentTier as keyof typeof tiers] || { name: 'No Plan', price: 0, color: 'gray' };
   };
 
+  const tierInfo = getTierInfo();
+
+  // Calculate next billing date or show appropriate status
+  const getNextBillingDate = () => {
+    if (currentTier === 'free_trial') {
+      // Use the actual trial end date if provided
+      if (trialEndsAt) {
+        const trialEnd = new Date(trialEndsAt);
+        const firstChargeDate = trialEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        return `Free Trial — First charge on ${firstChargeDate}`;
+      }
+      
+      // Fallback: Calculate from start date + days
+      const startDate = subscriptionData?.created_at || accountCreatedAt;
+      
+      if (!startDate) return 'Free Trial — First charge pending';
+      
+      const created = new Date(startDate);
+      const trialEnd = new Date(created);
+      
+      // Add base 30 days + referral bonus days
+      const totalTrialDays = 30 + (referralBonusDays || 0);
+      
+      trialEnd.setDate(created.getDate() + totalTrialDays);
+      const firstChargeDate = trialEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      
+      return `Free Trial — First charge on ${firstChargeDate}`;
+    }
+    
+    if (!subscriptionData?.created_at) return 'Pending First Charge';
+    
+    const created = new Date(subscriptionData.created_at);
+    const next = new Date(created);
+    next.setDate(next.getDate() + 30);
+    return next.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  // Get billing status message
+  const getBillingStatus = () => {
+    if (currentTier === 'free_trial') {
+      // Use the actual trial end date if provided
+      if (trialEndsAt) {
+        const trialEnd = new Date(trialEndsAt);
+        const endDate = trialEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        return { text: `Free Trial — Ends ${endDate}`, color: 'purple' };
+      }
+      
+      // Fallback: Calculate from start date
+      const startDate = subscriptionData?.created_at || accountCreatedAt;
+      if (!startDate) return { text: 'Free Trial', color: 'purple' };
+      
+      const created = new Date(startDate);
+      const trialEnd = new Date(created);
+      const totalTrialDays = 30 + (referralBonusDays || 0);
+      trialEnd.setDate(trialEnd.getDate() + totalTrialDays);
+      const endDate = trialEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return { text: `Free Trial — Ends ${endDate}`, color: 'purple' };
+    }
+    return { text: 'Billing Active — Renewing Monthly', color: 'green' };
+  };
+
+  const billingStatus = getBillingStatus();
+
+  if (currentTier === 'free_access') {
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Main Billing Card - Modern & Glowy */}
-      <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-lg md:rounded-xl p-4 md:p-6 border-2 border-blue-500/30 hover:border-blue-500/50 transition-all duration-300 overflow-hidden group">
-        {/* Glow Effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        
-        {/* Animated Background Orbs - hidden on mobile */}
-        <div className="hidden md:block absolute -top-20 -right-20 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="hidden md:block absolute -bottom-20 -left-20 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl" />
-
-        <div className="relative z-10">
-          <div className="flex items-start justify-between mb-4 md:mb-6">
-            <div className="flex items-center gap-3 md:gap-4">
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-lg md:rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-600/20 flex items-center justify-center border border-blue-500/30 relative">
-                <CreditCard className="w-6 h-6 md:w-7 md:h-7 text-blue-400" />
-                {hasSubscription && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-[#1A2647]">
-                    <CheckCircle className="w-2 h-2 md:w-3 md:h-3 text-white" />
-                  </div>
-                )}
-              </div>
-              <div>
-                <h3 className="text-base md:text-xl font-bold text-white mb-0.5 md:mb-1">Subscription & Billing</h3>
-                <p className="text-gray-400 text-xs md:text-sm">Powered by Stripe</p>
-              </div>
+      <div className="space-y-6">
+        {/* VIP Access Card - Special Gold/Yellow Theme */}
+        <div className="relative bg-gradient-to-br from-amber-500/10 to-yellow-500/10 rounded-2xl p-10 border-2 border-amber-500/50 shadow-2xl shadow-amber-500/30 overflow-hidden">
+          {/* Animated Background Glow */}
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-yellow-500/10 to-amber-500/0 animate-pulse" />
+          <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-500/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-yellow-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          
+          <div className="relative z-10 text-center">
+            {/* Crown Icon */}
+            <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-amber-500/30 to-yellow-500/30 rounded-2xl border-2 border-amber-400/50 mb-6 shadow-lg shadow-amber-500/40">
+              <Sparkles className="w-12 h-12 text-amber-400 animate-pulse" />
             </div>
-            <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-blue-400 opacity-70" />
-          </div>
-
-          {/* Billing Email */}
-          <div className="bg-[#0B1437]/50 rounded-lg p-3 md:p-4 mb-4 md:mb-6 border border-gray-800/50 backdrop-blur-sm">
-            <p className="text-[10px] md:text-xs text-gray-500 mb-1">Billing Email</p>
-            <p className="text-sm md:text-base text-white font-medium truncate">{userEmail}</p>
-          </div>
-
-          {/* Subscription Status & Actions */}
-          {currentTier === 'free_access' ? (
-            <>
-              {/* VIP Access Status Badge */}
-              <div className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30 rounded-lg mb-4 md:mb-6">
-                <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-                <span className="text-amber-400 font-semibold text-xs md:text-sm">
-                  VIP Access
-                </span>
-                <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-amber-400" />
-              </div>
-
-              {/* VIP Access Card */}
-              <div className="relative bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-orange-500/10 rounded-lg md:rounded-xl p-4 md:p-6 border-2 border-amber-500/30 overflow-hidden group mb-4">
-                {/* Animated shine effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 translate-x-[-100%] group-hover:translate-x-[100%]" style={{ transitionProperty: 'transform', transitionDuration: '1.5s' }} />
-                
-                {/* Content */}
-                <div className="relative z-10 text-center">
-                  <div className="flex justify-center mb-3">
-                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-amber-400/20 to-yellow-500/20 flex items-center justify-center border border-amber-400/30">
-                      <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-amber-400" />
-                    </div>
+            
+            {/* VIP Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 border-2 border-amber-400/50 rounded-full mb-4">
+              <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+              <span className="text-amber-400 font-bold text-sm">EXCLUSIVE ACCESS</span>
+              <Sparkles className="w-4 h-4 text-amber-400" />
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-amber-400 via-yellow-300 to-orange-400 bg-clip-text text-transparent mb-2">
-                    FULL VIP ACCESS
-                  </h3>
-                  <p className="text-xs md:text-sm text-amber-400/80">
-                    Unlimited access with custom pricing
-                  </p>
-                </div>
+            
+            <h2 className="text-5xl font-bold bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 bg-clip-text text-transparent mb-3">
+              ✨ VIP ACCESS ✨
+            </h2>
+            <p className="text-lg text-amber-400/90 mb-6">Unlimited Access • Only Pay for Minutes</p>
+            
+            <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-5 mb-4">
+              <p className="text-amber-300 font-semibold mb-2">🎉 You have exclusive VIP status</p>
+              <p className="text-sm text-amber-400/70 mb-3">
+                Enjoy unlimited access to all features — only pay for the minutes you use.
+              </p>
+              <p className="text-sm text-amber-300/80 italic">
+                You're VIP — nothing to bill here.
+              </p>
+            </div>
+            
+            <p className="text-xs text-amber-400/60">
+              Have questions about your VIP status? Contact your concierge.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Current Plan Card */}
+      <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-8 border-2 border-blue-500/30 shadow-xl">
+        {/* Plan Info */}
+        <div className="mb-6">
+          <h2 className="text-3xl font-bold text-white mb-1">{tierInfo.name}</h2>
+          <p className="text-2xl font-bold text-blue-400 mb-1">
+            {tierInfo.price > 0 ? `$${tierInfo.price}` : '$0'}<span className="text-base text-gray-400 font-normal">/month</span>
+          </p>
+          <p className="text-sm text-gray-400 mb-3">+ $0.30 per minute for calls</p>
+          
+          {/* Status Badge */}
+          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${
+            billingStatus.color === 'purple'
+              ? 'bg-purple-500/10 border border-purple-500/30'
+              : 'bg-green-500/10 border border-green-500/30'
+          }`}>
+            <div className={`w-2 h-2 rounded-full ${
+              billingStatus.color === 'purple' ? 'bg-purple-400' : 'bg-green-400'
+            } animate-pulse`} />
+            <span className={`font-medium text-xs ${
+              billingStatus.color === 'purple' ? 'text-purple-400' : 'text-green-400'
+            }`}>
+              {billingStatus.text}
+            </span>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-800 my-6"></div>
+
+        {/* Next Billing Date */}
+        <div className="mb-5">
+          <div className="flex items-center gap-3 mb-2">
+            <Calendar className="w-5 h-5 text-blue-400" />
+            <p className="text-sm font-semibold text-gray-300">Next Billing Date</p>
+          </div>
+          <p className="text-lg text-white font-medium pl-8">{getNextBillingDate()}</p>
               </div>
 
-              <p className="text-[10px] md:text-xs text-center text-gray-500">
-                🎉 You have exclusive VIP access to all features
+        {/* Divider */}
+        <div className="border-t border-gray-800 my-6"></div>
+
+        {/* Card on File */}
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <CreditCard className="w-5 h-5 text-green-400" />
+            <p className="text-sm font-semibold text-gray-300">Card on File</p>
+                    </div>
+          {paymentMethod ? (
+            <div className="pl-8">
+              <p className="text-lg text-white font-medium mb-2">
+                {paymentMethod.brand?.charAt(0).toUpperCase()}{paymentMethod.brand?.slice(1)} •••• {paymentMethod.last4}
               </p>
-            </>
-          ) : currentTier === 'free_trial' ? (
-            <>
-              {/* Free Trial Status Badge */}
-              <div className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg mb-4 md:mb-6">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-green-400 font-semibold text-xs md:text-sm">
-                  30-Day Free Trial
-                </span>
-                <Zap className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
+              <p className="text-xs text-gray-400 leading-relaxed">
+                This card will be used for all charges, including subscription fees, call minutes, and auto-refills.
+              </p>
               </div>
-
-              {/* Manage Subscription Button (for free trial) */}
-              <button
-                onClick={handleManageBilling}
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-bold rounded-lg md:rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group text-sm md:text-base"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 translate-x-[-100%] group-hover:translate-x-[100%]" style={{ transitionProperty: 'transform', transitionDuration: '1s' }} />
-                <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="relative z-10">{loading ? 'Opening Portal...' : 'Manage Subscription'}</span>
-              </button>
-
-              <p className="text-[10px] md:text-xs text-center text-gray-500 mt-2 md:mt-3">
-                Update payment method • View payment history
-              </p>
-            </>
-          ) : hasSubscription ? (
-            <>
-              {/* Active Paid Subscription Status Badge */}
-              <div className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg mb-4 md:mb-6">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-green-400 font-semibold text-xs md:text-sm">
-                  Active Subscription
-                </span>
-                <Zap className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
-              </div>
-
-              {/* Manage Button */}
-              <button
-                onClick={handleManageBilling}
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-bold rounded-lg md:rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group text-sm md:text-base"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 translate-x-[-100%] group-hover:translate-x-[100%]" style={{ transitionProperty: 'transform', transitionDuration: '1s' }} />
-                <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="relative z-10">{loading ? 'Opening Portal...' : 'Manage Billing'}</span>
-              </button>
-
-              <p className="text-[10px] md:text-xs text-center text-gray-500 mt-2 md:mt-3">
-                Update payment method • View invoices • Cancel anytime
-              </p>
-            </>
           ) : (
-            <>
-              {/* Inactive Status */}
-              <div className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg mb-4 md:mb-6">
-                <div className="w-2 h-2 bg-gray-500 rounded-full" />
-                <span className="text-gray-400 font-medium text-xs md:text-sm">No Active Subscription</span>
-              </div>
-
-              {/* Subscribe Button */}
-              <button
-                onClick={handleSubscribe}
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-bold rounded-lg md:rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
-              >
-                <CreditCard className="w-4 h-4 md:w-5 md:h-5" />
-                <span>{loading ? 'Loading...' : 'Subscribe Now'}</span>
-              </button>
-
-              <p className="text-[10px] md:text-xs text-center text-gray-500 mt-2 md:mt-3">
-                Start automating your sales today
-              </p>
-            </>
+            <p className="text-lg text-gray-500 pl-8">No payment method on file</p>
           )}
         </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-800 my-6"></div>
+
+        {/* Manage Payment Method Button */}
+        <button
+          onClick={handleManageBilling}
+          disabled={loading}
+          className="group relative overflow-hidden w-full px-6 py-4 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 hover:from-blue-600/30 hover:to-indigo-600/30 border-2 border-blue-500/40 hover:border-blue-500/60 text-blue-400 font-semibold rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/40 flex items-center justify-center gap-3"
+        >
+          <span className="relative z-10 flex items-center gap-2">
+            <CreditCard className="w-5 h-5" />
+            Manage Payment Method
+            <ExternalLink className="w-4 h-4" />
+          </span>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+        </button>
+
+        {/* Cancel Subscription / Free Trial */}
+        {hasSubscription && (
+          <button
+            onClick={handleManageBilling}
+            className="w-full px-4 py-2 mt-4 text-red-400 hover:text-red-300 text-sm font-medium transition-colors"
+          >
+            {currentTier === 'free_trial' ? 'Cancel Free Trial' : 'Cancel Subscription'}
+          </button>
+        )}
       </div>
 
-      {/* Features Card - Modern Design */}
-      <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-lg md:rounded-xl p-4 md:p-6 border border-gray-800">
-        <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-5">
-          <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-600/20 flex items-center justify-center border border-green-500/30">
-            <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
-          </div>
-          <h3 className="text-base md:text-lg font-bold text-white">What's Included</h3>
-        </div>
-
-        <div className="grid grid-cols-1 gap-2 md:gap-3">
-          {(() => {
-            // Base features for all tiers
-            const baseFeatures = ['AI-powered calling automation'];
-            
-            // Add appointment verifier for Pro and Elite
-            // All tiers have the same core features now
-            
-            // Add remaining features based on tier
-            if (currentTier === 'free_access') {
-              baseFeatures.push(
-                '1 AI Caller',
-                'Up to 600 leads per day',
-                'Custom pricing per minute',
-                'Live call transfer',
-                'Call recordings & analytics',
-                'Appointment scheduling',
-                'Revenue tracking',
-                'VIP Priority Support'
-              );
-            } else if (currentTier === 'free_trial') {
-              baseFeatures.push(
-                '1 AI Caller',
-                'Up to 600 leads per day',
-                '$0.30 per minute calling',
-                'Live call transfer',
-                'Call recordings & analytics',
-                'Appointment scheduling',
-                'Calendar integration'
-              );
-            } else if (currentTier === 'starter') {
-              baseFeatures.push(
-                '1 AI Caller',
-                'Up to 600 leads per day',
-                'Live call transfer',
-                'Call recordings & analytics',
-                'Appointment scheduling',
-                'Revenue tracking'
-              );
-            } else if (currentTier === 'pro') {
-              baseFeatures.push(
-                '2 AI Callers',
-                'Up to 1,200 leads per day',
-                'Live call transfer',
-                'Call recordings & analytics',
-                'Appointment scheduling',
-                'Revenue tracking',
-                'Priority support'
-              );
-            } else if (currentTier === 'elite') {
-              baseFeatures.push(
-                '3 AI Callers',
-                'Up to 1,800 leads per day',
-                'Live call transfer',
-                'Call recordings & analytics',
-                'Appointment scheduling',
-                'Revenue tracking',
-                'Priority support'
-              );
-            } else {
-              // Default for 'none' tier
-              baseFeatures.push(
-                'Up to 1,800 leads per day',
-                'Live call transfer',
-                'Call recordings & analytics',
-                'Appointment scheduling',
-                'Revenue tracking'
-              );
-            }
-            
-            return baseFeatures;
-          })().map((feature, idx) => (
-            <div
-              key={idx}
-              className="flex items-center gap-2 md:gap-3 bg-[#0B1437]/50 rounded-lg p-2.5 md:p-3 border border-gray-800/50 hover:border-green-500/30 transition-colors duration-200"
-            >
-              <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
-              </div>
-              <span className="text-gray-300 text-xs md:text-sm">{feature}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
-

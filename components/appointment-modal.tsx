@@ -214,8 +214,9 @@ export function AppointmentModal({ appointment, userId, onClose }: AppointmentMo
   }, [appointment, monthlyPayment]);
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#1A2647] rounded-2xl border border-gray-700 max-w-2xl w-full">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 overflow-y-auto">
+      <div className="min-h-screen flex items-start justify-center p-4 py-8">
+        <div className="bg-[#1A2647] rounded-2xl border border-gray-700 max-w-2xl w-full">
         {/* Header */}
         <div className="p-6 border-b border-gray-800 flex items-start justify-between">
           <div>
@@ -328,18 +329,24 @@ export function AppointmentModal({ appointment, userId, onClose }: AppointmentMo
 
           {/* Mark as Sold Section */}
           {isSelling && (
-            <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 rounded-lg p-4 border border-yellow-500/30">
-              <div className="flex items-center gap-2 mb-3">
-                <DollarSign className="w-5 h-5 text-yellow-400" />
-                <p className="text-sm font-medium text-white">
+            <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-xl p-5 border-2 border-yellow-500/40 shadow-lg shadow-yellow-500/20">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center border border-yellow-500/40">
+                  <DollarSign className="w-5 h-5 text-yellow-400" />
+                </div>
+                <p className="text-base font-semibold text-white">
                   {appointment.is_sold ? 'Update Monthly Payment' : 'Enter Monthly Payment'}
                 </p>
               </div>
+              
               {appointment.is_sold && (
-                <p className="text-xs text-yellow-400 mb-2">
-                  Current: ${appointment.monthly_payment}/month (${(appointment.monthly_payment * 12).toLocaleString()} AP)
-                </p>
+                <div className="mb-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                  <p className="text-xs text-yellow-400">
+                    Current: ${appointment.monthly_payment}/month (${(appointment.monthly_payment * 12).toLocaleString()} AP)
+                  </p>
+                </div>
               )}
+              
               <input
                 type="number"
                 value={monthlyPayment}
@@ -347,28 +354,37 @@ export function AppointmentModal({ appointment, userId, onClose }: AppointmentMo
                 placeholder={appointment.is_sold ? `Current: ${appointment.monthly_payment}` : "Enter monthly payment (e.g., 150)"}
                 min="0"
                 step="0.01"
-                className="w-full px-4 py-2 bg-[#1A2647] border border-yellow-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"
+                className="w-full px-4 py-3 bg-[#0B1437] border-2 border-yellow-500/40 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500/60 mb-3 transition-all"
               />
-              <p className="text-xs text-gray-400 mb-3">
-                New Annual Premium (AP): ${monthlyPayment ? (parseFloat(monthlyPayment) * 12).toLocaleString() : '0'}
-              </p>
+              
+              <div className="mb-4 p-3 bg-[#0B1437]/60 border border-gray-700 rounded-lg">
+                <p className="text-xs text-gray-400 mb-1">New Annual Premium (AP):</p>
+                <p className="text-2xl font-bold text-yellow-400">
+                  ${monthlyPayment ? (parseFloat(monthlyPayment) * 12).toLocaleString() : '0'}
+                </p>
+              </div>
+              
               <div className="flex gap-3">
                 <button
                   onClick={() => {
                     setIsSelling(false);
                     setMonthlyPayment(appointment.is_sold ? appointment.monthly_payment.toString() : '');
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-800 bg-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-800/50 rounded-lg transition-all duration-200 hover:scale-[1.02]"
+                  className="flex-1 px-4 py-3 border-2 border-gray-700 bg-gray-800/20 text-gray-400 hover:text-white hover:bg-gray-800/40 hover:border-gray-600 rounded-lg transition-all duration-200 hover:scale-[1.02] font-medium"
                 >
                   Cancel
                 </button>
-                <Button
+                <button
                   onClick={handleMarkSold}
                   disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-yellow-500/80 to-orange-500/80 hover:from-yellow-500 hover:to-orange-500 text-white font-bold transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:shadow-yellow-500/30"
+                  className="group relative overflow-hidden flex-1 px-4 py-3 bg-gradient-to-r from-yellow-500/80 to-orange-500/80 hover:from-yellow-500 hover:to-orange-500 border-2 border-yellow-500/60 text-white font-bold rounded-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-2xl hover:shadow-yellow-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  🎉 {appointment.is_sold ? 'Update Sale' : 'Confirm Sale'}
-                </Button>
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    🎉 {appointment.is_sold ? 'Update Sale' : 'Confirm Sale'}
+                  </span>
+                  {/* Shine Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                </button>
               </div>
             </div>
           )}
@@ -390,47 +406,72 @@ export function AppointmentModal({ appointment, userId, onClose }: AppointmentMo
             <div className="space-y-3">
               {/* Row 1: Mark Complete & No-Show */}
               <div className="grid grid-cols-2 gap-3">
-                <Button
+                <button
                   onClick={handleMarkComplete}
-                  className="bg-green-600/80 hover:bg-green-600 text-white font-medium transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:shadow-green-500/30"
                   disabled={loading}
+                  className="group relative overflow-hidden px-6 py-3 bg-green-500/10 hover:bg-green-500/20 border-2 border-green-500/40 hover:border-green-500/60 text-green-400 font-semibold rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Mark Complete
-                </Button>
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    Mark Complete
+                  </span>
+                  {/* Shine Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                  {/* Inner Glow */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 via-green-500/10 to-green-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </button>
 
-                <Button
+                <button
                   onClick={handleMarkNoShow}
-                  className="bg-orange-600/80 hover:bg-orange-600 text-white font-medium transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:shadow-orange-500/30"
                   disabled={loading}
+                  className="group relative overflow-hidden px-6 py-3 bg-orange-500/10 hover:bg-orange-500/20 border-2 border-orange-500/40 hover:border-orange-500/60 text-orange-400 font-semibold rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-orange-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <AlertCircle className="w-4 h-4 mr-2" />
-                  No-Show
-                </Button>
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    No-Show
+                  </span>
+                  {/* Shine Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-400/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                  {/* Inner Glow */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/10 to-orange-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </button>
               </div>
 
               {/* Row 2: Mark as SOLD & Delete */}
               <div className="grid grid-cols-2 gap-3">
-                <Button
+                <button
                   onClick={() => setIsSelling(true)}
-                  className="bg-gradient-to-r from-yellow-500/80 to-orange-500/80 hover:from-yellow-500 hover:to-orange-500 text-white font-semibold transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:shadow-yellow-500/30"
                   disabled={loading}
+                  className="group relative overflow-hidden px-6 py-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 hover:from-yellow-500/20 hover:to-orange-500/20 border-2 border-yellow-500/40 hover:border-yellow-500/60 text-yellow-400 font-bold rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-yellow-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  {appointment.is_sold ? 'Update SOLD Amount' : 'Mark as SOLD'}
-                </Button>
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <DollarSign className="w-4 h-4" />
+                    {appointment.is_sold ? 'Update SOLD' : 'Mark as SOLD'}
+                  </span>
+                  {/* Shine Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                  {/* Inner Glow */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/0 via-yellow-500/15 to-orange-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </button>
 
-                <Button
+                <button
                   onClick={handleDelete}
-                  className="bg-red-600/80 hover:bg-red-600 text-white font-medium transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:shadow-red-500/30"
                   disabled={loading}
+                  className="group relative overflow-hidden px-6 py-3 bg-red-500/10 hover:bg-red-500/20 border-2 border-red-500/40 hover:border-red-500/60 text-red-400 font-semibold rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </Button>
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </span>
+                  {/* Shine Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-400/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                  {/* Inner Glow */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-500/0 via-red-500/10 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </button>
               </div>
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>

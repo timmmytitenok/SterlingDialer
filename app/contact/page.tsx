@@ -202,10 +202,10 @@ export default function ContactPage() {
                   <h3 className="text-lg font-semibold text-white mb-2">Email Us</h3>
                   <p className="text-gray-400 text-sm mb-2">For general inquiries and support</p>
                   <a
-                    href="mailto:support@sterlingai.com"
+                    href="mailto:SterlingDialer@gmail.com"
                     className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
                   >
-                    SterlingDailer@gmail.com
+                    SterlingDialer@gmail.com
                   </a>
                 </div>
               </div>

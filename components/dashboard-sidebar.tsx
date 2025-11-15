@@ -3,7 +3,7 @@
 import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Settings, Sparkles, CalendarDays, Phone } from 'lucide-react';
+import { LayoutDashboard, Settings, Sparkles, CalendarDays, Phone, Users, Wallet } from 'lucide-react';
 
 interface DashboardSidebarProps {
   user: User;
@@ -15,9 +15,10 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
 
   const mainNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'AI Control Center', href: '/dashboard/ai-control', icon: Sparkles },
+    { name: 'Lead Manager', href: '/dashboard/leads', icon: Users },
+    { name: 'AI Dialer', href: '/dashboard/ai-dialer', icon: Sparkles },
     { name: 'Appointments', href: '/dashboard/appointments', icon: CalendarDays },
-    { name: 'Activity Logs', href: '/dashboard/activity-logs', icon: Phone },
+    { name: 'Call History', href: '/dashboard/activity-logs', icon: Phone },
   ];
 
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
@@ -57,6 +58,24 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
             </Link>
           );
         })}
+
+        {/* Divider */}
+        <div className="py-3">
+          <div className="border-t border-gray-800"></div>
+        </div>
+
+        {/* Minutes & Balance Button */}
+        <Link
+          href="/dashboard/settings/balance"
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+            pathname === '/dashboard/settings/balance'
+              ? 'bg-green-600/20 text-green-400 border border-green-500/30'
+              : 'text-gray-400 hover:bg-gray-800/50 hover:text-white hover:scale-[1.02] hover:translate-x-1'
+          }`}
+        >
+          <Wallet className="w-5 h-5" />
+          <span className="font-medium">Minutes & Balance</span>
+        </Link>
       </nav>
 
       {/* Settings at Bottom */}

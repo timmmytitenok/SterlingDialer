@@ -49,14 +49,15 @@ export function LaunchAIModalV2({
     subscriptionTier === 'pro' ? 20 : 
     10;
 
-  // Helper: Round to nearest snap value
+  // Helper: Round to nearest snap value (but allow values below step size)
   const roundToStep = (value: number, step: number) => {
+    if (value <= step) return value; // Allow values 1-10 (or 1-20, 1-30)
     return Math.round(value / step) * step;
   };
 
   // Form state - Initialize with last used values, default to 'time' if no previous settings
   const [executionMode, setExecutionMode] = useState<ExecutionMode>(initialMode as ExecutionMode);
-  const [leadCount, setLeadCount] = useState(roundToStep(initialLeadCount || initialLimit, sliderStep));
+  const [leadCount, setLeadCount] = useState(initialLeadCount || initialLimit || 1);
   const [targetTime, setTargetTime] = useState(convertMilitaryToTime(initialTargetTime ?? null));
   // Live transfer is always enabled - no longer a toggle option
   const liveTransfer = true;
@@ -104,13 +105,7 @@ export function LaunchAIModalV2({
   const handleAPILaunch = async () => {
     setLaunching(true);
 
-    // Show launching animation for 3 seconds
-    setTimeout(() => {
-      onLaunched();
-      router.refresh();
-    }, 3000);
-
-    // Start AI in background
+    // Start AI and WAIT for response
     try {
       const payload: any = {
         userId,
@@ -128,13 +123,48 @@ export function LaunchAIModalV2({
         payload.targetTime = militaryTime;
       }
 
-      await fetch('/api/ai-control/start', {
+      console.log('🚀 Starting AI with payload:', payload);
+
+      const response = await fetch('/api/ai-control/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-    } catch (error) {
-      console.error('Error launching AI:', error);
+
+      console.log('🚀 Response status:', response.status, response.statusText);
+
+      // Try to parse response - handle both JSON and non-JSON responses
+      let result: any;
+      try {
+        const text = await response.text();
+        console.log('🚀 Response text (first 500 chars):', text.substring(0, 500));
+        result = JSON.parse(text);
+      } catch (parseError) {
+        console.error('❌ Failed to parse response:', parseError);
+        setLaunching(false);
+        alert(`❌ Server returned an invalid response.\n\nThis usually means:\n1. Retell API key is incorrect\n2. Retell config is missing\n3. No callable leads available\n\nCheck /dashboard/ai-dialer/debug for details.`);
+        return;
+      }
+      
+      console.log('🚀 Start response:', result);
+
+      if (!response.ok) {
+        // ERROR! Show it to user
+        setLaunching(false);
+        alert(`❌ Failed to start AI:\n\n${result.error || 'Unknown error'}\n\n${JSON.stringify(result.details || '', null, 2)}`);
+        return;
+      }
+
+      // Success! Show launching animation for 2 seconds then close
+      setTimeout(() => {
+        onLaunched();
+        router.refresh();
+      }, 2000);
+
+    } catch (error: any) {
+      console.error('❌ Error launching AI:', error);
+      setLaunching(false);
+      alert(`❌ Failed to start AI:\n\n${error.message || 'Network error'}`);
     }
   };
 
@@ -218,9 +248,9 @@ export function LaunchAIModalV2({
                 <div className="relative px-2">
                   <input
                     type="range"
-                    min={sliderStep}
+                    min={1}
                     max={maxCallsAllowed}
-                    step={sliderStep}
+                    step={1}
                     value={leadCount}
                     onChange={(e) => setLeadCount(parseInt(e.target.value))}
                     className="w-full h-2 md:h-3 rounded-full appearance-none cursor-pointer"

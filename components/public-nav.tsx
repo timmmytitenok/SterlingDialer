@@ -3,11 +3,32 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Rocket } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 export function PublicNav() {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [user, setUser] = useState<any>(null);
+  const supabase = createClient();
+
+  // Check auth state
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      console.log('🔍 Auth check in PublicNav:', { user: user ? 'LOGGED IN' : 'LOGGED OUT', userId: user?.id });
+      setUser(user);
+    };
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('🔄 Auth state changed:', session?.user ? 'LOGGED IN' : 'LOGGED OUT');
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -57,74 +78,106 @@ export function PublicNav() {
           </Link>
 
           {/* Navigation - Centered */}
-          <div className="hidden lg:flex items-center gap-2 flex-1 justify-center">
+          <div className="hidden lg:flex items-center gap-5 flex-1 justify-center">
             <Link 
               href="/" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-medium group"
+              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-semibold group"
             >
               <span className="relative z-10">Home</span>
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
             </Link>
             <Link 
               href="/pricing" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-medium group"
+              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-semibold group"
             >
               <span className="relative z-10">Pricing</span>
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
             </Link>
             <Link 
-              href="/how-it-works" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-medium group"
+              href="/demo" 
+              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-semibold group"
             >
-              <span className="relative z-10">How It Works</span>
+              <span className="relative z-10">Demo</span>
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
             </Link>
             {/* Case Studies - Hidden for now */}
             {/* <Link 
               href="/case-studies" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-medium group"
+              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-semibold group"
             >
               <span className="relative z-10">Case Studies</span>
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
             </Link> */}
             <Link 
               href="/faq" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-medium group"
+              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-semibold group"
             >
               <span className="relative z-10">FAQ</span>
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
             </Link>
             <Link 
               href="/contact" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-medium group"
+              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-semibold group"
             >
               <span className="relative z-10">Contact</span>
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
             </Link>
           </div>
           
-          {/* Dashboard Button - Right Side */}
-          <div className="hidden lg:block flex-shrink-0">
-            <Link 
-              href="/login" 
-              className="group relative px-8 py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/50 overflow-hidden inline-flex"
-            >
-              <span className="relative z-10 flex items-center gap-2">
-                <Rocket className="w-5 h-5 group-hover:translate-y-[-2px] transition-transform" />
-                Go to Dashboard
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
-            </Link>
+          {/* Right Side: Conditional Based on Auth */}
+          <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
+            {user === null ? (
+              // LOGGED OUT: Show Sign In + Start Free Trial
+              <>
+                {/* Sign In Link */}
+                <Link 
+                  href="/login" 
+                  className="px-4 py-2 text-white/70 hover:text-white transition-colors font-medium"
+                >
+                  Sign In
+                </Link>
+
+                {/* Start Free Trial Button */}
+                <Link 
+                  href="/signup" 
+                  className="group relative px-6 py-2.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/50 overflow-hidden inline-flex items-center gap-2"
+                >
+                  <span className="relative z-10">Start Free Trial</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
+                </Link>
+              </>
+            ) : (
+              // LOGGED IN: Show Dashboard button only
+              <Link 
+                href="/dashboard" 
+                className="group relative px-6 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/50 overflow-hidden inline-flex items-center gap-2"
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  <Rocket className="w-4 h-4" />
+                  Go to Dashboard
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
+              </Link>
+            )}
           </div>
 
-          {/* Mobile Menu */}
+          {/* Mobile CTA - Conditional */}
           <div className="lg:hidden">
-            <Link 
-              href="/login" 
-              className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-lg hover:scale-105 transition-transform"
-            >
-              Dashboard
-            </Link>
+            {user !== null ? (
+              <Link 
+                href="/dashboard" 
+                className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-lg hover:scale-105 transition-transform text-sm"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <Link 
+                href="/login" 
+                className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-lg hover:scale-105 transition-transform text-sm"
+              >
+                Start Trial
+              </Link>
+            )}
           </div>
         </div>
       </div>

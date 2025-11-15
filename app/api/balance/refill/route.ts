@@ -10,9 +10,10 @@ export async function POST(req: Request) {
   try {
     const { amount, isFirstRefill } = await req.json();
 
-    if (!amount || ![50, 100].includes(amount)) {
-      return NextResponse.json({ error: 'Invalid amount. Must be 50 or 100' }, { status: 400 });
-    }
+    // Fixed refill amount: $25
+    const refillAmount = 25;
+    
+    console.log('💰 Balance refill requested:', { amount, isFirstRefill, fixedAmount: refillAmount });
 
     const supabase = await createClient();
 
@@ -45,42 +46,50 @@ export async function POST(req: Request) {
         .eq('user_id', user.id);
     }
 
-    // Calculate estimated minutes
-    const estimatedMinutes = Math.floor(amount / costPerMinute);
+    // Determine which price ID to use based on Stripe API key (not NODE_ENV)
+    const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_');
+    const priceId = isTestMode
+      ? process.env.STRIPE_PRICE_ID_BALANCE_REFILL_TEST // Test: price_1SSrtS060cz3QrqoF1VRvC1s
+      : process.env.STRIPE_PRICE_ID_BALANCE_REFILL; // Live: price_1SSrrT060cz3Qrqo3KP5c7LG
+    
+    console.log('💳 Stripe Mode:', isTestMode ? 'TEST' : 'LIVE');
+    console.log('💳 Using Price ID:', priceId ? `${priceId.substring(0, 15)}...` : 'NOT SET');
+    
+    if (!priceId) {
+      console.error('❌ Missing STRIPE_PRICE_ID_BALANCE_REFILL in environment!');
+      return NextResponse.json({ 
+        error: 'Balance refill not configured. Add STRIPE_PRICE_ID_BALANCE_REFILL to .env.local' 
+      }, { status: 500 });
+    }
 
-    // Create Stripe checkout session for balance refill
+    // Calculate estimated minutes for display
+    const estimatedMinutes = Math.floor(refillAmount / costPerMinute);
+
+    // Create Stripe checkout session using your $25 product
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [
         {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: isFirstRefill ? `Add Card & First Refill` : `Call Balance Top-Up`,
-              description: isFirstRefill 
-                ? `Add $${amount} to your balance + save card for auto-refill (≈${estimatedMinutes} minutes at $${costPerMinute}/min)`
-                : `Add $${amount} to your call balance (≈${estimatedMinutes} minutes at $${costPerMinute}/min)`,
-            },
-            unit_amount: amount * 100, // Convert to cents
-          },
+          price: priceId, // Use your fixed $25 product price!
           quantity: 1,
         },
       ],
       mode: 'payment',
       payment_intent_data: {
-        setup_future_usage: 'off_session', // Save payment method for future use
+        setup_future_usage: 'off_session', // Save card for auto-refill
       },
-      success_url: `${req.headers.get('origin')}/dashboard/settings/call-balance?balance_success=true&amount=${amount}`,
+      success_url: `${req.headers.get('origin')}/dashboard/settings/call-balance?balance_success=true&amount=25`,
       cancel_url: `${req.headers.get('origin')}/dashboard/settings/call-balance?balance_canceled=true`,
       metadata: {
         user_id: user.id,
         type: 'balance_refill',
-        amount: amount.toString(),
+        amount: '25', // Always $25
         is_first_refill: isFirstRefill ? 'true' : 'false',
-        auto_refill_amount: isFirstRefill ? amount.toString() : '',
       },
     });
+    
+    console.log('✅ Checkout session created:', session.id);
 
     return NextResponse.json({ success: true, sessionId: session.id, url: session.url });
   } catch (error: any) {

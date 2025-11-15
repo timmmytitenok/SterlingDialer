@@ -96,6 +96,7 @@ export function BillingTabs({
                 </div>
                 
                 <StripeBilling 
+                  userId={userId}
                   userEmail={userEmail} 
                   hasSubscription={hasSubscription}
                   currentTier={currentTier}

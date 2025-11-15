@@ -63,20 +63,32 @@ export default async function AppointmentsPage() {
     .eq('user_id', user.id)
     .single();
 
-  // Default to 8 AM - 8 PM if no settings
-  const startHour = calendarSettings?.start_hour ?? 8;
+  // Default to 9 AM - 8 PM if no settings
+  const startHour = calendarSettings?.start_hour ?? 9;
   const endHour = calendarSettings?.end_hour ?? 20;
 
   return (
-    <div className="min-h-screen bg-[#0B1437]">
-      <main className="container mx-auto px-4 lg:px-8 py-8">
+    <div className="min-h-screen bg-[#0B1437] relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-3xl -top-40 -left-40 animate-pulse" />
+        <div className="absolute w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-3xl -bottom-40 -right-40 animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+
+      {/* Grid Pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
+
+      <main className="container mx-auto px-4 lg:px-8 py-8 relative z-10">
         {/* Header */}
         <div className="mb-8 flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Appointments</h1>
             <p className="text-gray-400">Manage and view your scheduled appointments</p>
           </div>
-          <AddAppointmentButton userId={user.id} />
+          {/* Hidden for now - can be re-enabled later */}
+          <div className="hidden">
+            <AddAppointmentButton userId={user.id} existingAppointments={allAppointments || []} />
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -93,7 +105,11 @@ export default async function AppointmentsPage() {
               </div>
               <div className="text-5xl">🗓️</div>
             </div>
-            <p className="text-sm text-green-400/60">Appointments for today</p>
+            {todayAppointments.length === 0 ? (
+              <p className="text-sm text-green-400/80">No appointments today — your AI is still dialing and booking!</p>
+            ) : (
+              <p className="text-sm text-green-400/60">Appointments for today</p>
+            )}
           </div>
 
           {/* Active Appointments - RIGHT */}

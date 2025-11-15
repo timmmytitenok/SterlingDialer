@@ -26,7 +26,7 @@ export async function GET() {
     // Return default settings if none exist
     if (!settings) {
       return NextResponse.json({
-        start_hour: 8,
+        start_hour: 9,
         end_hour: 20,
       });
     }

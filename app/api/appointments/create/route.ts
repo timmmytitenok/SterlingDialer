@@ -28,10 +28,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Validate required fields
-    if (!contactName || !contactPhone || !contactAge || !contactState || !duration || !scheduledAt) {
+    // Validate required fields (only name, phone, duration, and scheduledAt are required)
+    if (!contactName || !contactPhone || !duration || !scheduledAt) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields (name, phone, duration, scheduledAt)' },
         { status: 400 }
       );
     }
@@ -85,10 +85,16 @@ export async function POST(request: Request) {
       is_no_show: false,
       prospect_name: contactName,
       prospect_phone: contactPhone,
-      prospect_age: contactAge,
-      prospect_state: contactState,
       created_at: new Date().toISOString(),
     };
+
+    // Add optional fields if provided
+    if (contactAge) {
+      appointmentData.prospect_age = contactAge;
+    }
+    if (contactState) {
+      appointmentData.prospect_state = contactState;
+    }
 
     // Note: duration_minutes column doesn't exist in current schema
     // Duration is handled by the duration parameter but not stored
@@ -117,20 +123,28 @@ export async function POST(request: Request) {
         cleanPhone = '1' + cleanPhone;
       }
       
+      const webhookPayload: any = {
+        appointmentId: data.id,
+        status: 'scheduled',
+        phoneNumber: cleanPhone,
+        prospectName: contactName,
+        scheduledAt: scheduledAt,
+        userId: user.id,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Add optional fields if provided
+      if (contactAge) {
+        webhookPayload.prospectAge = contactAge;
+      }
+      if (contactState) {
+        webhookPayload.prospectState = contactState;
+      }
+
       const webhookResponse = await fetch('https://timmmytitenok.app.n8n.cloud/webhook/167c711b-4cf9-46e7-a7cb-c37a4ef6f9f0', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          appointmentId: data.id,
-          status: 'scheduled',
-          phoneNumber: cleanPhone,
-          prospectName: contactName,
-          prospectAge: contactAge,
-          prospectState: contactState,
-          scheduledAt: scheduledAt,
-          userId: user.id,
-          timestamp: new Date().toISOString(),
-        }),
+        body: JSON.stringify(webhookPayload),
       });
       
       if (webhookResponse.ok) {

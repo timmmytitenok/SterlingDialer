@@ -201,40 +201,17 @@ export async function POST(req: Request) {
           
           console.log('✅ Found user for customer:', userProfile.user_id);
 
-          // Determine tier based on price ID
-          let tier: 'starter' | 'pro' | 'elite' = 'starter';
-          let maxCalls = 600;
-          let hasChecker = false;
-          let callerCount = 1;
+          // Single tier: SterlingAI Pro Access ($499/month)
+          const tier = 'pro';
+          const maxCalls = 999999; // Unlimited
+          const hasChecker = true;
+          const callerCount = 99; // Unlimited
+          const costPerMinute = 0.30; // Everyone pays $0.30/min
 
-          if (priceId === process.env.STRIPE_PRICE_ID_STARTER) {
-            tier = 'starter';
-            maxCalls = 600;
-            hasChecker = false;
-            callerCount = 1;
-          } else if (priceId === process.env.STRIPE_PRICE_ID_PRO) {
-            tier = 'pro';
-            maxCalls = 1200;
-            hasChecker = false;
-            callerCount = 2;
-          } else if (priceId === process.env.STRIPE_PRICE_ID_ELITE) {
-            tier = 'elite';
-            maxCalls = 1800;
-            hasChecker = false;
-            callerCount = 3;
-          } else {
-            console.warn('⚠️ Unknown price ID:', priceId, '- Defaulting to starter');
-          }
-
-          console.log('🎯 Determined tier:', { tier, maxCalls, hasChecker, callerCount });
-
-          // Determine cost_per_minute based on tier
-          let costPerMinute = 0.30; // Default (Starter)
-          if (tier === 'pro') {
-            costPerMinute = 0.25;
-          } else if (tier === 'elite') {
-            costPerMinute = 0.20;
-          }
+          console.log('💎 SterlingAI Pro Access subscription');
+          console.log('   - Tier: pro');
+          console.log('   - Cost per minute: $0.30');
+          console.log('   - Features: Unlimited');
 
           // Upsert subscription
           const { error: upsertError } = await supabase
@@ -702,14 +679,14 @@ export async function POST(req: Request) {
       // Check if this is a balance refill (not a subscription)
       if (session.mode === 'payment' && session.metadata?.type === 'balance_refill') {
         const userId = session.metadata.user_id;
-        const amount = parseFloat(session.metadata.amount);
+        const amount = 25; // Always $25
         const isFirstRefill = session.metadata.is_first_refill === 'true';
-        const autoRefillAmount = session.metadata.auto_refill_amount;
         
-        console.log('💰 Balance refill payment completed:', { userId, amount, isFirstRefill });
-        console.log('💰 Session metadata:', session.metadata);
-        console.log('💰 is_first_refill value:', session.metadata.is_first_refill);
-        console.log('💰 isFirstRefill boolean:', isFirstRefill);
+        console.log('💰💰💰 BALANCE REFILL PAYMENT COMPLETED 💰💰💰');
+        console.log('💰 User ID:', userId);
+        console.log('💰 Amount: $25 (fixed)');
+        console.log('💰 Is first refill:', isFirstRefill);
+        console.log('💰 Session ID:', session.id);
 
         try {
           // Get current balance
@@ -722,18 +699,20 @@ export async function POST(req: Request) {
           const balanceBefore = currentBalance?.balance || 0;
           const balanceAfter = balanceBefore + amount;
 
-          // Update balance (and auto-refill settings if this is first refill)
+          console.log(`💰 Balance: $${balanceBefore.toFixed(2)} → $${balanceAfter.toFixed(2)}`);
+
+          // Update balance (and enable auto-refill if first refill)
           const updateData: any = {
             user_id: userId,
             balance: balanceAfter,
             last_refill_at: new Date().toISOString(),
           };
 
-          // If this is the first refill, enable auto-refill with the selected amount
-          if (isFirstRefill && autoRefillAmount) {
+          // If this is the first refill, enable auto-refill
+          if (isFirstRefill) {
             updateData.auto_refill_enabled = true;
-            updateData.auto_refill_amount = parseFloat(autoRefillAmount);
-            console.log('💳 Enabling auto-refill with amount:', autoRefillAmount);
+            updateData.auto_refill_amount = 25; // Fixed $25
+            console.log('💳 Enabling auto-refill with fixed $25 amount');
           }
 
           const { error: updateError } = await supabase
@@ -747,7 +726,7 @@ export async function POST(req: Request) {
           } else {
             console.log('✅ Balance updated successfully:', balanceAfter);
             if (isFirstRefill) {
-              console.log('✅ Auto-refill enabled with amount:', autoRefillAmount);
+              console.log('✅ Auto-refill enabled with amount:', updateData.auto_refill_amount);
             }
           }
 

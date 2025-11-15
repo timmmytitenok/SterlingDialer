@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { User } from '@supabase/supabase-js';
-import { UserCircle, Mail, Save, LogOut, CheckCircle, AlertCircle, Sparkles, Phone, Building2, Crown, CreditCard } from 'lucide-react';
+import { UserCircle, Mail, Save, LogOut, CheckCircle, AlertCircle, Sparkles, Phone, Crown, CreditCard, Lock } from 'lucide-react';
 
 interface ProfileFormProps {
   user: User;
@@ -18,7 +18,6 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
   
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [phoneNumber, setPhoneNumber] = useState(profile?.phone_number || '');
-  const [companyName, setCompanyName] = useState(profile?.company_name || '');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
@@ -70,7 +69,6 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
           user_id: user.id,
           full_name: fullName,
           phone_number: phoneNumber,
-          company_name: companyName,
           updated_at: new Date().toISOString(),
         });
 
@@ -109,9 +107,16 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
   const tierInfo = getTierInfo();
 
   return (
-    <div className="space-y-6">
-      {/* Current Plan Display */}
-      {tierInfo && (
+    <>
+      {/* Page Title */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Profile Settings</h1>
+        <p className="text-gray-400">Manage your account information and preferences</p>
+      </div>
+
+      <div className="space-y-6 max-w-3xl">
+          {/* Current Plan Display */}
+          {tierInfo && (
         <div className="relative overflow-hidden bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl border border-gray-800 group/plan">
           {/* Glow Effect */}
           <div className={`absolute inset-0 bg-gradient-to-r from-${tierInfo.color}-600/0 via-${tierInfo.color}-600/5 to-${tierInfo.color}-600/0 opacity-0 group-hover/plan:opacity-100 transition-opacity duration-500`} />
@@ -208,33 +213,11 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="(555) 123-4567"
+                  placeholder={phoneNumber ? "(555) 123-4567" : "Add phone number!"}
                   className="w-full px-4 py-3 bg-[#0B1437]/50 backdrop-blur-sm border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 transition-all duration-200 group-hover/input:border-gray-600"
                 />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-green-500/0 to-emerald-500/0 group-focus-within/input:from-green-500/5 group-focus-within/input:to-emerald-500/5 pointer-events-none transition-all duration-300" />
               </div>
-            </div>
-
-            {/* Company/Agency Name */}
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
-                <Building2 className="w-4 h-4 text-purple-400" />
-                Agency/Company Name
-              </label>
-              <div className="relative group/input">
-                <input
-                  type="text"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="Smith Insurance Group"
-                  className="w-full px-4 py-3 bg-[#0B1437]/50 backdrop-blur-sm border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 group-hover/input:border-gray-600"
-                />
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-focus-within/input:from-purple-500/5 group-focus-within/input:to-pink-500/5 pointer-events-none transition-all duration-300" />
-              </div>
-              <p className="text-xs text-gray-500 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
-                Optional - appears on invoices and communications
-              </p>
             </div>
 
             {/* Email (Read-only) */}
@@ -242,6 +225,7 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
               <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
                 <Mail className="w-4 h-4 text-gray-400" />
                 Email Address
+                <Lock className="w-3 h-3 text-gray-500 ml-1" />
               </label>
               <div className="relative">
                 <input
@@ -250,8 +234,9 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
                   disabled
                   className="w-full px-4 py-3 bg-[#0B1437]/30 backdrop-blur-sm border border-gray-800 rounded-lg text-gray-500 cursor-not-allowed"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <div className="px-2 py-1 bg-gray-800/50 rounded text-xs text-gray-500">Read Only</div>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-gray-600" />
+                  <div className="px-2 py-1 bg-gray-800/50 rounded text-xs text-gray-500">Locked</div>
                 </div>
               </div>
               <p className="text-xs text-gray-500">Email cannot be changed for security reasons</p>
@@ -302,44 +287,37 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
         {/* Glow Effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-red-600/0 via-red-600/5 to-red-600/0 opacity-0 group-hover/danger:opacity-100 transition-opacity duration-500" />
         
-        {/* Animated Background */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-red-500/10 rounded-full blur-3xl animate-pulse" />
-        
-        <div className="relative p-8">
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-red-500/20 rounded-xl border border-red-500/30">
-              <LogOut className="w-6 h-6 text-red-400" />
+        <div className="relative p-6">
+          {/* Everything in 1 row - title left, button right */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-500/20 rounded-lg border border-red-500/30">
+                <LogOut className="w-4 h-4 text-red-400" />
+              </div>
+              <h3 className="text-base font-semibold text-red-400">Sign Out</h3>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-red-400">Danger Zone</h3>
-              <p className="text-sm text-gray-400">End your current session</p>
-            </div>
+            
+            <button
+              onClick={handleSignOut}
+              className="relative group/signout overflow-hidden rounded-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              {/* Button Background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-700" />
+              
+              {/* Shine Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover/signout:translate-x-[200%] transition-transform duration-1000" />
+              
+              {/* Button Content */}
+              <div className="relative flex items-center justify-center gap-2 px-4 py-2 border border-red-500/50">
+                <LogOut className="w-4 h-4" />
+                <span className="font-medium text-sm">Sign Out</span>
+              </div>
+            </button>
           </div>
-
-          <p className="text-gray-400 text-sm mb-6">
-            You will be signed out and redirected to the login page. Any unsaved changes will be lost.
-          </p>
-          
-          <button
-            onClick={handleSignOut}
-            className="relative group/signout overflow-hidden rounded-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-          >
-            {/* Button Background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-700" />
-            
-            {/* Shine Effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover/signout:translate-x-[200%] transition-transform duration-1000" />
-            
-            {/* Button Content */}
-            <div className="relative flex items-center justify-center gap-3 px-6 py-3 border border-red-500/50">
-              <LogOut className="w-5 h-5" />
-              <span className="font-semibold">Sign Out</span>
-            </div>
-          </button>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

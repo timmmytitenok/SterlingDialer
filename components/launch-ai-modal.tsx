@@ -144,6 +144,7 @@ export function LaunchAIModal({ userId, initialLimit, initialTransfer, onClose, 
                 type="range"
                 min="1"
                 max="600"
+                step="1"
                 value={dailyLimit}
                 onChange={(e) => setDailyLimit(parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-700 rounded-full appearance-none cursor-pointer transition-all duration-200"

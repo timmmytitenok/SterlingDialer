@@ -1,565 +1,174 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2, Zap, ArrowRight, Loader2, Sparkles } from 'lucide-react';
-import { UpgradeConfirmationModal } from './upgrade-confirmation-modal';
-import { FinalConfirmationModal } from './final-confirmation-modal';
+import { CheckCircle2, Zap, ArrowRight, Loader2, Sparkles, Clock } from 'lucide-react';
 
 interface SubscriptionTierSelectorProps {
   currentTier?: 'starter' | 'pro' | 'elite' | 'none' | null;
-  hideFreeTrial?: boolean; // Hide free trial option (for trial-expired page)
+  hideFreeTrial?: boolean;
 }
 
 export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }: SubscriptionTierSelectorProps) {
-  const [loading, setLoading] = useState<string | null>(null);
-  const [pendingTier, setPendingTier] = useState<'starter' | 'pro' | 'elite' | null>(null);
-  const [showFinalConfirmation, setShowFinalConfirmation] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [trialLoading, setTrialLoading] = useState(false);
-  const [showTrialConfirmation, setShowTrialConfirmation] = useState(false);
-  const [trialAgreed, setTrialAgreed] = useState(false);
 
-  const handleSubscribeClick = (tier: 'starter' | 'pro' | 'elite') => {
-    // If user already has a subscription, show first confirmation modal
-    if (currentTier && ['starter', 'pro', 'elite'].includes(currentTier)) {
-      setPendingTier(tier);
-      setShowFinalConfirmation(false);
-    } else {
-      // New subscription, proceed directly
-      handleSubscribe(tier);
-    }
-  };
-
-  const handleFirstConfirmation = () => {
-    // First modal confirmed, show second final confirmation modal
-    setShowFinalConfirmation(true);
-  };
-
-  const handleFinalConfirmation = () => {
-    // All confirmations done, proceed with the actual upgrade
-    if (pendingTier) {
-      handleSubscribe(pendingTier);
-    }
-  };
-
-  const handleCancelAll = () => {
-    // Cancel everything and reset
-    setPendingTier(null);
-    setShowFinalConfirmation(false);
-  };
-
-  const handleStartFreeTrial = () => {
-    setShowTrialConfirmation(true);
-  };
-
-  const confirmStartFreeTrial = async () => {
-    if (!trialAgreed) {
-      alert('Please agree to the terms to start your free trial.');
-      return;
-    }
-
-    setShowTrialConfirmation(false);
-    setTrialLoading(true);
+  const handleSubscribe = async () => {
+    setLoading(true);
     try {
-      console.log('🎁 Starting free trial...');
-      
-      const response = await fetch('/api/trial/start', {
+      const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier: 'pro' }),
       });
 
-      console.log('📡 Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ API Error:', errorData);
-        throw new Error(errorData.error || `Server error: ${response.status}`);
-      }
-      
       const data = await response.json();
-      console.log('📦 Response data:', data);
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (data.sessionId) {
+        window.location.href = `/api/stripe/verify-session?session_id=${data.sessionId}`;
+      } else {
+        alert(data.error || 'Failed to create checkout');
+        setLoading(false);
+      }
+    } catch (error) {
+      alert('Error creating checkout');
+      setLoading(false);
+    }
+  };
+
+  const handleStartFreeTrial = async () => {
+    setTrialLoading(true);
+    try {
+      const response = await fetch('/api/trial/start', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
 
       if (data.success) {
-        console.log('✅ Free trial started! Redirecting to onboarding...');
-        // Redirect to onboarding page
         window.location.href = '/onboarding';
       } else {
-        console.error('❌ No success in response:', data);
-        alert(`Failed to start trial: ${data.error || 'Unknown error'}`);
+        alert(data.error || 'Failed to start trial');
         setTrialLoading(false);
       }
     } catch (error) {
-      console.error('❌ Free trial error:', error);
-      alert(`Error starting free trial: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      alert('Error starting trial');
       setTrialLoading(false);
     }
   };
 
-  const handleSubscribe = async (tier: 'starter' | 'pro' | 'elite') => {
-    setShowFinalConfirmation(false);
-    setPendingTier(null);
-    setLoading(tier);
-    try {
-      console.log('🚀 Starting checkout for tier:', tier);
-      
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier }),
-      });
-
-      console.log('📡 Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ API Error:', errorData);
-        throw new Error(errorData.error || errorData.details || `Server error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('📦 Response data:', data);
-
-      // Handle upgrade (existing subscription updated)
-      if (data.upgraded) {
-        console.log('✅ Subscription upgraded! Refreshing page...');
-        alert('✅ Your plan has been upgraded! Proration will be applied to your next invoice.');
-        // Refresh the page to show updated tier
-        window.location.reload();
-        return;
-      }
-
-      // Handle new subscription (redirect to checkout)
-      if (data.url) {
-        console.log('✅ Redirecting to checkout:', data.url);
-        window.location.href = data.url;
-      } else {
-        console.error('❌ No checkout URL in response:', data);
-        console.error('❌ Full response:', JSON.stringify(data, null, 2));
-        const errorMessage = data.error || data.details || 'Unknown error - check console for details';
-        alert(`Failed to process subscription: ${errorMessage}`);
-        setLoading(null);
-      }
-    } catch (error) {
-      console.error('❌ Checkout error:', error);
-      alert(`Error processing subscription: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setLoading(null);
-    }
-  };
-
-  const isCurrentTier = (tier: string) => currentTier === tier;
-
-  // Helper to determine if moving to target tier is an upgrade or downgrade
-  const getTierLevel = (tier: string | undefined | null) => {
-    if (tier === 'elite') return 3;
-    if (tier === 'pro') return 2;
-    if (tier === 'starter') return 1;
-    return 0; // no tier or 'none'
-  };
-
-  const getButtonText = (targetTier: 'starter' | 'pro' | 'elite') => {
-    const currentLevel = getTierLevel(currentTier);
-    const targetLevel = getTierLevel(targetTier);
-
-    // New subscription
-    if (currentLevel === 0) {
-      return 'Activate';
-    }
-
-    // Same tier
-    if (currentLevel === targetLevel) {
-      return 'Current Plan';
-    }
-
-    // Determine upgrade or downgrade
-    if (targetLevel > currentLevel) {
-      return `Upgrade to ${targetTier.charAt(0).toUpperCase() + targetTier.slice(1)}`;
-    } else {
-      return `Downgrade to ${targetTier.charAt(0).toUpperCase() + targetTier.slice(1)}`;
-    }
-  };
-
   return (
-    <div className="space-y-6 md:space-y-8">
-      {/* Header */}
-      <div className="text-center">
-        <h2 className="text-xl md:text-3xl font-bold text-white mb-1 md:mb-2">
-          {currentTier && currentTier !== 'none' ? 'Upgrade or Change Your Plan' : 'Choose Package '}
-        </h2>
-        <p className="text-sm md:text-base text-gray-400">
-          {currentTier && currentTier !== 'none' ? 'Switch plans anytime' : 'Start reviving old leads and booking appointments automatically'}
-        </p>
-      </div>
-
-
-      {/* Pricing Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mt-6 md:mt-8">
-        
-        {/* Starter Plan */}
-        <div className={`relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl md:rounded-2xl p-4 md:p-6 border-2 transition-all duration-500 md:hover:scale-105 hover:border-blue-500/60 hover:shadow-2xl hover:shadow-blue-500/40 cursor-pointer group ${
-          isCurrentTier('starter') ? 'border-blue-500/50 ring-2 ring-blue-500/30' : 'border-blue-500/30'
-        }`}>
-          <div className="text-center mb-4 md:mb-6">
-            <h3 className="text-xl md:text-2xl font-bold text-white mb-1 md:mb-2">Starter</h3>
-            <p className="text-gray-400 text-xs md:text-sm mb-3 md:mb-4">Perfect for getting started</p>
-            
-            <div className="flex items-baseline justify-center gap-1 mb-2">
-              <span className="text-4xl md:text-5xl font-bold text-white">$499</span>
-              <span className="text-lg md:text-xl text-gray-400">/mo</span>
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Free Trial Card */}
+      {!hideFreeTrial && (
+        <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-2xl p-8 border-2 border-green-500/30">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/20 rounded-full mb-4">
+              <Sparkles className="w-8 h-8 text-green-400" />
             </div>
-            <p className="text-sm text-blue-400 font-semibold">+ $0.30/min</p>
-          </div>
-
-          <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-300 text-xs md:text-sm">1 AI Caller</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-300 text-xs md:text-sm">600 leads per day</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-300 text-xs md:text-sm">Live call transfer</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-300 text-xs md:text-sm">Calendar integration</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-300 text-xs md:text-sm">Call analytics</span>
-            </div>
+            <h3 className="text-3xl font-bold text-white mb-2">🎁 Start Your Free Trial</h3>
+            <p className="text-green-300 text-lg">Try all features FREE for 30 days - No credit card required!</p>
           </div>
 
           <button
-            onClick={() => handleSubscribeClick('starter')}
-            disabled={loading !== null || isCurrentTier('starter')}
-            className={`w-full flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 font-bold rounded-lg md:rounded-xl transition-all duration-300 text-sm md:text-base ${
-              isCurrentTier('starter')
-                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white md:hover:scale-105 hover:shadow-xl hover:shadow-blue-500/50'
-            }`}
+            onClick={handleStartFreeTrial}
+            disabled={trialLoading}
+            className="w-full px-8 py-5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold text-xl rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-green-500/50 disabled:opacity-50"
           >
-            {loading === 'starter' ? (
-              <>
-                <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
-                Processing...
-              </>
-            ) : isCurrentTier('starter') ? (
-              'Current Plan'
+            {trialLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                Starting Trial...
+              </span>
             ) : (
-              <>
-                <Zap className="w-4 h-4 md:w-5 md:h-5" />
-                {getButtonText('starter')}
-                <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
-              </>
+              <span className="flex items-center justify-center gap-2">
+                <Clock className="w-6 h-6" />
+                Start 30-Day Free Trial
+                <ArrowRight className="w-6 h-6" />
+              </span>
             )}
           </button>
         </div>
+      )}
 
-        {/* Pro Plan - MOST POPULAR */}
-        <div className={`relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl md:rounded-2xl p-4 md:p-6 border-2 transform lg:scale-105 transition-all duration-500 md:hover:scale-110 hover:border-purple-500/70 hover:shadow-3xl hover:shadow-purple-500/50 cursor-pointer group ${
-          isCurrentTier('pro') ? 'border-purple-500/50 ring-2 ring-purple-500/30' : 'border-purple-500/40'
-        }`}>
-          {/* Most Popular Badge */}
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs md:text-sm rounded-full shadow-lg whitespace-nowrap">
-            ⭐ MOST POPULAR
-          </div>
-          
-          <div className="text-center mb-4 md:mb-6 mt-2">
-            <h3 className="text-xl md:text-2xl font-bold text-white mb-1 md:mb-2">Pro</h3>
-            <p className="text-gray-400 text-xs md:text-sm mb-3 md:mb-4">For serious closers</p>
-            
-            <div className="flex items-baseline justify-center gap-1 mb-2">
-              <span className="text-4xl md:text-5xl font-bold text-white">$899</span>
-              <span className="text-lg md:text-xl text-gray-400">/mo</span>
+      {/* Single Pro Plan */}
+      <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-8 border-2 border-blue-500/40 shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5"></div>
+
+        <div className="relative z-10">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-4 shadow-lg">
+              <Zap className="w-10 h-10 text-white" />
             </div>
-            <p className="text-sm text-purple-400 font-semibold">+ $0.25/min</p>
+            <h2 className="text-4xl font-bold text-white mb-3">
+              SterlingAI Pro Access
+            </h2>
+            <div className="flex items-baseline justify-center gap-2 mb-3">
+              <span className="text-6xl font-bold text-blue-400">$499</span>
+              <span className="text-2xl text-gray-400">/month</span>
+            </div>
+            <p className="text-gray-300 text-lg">
+              Full access + pay-as-you-go minutes ($0.30/min)
+            </p>
           </div>
 
-          <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-300 text-xs md:text-sm">2 AI Callers</span>
+          <div className="space-y-4 mb-8">
+            {[
+              'Unlimited AI calling agents',
+              'All premium features unlocked',
+              'Priority support & setup',
+              'Advanced analytics & reporting',
+              'Google Sheets integration',
+              'Cal.ai appointment booking',
+              'Live transfer capability',
+              'Custom AI configuration',
+            ].map((feature, index) => (
+              <div key={index} className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg">
+                <CheckCircle2 className="w-6 h-6 text-green-400 flex-shrink-0" />
+                <span className="text-white font-medium">{feature}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mb-8 p-6 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+            <h4 className="text-white font-bold mb-2">💰 Pay-As-You-Go Minutes</h4>
+            <p className="text-gray-300 text-sm mb-3">
+              Only pay for minutes you use - billed separately
+            </p>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Per-minute rate:</span>
+              <span className="text-2xl font-bold text-blue-400">$0.30/min</span>
             </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-300 text-xs md:text-sm">1,200 leads per day</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-300 text-xs md:text-sm">Live call transfer</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-300 text-xs md:text-sm">Priority support</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-300 text-xs md:text-sm">All Starter features</span>
-            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Auto-refill $25 when balance drops below $10
+            </p>
           </div>
 
           <button
-            onClick={() => handleSubscribeClick('pro')}
-            disabled={loading !== null || isCurrentTier('pro')}
-            className={`w-full flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 font-bold rounded-lg md:rounded-xl transition-all duration-300 text-sm md:text-base ${
-              isCurrentTier('pro')
-                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white md:hover:scale-105 hover:shadow-xl hover:shadow-purple-500/50'
-            }`}
+            onClick={handleSubscribe}
+            disabled={loading}
+            className="w-full px-8 py-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-bold text-2xl rounded-xl transition-all duration-300 hover:scale-105 shadow-2xl hover:shadow-blue-500/50 disabled:opacity-50"
           >
-            {loading === 'pro' ? (
-              <>
-                <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
+            {loading ? (
+              <span className="flex items-center justify-center gap-3">
+                <Loader2 className="w-7 h-7 animate-spin" />
                 Processing...
-              </>
-            ) : isCurrentTier('pro') ? (
-              'Current Plan'
+              </span>
             ) : (
-              <>
-                <Zap className="w-4 h-4 md:w-5 md:h-5" />
-                {getButtonText('pro')}
-                <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
-              </>
+              <span className="flex items-center justify-center gap-3">
+                <Sparkles className="w-7 h-7" />
+                Subscribe Now - $499/month
+                <ArrowRight className="w-7 h-7" />
+              </span>
             )}
           </button>
+
+          <p className="text-center text-gray-400 text-sm mt-4">
+            Cancel anytime • Billed monthly • Secure payment via Stripe
+          </p>
         </div>
-
-        {/* Elite Plan */}
-        <div className={`relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl md:rounded-2xl p-4 md:p-6 border-2 transition-all duration-500 md:hover:scale-105 hover:border-amber-500/60 hover:shadow-2xl hover:shadow-amber-500/40 cursor-pointer group ${
-          isCurrentTier('elite') ? 'border-amber-500/50 ring-2 ring-amber-500/30' : 'border-amber-500/30'
-        }`}>
-          <div className="text-center mb-4 md:mb-6">
-            <h3 className="text-xl md:text-2xl font-bold text-white mb-1 md:mb-2">Elite</h3>
-            <p className="text-gray-400 text-xs md:text-sm mb-3 md:mb-4">Maximum volume & automation</p>
-            
-            <div className="flex items-baseline justify-center gap-1 mb-2">
-              <span className="text-4xl md:text-5xl font-bold text-white">$1,499</span>
-              <span className="text-lg md:text-xl text-gray-400">/mo</span>
-            </div>
-            <p className="text-sm text-amber-400 font-semibold">+ $0.20/min</p>
-          </div>
-
-          <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <span className="text-white font-semibold text-xs md:text-sm">3 AI Callers</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <span className="text-white font-semibold text-xs md:text-sm">2,000 leads per day</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-300 text-xs md:text-sm">Live call transfer</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-300 text-xs md:text-sm">Priority support</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-300 text-xs md:text-sm">All Pro features</span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => handleSubscribeClick('elite')}
-            disabled={loading !== null || isCurrentTier('elite')}
-            className={`w-full flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 font-bold rounded-lg md:rounded-xl transition-all duration-300 text-sm md:text-base ${
-              isCurrentTier('elite')
-                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white md:hover:scale-105 hover:shadow-xl hover:shadow-amber-500/50'
-            }`}
-          >
-            {loading === 'elite' ? (
-              <>
-                <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
-                Processing...
-              </>
-            ) : isCurrentTier('elite') ? (
-              'Current Plan'
-            ) : (
-              <>
-                <Zap className="w-4 h-4 md:w-5 md:h-5" />
-                {getButtonText('elite')}
-                <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
-              </>
-            )}
-          </button>
-        </div>
-
       </div>
-
-      {/* Free Trial Banner (only show if no current tier AND not hidden) */}
-      {(!currentTier || currentTier === 'none' || currentTier === null) && !hideFreeTrial && (
-        <div className="mb-6 md:mb-8 mt-25 md:mt-28">
-          <div className="relative bg-gradient-to-br from-green-600/20 to-emerald-600/20 rounded-xl md:rounded-2xl p-4 md:p-6 border-2 border-green-500/50 hover:border-green-500/70 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/40">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-sm rounded-full shadow-lg whitespace-nowrap">
-              🎁 30-DAY FREE TRIAL
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-6">
-              {/* Left side - info */}
-              <div className="space-y-3">
-                <h3 className="text-xl md:text-2xl font-bold text-white">Try Sterling AI Risk-Free!</h3>
-                <p className="text-sm md:text-base text-gray-300">
-                  Get full access to all features for 30 days. Only pay $0.30/min for calls you make.
-                </p>
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-xs md:text-sm text-gray-300">1 AI Caller • 600 dials per day</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-xs md:text-sm text-gray-300">$0.30/minute calling costs</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-xs md:text-sm text-gray-300">All core features included</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-xs md:text-sm text-gray-300">Cancel anytime, no commitment</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right side - CTA */}
-              <div className="flex flex-col justify-center items-center">
-                <div className="text-center mb-4">
-                  <div className="text-4xl md:text-5xl font-bold text-white mb-2">FREE</div>
-                  <p className="text-sm md:text-base text-gray-400">for 30 days</p>
-                </div>
-                <button
-                  onClick={handleStartFreeTrial}
-                  disabled={trialLoading}
-                  className="w-full md:w-auto px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {trialLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Starting Trial...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5" />
-                      Start Free Trial
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-                <p className="text-xs text-gray-500 mt-3 text-center">Instant setup • Cancel anytime</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6 text-center">
-        <p className="text-blue-300 text-sm">
-          💳 <strong>Secure checkout powered by Stripe</strong> • Cancel anytime • No long-term contracts
-        </p>
-      </div>
-
-      {/* First Confirmation Modal */}
-      {pendingTier && currentTier && ['starter', 'pro', 'elite'].includes(currentTier) && !showFinalConfirmation && (
-        <UpgradeConfirmationModal
-          currentTier={currentTier as 'starter' | 'pro' | 'elite'}
-          newTier={pendingTier}
-          onConfirm={handleFirstConfirmation}
-          onCancel={handleCancelAll}
-        />
-      )}
-
-      {/* Final Confirmation Modal (with checkbox agreement) */}
-      {pendingTier && currentTier && ['starter', 'pro', 'elite'].includes(currentTier) && showFinalConfirmation && (
-        <FinalConfirmationModal
-          currentTier={currentTier as 'starter' | 'pro' | 'elite'}
-          newTier={pendingTier}
-          onConfirm={handleFinalConfirmation}
-          onCancel={() => setShowFinalConfirmation(false)}
-        />
-      )}
-
-      {/* Free Trial Confirmation Modal */}
-      {showTrialConfirmation && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-6 md:p-8 max-w-md w-full border-2 border-green-500/30 shadow-2xl shadow-green-500/20 animate-in zoom-in duration-300">
-            {/* Header */}
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/50">
-                <Sparkles className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                Start Your Free Trial?
-              </h3>
-              <p className="text-gray-400 text-sm md:text-base">
-                Activate your 30-day free trial and start reviving old leads today!
-              </p>
-            </div>
-
-            {/* Benefits */}
-            <div className="space-y-3 mb-6 bg-green-500/5 border border-green-500/20 rounded-xl p-4">
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-300 text-sm">30 days of full access</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-300 text-sm">1 AI Caller • 600 dials per day</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-300 text-sm">Only pay $0.30/min for calls</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-300 text-sm">Cancel anytime, no commitment</span>
-              </div>
-            </div>
-
-            {/* Agreement Checkbox */}
-            <div className="mb-6">
-              <label className="flex items-start gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={trialAgreed}
-                  onChange={(e) => setTrialAgreed(e.target.checked)}
-                  className="w-5 h-5 mt-0.5 rounded border-2 border-gray-600 bg-gray-800 text-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900 cursor-pointer"
-                />
-                <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
-                  I understand that I will be charged <span className="text-green-400 font-bold">$0.30 per minute</span> for calls made during my trial period
-                </span>
-              </label>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={() => {
-                  setShowTrialConfirmation(false);
-                  setTrialAgreed(false);
-                }}
-                className="flex-1 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-all duration-300 border border-gray-700 hover:border-gray-600"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmStartFreeTrial}
-                disabled={!trialAgreed}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-              >
-                <Sparkles className="w-5 h-5" />
-                Start Free Trial
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
-

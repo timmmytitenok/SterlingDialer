@@ -23,7 +23,7 @@ export function MobileFooter() {
             <span className="text-xl font-bold text-white">Sterling AI</span>
           </div>
           <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">
-            Revive old leads and book appointments automatically with AI-powered calling.
+            Revive your old leads into booked appointments.
           </p>
         </div>
 
@@ -47,11 +47,11 @@ export function MobileFooter() {
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Contact</h3>
           <div className="space-y-2">
             <a 
-              href="mailto:SterlingDailer@gmail.com" 
+              href="mailto:SterlingDialer@gmail.com" 
               className="flex items-center justify-center gap-2 py-2.5 px-3 bg-gray-800/30 hover:bg-gray-800/50 border border-gray-800 hover:border-gray-700 rounded-lg text-sm text-gray-300 hover:text-white transition-all duration-200"
             >
               <Mail className="w-4 h-4 text-blue-400" />
-              <span className="text-xs">SterlingDailer@gmail.com</span>
+              <span className="text-xs">SterlingDialer@gmail.com</span>
             </a>
             <Link 
               href="/contact" 
@@ -63,17 +63,8 @@ export function MobileFooter() {
           </div>
         </div>
 
-        {/* Legal Links */}
+        {/* Legal Links - Removed (now in nav dropdown) */}
         <div className="space-y-2 pt-4 border-t border-gray-800/50">
-          <div className="flex items-center justify-center gap-4 text-xs">
-            <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
-              Terms
-            </Link>
-            <span className="text-gray-700">•</span>
-            <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
-              Privacy
-            </Link>
-          </div>
           <p className="text-xs text-gray-600 text-center">
             © 2025 Sterling AI. All rights reserved.
           </p>

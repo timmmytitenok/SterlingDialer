@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, ChevronLeft, ChevronRight, Search, FileText } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface ActivityLogsTableProps {
@@ -10,11 +10,28 @@ interface ActivityLogsTableProps {
 
 export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
   const [filter, setFilter] = useState<'all' | 'today' | '7days'>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50;
+  const pageSize = 10;
 
-  // Filter calls based on selected period
-  const filteredCalls = useMemo(() => {
+  // Helper: Normalize status for comparison
+  const normalizeStatus = (status: string | null): string => {
+    if (!status) return 'unclassified';
+    return status.toLowerCase().replace(/ /g, '_');
+  };
+
+  // Helper: Format date for search
+  const formatDateForSearch = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  // Step 1: Filter calls based on selected time period
+  const dateFilteredCalls = useMemo(() => {
     if (filter === 'all') return calls;
 
     const now = new Date();
@@ -33,16 +50,128 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
     });
   }, [calls, filter]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredCalls.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedCalls = filteredCalls.slice(startIndex, endIndex);
+  // Step 2: Filter by status/disposition
+  const statusFilteredCalls = useMemo(() => {
+    if (statusFilter === 'all') return dateFilteredCalls;
+    
+    return dateFilteredCalls.filter(call => {
+      const callStatus = normalizeStatus(call.outcome);
+      return callStatus === statusFilter;
+    });
+  }, [dateFilteredCalls, statusFilter]);
 
-  // Reset to page 1 when filter changes
+  // Step 3: Filter by search query (name, phone, or date)
+  const visibleCalls = useMemo(() => {
+    if (!searchQuery) return statusFilteredCalls;
+
+    const q = searchQuery.toLowerCase();
+    return statusFilteredCalls.filter(call => {
+      const name = (call.contact_name || '').toLowerCase();
+      const phone = (call.contact_phone || '').toLowerCase();
+      const dateStr = formatDateForSearch(call.created_at).toLowerCase();
+      
+      return name.includes(q) || phone.includes(q) || dateStr.includes(q);
+    });
+  }, [statusFilteredCalls, searchQuery]);
+
+  // Step 4: Pagination
+  const totalPages = Math.ceil(visibleCalls.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedCalls = visibleCalls.slice(startIndex, endIndex);
+
+  // Reset to page 1 when any filter changes
   const handleFilterChange = (newFilter: 'all' | 'today' | '7days') => {
     setFilter(newFilter);
     setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (newStatus: string) => {
+    setStatusFilter(newStatus);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
+
+  // Helper: Get duration color class based on seconds
+  const getDurationClass = (seconds: number | null): string => {
+    if (!seconds) return 'text-gray-400';
+    if (seconds < 20) return 'text-red-400';
+    if (seconds < 60) return 'text-yellow-400';
+    return 'text-emerald-400';
+  };
+
+  // PDF Export Handler
+  const handleExportPdf = async () => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const autoTable = (await import('jspdf-autotable')).default;
+      
+      const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+      
+      // Add title
+      doc.setFontSize(18);
+      doc.setTextColor(59, 130, 246); // blue color
+      doc.text('Sterling AI - Call History Report', 14, 15);
+      
+      // Add metadata
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 22);
+      doc.text(`Total Calls: ${visibleCalls.length}`, 14, 27);
+      
+      // Prepare table data
+      const tableData = visibleCalls.map(call => [
+        formatDateForSearch(call.created_at),
+        new Date(call.created_at).toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        }),
+        call.contact_name || 'Unknown',
+        call.contact_phone || 'N/A',
+        formatDuration(call.duration_seconds),
+        call.outcome?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'N/A',
+      ]);
+      
+      // Generate table
+      autoTable(doc, {
+        head: [['Date', 'Time', 'Name', 'Phone', 'Duration', 'Status']],
+        body: tableData,
+        startY: 32,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [59, 130, 246], // blue
+          textColor: 255,
+          fontStyle: 'bold',
+          halign: 'center',
+        },
+        bodyStyles: {
+          textColor: 50,
+        },
+        alternateRowStyles: {
+          fillColor: [245, 247, 250],
+        },
+        columnStyles: {
+          0: { cellWidth: 25 }, // Date
+          1: { cellWidth: 25 }, // Time
+          2: { cellWidth: 50 }, // Name
+          3: { cellWidth: 40 }, // Phone
+          4: { cellWidth: 25 }, // Duration
+          5: { cellWidth: 45 }, // Status
+        },
+        margin: { top: 32 },
+      });
+      
+      // Save the PDF
+      doc.save(`sterling-ai-call-history-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
   };
 
   // Helper: Format phone number
@@ -122,8 +251,8 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
 
   return (
     <div className="bg-[#1A2647] rounded-xl border border-gray-800 overflow-hidden">
-      {/* Filters */}
-      <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+      {/* Header with Title and Time Filters */}
+      <div className="p-6 border-b border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h3 className="text-lg font-bold text-white">Call History</h3>
         <div className="flex gap-1 bg-[#0B1437] p-1 rounded-lg border border-gray-700">
           <button
@@ -156,6 +285,62 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
           >
             Last 7 Days
           </button>
+        </div>
+      </div>
+
+      {/* Filter Bar: Status Dropdown, Search, and Export */}
+      <div className="px-6 py-4 border-b border-gray-800 flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between bg-[#0B1437]/30">
+        {/* Left: Status Filter Dropdown */}
+        <div className="flex items-center gap-3">
+          <label htmlFor="status-filter" className="text-sm font-medium text-gray-300 whitespace-nowrap">
+            Filter by Status:
+          </label>
+          <div className="relative">
+            <select
+              id="status-filter"
+              value={statusFilter}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
+              className="appearance-none pl-4 pr-12 py-2 bg-[#1A2647] border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all cursor-pointer"
+            >
+              <option value="all">All statuses</option>
+              <option value="not_interested">Not Interested</option>
+              <option value="callback_later">Callback</option>
+              <option value="live_transfer">Live Transfers</option>
+              <option value="appointment_booked">Booked Appointments</option>
+              <option value="unclassified">Unclassified</option>
+            </select>
+            {/* Custom Dropdown Arrow */}
+            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Search Bar and Export Button */}
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          {/* Search Input */}
+          <div className="relative flex-1 lg:flex-initial">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name, phone, or date..."
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="w-full lg:w-80 pl-10 pr-4 py-2 bg-[#1A2647] border border-gray-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            />
+          </div>
+
+          {/* Export PDF Button */}
+          <Button
+            onClick={handleExportPdf}
+            disabled={visibleCalls.length === 0}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+          >
+            <FileText className="w-4 h-4" />
+            Export PDF
+          </Button>
         </div>
       </div>
 
@@ -220,7 +405,7 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
 
                 {/* Duration */}
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-white font-medium">
+                  <div className={`text-sm font-semibold ${getDurationClass(call.duration_seconds)}`}>
                     {formatDuration(call.duration_seconds)}
                   </div>
                 </td>
@@ -254,9 +439,9 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
 
       {/* Pagination Footer */}
       <div className="p-4 bg-[#0B1437] border-t border-gray-800">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-400">
-            Showing {startIndex + 1}-{Math.min(endIndex, filteredCalls.length)} of {filteredCalls.length} calls
+            Showing {visibleCalls.length === 0 ? 0 : startIndex + 1}–{Math.min(endIndex, visibleCalls.length)} of {visibleCalls.length} calls
           </p>
 
           {totalPages > 1 && (

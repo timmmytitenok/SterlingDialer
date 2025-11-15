@@ -75,8 +75,15 @@ export function AppointmentCalendar({
     <>
       <div className="bg-[#1A2647] rounded-xl border border-gray-800 overflow-hidden">
         <div className="p-6 border-b border-gray-800">
-          <h3 className="text-xl font-bold text-white mb-1">Calendar View</h3>
-          <p className="text-sm text-gray-400">Next 5 days - Click an appointment to view details</p>
+          <h3 className="text-xl font-bold text-white mb-3">Calendar View</h3>
+          
+          {/* Helpful Hint */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-xs text-blue-400 font-medium">💡 Tap an appointment to update the status</span>
+          </div>
         </div>
 
         <div className="w-full">

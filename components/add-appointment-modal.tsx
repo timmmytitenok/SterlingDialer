@@ -1,19 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
-import { X, Calendar, Clock, User, Phone, MapPin, Hash } from 'lucide-react';
+import { X, Calendar, Clock, User, Phone, MapPin, Hash, ChevronDown, AlertCircle } from 'lucide-react';
 
 interface AddAppointmentModalProps {
   onClose: () => void;
   userId: string;
+  existingAppointments?: any[];
 }
 
-export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProps) {
+export function AddAppointmentModal({ onClose, userId, existingAppointments = [] }: AddAppointmentModalProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [showMoreDetails, setShowMoreDetails] = useState(false);
+  const [conflictWarning, setConflictWarning] = useState('');
 
   // Form state
   const [name, setName] = useState('');
@@ -21,8 +24,38 @@ export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProp
   const [age, setAge] = useState('');
   const [state, setState] = useState('');
   const [duration, setDuration] = useState('20'); // Default 20 minutes
-  const [date, setDate] = useState('');
+  const [selectedDateOption, setSelectedDateOption] = useState(''); // 'today', 'tomorrow', or ISO date
   const [time, setTime] = useState('');
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedHour, setSelectedHour] = useState('09');
+  const [selectedMinute, setSelectedMinute] = useState('00');
+  const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('AM');
+
+  // Time picker options
+  const hours = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+  const minutes = ['00', '10', '20', '30', '40', '50'];
+
+  // Update time value when hour/minute/period changes
+  const updateTime = (hour: string, minute: string, period: 'AM' | 'PM') => {
+    let hour24 = parseInt(hour);
+    if (period === 'PM' && hour24 !== 12) {
+      hour24 += 12;
+    } else if (period === 'AM' && hour24 === 12) {
+      hour24 = 0;
+    }
+    const timeStr = `${String(hour24).padStart(2, '0')}:${minute}`;
+    setTime(timeStr);
+  };
+
+  // Format time for display
+  const formatTimeDisplay = () => {
+    if (!time) return 'Select time';
+    const [hour, minute] = time.split(':');
+    const hourNum = parseInt(hour);
+    const period = hourNum >= 12 ? 'PM' : 'AM';
+    const displayHour = hourNum === 0 ? 12 : hourNum > 12 ? hourNum - 12 : hourNum;
+    return `${displayHour}:${minute} ${period}`;
+  };
 
   // Format phone number as user types
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,27 +75,88 @@ export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProp
     setPhone(formatted);
   };
 
-  // Get min and max dates (today to 4 days ahead - 5 days total to match calendar)
+  // Generate date options (5 days: today + 4 days ahead)
+  const dateOptions = useMemo(() => {
+    const options = [];
   const today = new Date();
-  // Force local timezone for date picker
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  const minDate = `${year}-${month}-${day}`;
+    
+    for (let i = 0; i < 5; i++) {
+      const date = new Date();
+      date.setDate(today.getDate() + i);
+      
+      // Use local date string (YYYY-MM-DD format in local timezone)
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
   
-  const maxDateObj = new Date();
-  maxDateObj.setDate(maxDateObj.getDate() + 4);
-  const maxYear = maxDateObj.getFullYear();
-  const maxMonth = String(maxDateObj.getMonth() + 1).padStart(2, '0');
-  const maxDay = String(maxDateObj.getDate()).padStart(2, '0');
-  const maxDate = `${maxYear}-${maxMonth}-${maxDay}`;
-  
-  console.log('📅 Date picker range:', { minDate, maxDate });
+      const dayNum = date.getDate();
+      const ordinal = dayNum + (dayNum > 3 && dayNum < 21 ? 'th' : ['th', 'st', 'nd', 'rd'][dayNum % 10] || 'th');
+      
+      let label = '';
+      if (i === 0) label = 'Today';
+      else if (i === 1) label = 'Tomorrow';
+      else label = ordinal;
+      
+      options.push({ value: dateStr, label, date });
+    }
+    
+    return options;
+  }, []);
+
+  // Helper to get actual date string from selection
+  const getDateString = () => {
+    if (!selectedDateOption) return '';
+    return selectedDateOption;
+  };
+
+  // Helper to format date for preview
+  const formatDateForPreview = () => {
+    if (!selectedDateOption) return '';
+    const option = dateOptions.find(opt => opt.value === selectedDateOption);
+    return option?.label || '';
+  };
+
+  // Check for appointment conflicts when date/time changes
+  useEffect(() => {
+    const dateStr = getDateString();
+    if (!dateStr || !time) {
+      setConflictWarning('');
+      return;
+    }
+
+    const selectedDateTime = new Date(`${dateStr}T${time}`);
+    const selectedDuration = parseInt(duration);
+    const selectedStart = selectedDateTime.getTime();
+    const selectedEnd = selectedStart + selectedDuration * 60 * 1000;
+
+    // Check for conflicts with existing appointments
+    for (const apt of existingAppointments) {
+      const aptStart = new Date(apt.scheduled_at).getTime();
+      const aptDuration = apt.duration_minutes || 20;
+      const aptEnd = aptStart + aptDuration * 60 * 1000;
+
+      // Check for exact overlap
+      if (selectedStart === aptStart) {
+        setConflictWarning('🔴 You already have another appointment at this time.');
+        return;
+      }
+
+      // Check for adjacent appointments (within 5 minutes)
+      const timeDiff = Math.abs(selectedStart - aptStart) / 1000 / 60; // in minutes
+      if (timeDiff > 0 && timeDiff < 5) {
+        setConflictWarning('🟡 This time is adjacent to another appointment.');
+        return;
+      }
+    }
+
+    setConflictWarning('');
+  }, [selectedDateOption, time, duration, existingAppointments, getDateString]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
+    // Validation - Only name, phone, date, and time are required
     if (!name.trim()) {
       setMessage('❌ Please enter a name');
       return;
@@ -71,15 +165,7 @@ export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProp
       setMessage('❌ Please enter a phone number');
       return;
     }
-    if (!age || parseInt(age) <= 0) {
-      setMessage('❌ Please enter a valid age');
-      return;
-    }
-    if (!state.trim()) {
-      setMessage('❌ Please enter a state');
-      return;
-    }
-    if (!date) {
+    if (!selectedDateOption) {
       setMessage('❌ Please select a date');
       return;
     }
@@ -93,20 +179,29 @@ export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProp
 
     try {
       // Combine date and time into ISO string
-      const scheduledAt = new Date(`${date}T${time}`).toISOString();
+      const dateStr = getDateString();
+      const scheduledAt = new Date(`${dateStr}T${time}`).toISOString();
+
+      const payload: any = {
+        userId,
+        contactName: name.trim(),
+        contactPhone: phone.trim(),
+        duration: parseInt(duration),
+        scheduledAt,
+      };
+
+      // Add optional fields if provided
+      if (age && parseInt(age) > 0) {
+        payload.contactAge = parseInt(age);
+      }
+      if (state.trim()) {
+        payload.contactState = state.trim();
+      }
 
       const response = await fetch('/api/appointments/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          contactName: name.trim(),
-          contactPhone: phone.trim(),
-          contactAge: parseInt(age),
-          contactState: state.trim(),
-          duration: parseInt(duration),
-          scheduledAt,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -127,10 +222,11 @@ export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProp
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#1A2647] rounded-2xl border border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 overflow-y-auto">
+      <div className="min-h-screen flex items-start justify-center p-4 py-8">
+        <div className="bg-[#1A2647] rounded-2xl border border-gray-700 max-w-2xl w-full">
+        {/* Header - Scrolls with content */}
+        <div className="bg-[#1A2647] flex items-center justify-between p-6 border-b border-gray-800 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <Calendar className="w-6 h-6 text-blue-400" />
             <h2 className="text-2xl font-bold text-white">Add New Appointment</h2>
@@ -143,19 +239,14 @@ export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProp
           </button>
         </div>
 
-        {/* Form */}
+        {/* Form - Scrollable Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Contact Info Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <User className="w-5 h-5 text-blue-400" />
-              Contact Information
-            </h3>
-
             {/* Name */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Full Name *
+                Name *
               </label>
               <input
                 type="text"
@@ -167,12 +258,10 @@ export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProp
               />
             </div>
 
-            {/* Phone and Age Row */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Phone */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  Phone Number *
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Phone *
                 </label>
                 <input
                   type="tel"
@@ -185,10 +274,24 @@ export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProp
                 />
               </div>
 
+            {/* More Details - Collapsible */}
+            <div className="border-t border-gray-800 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowMoreDetails(!showMoreDetails)}
+                className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                <ChevronDown className={`w-4 h-4 transition-transform ${showMoreDetails ? 'rotate-180' : ''}`} />
+                <span>More Details (optional)</span>
+              </button>
+
+              {showMoreDetails && (
+                <div className="mt-4 space-y-4 pl-6">
+                  {/* Age */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
                   <Hash className="w-4 h-4" />
-                  Age *
+                      Age
                 </label>
                 <input
                   type="number"
@@ -200,14 +303,13 @@ export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProp
                   className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   disabled={loading}
                 />
-              </div>
             </div>
 
             {/* State */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                State *
+                      State
               </label>
               <input
                 type="text"
@@ -218,30 +320,24 @@ export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProp
                 className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
                 disabled={loading}
               />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Appointment Details Section */}
           <div className="space-y-4 pt-4 border-t border-gray-800">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Clock className="w-5 h-5 text-green-400" />
-              Appointment Details
-            </h3>
-
-            {/* Duration Selection */}
+            {/* Duration Selection - Compact Pills */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-3">
-                Meeting Duration *
+                Duration
               </label>
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 {['10', '20', '30'].map((dur) => (
                   <label
                     key={dur}
-                    className={`flex-1 cursor-pointer transition-all duration-200 ${
-                      duration === dur
-                        ? 'scale-[1.02]'
-                        : ''
-                    }`}
+                    className="cursor-pointer"
                   >
                     <input
                       type="radio"
@@ -253,53 +349,198 @@ export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProp
                       disabled={loading}
                     />
                     <div
-                      className={`p-4 rounded-lg text-center border-2 transition-all ${
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                         duration === dur
-                          ? 'bg-blue-600/20 border-blue-500 text-blue-300 shadow-lg shadow-blue-500/20'
-                          : 'bg-[#0B1437] border-gray-700 text-gray-400 hover:border-gray-600'
+                          ? 'bg-blue-600 text-white shadow-lg'
+                          : 'bg-[#0B1437] border border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300'
                       }`}
                     >
-                      <p className="text-2xl font-bold">{dur}</p>
-                      <p className="text-xs mt-1">minutes</p>
+                      {dur}m{duration === '20' && dur === '20' ? ' (default)' : ''}
                     </div>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/* Date and Time Row */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Date Selection - Pill Buttons */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-3">
                   Date *
                 </label>
+              <div className="flex flex-wrap gap-2">
+                {dateOptions.map((option) => (
+                  <label
+                    key={option.value}
+                    className="cursor-pointer"
+                  >
                 <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  min={minDate}
-                  max={maxDate}
-                  className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                      type="radio"
+                      name="date"
+                      value={option.value}
+                      checked={selectedDateOption === option.value}
+                      onChange={(e) => setSelectedDateOption(e.target.value)}
+                      className="sr-only"
                   disabled={loading}
                 />
-                <p className="text-xs text-gray-500 mt-1">Book up to 5 days in advance</p>
+                    <div
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        selectedDateOption === option.value
+                          ? 'bg-blue-600 text-white shadow-lg'
+                          : 'bg-[#0B1437] border border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300'
+                      }`}
+                    >
+                      {option.label}
+                    </div>
+                  </label>
+                ))}
+              </div>
               </div>
 
+            {/* Time */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Time *
                 </label>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+              
+              {/* Time Display Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTimePicker(!showTimePicker);
+                  // Auto-fill 9:00 AM on first open if no time is set
+                  if (!showTimePicker && !time) {
+                    setTime('09:00');
+                  }
+                }}
+                className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-600"
                   disabled={loading}
-                />
-                <p className="text-xs text-gray-500 mt-1">7 AM - 9 PM recommended</p>
+              >
+                <div className="flex items-center justify-between">
+                  <span className={time ? 'text-white' : 'text-gray-500'}>
+                    {formatTimeDisplay()}
+                  </span>
+                  <Clock className="w-4 h-4 text-gray-400" />
+                </div>
+              </button>
+
+              {/* Custom Scrollable Time Picker - Expands inline */}
+              {showTimePicker && (
+                <div className="mt-3 w-full bg-[#0B1437] border border-gray-700 rounded-lg p-4">
+                  <div className="flex gap-2 mb-3">
+                    {/* Hours Column */}
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-400 mb-2 text-center">Hour</label>
+                      <div className="h-40 overflow-y-auto bg-[#0B1437] rounded-lg border border-gray-700 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                        {hours.map((hour) => (
+                          <button
+                            key={hour}
+                            type="button"
+                            onClick={() => {
+                              setSelectedHour(hour);
+                              updateTime(hour, selectedMinute, selectedPeriod);
+                            }}
+                            className={`w-full px-3 py-2 text-center transition-colors ${
+                              selectedHour === hour
+                                ? 'bg-blue-600 text-white font-semibold'
+                                : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
+                            }`}
+                          >
+                            {hour}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Minutes Column */}
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-400 mb-2 text-center">Minute</label>
+                      <div className="h-40 overflow-y-auto bg-[#0B1437] rounded-lg border border-gray-700 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                        {minutes.map((minute) => (
+                          <button
+                            key={minute}
+                            type="button"
+                            onClick={() => {
+                              setSelectedMinute(minute);
+                              updateTime(selectedHour, minute, selectedPeriod);
+                            }}
+                            className={`w-full px-3 py-2 text-center transition-colors ${
+                              selectedMinute === minute
+                                ? 'bg-blue-600 text-white font-semibold'
+                                : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
+                            }`}
+                          >
+                            {minute}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* AM/PM Column */}
+                    <div className="w-20">
+                      <label className="block text-xs text-gray-400 mb-2 text-center">Period</label>
+                      <div className="h-40 flex flex-col gap-2 bg-[#0B1437] rounded-lg border border-gray-700 p-2">
+                        {['AM', 'PM'].map((period) => (
+                          <button
+                            key={period}
+                            type="button"
+                            onClick={() => {
+                              const p = period as 'AM' | 'PM';
+                              setSelectedPeriod(p);
+                              updateTime(selectedHour, selectedMinute, p);
+                            }}
+                            className={`flex-1 rounded-lg text-sm font-semibold transition-colors ${
+                              selectedPeriod === period
+                                ? 'bg-blue-600 text-white'
+                                : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
+                            }`}
+                          >
+                            {period}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Done Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowTimePicker(false)}
+                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                  >
+                    Done
+                  </button>
               </div>
+              )}
             </div>
+
+            {/* Conflict Warning */}
+            {conflictWarning && (
+              <div className={`flex items-start gap-2 p-3 rounded-lg border text-sm ${
+                conflictWarning.includes('🔴')
+                  ? 'bg-red-500/10 border-red-500/30 text-red-300'
+                  : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-300'
+              }`}>
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>{conflictWarning}</span>
+              </div>
+            )}
           </div>
+
+          {/* Preview */}
+          {name && selectedDateOption && time && (
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+              <p className="text-xs text-blue-400 font-medium mb-2">Preview</p>
+              <p className="text-white text-sm">
+                <span className="font-semibold">{name}</span>
+                {' — '}
+                <span>{formatDateForPreview()}</span>
+                {' — '}
+                <span>{new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</span>
+                {' — '}
+                <span>{duration} minutes</span>
+              </p>
+            </div>
+          )}
 
           {/* Message */}
           {message && (
@@ -312,8 +553,11 @@ export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProp
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+        </form>
+
+        {/* Action Buttons - Scrolls with content */}
+        <div className="bg-[#1A2647] border-t border-gray-800 p-6 rounded-b-2xl">
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
@@ -324,13 +568,15 @@ export function AddAppointmentModal({ onClose, userId }: AddAppointmentModalProp
             </button>
             <button
               type="submit"
+              onClick={handleSubmit}
               disabled={loading}
               className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600/80 to-green-600/80 hover:from-blue-600 hover:to-green-600 text-white font-semibold rounded-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/30 h-12"
             >
               {loading ? '⏳ Creating...' : '✅ Create Appointment'}
             </button>
           </div>
-        </form>
+        </div>
+        </div>
       </div>
     </div>
   );

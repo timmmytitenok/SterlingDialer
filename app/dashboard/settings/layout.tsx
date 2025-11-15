@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { User, CreditCard, Calendar, Gift, Wallet } from 'lucide-react';
+import { User, CreditCard, Gift, Wallet, Sparkles } from 'lucide-react';
 import { SignOutButton } from '@/components/sign-out-button';
 import { useEffect, useState } from 'react';
 
@@ -13,9 +13,9 @@ export default function SettingsLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null);
+  const [subscriptionTier, setSubscriptionTier] = useState<string>('none'); // Default to 'none' instead of null
 
-  // Check user's subscription tier
+  // Check user's subscription tier silently in background
   useEffect(() => {
     const checkSubscriptionTier = async () => {
       try {
@@ -41,8 +41,8 @@ export default function SettingsLayout({
   const baseNav = [
     { name: 'Profile', href: '/dashboard/settings/profile', icon: User },
     { name: 'Billing', href: '/dashboard/settings/billing', icon: CreditCard },
-    { name: 'Call Balance', href: '/dashboard/settings/call-balance', icon: Wallet },
-    { name: 'Calendar', href: '/dashboard/settings/calendar', icon: Calendar },
+    { name: 'Balance', href: '/dashboard/settings/balance', icon: Wallet },
+    { name: 'Dialer', href: '/dashboard/settings/dialer-automation', icon: Sparkles },
   ];
 
   // Only add Referrals if user is on FREE TRIAL
@@ -89,14 +89,6 @@ export default function SettingsLayout({
                 </Link>
               );
             })}
-            
-            {/* Show loading state while checking subscription tier */}
-            {subscriptionTier === null && (
-              <div className="px-4 py-3 text-gray-600 text-sm flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-600"></div>
-                Loading...
-              </div>
-            )}
           </nav>
         </aside>
 

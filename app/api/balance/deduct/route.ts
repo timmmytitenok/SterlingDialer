@@ -128,8 +128,8 @@ export async function POST(request: Request) {
       }
 
       try {
-        // Create a charge for auto-refill
-        const refillAmount = balanceData.auto_refill_amount;
+        // Fixed auto-refill amount: $25
+        const refillAmount = 25;
         
         console.log(`💳 Creating auto-refill charge for $${refillAmount}...`);
 
@@ -165,20 +165,20 @@ export async function POST(request: Request) {
           console.log(`✅ Found payment method: ${paymentMethodId}`);
         }
 
-        // Create a payment intent for auto-refill with the payment method
+        // Create a payment intent for $25 auto-refill
         const paymentIntent = await stripe.paymentIntents.create({
-          amount: refillAmount * 100, // Convert to cents
+          amount: 2500, // $25.00 in cents
           currency: 'usd',
           customer: profile.stripe_customer_id,
-          payment_method: paymentMethodId, // Explicitly specify the payment method
-          description: `Auto-refill: $${refillAmount}`,
+          payment_method: paymentMethodId,
+          description: 'Auto-refill: Call Balance $25',
           metadata: {
             type: 'auto_refill',
             user_id: userId,
-            refill_amount: refillAmount.toString(),
+            amount: '25', // Always $25
           },
-          off_session: true, // This allows charging without user present
-          confirm: true, // Automatically confirm the payment
+          off_session: true, // Charge without user present
+          confirm: true, // Automatically confirm
         });
 
         console.log('✅ Auto-refill payment created:', paymentIntent.id);

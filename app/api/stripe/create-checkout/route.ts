@@ -14,21 +14,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get tier from request body
+    // Single tier now: SterlingAI Pro Access ($499/month)
     const { tier } = await request.json();
-    console.log('🎯 Requested tier:', tier);
+    console.log('💎 Subscribing to SterlingAI Pro Access ($499/month)');
 
-    // Map tier to Stripe price ID
-    const priceIdMap: Record<string, string> = {
-      starter: process.env.STRIPE_PRICE_ID_STARTER!,
-      pro: process.env.STRIPE_PRICE_ID_PRO!,
-      elite: process.env.STRIPE_PRICE_ID_ELITE!,
-    };
-
-    const priceId = priceIdMap[tier];
+    // Use single Pro price ID
+    const priceId = process.env.STRIPE_PRICE_ID_PRO;
+    
     if (!priceId) {
-      console.error('❌ Invalid tier or missing price ID for tier:', tier);
-      return NextResponse.json({ error: 'Invalid subscription tier or price ID not configured' }, { status: 400 });
+      console.error('❌ Missing STRIPE_PRICE_ID_PRO');
+      return NextResponse.json({ 
+        error: 'Subscription not configured. Add STRIPE_PRICE_ID_PRO to environment variables.' 
+      }, { status: 500 });
     }
 
     console.log('💳 Using Stripe Price ID:', priceId);
