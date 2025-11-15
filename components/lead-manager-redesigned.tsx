@@ -761,59 +761,105 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
 
               {/* Add Sheet Form */}
               {showAddSheet && (
-                <div className="bg-[#1A2647] rounded-2xl border border-gray-800 p-8 animate-in fade-in slide-in-from-top duration-500">
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-white mb-2">Connect Google Sheet</h2>
-                    <p className="text-gray-400">Paste your Google Sheet URL below</p>
+                <div className="bg-gradient-to-br from-[#1A2647] to-[#0F172A] rounded-2xl border-2 border-blue-500/40 p-8 shadow-2xl shadow-blue-500/20 animate-in fade-in slide-in-from-top duration-500">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                      <Sparkles className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">Connect Google Sheet</h2>
+                      <p className="text-gray-400 text-sm">Follow the steps below to connect your spreadsheet</p>
+                    </div>
                   </div>
 
                   <form onSubmit={handleConnectSheet} className="space-y-6">
-                    {/* Simple Instructions */}
-                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-5">
-                      <div className="space-y-3 text-sm">
-                        <p className="text-gray-300">
-                          <strong className="text-white">1.</strong> Open your Google Sheet and copy the URL
-                        </p>
-                        <p className="text-gray-300">
-                          <strong className="text-white">2.</strong> Share it with: 
-                          <code className="ml-2 px-2 py-1 bg-[#0F172A]/80 rounded text-blue-300 text-xs">
-                            sterlingdailer@sterlingdialer.iam.gserviceaccount.com
-                          </code>
-                        </p>
-                        <p className="text-gray-300">
-                          <strong className="text-white">3.</strong> Paste the URL below
-                        </p>
+                    {/* Instructions */}
+                    <div className="space-y-5">
+                      {/* Step 1 */}
+                      <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/5 border-2 border-blue-500/30 rounded-xl p-5 backdrop-blur-sm hover:border-blue-500/50 transition-all">
+                        <div className="flex items-start gap-4">
+                          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">
+                            ⭐
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-white font-bold text-lg mb-2">Step 1: Open Your Google Sheet</h3>
+                            <p className="text-gray-300 text-sm italic">
+                              "Open the Google Sheet that contains your leads."
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Step 2 */}
+                      <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/5 border-2 border-blue-500/30 rounded-xl p-5 backdrop-blur-sm hover:border-blue-500/50 transition-all">
+                        <div className="flex items-start gap-4">
+                          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">
+                            ⭐
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-white font-bold text-lg mb-2">Step 2: Share With SterlingDialer (Required for Access)</h3>
+                            <p className="text-gray-300 text-sm mb-3 italic">
+                              "Click the Share button in Google Sheets, then share it with:"
+                            </p>
+                            <div className="p-3 bg-[#0F172A]/80 rounded-lg border border-blue-500/20 backdrop-blur-sm mb-3">
+                              <code className="text-blue-300 text-sm break-all">
+                                sterlingdiailer@sterlingdialer.iam.gserviceaccount.com
+                              </code>
+                            </div>
+                            <p className="text-gray-300 text-sm mb-2">
+                              Give it: <strong className="text-white">Editor Access</strong> (so the AI can read/update lead statuses)."
+                            </p>
+                            <p className="text-yellow-300 text-xs italic bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2">
+                              (Include a small tooltip: "We do NOT change your sheet except updating status/attempts.")
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Step 3 */}
+                      <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/5 border-2 border-blue-500/30 rounded-xl p-5 backdrop-blur-sm hover:border-blue-500/50 transition-all">
+                        <div className="flex items-start gap-4">
+                          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">
+                            ⭐
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-white font-bold text-lg mb-2">Step 3: Paste Your Sheet Link Below</h3>
+                            <p className="text-gray-300 text-sm italic mb-3">
+                              "Copy the URL from your browser and paste it here."
+                            </p>
+                            
+                            {/* URL Input - Inside Step 3 */}
+                            <div className="bg-[#0F172A]/80 border-2 border-blue-500/20 rounded-xl p-1 backdrop-blur-sm">
+                              <input
+                                type="url"
+                                value={sheetUrl}
+                                onChange={(e) => setSheetUrl(e.target.value)}
+                                placeholder="📋 Paste Google Sheet URL here..."
+                                className="w-full px-4 py-3 bg-transparent border-0 text-white placeholder-gray-400 focus:outline-none text-sm"
+                                required
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* URL Input */}
-                    <div>
-                      <input
-                        type="url"
-                        value={sheetUrl}
-                        onChange={(e) => setSheetUrl(e.target.value)}
-                        placeholder="Paste Google Sheet URL here..."
-                        className="w-full px-5 py-4 bg-[#0F172A] border-2 border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl text-white placeholder-gray-500 focus:outline-none transition-all text-sm"
-                        required
-                      />
-                    </div>
-
                     {/* Actions */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4 pt-2">
                       <button
                         type="button"
                         onClick={() => {
                           setShowAddSheet(false);
                           setSheetUrl('');
                         }}
-                        className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold transition-all"
+                        className="flex-1 px-6 py-4 bg-gray-700/50 hover:bg-gray-700 text-white rounded-xl font-bold transition-all border-2 border-gray-600 hover:border-gray-500"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={loading || !sheetUrl}
-                        className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-gray-700 disabled:to-gray-800 disabled:text-gray-500 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2 hover:scale-105 disabled:scale-100"
+                        className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 disabled:from-gray-700 disabled:to-gray-800 disabled:text-gray-500 text-white rounded-xl font-bold transition-all shadow-2xl shadow-blue-500/30 flex items-center justify-center gap-3 hover:scale-105 disabled:scale-100 disabled:shadow-none"
                       >
                         {loading ? (
                           <>
