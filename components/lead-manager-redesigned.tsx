@@ -820,7 +820,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                               Give it: <strong className="text-white">Editor Access</strong> (so the AI can read/update lead statuses)."
                             </p>
                             <p className="text-yellow-300 text-xs italic bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2">
-                              Disclaimer: We do NOT change your sheet at all. It is only used to read data
+                                We will NOT edit your sheet. The AI only uses it to read your leads.
                             </p>
                           </div>
                         </div>
@@ -1429,6 +1429,19 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                 <div>
                   <h2 className="text-2xl font-bold text-white">Importing Leads</h2>
                   <p className="text-blue-100 text-sm">Please wait...</p>
+                </div>
+              </div>
+              
+              {/* Warning Banner */}
+              <div className="mt-4 p-4 bg-yellow-500/20 backdrop-blur-sm border-2 border-yellow-400/40 rounded-xl flex items-start gap-3">
+                <svg className="w-6 h-6 text-yellow-300 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-yellow-100 font-bold text-sm mb-1">⏱️ This can take several minutes</p>
+                  <p className="text-yellow-200/90 text-xs leading-relaxed">
+                    For thousands of leads, this may take up to 10 minutes. Please do NOT leave or refresh this page or your progress will be lost!
+                  </p>
                 </div>
               </div>
             </div>

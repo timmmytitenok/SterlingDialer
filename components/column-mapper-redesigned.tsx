@@ -93,12 +93,12 @@ export function ColumnMapperRedesigned({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-500">
-      <div className="bg-[#1A2647] rounded-2xl border border-gray-800 max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-500">
+      <div className="bg-[#1A2647] rounded-2xl border border-gray-800 max-w-5xl w-full max-h-[92vh] overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-500">
         {/* Header */}
-        <div className="p-6 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
+        <div className="p-8 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-1">Map Your Columns</h2>
-            <p className="text-gray-400 text-sm">{sheetName}</p>
+            <h2 className="text-3xl font-bold text-white mb-1">Map Your Columns</h2>
+            <p className="text-gray-400">{sheetName}</p>
           </div>
           <button
             onClick={onCancel}
@@ -109,8 +109,8 @@ export function ColumnMapperRedesigned({
         </div>
 
         {/* Info Banner */}
-        <div className="p-4 mx-6 mt-4 bg-blue-500/10 border border-blue-500/30 rounded-xl flex-shrink-0">
-          <p className="text-blue-300 font-semibold text-sm mb-1">
+        <div className="p-5 mx-8 mt-6 bg-blue-500/10 border border-blue-500/30 rounded-xl flex-shrink-0">
+          <p className="text-blue-300 font-semibold mb-1">
             ✨ Our smart auto-detection tried mapping the columns by itself
           </p>
           <p className="text-gray-300 text-sm">
@@ -119,19 +119,19 @@ export function ColumnMapperRedesigned({
         </div>
 
         {/* Column Mapping */}
-        <div className="p-6 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(85vh - 280px)' }}>
+        <div className="p-8 space-y-5 overflow-y-auto" style={{ maxHeight: 'calc(92vh - 320px)' }}>
           {fields.map((field) => (
             <div
               key={field.key}
-              className="bg-[#0F172A]/50 rounded-xl border border-gray-700 p-5 hover:border-blue-500/50 transition-all"
+              className="bg-[#0F172A]/50 rounded-xl border border-gray-700 p-6 hover:border-blue-500/50 transition-all"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${field.gradient} flex items-center justify-center text-2xl`}>
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${field.gradient} flex items-center justify-center text-2xl shadow-lg`}>
                   {field.icon}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <label className="text-white font-bold">
+                    <label className="text-white font-bold text-lg">
                       {field.label}
                     </label>
                     {field.required && (
@@ -140,7 +140,7 @@ export function ColumnMapperRedesigned({
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-400 text-xs mt-0.5">{field.description}</p>
+                  <p className="text-gray-400 text-sm mt-1">{field.description}</p>
                 </div>
               </div>
 
@@ -149,7 +149,7 @@ export function ColumnMapperRedesigned({
                 onChange={(e) =>
                   setMapping({ ...mapping, [field.key]: parseInt(e.target.value) })
                 }
-                className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg text-white focus:outline-none transition-all"
+                className="w-full px-5 py-4 bg-[#0B1437] border-2 border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg text-white focus:outline-none transition-all text-base"
               >
                 <option value={-1}>
                   {field.required ? '-- Select a column --' : '-- Skip (optional) --'}
@@ -165,7 +165,7 @@ export function ColumnMapperRedesigned({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-800 flex items-center justify-between gap-4 flex-shrink-0">
+        <div className="p-8 border-t border-gray-800 flex items-center justify-between gap-4 flex-shrink-0">
           <div className="flex items-center gap-3">
             {isValid ? (
               <>
