@@ -1211,6 +1211,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
             setAvailableTabs([]);
             setSheetUrl('');
           }}
+          usedTabs={sheets.map(s => s.tab_name).filter(Boolean) as string[]}
         />
       )}
 

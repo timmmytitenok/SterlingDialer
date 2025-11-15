@@ -95,7 +95,7 @@ export function ColumnMapperRedesigned({
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-500">
       <div className="bg-[#1A2647] rounded-2xl border border-gray-800 max-w-5xl w-full max-h-[92vh] overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-500">
         {/* Header */}
-        <div className="p-8 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
+        <div className="p-6 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
           <div>
             <h2 className="text-3xl font-bold text-white mb-1">Map Your Columns</h2>
             <p className="text-gray-400">{sheetName}</p>
@@ -109,7 +109,7 @@ export function ColumnMapperRedesigned({
         </div>
 
         {/* Info Banner */}
-        <div className="p-5 mx-8 mt-6 bg-blue-500/10 border border-blue-500/30 rounded-xl flex-shrink-0">
+        <div className="p-4 mx-6 mt-4 bg-blue-500/10 border border-blue-500/30 rounded-xl flex-shrink-0">
           <p className="text-blue-300 font-semibold mb-1">
             ✨ Our smart auto-detection tried mapping the columns by itself
           </p>
@@ -119,13 +119,13 @@ export function ColumnMapperRedesigned({
         </div>
 
         {/* Column Mapping */}
-        <div className="p-8 space-y-5 overflow-y-auto" style={{ maxHeight: 'calc(92vh - 320px)' }}>
+        <div className="p-6 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(92vh - 340px)' }}>
           {fields.map((field) => (
             <div
               key={field.key}
-              className="bg-[#0F172A]/50 rounded-xl border border-gray-700 p-6 hover:border-blue-500/50 transition-all"
+              className="bg-[#0F172A]/50 rounded-xl border border-gray-700 p-5 hover:border-blue-500/50 transition-all"
             >
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-4 mb-3">
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${field.gradient} flex items-center justify-center text-2xl shadow-lg`}>
                   {field.icon}
                 </div>
@@ -165,7 +165,7 @@ export function ColumnMapperRedesigned({
         </div>
 
         {/* Footer */}
-        <div className="p-8 border-t border-gray-800 flex items-center justify-between gap-4 flex-shrink-0">
+        <div className="p-6 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 flex-shrink-0">
           <div className="flex items-center gap-3">
             {isValid ? (
               <>
@@ -184,17 +184,17 @@ export function ColumnMapperRedesigned({
             )}
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 w-full sm:w-auto">
             <button
               onClick={onCancel}
-              className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold transition-all"
+              className="flex-1 sm:flex-none px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold transition-all"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={!isValid}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-gray-700 disabled:to-gray-800 disabled:text-gray-500 text-white rounded-xl font-semibold transition-all hover:scale-105 disabled:scale-100 flex items-center gap-2"
+              className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-gray-700 disabled:to-gray-800 disabled:text-gray-500 text-white rounded-xl font-semibold transition-all hover:scale-105 disabled:scale-100 flex items-center justify-center gap-2"
             >
               {isValid && <Check className="w-5 h-5" />}
               Import Leads

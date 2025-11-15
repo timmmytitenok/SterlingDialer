@@ -14,9 +14,10 @@ interface SheetTabSelectorProps {
   tabs: SheetTab[];
   onSelect: (tabName: string) => void;
   onCancel: () => void;
+  usedTabs?: string[];
 }
 
-export function SheetTabSelector({ tabs, onSelect, onCancel }: SheetTabSelectorProps) {
+export function SheetTabSelector({ tabs, onSelect, onCancel, usedTabs = [] }: SheetTabSelectorProps) {
   const [selectedTab, setSelectedTab] = useState<string | null>(null);
 
   return (
@@ -29,26 +30,42 @@ export function SheetTabSelector({ tabs, onSelect, onCancel }: SheetTabSelectorP
           </div>
 
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            {tabs.map((tab) => (
-              <button
-                key={tab.sheetId}
-                onClick={() => setSelectedTab(tab.title)}
-                className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                  selectedTab === tab.title
-                    ? 'border-blue-500 bg-blue-500/20'
-                    : 'border-gray-700 bg-[#0F172A]/50 hover:border-blue-500/50 hover:bg-[#0F172A]'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-white font-semibold text-lg">{tab.title}</p>
-                  {selectedTab === tab.title && (
-                    <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                      <Check className="w-4 h-4 text-white" />
+            {tabs.map((tab) => {
+              const isAlreadyUsed = usedTabs.includes(tab.title);
+              
+              return (
+                <button
+                  key={tab.sheetId}
+                  onClick={() => !isAlreadyUsed && setSelectedTab(tab.title)}
+                  disabled={isAlreadyUsed}
+                  className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                    isAlreadyUsed
+                      ? 'border-gray-800 bg-gray-900/50 opacity-50 cursor-not-allowed'
+                      : selectedTab === tab.title
+                      ? 'border-blue-500 bg-blue-500/20'
+                      : 'border-gray-700 bg-[#0F172A]/50 hover:border-blue-500/50 hover:bg-[#0F172A]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`font-semibold text-lg ${isAlreadyUsed ? 'text-gray-500' : 'text-white'}`}>
+                        {tab.title}
+                      </p>
+                      {isAlreadyUsed && (
+                        <p className="text-red-400 text-xs mt-1 font-medium">
+                          ⚠️ Sheet is already in use!
+                        </p>
+                      )}
                     </div>
-                  )}
-                </div>
-              </button>
-            ))}
+                    {selectedTab === tab.title && !isAlreadyUsed && (
+                      <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex gap-3 mt-6">
