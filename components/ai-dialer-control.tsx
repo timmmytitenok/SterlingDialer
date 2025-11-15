@@ -12,8 +12,8 @@ interface AIDialerControlProps {
 }
 
 export function AIDialerControl({ userId }: AIDialerControlProps) {
-  const [status, setStatus] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<any>({ status: 'stopped', calls_today: 0, total_calls: 0 });
+  const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [showOverrideModal, setShowOverrideModal] = useState(false);
   const [errorModal, setErrorModal] = useState<{ show: boolean; title: string; message: string }>({
@@ -38,8 +38,6 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
       }
     } catch (error) {
       console.error('Error fetching status:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -282,17 +280,6 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
   const overrideLeads = calculateOverrideLeads();
   const overrideCostCents = overrideLeads * 1 * 30; // leads × 1 min × $0.30
   const overrideCostDollars = (overrideCostCents / 100).toFixed(2);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0B1437] flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="w-12 h-12 text-blue-400 animate-spin mx-auto mb-4" />
-          <p className="text-gray-400">Loading dialer status...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#0B1437] relative overflow-hidden">
