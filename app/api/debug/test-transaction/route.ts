@@ -77,7 +77,7 @@ export async function GET(req: Request) {
       logs.push(`✅ Found ${existing?.length || 0} transactions with Stripe payment IDs`);
       if (existing && existing.length > 0) {
         logs.push('Latest transactions:');
-        existing.forEach((t, i) => {
+        existing.forEach((t: any, i: number) => {
           logs.push(`  ${i + 1}. $${t.amount} - ${t.type} - ${t.created_at}`);
         });
       }
