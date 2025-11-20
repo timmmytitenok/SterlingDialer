@@ -7,7 +7,7 @@ interface StripeBillingProps {
   userId: string;
   userEmail: string;
   hasSubscription: boolean;
-  currentTier?: 'none' | 'starter' | 'pro' | 'elite' | 'free_trial' | 'free_access';
+  currentTier?: 'none' | 'starter' | 'pro' | 'elite' | 'free_trial' | 'free_access' | 'vip' | 'trial';
   subscriptionData?: any;
   accountCreatedAt?: string;
   referralBonusDays?: number;

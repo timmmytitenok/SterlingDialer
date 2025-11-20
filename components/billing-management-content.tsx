@@ -10,7 +10,7 @@ interface BillingManagementContentProps {
   userId: string;
   userEmail: string;
   hasSubscription: boolean;
-  currentTier: 'none' | 'free_trial' | 'starter' | 'pro' | 'elite' | 'free_access';
+  currentTier: 'none' | 'free_trial' | 'starter' | 'pro' | 'elite' | 'free_access' | 'vip' | 'trial';
   subscriptionData?: any;
   accountCreatedAt?: string;
   referralBonusDays?: number;
