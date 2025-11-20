@@ -92,7 +92,7 @@ export async function GET(
     let refillCount = 0;
     
     // Count refills - only count real Stripe payments with positive amounts
-    (revenueData.data || []).forEach((t) => {
+    (revenueData.data || []).forEach((t: any) => {
       if (t.stripe_payment_intent_id && t.amount > 0) {
         refillCount++;
         refillProfit += 14.25; // $14.25 profit per $25 refill
@@ -137,9 +137,9 @@ export async function GET(
     });
     
     // Calculate admin adjustments from revenue_tracking table
-    const totalAdminCalls = (adminStats.data || []).reduce((sum, stat) => sum + (stat.total_calls || 0), 0);
-    const totalAdminAppointments = (adminStats.data || []).reduce((sum, stat) => sum + (stat.appointments_booked || 0), 0);
-    const totalAdminRevenue = (adminStats.data || []).reduce((sum, stat) => sum + (parseFloat(stat.revenue?.toString() || '0')), 0);
+    const totalAdminCalls = (adminStats.data || []).reduce((sum: number, stat: any) => sum + (stat.total_calls || 0), 0);
+    const totalAdminAppointments = (adminStats.data || []).reduce((sum: number, stat: any) => sum + (stat.appointments_booked || 0), 0);
+    const totalAdminRevenue = (adminStats.data || []).reduce((sum: number, stat: any) => sum + (parseFloat(stat.revenue?.toString() || '0')), 0);
     
     console.log(`📊 Admin adjustments for user ${userId} (for their dashboard):`, {
       calls: totalAdminCalls,
@@ -150,7 +150,7 @@ export async function GET(
     // Calculate call stats - safely handle missing data + admin adjustments
     const realCalls = (callStats.data || []).length;
     const totalCalls = realCalls + totalAdminCalls;
-    const totalMinutes = (callStats.data || []).reduce((sum, call) => sum + (call.duration || 0), 0);
+    const totalMinutes = (callStats.data || []).reduce((sum: number, call: any) => sum + (call.duration || 0), 0);
     
     console.log(`📞 Call stats for user ${userId}:`, {
       realCalls: realCalls,
