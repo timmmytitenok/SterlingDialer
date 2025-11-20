@@ -464,28 +464,6 @@ export default async function DashboardPage() {
         </div>
 
         {/* Stats Grid with Period Filter (Always Visible) */}
-        {console.log('🔥🔥🔥 TODAY VALUES:', {
-          totalCalls: finalTotalCallsToday,
-          connectionRate: connectionRateToday,
-          connectedCalls: connectedCallsToday,
-          policiesSold: policiesSoldToday,
-          revenue: revenueToday,
-          notInterested: notInterestedToday,
-          callbacks: callbacksToday,
-          transfers: transfersToday,
-          appointments: appointmentsToday,
-        })}
-        {console.log('🔥🔥🔥 ALL-TIME VALUES:', {
-          totalCalls,
-          connectionRate,
-          connectedCalls,
-          policiesSold,
-          revenue: totalRevenue,
-          notInterested,
-          callbacks,
-          transfers,
-          appointments: totalAppointments,
-        })}
         <DashboardStatsGrid
           todayStats={{
             totalCalls: finalTotalCallsToday,
