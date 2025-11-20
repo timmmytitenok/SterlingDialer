@@ -37,7 +37,7 @@ export async function GET() {
 
     // Get detailed data for each affiliate
     const affiliates = await Promise.all(
-      uniqueReferrerIds.map(async (referrerId) => {
+      uniqueReferrerIds.map(async (referrerId: any) => {
         // Get referrer profile and email
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
