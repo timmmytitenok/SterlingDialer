@@ -87,15 +87,15 @@ export async function GET() {
 
         // Get ALL pending (not just this month)
         const pendingTotal = (payouts || [])
-          .filter(p => p.status === 'pending')
-          .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+          .filter((p: any) => p.status === 'pending')
+          .reduce((sum: number, p: any) => sum + parseFloat(p.amount.toString()), 0);
 
         const totalPaid = (payouts || [])
-          .filter(p => p.status === 'paid')
-          .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+          .filter((p: any) => p.status === 'paid')
+          .reduce((sum: number, p: any) => sum + parseFloat(p.amount.toString()), 0);
 
         const totalEarned = (payouts || [])
-          .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+          .reduce((sum: number, p: any) => sum + parseFloat(p.amount.toString()), 0);
 
         return {
           id: referrerId,
@@ -106,7 +106,7 @@ export async function GET() {
           pending: pendingTotal, // Changed from pendingThisMonth
           totalPaid,
           totalEarned,
-          lastPayoutAt: payouts?.find(p => p.status === 'paid')?.paid_at || null,
+          lastPayoutAt: payouts?.find((p: any) => p.status === 'paid')?.paid_at || null,
         };
       })
     );
@@ -114,9 +114,9 @@ export async function GET() {
     // Calculate summary
     const summary = {
       totalAffiliates: affiliates.length,
-      totalActiveReferrals: affiliates.reduce((sum, a) => sum + a.activeReferrals, 0),
-      pendingThisMonth: affiliates.reduce((sum, a) => sum + a.pending, 0), // Use pending instead
-      totalPaidAllTime: affiliates.reduce((sum, a) => sum + a.totalPaid, 0),
+      totalActiveReferrals: affiliates.reduce((sum: number, a: any) => sum + a.activeReferrals, 0),
+      pendingThisMonth: affiliates.reduce((sum: number, a: any) => sum + a.pending, 0), // Use pending instead
+      totalPaidAllTime: affiliates.reduce((sum: number, a: any) => sum + a.totalPaid, 0),
     };
 
     return NextResponse.json({
