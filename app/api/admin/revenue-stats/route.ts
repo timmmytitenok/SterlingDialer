@@ -221,12 +221,12 @@ export async function GET(req: Request) {
       const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 1);
 
-      const monthRefills = refillTransactions?.filter(t => {
+      const monthRefills = refillTransactions?.filter((t: any) => {
         const tDate = new Date(t.created_at);
         return tDate >= monthStart && tDate < monthEnd;
-      }).reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      }).reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
 
-      const monthSubs = activeSubscriptions.filter(s => {
+      const monthSubs = activeSubscriptions.filter((s: any) => {
         const sDate = new Date(s.created_at);
         return sDate >= monthStart && sDate < monthEnd;
       }).length * 499;
@@ -251,7 +251,7 @@ export async function GET(req: Request) {
     if (userCountError) throw userCountError;
 
     // Pro access users (active pro or vip subscriptions)
-    const proUsers = allSubscriptions?.filter(s => 
+    const proUsers = allSubscriptions?.filter((s: any) => 
       s.status === 'active' && (s.tier === 'pro' || s.tier === 'vip')
     ).length || 0;
 
@@ -268,10 +268,10 @@ export async function GET(req: Request) {
     if (callsError) throw callsError;
 
     const totalCallsToday = todayCalls?.length || 0;
-    const connectedCallsToday = todayCalls?.filter(c => 
+    const connectedCallsToday = todayCalls?.filter((c: any) => 
       c.disposition === 'answered' || c.connected === true
     ).length || 0;
-    const appointmentsToday = todayCalls?.filter(c => 
+    const appointmentsToday = todayCalls?.filter((c: any) => 
       c.outcome === 'appointment_booked'
     ).length || 0;
 
