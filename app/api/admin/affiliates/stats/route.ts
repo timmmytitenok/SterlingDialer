@@ -33,7 +33,7 @@ export async function GET() {
       });
     }
 
-    const uniqueReferrerIds = affiliateProfiles.map(p => p.user_id);
+    const uniqueReferrerIds = affiliateProfiles.map((p: any) => p.user_id);
 
     // Get detailed data for each affiliate
     const affiliates = await Promise.all(
