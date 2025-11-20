@@ -39,7 +39,7 @@ export async function GET(req: Request) {
     // Calculate subscription revenue
     // PRO = $499/month, VIP = lifetime (no recurring charges)
     // Only count 'active' or 'trialing' subscriptions that have been billed
-    const activeSubscriptions = allSubscriptions?.filter(s => 
+    const activeSubscriptions = allSubscriptions?.filter((s: any) => 
       s.status === 'active' && s.tier === 'pro' && s.stripe_subscription_id
     ) || [];
 
