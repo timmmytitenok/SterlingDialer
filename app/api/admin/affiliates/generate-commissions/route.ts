@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       .select('referrer_id');
 
     if (affiliates) {
-      const uniqueReferrers = [...new Set(affiliates.map(a => a.referrer_id))];
+      const uniqueReferrers = [...new Set(affiliates.map((a: any) => a.referrer_id))];
       
       for (const referrerId of uniqueReferrers) {
         await supabase.rpc('update_affiliate_stats', { p_referrer_id: referrerId });
