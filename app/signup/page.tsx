@@ -68,31 +68,30 @@ export default function SignupPage() {
         
         // Fetch referrer's name by referral code
         console.log('👤 Fetching referrer name for code:', finalRefCode);
-        supabase
-          .from('referral_codes')
-          .select('user_id')
-          .eq('code', finalRefCode.toUpperCase())
-          .single()
-          .then(({ data: codeData }) => {
+        (async () => {
+          try {
+            const { data: codeData } = await supabase
+              .from('referral_codes')
+              .select('user_id')
+              .eq('code', finalRefCode.toUpperCase())
+              .single();
+            
             if (codeData?.user_id) {
-              // Now get the profile
-              return supabase
+              const { data: profileData } = await supabase
                 .from('profiles')
                 .select('full_name')
                 .eq('user_id', codeData.user_id)
                 .single();
+              
+              if (profileData?.full_name) {
+                console.log('✅ Referrer name found:', profileData.full_name);
+                setReferrerName(profileData.full_name);
+              }
             }
-            return null;
-          })
-          .then((result) => {
-            if (result?.data?.full_name) {
-              console.log('✅ Referrer name found:', result.data.full_name);
-              setReferrerName(result.data.full_name);
-            }
-          })
-          .catch((err) => {
+          } catch (err) {
             console.error('❌ Error fetching referrer name:', err);
-          });
+          }
+        })();
       }
     } catch (error) {
       console.error('❌ Error in referral useEffect:', error);
