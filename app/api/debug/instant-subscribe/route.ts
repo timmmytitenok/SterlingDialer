@@ -64,7 +64,7 @@ export async function POST(request: Request) {
         },
       ],
       subscription_data: {
-        trial_end: 'now', // 🔥 Trial ends immediately = instant charge!
+        trial_end: 'now' as any, // 🔥 Trial ends immediately = instant charge!
         metadata: {
           user_id: user.id,
           debug_instant: 'true',
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
         user_id: user.id,
         type: 'debug_instant_subscribe',
       },
-    });
+    } as any);
 
     console.log('✅ DEBUG: Instant subscription session created (NO TRIAL)');
     console.log('   Customer will be charged $499 immediately');
