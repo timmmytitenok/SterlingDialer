@@ -12,7 +12,39 @@ export default async function DialerAutomationPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/signup');
+  }
+
+  // Mark Step 4 complete just by visiting this page
+  await supabase
+    .from('profiles')
+    .update({ onboarding_step_4_schedule: true })
+    .eq('user_id', user.id);
+
+  console.log('✅ Onboarding Step 4 (Dialer) marked complete - user visited the page');
+
+  // Check if all onboarding steps are now complete
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('onboarding_step_1_form, onboarding_step_2_balance, onboarding_step_3_sheet, onboarding_step_4_schedule')
+    .eq('user_id', user.id)
+    .single();
+
+  const allComplete = profile?.onboarding_step_1_form &&
+                      profile?.onboarding_step_2_balance &&
+                      profile?.onboarding_step_3_sheet &&
+                      profile?.onboarding_step_4_schedule;
+
+  if (allComplete) {
+    console.log('🎉 All onboarding steps complete! Hiding Quick Setup forever.');
+    
+    await supabase
+      .from('profiles')
+      .update({
+        onboarding_all_complete: true,
+        onboarding_completed_at: new Date().toISOString(),
+      })
+      .eq('user_id', user.id);
   }
 
   // Get dialer settings

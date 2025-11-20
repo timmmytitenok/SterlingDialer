@@ -1,8 +1,42 @@
-import { type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request);
+  // First, handle Supabase session
+  const response = await updateSession(request);
+  
+  // Then, check for referral code in ANY page
+  const refCode = request.nextUrl.searchParams.get('ref');
+  
+  if (refCode) {
+    console.log('🎯 Middleware: Detected referral code:', refCode);
+    
+    // Store referral code in uppercase (standardized)
+    const codeToStore = refCode.toUpperCase();
+    console.log('💾 Storing affiliate code as:', codeToStore);
+    
+    // Store referral code in a session cookie (expires when browser closes)
+    response.cookies.set('pending_referral', codeToStore, {
+      httpOnly: false, // Allow JavaScript access
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      // No maxAge = session cookie (cleared when browser closes)
+    });
+    
+    console.log('✅ Middleware: Stored referral code in session cookie');
+    
+    // If they landed on a page that's not signup, redirect to signup page
+    const pathname = request.nextUrl.pathname;
+    if (pathname !== '/signup' && !pathname.startsWith('/api')) {
+      console.log('🔄 Middleware: Redirecting to signup with referral code');
+      const signupUrl = new URL('/signup', request.url);
+      signupUrl.searchParams.set('ref', refCode);
+      return NextResponse.redirect(signupUrl);
+    }
+  }
+  
+  return response;
 }
 
 export const config = {
@@ -20,11 +54,11 @@ export const config = {
      * - api/stripe/webhook (Stripe webhook - no auth needed)
      * - api/referral/validate-simple (Referral validation - called during signup)
      * - api/referral/credit (Referral crediting - called by webhook)
-     * - api/referral/create-from-link (Create referral from link - called during signup)
-     * - api/admin/credit-latest-referral (Admin tool - temp for debugging)
+     * - api/debug/instant-subscribe (Debug tool - instant subscription for testing)
+     * - api/admin/complete-pending-referrals (Admin tool - temp for testing)
      * - api/admin/master-login (Master password login - no auth needed)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|fil|webp)$|api/appointments/cal-webhook|api/ai-control/complete|api/ai-control/next-call|api/retell/call-result|api/stripe/webhook|api/referral/validate-simple|api/referral/credit|api/referral/create-from-link|api/admin/credit-latest-referral|api/admin/master-login).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|fil|webp)$|api/appointments/cal-webhook|api/ai-control/complete|api/ai-control/next-call|api/retell/call-result|api/stripe/webhook|api/referral/validate-simple|api/referral/credit|api/debug/instant-subscribe|api/admin/complete-pending-referrals|api/admin/master-login).*)',
   ],
 };
 

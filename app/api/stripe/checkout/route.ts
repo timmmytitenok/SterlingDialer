@@ -219,50 +219,16 @@ export async function POST(req: Request) {
       },
     };
 
-    // Apply 30% discount if user was referred
-    if (hasReferral) {
-      try {
-        // Try to apply the referral coupon - it might not exist in live mode
-        sessionConfig.discounts = [
-          {
-            coupon: 'REFERRAL30', // 30% off first month coupon
-          },
-        ];
-        console.log('✅ 30% referral discount will be applied to checkout');
-      } catch (error: any) {
-        console.warn('⚠️ Could not apply referral discount:', error.message);
-        console.warn('⚠️ Make sure REFERRAL30 coupon exists in your Stripe account (live mode)');
-        // Continue without discount if coupon doesn't exist
-      }
-    }
+    // NO DISCOUNTS - Users already got 30 days FREE trial!
+    // Referral benefit: Referrer gets $200 credits (handled in webhook)
+    console.log('💰 Full price checkout - user already had 30-day trial');
 
-    try {
-      const session = await stripe.checkout.sessions.create(sessionConfig);
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
-      console.log('✅ Checkout session created:', session.id);
-      console.log('🔗 Checkout URL:', session.url);
-      
-      return NextResponse.json({ sessionId: session.id, url: session.url });
-    } catch (stripeError: any) {
-      // If coupon error, retry without the discount
-      if (stripeError.message?.includes('coupon') || stripeError.code === 'resource_missing') {
-        console.warn('⚠️ Coupon not found, retrying without discount...');
-        delete sessionConfig.discounts;
-        
-        const session = await stripe.checkout.sessions.create(sessionConfig);
-        console.log('✅ Checkout session created (without discount):', session.id);
-        console.log('🔗 Checkout URL:', session.url);
-        
-        return NextResponse.json({ 
-          sessionId: session.id, 
-          url: session.url,
-          warning: 'Referral discount could not be applied. Please contact support.'
-        });
-      }
-      
-      // If it's a different error, throw it
-      throw stripeError;
-    }
+    console.log('✅ Checkout session created:', session.id);
+    console.log('🔗 Checkout URL:', session.url);
+    
+    return NextResponse.json({ sessionId: session.id, url: session.url });
   } catch (error: any) {
     console.error('❌ Checkout error:', error);
     console.error('❌ Error stack:', error.stack);

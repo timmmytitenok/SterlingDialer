@@ -16,7 +16,7 @@ export default async function ActivityLogsPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/signup');
   }
 
   // Get ALL answered calls (for table display)

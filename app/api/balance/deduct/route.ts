@@ -98,7 +98,7 @@ export async function POST(request: Request) {
       .insert({
         user_id: userId,
         amount: -cost,
-        transaction_type: 'deduction',
+        type: 'deduction',
         description: `Call charge: ${durationMinutes} minutes`,
         balance_after: newBalance,
       });
@@ -204,10 +204,10 @@ export async function POST(request: Request) {
           .insert({
             user_id: userId,
             amount: refillAmount,
-            transaction_type: 'auto_refill',
+            type: 'auto_refill',
             description: `Auto-refill: $${refillAmount}`,
-            balance_after: refillBalance,
             stripe_payment_intent_id: paymentIntent.id,
+            balance_after: refillBalance,
           });
 
         console.log(`✅ Auto-refill complete. New balance: $${refillBalance}`);

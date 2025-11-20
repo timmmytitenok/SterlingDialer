@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Sparkles, DollarSign, Phone, ChevronRight, LogOut, Users } from 'lucide-react';
+import { LayoutDashboard, DollarSign, Phone, ChevronRight, LogOut, Rocket } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 interface DashboardMobileNavProps {
@@ -20,13 +20,20 @@ export function DashboardMobileNav({ user, profile }: DashboardMobileNavProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const mainNavigation = [
+  // Build navigation array - hide Quick Setup if onboarding is complete
+  const allNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Lead Manager', href: '/dashboard/leads', icon: Users },
-    { name: 'AI Dialer', href: '/dashboard/ai-dialer', icon: Sparkles },
-    { name: 'Billing', href: '/dashboard/settings/billing', icon: DollarSign },
-    { name: 'Balance', href: '/dashboard/settings/balance', icon: Phone },
+    { name: 'Quick Setup', href: '/dashboard/onboarding', icon: Rocket },
+    { name: 'Billing & Balance', href: '/dashboard/settings/billing', icon: DollarSign },
   ];
+
+  // Filter out Quick Setup if all onboarding steps are complete
+  const mainNavigation = allNavigation.filter(item => {
+    if (item.name === 'Quick Setup' && profile?.onboarding_all_complete) {
+      return false; // Hide Quick Setup button
+    }
+    return true;
+  });
 
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
 
@@ -78,7 +85,7 @@ export function DashboardMobileNav({ user, profile }: DashboardMobileNavProps) {
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push('/signup');
   };
 
   return (
@@ -254,10 +261,18 @@ export function DashboardMobileNav({ user, profile }: DashboardMobileNavProps) {
           >
             <button
               onClick={handleSignOut}
-              className="w-full py-3.5 px-4 bg-gradient-to-r from-red-600/80 to-red-700/80 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-red-500/30 active:scale-95 flex items-center justify-center gap-2"
+              className="relative overflow-hidden w-full py-3.5 px-4 bg-gradient-to-r from-red-600/20 to-rose-600/20 backdrop-blur-sm border-2 border-red-500/40 hover:border-red-500/60 text-red-400 hover:text-red-300 font-bold rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-red-500/40 active:scale-95 flex items-center justify-center gap-2 group"
             >
-              <LogOut className="w-5 h-5" />
-              Sign Out
+              {/* Animated glow background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/10 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              
+              {/* Shimmer effect */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-400/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+              </div>
+              
+              <LogOut className="w-5 h-5 relative z-10" />
+              <span className="relative z-10">Sign Out</span>
             </button>
           </div>
         </div>

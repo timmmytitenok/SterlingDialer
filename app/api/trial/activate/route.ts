@@ -26,7 +26,10 @@ export async function POST(request: Request) {
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: user.email!,
-        metadata: { user_id: user.id },
+        metadata: { 
+          user_id: user.id,
+          supabase_user_id: user.id // Match webhook lookup
+        },
       });
       customerId = customer.id;
 
@@ -34,14 +37,36 @@ export async function POST(request: Request) {
         .from('profiles')
         .update({ stripe_customer_id: customerId })
         .eq('user_id', user.id);
+      
+      console.log('✅ Created Stripe customer with user_id metadata:', user.id);
+    } else {
+      console.log('✅ Using existing Stripe customer:', customerId);
     }
 
-    // Create Stripe Checkout Session in SETUP mode (saves card, no charge)
+    // Get the Pro Access price ID from environment
+    const priceId = process.env.STRIPE_PRO_PRICE_ID;
+    if (!priceId) {
+      throw new Error('STRIPE_PRO_PRICE_ID not configured');
+    }
+
+    // Create Stripe Checkout Session in SUBSCRIPTION mode with 30-day trial
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      mode: 'setup', // CRITICAL: Setup mode, not payment mode!
+      mode: 'subscription', // SUBSCRIPTION mode - will auto-charge after trial!
       payment_method_types: ['card'],
-      success_url: `${request.headers.get('origin')}/onboarding?trial_activated=true`,
+      line_items: [
+        {
+          price: priceId, // $499/month Pro Access
+          quantity: 1,
+        },
+      ],
+      subscription_data: {
+        trial_period_days: 30, // 30-day free trial
+        metadata: {
+          user_id: user.id,
+        },
+      },
+      success_url: `${request.headers.get('origin')}/welcome`,
       cancel_url: `${request.headers.get('origin')}/trial-activate?canceled=true`,
       metadata: {
         user_id: user.id,
@@ -49,18 +74,20 @@ export async function POST(request: Request) {
       },
     });
 
-    // Start the free trial
+    // Start the free trial (Stripe will handle the rest)
+    const trialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await supabase
       .from('profiles')
       .update({
         subscription_tier: 'free_trial',
         free_trial_started_at: new Date().toISOString(),
-        free_trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+        free_trial_ends_at: trialEnd.toISOString(),
         cost_per_minute: 0.30,
       })
       .eq('user_id', user.id);
 
     console.log('✅ Trial activation session created');
+    console.log('🎯 User will be redirected to onboarding steps after checkout');
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {

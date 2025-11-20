@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await request.json();
+    const { userId, testPhoneNumber } = await request.json();
 
     if (!userId) {
       return NextResponse.json(
@@ -11,6 +11,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    
+    // Use provided test phone or default to admin number
+    const adminTestPhone = testPhoneNumber || process.env.ADMIN_TEST_PHONE_NUMBER || '+16149403824';
 
     const supabase = await createClient();
 
@@ -30,40 +33,26 @@ export async function POST(request: Request) {
     console.log('   Requested by:', requestingUser.email);
     console.log('   Target user ID:', userId);
 
-    // Get the target user's N8N webhook configuration
-    const { data: webhookConfig, error: webhookError } = await supabase
-      .from('user_n8n_webhooks')
-      .select('ai_agent_webhook_url, ai_agent_webhook_enabled')
+    // Get the target user's Retell AI configuration (NEW LOGIC)
+    const { data: retellConfig, error: retellError } = await supabase
+      .from('user_retell_config')
+      .select('retell_agent_id, phone_number')
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (webhookError) {
-      console.error('❌ Error fetching webhook config:', webhookError);
+    if (retellError) {
+      console.error('❌ Error fetching Retell config:', retellError);
       return NextResponse.json(
-        { error: 'Failed to load webhook configuration' },
+        { error: 'Failed to load AI configuration' },
         { status: 500 }
       );
     }
 
-    if (!webhookConfig || !webhookConfig.ai_agent_webhook_url) {
-      console.error('❌ No webhook configured for user:', userId);
+    if (!retellConfig || !retellConfig.retell_agent_id || !retellConfig.phone_number) {
+      console.error('❌ No Retell AI configured for user:', userId);
       return NextResponse.json(
-        { error: 'No N8N webhook configured for this user. Please set up their webhook URL in the database first.' },
+        { error: 'No AI Agent configured for this user. Please set up their Retell Agent ID and Phone Number first.' },
         { status: 400 }
-      );
-    }
-
-    // Skip webhook enabled check for admin testing
-    // Admin can test even if webhook is "disabled" for production use
-
-    // Get admin test phone number from environment
-    const adminTestPhone = process.env.ADMIN_TEST_PHONE_NUMBER;
-    
-    if (!adminTestPhone) {
-      console.error('❌ ADMIN_TEST_PHONE_NUMBER not configured');
-      return NextResponse.json(
-        { error: 'Admin test phone number not configured in environment variables. Please add ADMIN_TEST_PHONE_NUMBER to .env.local' },
-        { status: 500 }
       );
     }
 
@@ -75,55 +64,60 @@ export async function POST(request: Request) {
       .single();
 
     console.log('📞 Triggering test call to admin phone:', adminTestPhone);
-    console.log('🔗 Using webhook:', webhookConfig.ai_agent_webhook_url);
+    console.log('🤖 Using Retell Agent ID:', retellConfig.retell_agent_id);
+    console.log('📱 From phone number:', retellConfig.phone_number);
 
-    // Prepare webhook payload for test call
-    const webhookPayload = {
-      userId: userId,
-      userEmail: profile?.email || 'test@example.com',
-      userName: profile?.full_name || 'Test User',
-      testMode: true,
-      testPhoneNumber: adminTestPhone,
-      dailyCallLimit: 1, // Only one test call
-      callsMadeToday: 0,
-      sessionStatus: 'active',
-      timestamp: new Date().toISOString(),
-      adminTest: true,
-      message: 'Admin test call - verifying AI setup'
-    };
+    // Call Retell API to create a phone call
+    const retellApiKey = process.env.RETELL_API_KEY;
+    if (!retellApiKey) {
+      return NextResponse.json(
+        { error: 'Retell API key not configured' },
+        { status: 500 }
+      );
+    }
 
-    console.log('📤 Sending test payload to N8N:', webhookPayload);
-
-    // Call the user's N8N webhook
-    const webhookResponse = await fetch(webhookConfig.ai_agent_webhook_url, {
+    const retellResponse = await fetch('https://api.retellai.com/v2/create-phone-call', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(webhookPayload),
+      headers: {
+        'Authorization': `Bearer ${retellApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        agent_id: retellConfig.retell_agent_id,
+        from_number: retellConfig.phone_number,
+        to_number: adminTestPhone,
+        metadata: {
+          user_id: userId,
+          admin_test: true,
+          test_by: requestingUser.email,
+        },
+      }),
     });
 
-    console.log('📡 N8N Response Status:', webhookResponse.status);
+    console.log('📡 Retell Response Status:', retellResponse.status);
 
-    if (!webhookResponse.ok) {
-      const errorText = await webhookResponse.text();
-      console.error('❌ N8N webhook error:', errorText);
+    if (!retellResponse.ok) {
+      const errorText = await retellResponse.text();
+      console.error('❌ Retell API error:', errorText);
       return NextResponse.json(
         { 
-          error: 'N8N webhook call failed',
+          error: 'Retell API call failed',
           details: errorText,
-          status: webhookResponse.status 
+          status: retellResponse.status 
         },
         { status: 500 }
       );
     }
 
-    const responseData = await webhookResponse.text();
-    console.log('✅ N8N webhook response:', responseData);
+    const retellData = await retellResponse.json();
+    console.log('✅ Retell API response:', retellData);
 
     // Log the test call in the calls table
     await supabase.from('calls').insert({
       user_id: userId,
       phone_number: adminTestPhone,
-      status: 'test',
+      retell_call_id: retellData.call_id,
+      status: 'initiated',
       disposition: 'admin_test',
       connected: false,
       outcome: null,
@@ -132,10 +126,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Test call initiated! Your phone (${adminTestPhone}) should ring shortly using ${profile?.full_name}'s AI configuration.`,
-      webhook: webhookConfig.ai_agent_webhook_url,
+      message: `Test call initiated! Your phone (${adminTestPhone}) should ring shortly using ${profile?.full_name}'s AI Agent.`,
+      agentId: retellConfig.retell_agent_id,
+      fromNumber: retellConfig.phone_number,
       testPhone: adminTestPhone,
-      responseFromN8N: responseData,
+      callId: retellData.call_id,
+      retellResponse: retellData,
     });
 
   } catch (error: any) {

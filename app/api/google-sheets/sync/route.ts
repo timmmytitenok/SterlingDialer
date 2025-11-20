@@ -473,6 +473,50 @@ export async function POST(request: Request) {
     
     console.log(`✅ Sync complete: ${imported} imported, ${updated} updated, ${skipped} skipped, ${qualified} qualified, ${unqualified} unqualified`);
 
+    // Check total leads count to mark onboarding step 3 complete
+    const { count: totalLeads } = await supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+
+    console.log(`📊 User has ${totalLeads || 0} total leads`);
+
+    // Mark onboarding step 3 complete ONLY if they have more than 1 lead
+    if (totalLeads && totalLeads > 1) {
+      await supabase
+        .from('profiles')
+        .update({ onboarding_step_3_sheet: true })
+        .eq('user_id', user.id);
+
+      console.log('✅ Onboarding Step 3 (Sheet) marked complete - user has more than 1 lead!');
+
+      // Check if all onboarding steps are now complete
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_step_1_form, onboarding_step_2_balance, onboarding_step_3_sheet, onboarding_step_4_schedule')
+        .eq('user_id', user.id)
+        .single();
+
+      const allComplete = profile?.onboarding_step_1_form &&
+                          profile?.onboarding_step_2_balance &&
+                          profile?.onboarding_step_3_sheet &&
+                          profile?.onboarding_step_4_schedule;
+
+      if (allComplete) {
+        console.log('🎉 All onboarding steps complete! Hiding Quick Setup forever.');
+        
+        await supabase
+          .from('profiles')
+          .update({
+            onboarding_all_complete: true,
+            onboarding_completed_at: new Date().toISOString(),
+          })
+          .eq('user_id', user.id);
+      }
+    } else {
+      console.log(`⚠️ Step 3 not complete yet - user needs more than 1 lead (current: ${totalLeads || 0})`);
+    }
+
     return NextResponse.json({ 
       success: true,
       message: `Sync complete! ${qualified} qualified leads, ${unqualified} unqualified leads.`,

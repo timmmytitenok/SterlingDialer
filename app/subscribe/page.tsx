@@ -12,18 +12,19 @@ export default async function SubscribePage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/signup');
   }
 
   // Get user profile to check subscription status
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_tier')
-    .eq('id', user.id)
+    .select('subscription_tier, has_active_subscription')
+    .eq('user_id', user.id)
     .single();
 
-  // If user already has a subscription, redirect to dashboard
-  if (profile?.subscription_tier && ['starter', 'pro', 'elite'].includes(profile.subscription_tier)) {
+  // If user already has Pro Access, redirect to dashboard
+  if (profile?.subscription_tier === 'pro' || profile?.has_active_subscription) {
+    console.log('✅ User has Pro Access - redirecting to dashboard');
     redirect('/dashboard');
   }
 

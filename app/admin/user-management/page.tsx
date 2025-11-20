@@ -1,0 +1,378 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Users, Loader2, AlertCircle, UserCheck, UserX, Settings, Skull } from 'lucide-react';
+
+interface User {
+  id: string;
+  full_name: string;
+  email: string;
+  setup_status: string;
+  last_sign_in_at: string | null;
+  account_type: string;
+  days_left: number;
+  next_billing_date: string | null;
+  created_at: string;
+  is_active: boolean;
+  has_ai_config: boolean;
+  call_balance: number;
+}
+
+type FilterType = 'all' | 'needs_onboarding' | 'needs_ai_setup' | 'dead';
+
+export default function AdminUsersPage() {
+  const router = useRouter();
+  const [users, setUsers] = useState<User[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+
+  // Redirect mobile users to My Revenue
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      window.location.href = '/admin/my-revenue';
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/admin/users/list', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        
+        if (response.status === 403) {
+          alert('⚠️ Admin Access Required\n\nTo access the admin panel:\n1. Click the logo 10 times on the login page\n2. Enter the master password\n3. Try again');
+          router.push('/signup');
+          return;
+        }
+        
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      setAllUsers(data.users || []);
+      setUsers(data.users || []);
+    } catch (err: any) {
+      console.error('❌ Error loading users:', err);
+      setError(err.message || 'Failed to load users');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const applyFilter = (filter: FilterType) => {
+    setActiveFilter(filter);
+    
+    if (filter === 'all') {
+      setUsers(allUsers);
+      return;
+    }
+
+    const now = new Date();
+    const twentyOneDaysAgo = new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000);
+
+    const filtered = allUsers.filter(user => {
+      if (filter === 'needs_onboarding') {
+        return user.setup_status === 'account_created';
+      }
+      if (filter === 'needs_ai_setup') {
+        return user.setup_status === 'onboarding_complete' || !user.has_ai_config;
+      }
+      if (filter === 'dead') {
+        const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at) : new Date(user.created_at);
+        return lastSignIn < twentyOneDaysAgo;
+      }
+      return true;
+    });
+
+    setUsers(filtered);
+  };
+
+  // Calculate stats
+  const now = new Date();
+  const twentyOneDaysAgo = new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000);
+  
+  const totalUsers = allUsers.length;
+  const needsOnboarding = allUsers.filter(u => u.setup_status === 'account_created').length;
+  const needsAISetup = allUsers.filter(u => u.setup_status === 'onboarding_complete' || !u.has_ai_config).length;
+  const deadAccounts = allUsers.filter(u => {
+    const lastSignIn = u.last_sign_in_at ? new Date(u.last_sign_in_at) : new Date(u.created_at);
+    return lastSignIn < twentyOneDaysAgo;
+  }).length;
+
+  const getStatusBadge = (user: User) => {
+    // Check if dead (inactive 21+ days)
+    const now = new Date();
+    const twentyOneDaysAgo = new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000);
+    const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at) : new Date(user.created_at);
+    
+    if (lastSignIn < twentyOneDaysAgo) {
+      return (
+        <span className="inline-flex items-center px-3 py-1 rounded-full border text-xs font-bold bg-red-500/10 text-red-400 border-red-500/30">
+          Dead
+        </span>
+      );
+    }
+
+    // Status badges
+    const statusConfig: Record<string, { label: string; color: string }> = {
+      account_created: { label: 'Waiting for Onboarding', color: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
+      onboarding_complete: { label: 'Waiting for AI Setup', color: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
+      active: { label: 'ACTIVE', color: 'bg-green-500/10 text-green-400 border-green-500/30' },
+    };
+
+    const config = statusConfig[user.setup_status] || statusConfig.account_created;
+    
+    return (
+      <span className={`inline-flex items-center px-3 py-1 rounded-full border text-xs font-bold ${config.color}`}>
+        {config.label}
+      </span>
+    );
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Never';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-16 h-16 text-blue-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-300 text-xl font-semibold animate-pulse">Loading users...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-lg w-full">
+          <div className="bg-gradient-to-br from-red-900/20 to-red-600/10 border-2 border-red-500/30 rounded-2xl p-8 backdrop-blur-xl">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-10 h-10 text-red-400" />
+              </div>
+              <h2 className="text-3xl font-bold text-white mb-3">Error Loading Users</h2>
+              <p className="text-red-300 mb-6 text-lg">{error}</p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={loadUsers}
+                  className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-all"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main UI
+  return (
+    <div className="min-h-screen p-4 md:p-8 pb-24 md:pb-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                <Users className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-white mb-1">User Management</h1>
+                <p className="text-gray-400">View and manage all user accounts</p>
+              </div>
+            </div>
+            <div className="px-6 py-3 bg-blue-500/10 border-2 border-blue-500/30 rounded-xl">
+              <span className="text-blue-300 font-bold text-lg">{users.length} Users</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* Total Users */}
+          <button
+            onClick={() => applyFilter('all')}
+            className={`p-6 bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl border-2 transition-all duration-200 text-left ${
+              activeFilter === 'all'
+                ? 'border-blue-500/50 shadow-xl shadow-blue-500/20 scale-105'
+                : 'border-gray-700/30 hover:border-blue-500/30 hover:scale-102'
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/30">
+                <Users className="w-6 h-6 text-blue-400" />
+              </div>
+              <div className="text-xs font-bold text-gray-400 uppercase">Total Users</div>
+            </div>
+            <div className="text-4xl font-black text-blue-400 mb-1">{totalUsers}</div>
+            <div className="text-xs text-gray-400">All accounts created</div>
+          </button>
+
+          {/* Dead Accounts */}
+          <button
+            onClick={() => applyFilter('dead')}
+            className={`p-6 bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl border-2 transition-all duration-200 text-left ${
+              activeFilter === 'dead'
+                ? 'border-red-500/50 shadow-xl shadow-red-500/20 scale-105'
+                : 'border-gray-700/30 hover:border-red-500/30 hover:scale-102'
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/30">
+                <Skull className="w-6 h-6 text-red-400" />
+              </div>
+              <div className="text-xs font-bold text-gray-400 uppercase">Dead Accounts</div>
+            </div>
+            <div className="text-4xl font-black text-red-400 mb-1">{deadAccounts}</div>
+            <div className="text-xs text-gray-400">Inactive 21+ days</div>
+          </button>
+
+          {/* Needs Onboarding */}
+          <button
+            onClick={() => applyFilter('needs_onboarding')}
+            className={`p-6 bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl border-2 transition-all duration-200 text-left ${
+              activeFilter === 'needs_onboarding'
+                ? 'border-amber-500/50 shadow-xl shadow-amber-500/20 scale-105'
+                : 'border-gray-700/30 hover:border-amber-500/30 hover:scale-102'
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/30">
+                <UserX className="w-6 h-6 text-amber-400" />
+              </div>
+              <div className="text-xs font-bold text-gray-400 uppercase">Needs Onboarding</div>
+            </div>
+            <div className="text-4xl font-black text-amber-400 mb-1">{needsOnboarding}</div>
+            <div className="text-xs text-gray-400">Incomplete onboarding</div>
+          </button>
+
+          {/* Needs AI Setup */}
+          <button
+            onClick={() => applyFilter('needs_ai_setup')}
+            className={`p-6 bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl border-2 transition-all duration-200 text-left ${
+              activeFilter === 'needs_ai_setup'
+                ? 'border-purple-500/50 shadow-xl shadow-purple-500/20 scale-105'
+                : 'border-gray-700/30 hover:border-purple-500/30 hover:scale-102'
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-3 bg-purple-500/10 rounded-xl border border-purple-500/30">
+                <Settings className="w-6 h-6 text-purple-400" />
+              </div>
+              <div className="text-xs font-bold text-gray-400 uppercase">Needs AI Setup</div>
+            </div>
+            <div className="text-4xl font-black text-purple-400 mb-1">{needsAISetup}</div>
+            <div className="text-xs text-gray-400">AI not configured</div>
+          </button>
+        </div>
+
+        {/* Active Filter Indicator */}
+        {activeFilter !== 'all' && (
+          <div className="mb-4 flex items-center justify-between p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-blue-400 font-semibold">
+                Showing {users.length} {activeFilter === 'needs_onboarding' ? 'users needing onboarding' : activeFilter === 'needs_ai_setup' ? 'users needing AI setup' : 'dead accounts'}
+              </span>
+            </div>
+            <button
+              onClick={() => applyFilter('all')}
+              className="text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              Clear filter
+            </button>
+          </div>
+        )}
+
+        {/* Users Table */}
+        <div className="bg-[#1A2647]/40 backdrop-blur-xl rounded-2xl border-2 border-gray-700/30 overflow-hidden shadow-2xl">
+          <div className="overflow-x-auto">
+            <table className="w-full table-fixed">
+              <thead>
+                <tr className="bg-[#0B1437] border-b-2 border-gray-700/50">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider" style={{ width: '20%' }}>
+                    Full Name
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider" style={{ width: '40%' }}>
+                    Email
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider" style={{ width: '20%' }}>
+                    Setup Status
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider" style={{ width: '20%' }}>
+                    Last Active
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700/30">
+                {users.map((user) => (
+                  <tr
+                    key={user.id}
+                    onClick={() => router.push(`/admin/user-management/${user.id}`)}
+                    className="hover:bg-[#0B1437]/70 transition-all duration-200 cursor-pointer"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="text-white font-semibold text-lg">{user.full_name}</div>
+                      <div className="text-xs text-gray-500 font-mono">{user.id.substring(0, 8)}...</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-gray-300">{user.email}</div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {getStatusBadge(user)}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="text-sm text-white">{formatDate(user.last_sign_in_at)}</div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {users.length === 0 && (
+            <div className="text-center py-16">
+              <Users className="w-20 h-20 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400 text-xl font-semibold">No users found</p>
+              <p className="text-gray-500 text-sm mt-2">Users will appear here once they sign up</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -148,7 +148,7 @@ export async function POST(request: Request) {
             .insert({
               user_id: userId,
               amount: -cost,
-              transaction_type: 'deduction',
+              type: 'deduction',
               description: `Call charge: ${durationMinutes.toFixed(2)} minutes`,
               balance_after: newBalance,
             });

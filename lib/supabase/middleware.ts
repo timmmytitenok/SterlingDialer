@@ -88,17 +88,19 @@ export async function updateSession(request: NextRequest) {
       .limit(1)
       .maybeSingle();
 
-    // Also check if user has an active free trial
+    // Check if user has Pro Access or active subscription
     const { data: profile } = await supabase
       .from('profiles')
-      .select('subscription_tier')
+      .select('subscription_tier, has_active_subscription')
       .eq('user_id', user.id)
       .single();
 
     const hasEverSubscribed = !!subscription;
     const hasFreeTrial = profile?.subscription_tier === 'free_trial';
+    const hasProAccess = profile?.subscription_tier === 'pro';
+    const hasActiveSubscription = profile?.has_active_subscription === true;
     const hasVIPAccess = profile?.subscription_tier === 'free_access';
-    const hasAccess = hasEverSubscribed || hasFreeTrial || hasVIPAccess;
+    const hasAccess = hasEverSubscribed || hasFreeTrial || hasProAccess || hasActiveSubscription || hasVIPAccess;
 
     // RULE 1: Trying to access DASHBOARD
     if (request.nextUrl.pathname.startsWith('/dashboard')) {

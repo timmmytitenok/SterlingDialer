@@ -58,7 +58,8 @@ export async function POST(req: Request) {
         referrer_id: referralCodeData.user_id,
         referee_id: newUserId,
         referral_code: code.toUpperCase(),
-        status: 'pending'
+        status: 'completed', // Referral relationship is established
+        conversion_status: 'trial' // They're in free trial, not yet paid
       })
       .select()
       .single();

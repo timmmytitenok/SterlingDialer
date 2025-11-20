@@ -13,7 +13,7 @@ export default async function APITestPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/signup');
   }
 
   // Fetch all calls with full details

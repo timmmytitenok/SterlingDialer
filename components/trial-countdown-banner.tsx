@@ -12,6 +12,7 @@ export function TrialCountdownBanner() {
   const [totalTrialDays, setTotalTrialDays] = useState(30);
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [tier, setTier] = useState<string>('trial');
   const supabase = createClient();
 
   useEffect(() => {
@@ -25,31 +26,43 @@ export function TrialCountdownBanner() {
         return;
       }
 
-      // Get user's subscription info
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('subscription_tier, free_trial_started_at, free_trial_ends_at, free_trial_total_days, free_trial_days_remaining')
+      // Get user's subscription info from subscriptions table (NEW)
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      // Only show banner if user is on free trial
-      if (profile?.subscription_tier === 'free_trial' && profile.free_trial_ends_at) {
-        const trialEndDate = new Date(profile.free_trial_ends_at);
+      console.log('🎫 Trial banner checking subscription:', subscription);
+
+      // Show banner if user is on trial (status = 'trialing') for ANY tier
+      if (subscription?.status === 'trialing' && subscription.trial_end) {
+        const trialEndDate = new Date(subscription.trial_end);
         const now = new Date();
         
-        // Calculate days remaining dynamically (don't trust the stored value)
+        // Calculate days remaining dynamically
         const msRemaining = trialEndDate.getTime() - now.getTime();
         const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
         const calculatedDaysRemaining = Math.max(0, daysRemaining); // Never show negative
         
-        setDaysRemaining(calculatedDaysRemaining);
-        setTotalTrialDays(profile.free_trial_total_days || 30);
+        console.log(`📅 Trial ends: ${trialEndDate.toISOString()}, Days remaining: ${calculatedDaysRemaining}`);
         
-        // Store dates for reference
-        if (profile.free_trial_started_at) {
-          setTrialStartDate(new Date(profile.free_trial_started_at));
+        setDaysRemaining(calculatedDaysRemaining);
+        setTier(subscription.tier || 'trial'); // Store the tier (trial, pro, vip)
+        
+        // Calculate total trial days from created_at to trial_end
+        if (subscription.created_at) {
+          const trialStartDate = new Date(subscription.created_at);
+          const totalDays = Math.ceil((trialEndDate.getTime() - trialStartDate.getTime()) / (1000 * 60 * 60 * 24));
+          setTotalTrialDays(totalDays || 30);
+          setTrialStartDate(trialStartDate);
+        } else {
+          setTotalTrialDays(30);
         }
+        
         setTrialEndDate(trialEndDate);
+      } else {
+        console.log('❌ No active trial found');
       }
 
       setLoading(false);
@@ -57,8 +70,8 @@ export function TrialCountdownBanner() {
 
     checkTrialStatus();
 
-    // Check again every hour in case days change
-    const interval = setInterval(checkTrialStatus, 3600000);
+    // Check again every minute for real-time updates
+    const interval = setInterval(checkTrialStatus, 60000);
     return () => clearInterval(interval);
   }, [supabase]);
 
@@ -146,7 +159,7 @@ export function TrialCountdownBanner() {
             <div className={`hidden md:flex px-3 py-1 ${colors.badge} border rounded-full`}>
               <span className="text-xs font-bold flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
-                FREE TRIAL
+                {tier === 'pro' ? 'PRO TRIAL' : 'FREE TRIAL'}
               </span>
             </div>
           </div>

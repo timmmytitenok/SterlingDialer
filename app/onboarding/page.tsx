@@ -18,10 +18,24 @@ export default function OnboardingPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push('/login');
-      } else {
-        setLoading(false);
+        router.push('/signup');
+        return;
       }
+
+      // Check if they already have Pro Access - skip onboarding
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('subscription_tier, has_active_subscription')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile?.subscription_tier === 'pro' || profile?.has_active_subscription) {
+        console.log('✅ User already has Pro Access - redirecting to dashboard');
+        router.push('/dashboard');
+        return;
+      }
+
+      setLoading(false);
     };
 
     checkUser();

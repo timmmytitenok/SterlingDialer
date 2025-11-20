@@ -21,64 +21,42 @@ export function AdminTestPanel({
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [webhookUrl, setWebhookUrl] = useState<string>('Loading...');
   const [result, setResult] = useState<{
     success: boolean;
     message: string;
     details?: any;
   } | null>(null);
 
-  // Fetch webhook URL when panel opens
-  useEffect(() => {
-    if (isOpen && webhookUrl === 'Loading...') {
-      fetch('/api/admin/get-webhook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.webhookUrl) {
-            setWebhookUrl(data.webhookUrl);
-          } else {
-            setWebhookUrl('Not configured');
-          }
-        })
-        .catch(() => setWebhookUrl('Error loading'));
-    }
-  }, [isOpen, userId, webhookUrl]);
-
   const handleLaunchAI = async () => {
     setLoading(true);
     setResult(null);
 
     try {
-      const response = await fetch('/api/ai-control/start', {
+      // Call the admin test endpoint to make a test call to +6149403824
+      const response = await fetch('/api/admin/test-call', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: userId,
-          dailyCallLimit: 1,
-          executionMode: 'leads',
-          targetLeadCount: 1,
+          testPhoneNumber: '+16149403824', // Your test number
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to start AI');
+        throw new Error(data.error || 'Failed to start test call');
       }
 
       setResult({
         success: true,
-        message: '🎯 AI Agent Launched! Calling first lead from Google Sheet...',
+        message: '🎯 Test call launched to +1 (614) 940-3824!',
         details: data,
       });
     } catch (error: any) {
       setResult({
         success: false,
-        message: error.message || 'Failed to launch AI agent',
+        message: error.message || 'Failed to launch test call',
       });
     } finally {
       setLoading(false);
@@ -130,89 +108,52 @@ export function AdminTestPanel({
 
           {/* Content */}
           {!isMinimized && (
-            <div className="p-4 space-y-4 max-h-[520px] overflow-y-auto">
-              {/* User Info */}
-              <div className="bg-[#0B1437] rounded-lg p-3 border border-purple-500/20">
-                <div className="text-xs text-gray-400 mb-2">Current User</div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-white font-medium">{userName}</span>
-                    <span className="text-xs px-2 py-1 bg-purple-600/20 text-purple-300 rounded">
-                      {subscriptionTier}
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-400">{userEmail}</div>
-                  <div className="text-xs text-gray-400 font-mono break-all">
-                    <div className="text-gray-500 mb-1">User ID:</div>
-                    {userId}
-                  </div>
-                </div>
+            <div className="p-6 space-y-4">
+              {/* User Name */}
+              <div className="text-center pb-4 border-b border-purple-500/20">
+                <div className="text-sm text-gray-400 mb-1">Testing as:</div>
+                <div className="text-lg font-bold text-white">{userName}</div>
               </div>
 
-              {/* Webhook URL */}
-              <div className="bg-[#0B1437] rounded-lg p-3 border border-purple-500/20">
-                <div className="text-xs text-gray-400 mb-2">N8N Webhook URL</div>
-                <div className="text-xs text-green-400 font-mono break-all">
-                  {webhookUrl}
-                </div>
-              </div>
-
-              {/* Launch AI Button */}
-              <div className="space-y-2">
-                <button
-                  onClick={handleLaunchAI}
-                  disabled={loading}
-                  className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
-                    loading 
-                      ? 'bg-gray-600 cursor-not-allowed' 
-                      : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-blue-500/50'
-                  }`}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Launching AI...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Phone className="w-5 h-5" />
-                      <span>Launch AI Agent</span>
-                    </>
-                  )}
-                </button>
-                <div className="text-xs text-center text-gray-500">
-                  Calls 1 lead from Google Sheet
-                </div>
+              {/* Launch AI Button - ONLY THING WE NEED */}
+              <button
+                onClick={handleLaunchAI}
+                disabled={loading}
+                className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 flex items-center justify-center gap-3 ${
+                  loading 
+                    ? 'bg-gray-600 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-blue-500/50 hover:scale-105'
+                }`}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <span>Calling...</span>
+                  </>
+                ) : (
+                  <>
+                    <Phone className="w-6 h-6" />
+                    <span>Launch AI Agent</span>
+                  </>
+                )}
+              </button>
+              
+              <div className="text-xs text-center text-gray-400">
+                📞 Will call: <span className="font-mono text-blue-400">+1 (614) 940-3824</span>
               </div>
 
               {/* Result Message */}
               {result && (
-                <div className={`p-3 rounded-lg border ${
+                <div className={`p-4 rounded-lg border ${
                   result.success 
                     ? 'bg-green-600/10 border-green-500/30 text-green-300' 
                     : 'bg-red-600/10 border-red-500/30 text-red-300'
                 }`}>
-                  <div className="text-sm font-medium mb-1">
-                    {result.success ? '✅ Success' : '❌ Error'}
+                  <div className="text-sm font-medium">
+                    {result.success ? '✅ ' : '❌ '}{result.message}
                   </div>
-                  <div className="text-xs">{result.message}</div>
-                  {result.details && (
-                    <details className="mt-2">
-                      <summary className="text-xs cursor-pointer hover:text-white">
-                        View Details
-                      </summary>
-                      <pre className="mt-2 text-xs bg-black/30 p-2 rounded overflow-x-auto">
-                        {JSON.stringify(result.details, null, 2)}
-                      </pre>
-                    </details>
-                  )}
                 </div>
               )}
-
-              {/* Info */}
-              <div className="text-xs text-gray-500 text-center pt-2 border-t border-purple-500/20">
-                🛡️ Admin Mode Active • Test calls use this user's N8N workflow
-              </div>
             </div>
           )}
         </div>

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { StripeBilling } from './stripe-billing';
 import { SubscriptionTierSelector } from './subscription-tier-selector';
+import { CallBalanceCard } from './call-balance-card';
+import { Wallet } from 'lucide-react';
 
 interface BillingManagementContentProps {
   userId: string;
@@ -13,6 +15,10 @@ interface BillingManagementContentProps {
   accountCreatedAt?: string;
   referralBonusDays?: number;
   trialEndsAt?: string;
+  // For mobile combined view
+  initialBalance?: number;
+  initialAutoRefill?: boolean;
+  initialRefillAmount?: number;
 }
 
 export function BillingManagementContent({
@@ -24,18 +30,56 @@ export function BillingManagementContent({
   accountCreatedAt,
   referralBonusDays,
   trialEndsAt,
+  initialBalance,
+  initialAutoRefill,
+  initialRefillAmount,
 }: BillingManagementContentProps) {
   const [showUpgrade, setShowUpgrade] = useState(false);
 
   return (
     <>
       {/* Page Title */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Billing</h1>
-        <p className="text-gray-400">Manage your subscription and payment information</p>
+      <div className="pt-6 md:pt-8 pb-6 md:pb-8 px-4 md:px-0">
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+          <span className="md:hidden">Billing & Balance</span>
+          <span className="hidden md:inline">Billing</span>
+        </h1>
+        <p className="text-sm md:text-base text-gray-400">
+          <span className="md:hidden">Manage your subscription and call minutes</span>
+          <span className="hidden md:inline">Manage your subscription and payment information</span>
+        </p>
       </div>
 
-      <div className="max-w-4xl">
+      <div className="max-w-4xl mx-auto px-4 md:px-0 space-y-8">
+        {/* Call Balance Section - Mobile Only */}
+        <div className="md:hidden">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-blue-400" />
+              Call Balance
+            </h2>
+            <p className="text-xs text-gray-400 mt-1">Manage your AI calling minutes</p>
+          </div>
+          <CallBalanceCard 
+            userId={userId}
+            initialBalance={initialBalance}
+            initialAutoRefill={initialAutoRefill}
+            initialRefillAmount={initialRefillAmount}
+            currentTier={currentTier}
+          />
+        </div>
+
+        {/* Subscription Section */}
+        <div>
+          <div className="mb-4 md:hidden">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              Subscription
+            </h2>
+            <p className="text-xs text-gray-400 mt-1">Your plan and payment details</p>
+          </div>
           {!showUpgrade ? (
             <StripeBilling 
               userId={userId}
@@ -69,6 +113,7 @@ export function BillingManagementContent({
               <SubscriptionTierSelector currentTier={currentTier as any} />
             </div>
           )}
+        </div>
       </div>
     </>
   );

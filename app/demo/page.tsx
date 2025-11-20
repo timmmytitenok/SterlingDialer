@@ -423,7 +423,7 @@ export default function HowItWorksPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                 <Link
-                  href="/login"
+                  href="/signup"
                   className="group/btn px-6 py-3 sm:px-10 sm:py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-base sm:text-lg rounded-xl transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50 flex items-center justify-center gap-2"
                 >
                   <Rocket className="w-5 h-5 sm:w-6 sm:h-6 group-hover/btn:translate-y-[-4px] transition-transform" />

@@ -17,11 +17,18 @@ export default async function DashboardLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/signup');
   }
 
-  // Check if logged in via master password
+  // Check if logged in via master password (admin controls)
   const showAdminPanel = await isAdminMode();
+  
+  // Extra safety check - only show for specific admin email or if explicitly in admin mode
+  const isReallyAdmin = showAdminPanel && (
+    user.email === 'timothytitenok9@gmail.com' || 
+    user.email === 'timothytitenokspam@gmail.com' ||
+    showAdminPanel === true
+  );
 
   // Get user profile
   const { data: profile } = await supabase
@@ -30,16 +37,9 @@ export default async function DashboardLayout({
     .eq('user_id', user.id)
     .single();
 
-  // Check if trial has expired
-  if (profile?.subscription_tier === 'free_trial' && profile.free_trial_ends_at) {
-    const trialEndsAt = new Date(profile.free_trial_ends_at);
-    const now = new Date();
-    
-    if (trialEndsAt < now) {
-      // Trial expired - redirect to trial-expired page
-      redirect('/trial-expired');
-    }
-  }
+  // Auto-charging is enabled - no need to redirect for expired trials
+  // Stripe will automatically charge when trial ends
+  // Users will be auto-upgraded to Pro Access
 
   return (
     <div className="flex h-screen bg-[#0B1437] text-white overflow-hidden relative">
@@ -60,7 +60,7 @@ export default async function DashboardLayout({
       </main>
       
       {/* Admin Test Panel - Only visible when logged in via master password */}
-      {showAdminPanel && profile && (
+      {isReallyAdmin && profile && (
         <AdminTestPanel
           userId={user.id}
           userEmail={user.email || ''}

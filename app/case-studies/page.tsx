@@ -245,7 +245,7 @@ export default function CaseStudiesPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/login"
+              href="/signup"
               className="group px-10 py-5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold text-lg rounded-xl transition-all hover:scale-105 hover:shadow-2xl hover:shadow-green-500/50 flex items-center justify-center gap-2"
             >
               <Rocket className="w-6 h-6 group-hover:translate-y-[-4px] transition-transform" />

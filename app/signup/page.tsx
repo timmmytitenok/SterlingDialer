@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Sparkles, Mail, Lock, User, ArrowRight, Zap, CheckCircle, Phone, ArrowLeft } from 'lucide-react';
+import { Sparkles, Mail, Lock, User, ArrowRight, Zap, CheckCircle, Phone, ArrowLeft, Gift } from 'lucide-react';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -13,8 +13,109 @@ export default function SignupPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referrerName, setReferrerName] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  // Check for referral code from URL or cookie
+  useEffect(() => {
+    try {
+      const refCode = searchParams.get('ref');
+      
+      // Helper function to get cookie value
+      const getCookie = (name: string) => {
+        if (typeof document === 'undefined') return null;
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop()?.split(';').shift();
+        return null;
+      };
+      
+      let finalRefCode: string | null = null;
+      
+      // Priority: URL > Cookie > LocalStorage
+      if (refCode) {
+        console.log('✅ Referral code found in URL:', refCode);
+        finalRefCode = refCode;
+        // Store in localStorage and cookie as backup
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('pending_referral', refCode);
+          document.cookie = `pending_referral=${refCode.toUpperCase()}; path=/; SameSite=Lax`;
+        }
+      } else {
+        // Check cookie first (middleware stores it here)
+        const cookieRef = getCookie('pending_referral');
+        if (cookieRef) {
+          console.log('📦 Found referral in cookie:', cookieRef);
+          finalRefCode = cookieRef;
+        } else {
+          // Fallback to localStorage
+          if (typeof window !== 'undefined') {
+            const storedRef = localStorage.getItem('pending_referral');
+            if (storedRef) {
+              console.log('📦 Found stored referral in localStorage:', storedRef);
+              finalRefCode = storedRef;
+            }
+          }
+        }
+      }
+      
+      if (finalRefCode) {
+        setReferralCode(finalRefCode);
+        console.log('🎯 Referral code active for session:', finalRefCode);
+        
+        // Fetch referrer's name by referral code
+        console.log('👤 Fetching referrer name for code:', finalRefCode);
+        supabase
+          .from('referral_codes')
+          .select('user_id')
+          .eq('code', finalRefCode.toUpperCase())
+          .single()
+          .then(({ data: codeData }) => {
+            if (codeData?.user_id) {
+              // Now get the profile
+              return supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('user_id', codeData.user_id)
+                .single();
+            }
+            return null;
+          })
+          .then((result) => {
+            if (result?.data?.full_name) {
+              console.log('✅ Referrer name found:', result.data.full_name);
+              setReferrerName(result.data.full_name);
+            }
+          })
+          .catch((err) => {
+            console.error('❌ Error fetching referrer name:', err);
+          });
+      }
+    } catch (error) {
+      console.error('❌ Error in referral useEffect:', error);
+    }
+  }, [searchParams]);
+
+  // Handle phone number formatting
+  const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove all non-digits
+    
+    if (value.length <= 10) {
+      // Format as (###) ###-####
+      let formatted = value;
+      if (value.length > 6) {
+        formatted = `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6, 10)}`;
+      } else if (value.length > 3) {
+        formatted = `(${value.slice(0, 3)}) ${value.slice(3)}`;
+      } else if (value.length > 0) {
+        formatted = `(${value}`;
+      }
+      setPhoneNumber(formatted);
+    }
+  };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +136,40 @@ export default function SignupPage() {
         },
       });
 
+      // If account already exists, just sign them in instead
+      if (signupError && signupError.message.includes('already')) {
+        console.log('📧 Account exists - signing in instead...');
+        
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          setError('Account exists but password is incorrect. Please use the correct password or click Sign In.');
+          setLoading(false);
+          return;
+        }
+
+        if (signInData.user) {
+          // Check if they already activated trial
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('subscription_tier')
+            .eq('user_id', signInData.user.id)
+            .single();
+
+          if (profile?.subscription_tier === 'free_trial' || profile?.subscription_tier === 'pro') {
+            // Already activated - go to dashboard
+            router.push('/dashboard');
+          } else {
+            // Not activated yet - go to trial activation
+            router.push('/trial-activate');
+          }
+          return;
+        }
+      }
+
       if (signupError) throw signupError;
 
       if (data.user) {
@@ -47,6 +182,40 @@ export default function SignupPage() {
             phone_number: phoneNumber,
             updated_at: new Date().toISOString(),
           });
+
+        // Process referral code if present
+        if (referralCode) {
+          console.log('🎁 Processing referral code:', referralCode);
+          
+          // Clear localStorage and cookie after using it
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('pending_referral');
+            document.cookie = 'pending_referral=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          }
+
+          // Process affiliate referral code
+          console.log('🎯 Processing referral code:', referralCode);
+          
+          fetch('/api/referral/validate-simple', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              code: referralCode, 
+              newUserId: data.user.id 
+            })
+          })
+          .then(async (res) => {
+            const result = await res.json();
+            if (res.ok) {
+              console.log('✅ Referral applied successfully!', result);
+            } else {
+              console.error('❌ Referral failed:', result.error);
+            }
+          })
+          .catch((err) => {
+            console.error('❌ Referral error:', err);
+          });
+        }
 
         // Account created! Now go to trial activation page
         router.push('/trial-activate');
@@ -90,6 +259,25 @@ export default function SignupPage() {
             Create an account to activate your 30-day trial
           </p>
         </div>
+
+        {/* Referral Badge - Show for all referrals */}
+        {referralCode && (
+          <div className="mb-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl animate-pulse">
+            <div className="flex items-center gap-2">
+              <Gift className="w-4 h-4 text-purple-400" />
+              <span className="text-purple-400 font-bold text-sm">🎉 You're invited!</span>
+            </div>
+            {referrerName ? (
+              <p className="text-gray-300 text-xs mt-1">
+                Invited by: <span className="font-bold text-purple-300">{referrerName}</span>
+              </p>
+            ) : (
+              <p className="text-gray-300 text-xs mt-1">
+                Referral code: <span className="font-mono font-bold text-purple-300">{referralCode}</span>
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Benefits - COMPACT */}
         <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
@@ -140,11 +328,12 @@ export default function SignupPage() {
                   type="tel"
                   required
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={handlePhoneNumberChange}
                   placeholder="(555) 123-4567"
                   className="w-full pl-10 sm:pl-11 pr-4 py-2.5 sm:py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm sm:text-base"
                 />
               </div>
+              <p className="text-xs text-gray-400 mt-1">10 digits - auto-formatted</p>
             </div>
 
             {/* Email */}
@@ -229,7 +418,7 @@ export default function SignupPage() {
             <p className="text-gray-400 text-sm">
               Already have an account?{' '}
               <Link href="/login" className="text-blue-400 hover:text-blue-300 font-semibold">
-                Sign in
+                Sign In
               </Link>
             </p>
           </div>

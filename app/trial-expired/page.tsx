@@ -19,7 +19,7 @@ export default function TrialExpiredPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push('/login');
+        router.push('/signup');
         return;
       }
 
@@ -28,12 +28,13 @@ export default function TrialExpiredPage() {
       // Check if user actually has an expired trial
       const { data: profile } = await supabase
         .from('profiles')
-        .select('subscription_tier, free_trial_ends_at')
+        .select('subscription_tier, free_trial_ends_at, has_active_subscription')
         .eq('user_id', user.id)
         .single();
 
-      // If they have an active subscription, redirect to dashboard
-      if (profile?.subscription_tier && ['starter', 'pro', 'elite'].includes(profile.subscription_tier)) {
+      // If they have Pro Access, redirect to dashboard
+      if (profile?.subscription_tier === 'pro' || profile?.has_active_subscription) {
+        console.log('✅ User has Pro Access - redirecting to dashboard');
         router.push('/dashboard');
         return;
       }

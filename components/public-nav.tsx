@@ -12,19 +12,53 @@ export function PublicNav() {
   const [user, setUser] = useState<any>(null);
   const supabase = createClient();
 
-  // Check auth state
+  // Check auth state - only show dashboard if they have active subscription
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
-      console.log('🔍 Auth check in PublicNav:', { user: user ? 'LOGGED IN' : 'LOGGED OUT', userId: user?.id });
-      setUser(user);
+      
+      if (user) {
+        // Check if they have a subscription or profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_tier, has_active_subscription')
+          .eq('user_id', user.id)
+          .single();
+        
+        // Only show dashboard if they have completed onboarding
+        if (profile && (profile.subscription_tier !== 'none' || profile.has_active_subscription)) {
+          console.log('🔍 Auth check in PublicNav: HAS SUBSCRIPTION');
+          setUser(user);
+        } else {
+          console.log('🔍 Auth check in PublicNav: NO SUBSCRIPTION');
+          setUser(null);
+        }
+      } else {
+        console.log('🔍 Auth check in PublicNav: NO USER');
+        setUser(null);
+      }
     };
     checkUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('🔄 Auth state changed:', session?.user ? 'LOGGED IN' : 'LOGGED OUT');
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_tier, has_active_subscription')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        if (profile && (profile.subscription_tier !== 'none' || profile.has_active_subscription)) {
+          console.log('🔄 Auth state changed: HAS SUBSCRIPTION');
+          setUser(session.user);
+        } else {
+          console.log('🔄 Auth state changed: NO SUBSCRIPTION');
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -127,7 +161,7 @@ export function PublicNav() {
           {/* Right Side: Conditional Based on Auth */}
           <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
             {user === null ? (
-              // LOGGED OUT: Show Sign In + Start Free Trial
+              // NOT LOGGED IN: Show Sign In + Start Free Trial
               <>
                 {/* Sign In Link */}
                 <Link 
@@ -172,7 +206,7 @@ export function PublicNav() {
               </Link>
             ) : (
               <Link 
-                href="/login" 
+                href="/signup" 
                 className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-lg hover:scale-105 transition-transform text-sm"
               >
                 Start Trial

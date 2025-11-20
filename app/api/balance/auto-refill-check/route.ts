@@ -99,17 +99,22 @@ export async function POST(req: Request) {
         .eq('user_id', user.id);
 
       // Record the transaction
-      await supabase
+      const { error: insertError } = await supabase
         .from('balance_transactions')
         .insert({
           user_id: user.id,
-          type: 'refill',
           amount: callBalance.auto_refill_amount,
-          balance_before: callBalance.balance,
-          balance_after: newBalance,
+          type: 'auto_refill',
           description: `Auto-refill: $${callBalance.auto_refill_amount}`,
           stripe_payment_intent_id: paymentIntent.id,
+          balance_after: newBalance,
         });
+
+      if (insertError) {
+        console.error('❌ Failed to log auto-refill transaction:', insertError);
+      } else {
+        console.log('✅ Auto-refill transaction logged:', paymentIntent.id);
+      }
 
       console.log('✅ Auto-refill completed successfully');
 

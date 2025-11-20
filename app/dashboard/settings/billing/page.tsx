@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { SimpleProSelector } from '@/components/simple-pro-selector';
 import { SubscriptionSuccessHandler } from '@/components/subscription-success-handler';
+import { BalanceSuccessHandler } from '@/components/balance-success-handler';
 import { BillingManagementContent } from '@/components/billing-management-content';
 import { getSubscriptionFeatures } from '@/lib/subscription-helpers';
 
@@ -17,17 +18,34 @@ export default async function BillingPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/signup');
   }
 
-  // DEBUG: Check profile directly from database
-  const { data: directProfile } = await supabase
+  // Get user's subscription info from subscriptions table (NEW - not profiles!)
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  
+  console.log('🔍 Billing Page - Subscription Data:', subscription);
+
+  // Fetch call balance data for mobile combined view
+  const { data: callBalanceData } = await supabase
+    .from('call_balance')
+    .select('balance')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  const { data: profileData } = await supabase
     .from('profiles')
-    .select('subscription_tier, cost_per_minute, free_trial_started_at, free_trial_ends_at, referral_bonus_days')
+    .select('auto_refill_enabled, auto_refill_amount')
     .eq('user_id', user.id)
     .single();
-  
-  console.log('🔍🔍🔍 DIRECT PROFILE CHECK:', directProfile);
+
+  const currentBalance = callBalanceData?.balance || 0;
+  const autoRefillEnabled = profileData?.auto_refill_enabled || false;
+  const autoRefillAmount = profileData?.auto_refill_amount || 25;
 
   // Get subscription features
   const subscriptionFeatures = await getSubscriptionFeatures(user.id);
@@ -37,41 +55,42 @@ export default async function BillingPage() {
     hasActiveSubscription: subscriptionFeatures.hasActiveSubscription,
   });
 
-  // Check if user has an active subscription
-  const { data: subscription } = await supabase
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .single();
+  // Determine account type and trial status from subscription table
+  const accountCreatedAt = subscription?.created_at || user.created_at || new Date().toISOString();
+  const trialEndsAt = subscription?.trial_end || null;
   
-  console.log('🔍 Billing Page - Subscription Data:', subscription);
-
-  // For free trial users, use the actual trial dates from profile
-  const accountCreatedAt = directProfile?.free_trial_started_at || user.created_at || new Date().toISOString();
-
-  // Force VIP check to use the direct profile data instead
-  const isVIP = directProfile?.subscription_tier === 'free_access';
-  console.log('🎯 IS VIP (from direct profile):', isVIP);
-  console.log('='.repeat(80));
-  console.log('🚨🚨🚨 VIP CHECK RESULT:', isVIP ? 'YES - SHOW VIP CARD' : 'NO - SHOW CHOOSE PLAN');
-  console.log('='.repeat(80));
+  const hasProAccess = subscription?.tier === 'pro' && (subscription?.status === 'active' || subscription?.status === 'trialing');
+  const hasFreeAccess = subscription?.tier === 'trial' && (subscription?.status === 'active' || subscription?.status === 'trialing');
+  const hasVIPAccess = subscription?.tier === 'vip';
+  
+  console.log('🎯 Subscription Status:', { 
+    tier: subscription?.tier, 
+    status: subscription?.status,
+    hasProAccess, 
+    hasFreeAccess,
+    hasVIPAccess,
+    trialEndsAt,
+  });
 
   return (
     <>
       <SubscriptionSuccessHandler />
+      <BalanceSuccessHandler />
       
       {/* Show subscription status */}
-      {subscriptionFeatures.hasActiveSubscription ? (
+      {(subscriptionFeatures.hasActiveSubscription || hasProAccess || hasFreeAccess || hasVIPAccess) ? (
         <BillingManagementContent
           userId={user.id}
           userEmail={user.email!}
           hasSubscription={true}
-          currentTier={subscription?.subscription_tier || subscriptionFeatures.tier || 'pro'}
+          currentTier={subscription?.tier || subscriptionFeatures.tier || 'trial'}
           subscriptionData={subscription || { created_at: accountCreatedAt }}
           accountCreatedAt={accountCreatedAt}
-          referralBonusDays={directProfile?.referral_bonus_days || 0}
-          trialEndsAt={directProfile?.free_trial_ends_at}
+          referralBonusDays={0}
+          trialEndsAt={trialEndsAt}
+          initialBalance={currentBalance}
+          initialAutoRefill={autoRefillEnabled}
+          initialRefillAmount={autoRefillAmount}
         />
       ) : (
         <div className="mb-8">

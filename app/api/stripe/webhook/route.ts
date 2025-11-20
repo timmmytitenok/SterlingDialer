@@ -77,7 +77,9 @@ export async function POST(req: Request) {
           : session.subscription.id;
         
         try {
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+            expand: ['default_payment_method']
+          });
           const customerId = subscription.customer as string;
           const priceId = subscription.items.data[0]?.price.id;
 
@@ -88,13 +90,39 @@ export async function POST(req: Request) {
             status: subscription.status,
           });
 
-          // Set the payment method as default for the customer (for auto-refill)
+          // Get payment method - Stripe attaches it to subscription automatically
+          let paymentMethodId: string | null = null;
+          
+          // Try from subscription (most reliable for trial subscriptions)
           if (subscription.default_payment_method) {
-            const paymentMethodId = typeof subscription.default_payment_method === 'string'
+            paymentMethodId = typeof subscription.default_payment_method === 'string'
               ? subscription.default_payment_method
               : subscription.default_payment_method.id;
+            console.log('💳 Found payment method from subscription:', paymentMethodId);
+          }
+          
+          // Fallback: List all payment methods for this customer
+          if (!paymentMethodId) {
+            console.log('🔍 Payment method not on subscription, fetching from customer...');
+            try {
+              const paymentMethods = await stripe.paymentMethods.list({
+                customer: customerId,
+                type: 'card',
+                limit: 1, // Get the most recently added
+              });
+              
+              if (paymentMethods.data.length > 0) {
+                paymentMethodId = paymentMethods.data[0].id;
+                console.log('💳 Found payment method from customer list:', paymentMethodId);
+              }
+            } catch (listError: any) {
+              console.error('⚠️ Could not list payment methods:', listError.message);
+            }
+          }
 
-            console.log('💳 Setting default payment method for customer:', paymentMethodId);
+          // Set the payment method as default for the customer (for auto-refill & future charges)
+          if (paymentMethodId) {
+            console.log('💳 Setting payment method as default for customer:', paymentMethodId);
             
             try {
               await stripe.customers.update(customerId, {
@@ -102,10 +130,14 @@ export async function POST(req: Request) {
                   default_payment_method: paymentMethodId,
                 },
               });
-              console.log('✅ Default payment method set for auto-refill');
+              console.log('✅ Default payment method set successfully!');
+              console.log('   → Will be used for subscription billing after trial');
+              console.log('   → Will be used for auto-refill');
             } catch (pmError: any) {
               console.error('⚠️ Failed to set default payment method:', pmError.message);
             }
+          } else {
+            console.warn('⚠️ No payment method found - this should not happen for subscription checkouts');
           }
 
           // Get user_id from stripe_customer_id (with fallback)
@@ -138,8 +170,10 @@ export async function POST(req: Request) {
                 metadata: customerData.metadata
               });
               
-              if (customerData && !customerData.deleted && customerData.metadata?.supabase_user_id) {
-                const userId = customerData.metadata.supabase_user_id;
+              // Check both possible metadata keys
+              const userId = customerData.metadata?.supabase_user_id || customerData.metadata?.user_id;
+              
+              if (customerData && !customerData.deleted && userId) {
                 console.log('✅ Found user ID in Stripe metadata:', userId);
                 
                 // Update profile with this customer ID for future lookups
@@ -346,9 +380,23 @@ export async function POST(req: Request) {
               } else {
                 console.log(`⚠️ Referral credit response:`, creditResult);
               }
+
+              // 💰 AFFILIATE COMMISSION: Mark as converted (first payment made!)
+              console.log('💰 Marking referral as converted for affiliate commission...');
+              const { error: conversionError } = await supabase.rpc('mark_referral_converted', {
+                p_user_id: userProfile.user_id
+              });
+
+              if (conversionError) {
+                console.error('⚠️ Error marking conversion:', conversionError);
+              } else {
+                console.log('✅ Referral marked as converted - commission created!');
+              }
             } else {
-              console.log('ℹ️ User was not referred by anyone');
+              console.log('ℹ️ User was not referred by anyone (old system)');
             }
+
+            // Free trial extension system removed - affiliates only now
           } catch (refError: any) {
             console.error('⚠️ Error processing referral credit:', refError.message);
             // Don't fail the whole webhook if referral fails
@@ -490,11 +538,8 @@ export async function POST(req: Request) {
 
       console.log('🎯 Determined tier:', { tier, maxCalls, hasChecker, callerCount });
 
-      // Determine cost per minute based on tier
-      let costPerMinuteForSub = 0.30; // default
-      if (tier === 'starter') costPerMinuteForSub = 0.30;
-      else if (tier === 'pro') costPerMinuteForSub = 0.25;
-      else if (tier === 'elite') costPerMinuteForSub = 0.20;
+      // Everyone pays $0.30/min - ONE SIMPLE PRICE
+      const costPerMinuteForSub = 0.30;
 
       // Upsert subscription
       const { error: upsertError } = await supabase
@@ -527,11 +572,8 @@ export async function POST(req: Request) {
 
       console.log(`✅ Subscription ${event.type === 'customer.subscription.created' ? 'created' : 'updated'} for user:`, userProfile2.user_id, `Tier: ${tier}`);
 
-      // Determine cost per minute based on tier
-      let costPerMinute = 0.30; // default
-      if (tier === 'starter') costPerMinute = 0.30;
-      else if (tier === 'pro') costPerMinute = 0.25;
-      else if (tier === 'elite') costPerMinute = 0.20;
+      // Everyone pays $0.30/min - ONE SIMPLE PRICE
+      const costPerMinute = 0.30;
 
       console.log(`💰 Setting cost_per_minute to $${costPerMinute} for ${tier} tier`);
 
@@ -544,16 +586,38 @@ export async function POST(req: Request) {
 
       console.log(`📊 Current profile tier BEFORE update: ${currentProfile?.subscription_tier}`);
 
+      // Check if this is a trial ending (trialing -> active)
+      const wasOnTrial = currentProfile?.subscription_tier === 'free_trial';
+      const isNowActive = subscription.status === 'active';
+      
+      if (wasOnTrial && isNowActive) {
+        console.log('🎉 TRIAL ENDED - Auto-converting to Pro Access!');
+        console.log('   Status changed: trialing → active');
+        console.log('   User will be charged automatically by Stripe');
+      }
+
       // 🚨 CRITICAL: Update profiles table with subscription info (for middleware checks)
+      const profileUpdate: any = {
+        subscription_tier: tier,
+        cost_per_minute: costPerMinute, // 🔥 SET COST PER MINUTE ON UPGRADE
+        stripe_customer_id: customerId,
+        subscription_status: subscription.status,
+        has_active_subscription: true // 🔥 SIMPLE BOOLEAN FLAG
+      };
+
+      // If converting from trial, clear trial data
+      if (wasOnTrial && isNowActive) {
+        console.log('🧹 Clearing trial data - user is now on paid subscription');
+        profileUpdate.free_trial_started_at = null;
+        profileUpdate.free_trial_ends_at = null;
+        profileUpdate.free_trial_days_remaining = null;
+        profileUpdate.upgraded_from_trial = true;
+        profileUpdate.previous_tier = 'free_trial';
+      }
+
       const { error: profileSubError2 } = await supabase
         .from('profiles')
-        .update({
-          subscription_tier: tier,
-          cost_per_minute: costPerMinute, // 🔥 SET COST PER MINUTE ON UPGRADE
-          stripe_customer_id: customerId,
-          subscription_status: subscription.status,
-          has_active_subscription: true // 🔥 SIMPLE BOOLEAN FLAG
-        })
+        .update(profileUpdate)
         .eq('user_id', userProfile2.user_id);
 
       if (profileSubError2) {
@@ -642,9 +706,11 @@ export async function POST(req: Request) {
     // Handle subscription deletion
     if (event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object as Stripe.Subscription;
+      const customerId = subscription.customer as string;
 
       console.log('🗑️ Processing subscription deletion:', subscription.id);
 
+      // Update subscription status
       const { error: deleteError } = await supabase
         .from('subscriptions')
         .update({ status: 'canceled' })
@@ -656,12 +722,89 @@ export async function POST(req: Request) {
       }
 
       console.log('✅ Subscription canceled:', subscription.id);
+
+      // Mark referral as cancelled (stops future commissions, but keeps earned ones!)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('stripe_customer_id', customerId)
+        .single();
+
+      if (profile?.user_id) {
+        console.log('🎯 Marking referral as cancelled for user:', profile.user_id);
+        
+        const { error: refCancelError } = await supabase
+          .from('referrals')
+          .update({ 
+            conversion_status: 'cancelled' 
+          })
+          .eq('referee_id', profile.user_id)
+          .eq('conversion_status', 'converted'); // Only cancel active converted referrals
+
+        if (refCancelError) {
+          console.error('⚠️ Error cancelling referral:', refCancelError);
+        } else {
+          console.log('✅ Referral marked as cancelled - no more monthly commissions!');
+          console.log('💰 Already earned commissions are kept - affiliate earned them!');
+        }
+      }
     }
 
-    // Handle payment succeeded
+    // Handle payment succeeded - AUTO-CREATE MONTHLY COMMISSIONS
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
+      
       console.log('💰 Payment succeeded for invoice:', invoice.id);
+
+      // Find the user
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('stripe_customer_id', customerId)
+        .single();
+
+      if (profile?.user_id) {
+        // Check if this user was referred
+        const { data: referral } = await supabase
+          .from('referrals')
+          .select('*')
+          .eq('referee_id', profile.user_id)
+          .eq('conversion_status', 'converted')
+          .maybeSingle();
+
+        if (referral) {
+          const currentMonth = new Date().toISOString().substring(0, 7); // '2025-11'
+          
+          console.log('🎁 User was referred - creating commission for:', currentMonth);
+          
+          // Create commission for this month (if doesn't exist)
+          const { error: commissionError } = await supabase
+            .from('commission_payouts')
+            .insert({
+              referrer_id: referral.referrer_id,
+              referee_id: profile.user_id,
+              month: currentMonth,
+              amount: 99.80,
+              status: 'pending',
+            })
+            .select()
+            .maybeSingle();
+
+          if (commissionError) {
+            // If duplicate, that's fine - commission already exists for this month
+            if (commissionError.code === '23505') {
+              console.log('ℹ️ Commission already exists for this month');
+            } else {
+              console.error('⚠️ Error creating commission:', commissionError);
+            }
+          } else {
+            console.log('✅ Commission created: $99.80 pending for affiliate');
+          }
+        } else {
+          console.log('ℹ️ User was not referred or not converted');
+        }
+      }
     }
 
     // Handle payment failed
@@ -805,70 +948,8 @@ export async function POST(req: Request) {
                       total_days: referrerProfile?.free_trial_total_days
                     });
 
-                    if (referrerProfile?.subscription_tier === 'free_trial' && referrerProfile.free_trial_ends_at) {
-                      // Count completed referrals (including this one)
-                      console.log('🔢 Counting completed referrals for referrer:', referral.referrer_id);
-                      const { data: completedReferrals, error: countError } = await supabase
-                        .from('referrals')
-                        .select('id')
-                        .eq('referrer_id', referral.referrer_id)
-                        .eq('status', 'completed');
-
-                      if (countError) {
-                        console.error('❌ Error counting referrals:', countError);
-                      }
-
-                      const totalCompleted = completedReferrals?.length || 0;
-                      console.log(`📊 Total completed referrals: ${totalCompleted} (max: 4)`);
-
-                      if (totalCompleted <= 4) {
-                        // Add 7 days to referrer's trial
-                        const currentTrialEnd = new Date(referrerProfile.free_trial_ends_at);
-                        const newTrialEnd = new Date(currentTrialEnd);
-                        newTrialEnd.setDate(newTrialEnd.getDate() + 7);
-
-                        const newTotalDays = (referrerProfile.free_trial_total_days || 30) + 7;
-
-                        console.log('📅 Trial extension calculation:');
-                        console.log('  - Current end date:', currentTrialEnd.toISOString());
-                        console.log('  - New end date:', newTrialEnd.toISOString());
-                        console.log('  - Current total days:', referrerProfile.free_trial_total_days);
-                        console.log('  - New total days:', newTotalDays);
-
-                        const { error: extendError } = await supabase
-                          .from('profiles')
-                          .update({
-                            free_trial_ends_at: newTrialEnd.toISOString(),
-                            free_trial_total_days: newTotalDays
-                          })
-                          .eq('user_id', referral.referrer_id);
-
-                        if (extendError) {
-                          console.error('❌ Error extending trial:', extendError);
-                          console.error('Error details:', JSON.stringify(extendError, null, 2));
-                        } else {
-                          console.log(`🎉 SUCCESS! Added 7 days to referrer's trial!`);
-                          console.log(`   New end date: ${newTrialEnd.toISOString()}`);
-                          console.log(`   New total days: ${newTotalDays}`);
-
-                          // Recalculate days remaining
-                          console.log('🔄 Recalculating days remaining...');
-                          const { error: rpcError } = await supabase.rpc('calculate_trial_days_remaining', {
-                            p_user_id: referral.referrer_id
-                          });
-
-                          if (rpcError) {
-                            console.error('❌ Error recalculating days:', rpcError);
-                          } else {
-                            console.log('✅ Days remaining recalculated successfully');
-                          }
-                        }
-                      } else {
-                        console.log('⚠️ Referrer has reached max 4 referrals - no reward granted');
-                      }
-                    } else {
-                      console.log('ℹ️ Referrer is not on free trial - no days added');
-                    }
+                    // Trial extension system removed - no longer adding days to trials
+                    console.log('ℹ️ Trial extension system disabled');
                   }
                 }
               } else {
@@ -881,25 +962,58 @@ export async function POST(req: Request) {
           }
 
           // Record transaction
-          await supabase
+          console.log('💾 [WEBHOOK] Logging transaction...');
+          const { data: insertData, error: insertError } = await supabase
             .from('balance_transactions')
             .insert({
               user_id: userId,
               amount: amount,
               type: isFirstRefill ? 'first_refill' : 'credit',
-              description: isFirstRefill ? `First refill + card saved: $${amount}` : `Balance refill: $${amount}`,
-              balance_before: balanceBefore,
-              balance_after: balanceAfter,
+              description: isFirstRefill ? `First refill: $${amount}` : `Refill: $${amount}`,
               stripe_payment_intent_id: session.payment_intent as string,
-              metadata: {
-                session_id: session.id,
-                amount_cents: session.amount_total,
-                is_first_refill: isFirstRefill,
-                auto_refill_enabled: isFirstRefill,
-              },
-            });
+              balance_after: balanceAfter,
+            })
+            .select();
+
+          if (insertError) {
+            console.error('❌ [WEBHOOK] Transaction insert failed:', insertError);
+          } else {
+            console.log('✅ [WEBHOOK] Transaction logged:', insertData);
+          }
 
           console.log('✅ Balance refill completed for user:', userId);
+
+          // Mark onboarding step 2 complete (they added balance!)
+          await supabase
+            .from('profiles')
+            .update({ onboarding_step_2_balance: true })
+            .eq('user_id', userId);
+
+          console.log('✅ Onboarding Step 2 (Balance) marked complete - user added funds');
+
+          // Check if all onboarding steps are now complete
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('onboarding_step_1_form, onboarding_step_2_balance, onboarding_step_3_sheet, onboarding_step_4_schedule')
+            .eq('user_id', userId)
+            .single();
+
+          const allComplete = profile?.onboarding_step_1_form &&
+                              profile?.onboarding_step_2_balance &&
+                              profile?.onboarding_step_3_sheet &&
+                              profile?.onboarding_step_4_schedule;
+
+          if (allComplete) {
+            console.log('🎉 All onboarding steps complete! Hiding Quick Setup forever.');
+            
+            await supabase
+              .from('profiles')
+              .update({
+                onboarding_all_complete: true,
+                onboarding_completed_at: new Date().toISOString(),
+              })
+              .eq('user_id', userId);
+          }
         } catch (error) {
           console.error('❌ Error processing balance refill:', error);
         }

@@ -13,7 +13,7 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 50; // Show 50 calls per page
 
   // Helper: Normalize status for comparison
   const normalizeStatus = (status: string | null): string => {

@@ -25,7 +25,7 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/signup');
   }
 
   // Get user profile
@@ -85,10 +85,42 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .gte('created_at', startOf30DaysISO);
 
-  // Calculate metrics
+  // Fetch ALL admin-adjusted stats from revenue_tracking table
+  const { data: allAdminStats } = await supabase
+    .from('revenue_tracking')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('date', { ascending: false });
+
+  console.log(`📊 ALL Admin stats:`, allAdminStats);
+  console.log(`📅 Looking for date: ${todayDateString}`);
+  
+  // Find today's admin stats
+  const adminStatsToday = allAdminStats?.find(stat => stat.date === todayDateString);
+  console.log(`📊 Admin-adjusted stats for today (${todayDateString}):`, adminStatsToday);
+
+  // Calculate admin adjustments for different time periods
+  const last7DaysDate = getDateStringDaysAgo(userTimezone, 7);
+  const last30DaysDate = getDateStringDaysAgo(userTimezone, 30);
+  
+  // Admin adjustments for last 7 days
+  const admin7DaysCalls = allAdminStats?.filter(stat => stat.date >= last7DaysDate).reduce((sum, stat) => sum + (stat.total_calls || 0), 0) || 0;
+  
+  // Admin adjustments for last 30 days
+  const admin30DaysCalls = allAdminStats?.filter(stat => stat.date >= last30DaysDate).reduce((sum, stat) => sum + (stat.total_calls || 0), 0) || 0;
+  
+  // Calculate metrics (combine real calls + admin adjustments)
   const totalCallsToday = todayCalls?.length || 0;
-  const totalCalls7Days = last7DaysCalls?.length || 0;
-  const totalCalls30Days = last30DaysCalls?.length || 0;
+  const totalCalls7Days = (last7DaysCalls?.length || 0) + admin7DaysCalls;
+  const totalCalls30Days = (last30DaysCalls?.length || 0) + admin30DaysCalls;
+  
+  // Add admin-adjusted numbers to today's totals
+  const adminDialsToday = adminStatsToday?.total_calls || 0;
+  const finalTotalCallsToday = totalCallsToday + adminDialsToday;
+
+  console.log(`📞 Today's calls: ${totalCallsToday} real + ${adminDialsToday} admin = ${finalTotalCallsToday} total`);
+  console.log(`📞 7 days calls: ${last7DaysCalls?.length || 0} real + ${admin7DaysCalls} admin = ${totalCalls7Days} total`);
+  console.log(`📞 30 days calls: ${last30DaysCalls?.length || 0} real + ${admin30DaysCalls} admin = ${totalCalls30Days} total`);
 
   // Fetch ACTUAL appointments from appointments table (Cal.ai bookings)
   // This only counts real Cal.ai appointments, not N8N call outcomes
@@ -98,9 +130,12 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
-  const appointmentsToday = allAppointmentsData?.filter(apt => {
+  const appointmentsTodayReal = allAppointmentsData?.filter(apt => {
     return apt.created_at >= startOfTodayISO;
   }).length || 0;
+  
+  // Add admin-adjusted appointments
+  const appointmentsToday = appointmentsTodayReal + (adminStatsToday?.appointments_booked || 0);
 
   const appointments7Days = allAppointmentsData?.filter(apt => {
     return apt.created_at >= startOf7DaysISO;
@@ -110,8 +145,27 @@ export default async function DashboardPage() {
     return apt.created_at >= startOf30DaysISO;
   }).length || 0;
 
-  // Total calls = ALL calls (answered + not answered)
-  const totalCalls = allCalls?.length || 0;
+  // Calculate TOTAL admin adjustments across ALL dates
+  const totalAdminCalls = allAdminStats?.reduce((sum, stat) => sum + (stat.total_calls || 0), 0) || 0;
+  const totalAdminCallbacks = allAdminStats?.reduce((sum, stat) => sum + (stat.callbacks || 0), 0) || 0;
+  const totalAdminNotInterested = allAdminStats?.reduce((sum, stat) => sum + (stat.not_interested || 0), 0) || 0;
+  const totalAdminTransfers = allAdminStats?.reduce((sum, stat) => sum + (stat.live_transfers || 0), 0) || 0;
+  const totalAdminAppointments = allAdminStats?.reduce((sum, stat) => sum + (stat.appointments_booked || 0), 0) || 0;
+  const totalAdminPolicies = allAdminStats?.reduce((sum, stat) => sum + (stat.policies_sold || 0), 0) || 0;
+  const totalAdminRevenue = allAdminStats?.reduce((sum, stat) => sum + (parseFloat(stat.revenue?.toString() || '0')), 0) || 0;
+  
+  console.log(`📊 Total admin adjustments across all time:`, {
+    calls: totalAdminCalls,
+    callbacks: totalAdminCallbacks,
+    notInterested: totalAdminNotInterested,
+    transfers: totalAdminTransfers,
+    appointments: totalAdminAppointments,
+    policies: totalAdminPolicies,
+    revenue: totalAdminRevenue,
+  });
+  
+  // Total calls = ALL calls (answered + not answered) + admin adjustments
+  const totalCalls = (allCalls?.length || 0) + totalAdminCalls;
   
   // Connected calls = ONLY answered calls (disposition = 'answered' OR connected = true)
   const connectedCalls = allCalls?.filter(c => c.disposition === 'answered' || c.connected === true).length || 0;
@@ -122,11 +176,11 @@ export default async function DashboardPage() {
   // Connection rate = answered / total
   const connectionRate = totalCalls > 0 ? ((connectedCalls / totalCalls) * 100).toFixed(1) : '0.0';
 
-  // Outcomes - Track all 4 types (ONLY for answered calls)
-  const notInterested = allCalls?.filter(c => c.outcome === 'not_interested').length || 0;
-  const totalAppointments = allAppointmentsData?.length || 0; // Count from appointments table, not calls
-  const callbacks = allCalls?.filter(c => c.outcome === 'callback_later').length || 0;
-  const transfers = allCalls?.filter(c => c.outcome === 'live_transfer').length || 0;
+  // Outcomes - Track all 4 types (ONLY for answered calls) + admin adjustments
+  const notInterested = (allCalls?.filter(c => c.outcome === 'not_interested').length || 0) + totalAdminNotInterested;
+  const totalAppointments = (allAppointmentsData?.length || 0) + totalAdminAppointments; // Count from appointments table + admin
+  const callbacks = (allCalls?.filter(c => c.outcome === 'callback_later').length || 0) + totalAdminCallbacks;
+  const transfers = (allCalls?.filter(c => c.outcome === 'live_transfer').length || 0) + totalAdminTransfers;
   
   console.log(`📈 Dashboard stats:`, {
     totalCalls,
@@ -146,7 +200,7 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .eq('is_sold', true);
 
-  const policiesSold = soldPolicies?.length || 0;
+  const policiesSold = (soldPolicies?.length || 0) + totalAdminPolicies;
 
   // Calculate stats for different time periods
   const policiesSold7Days = soldPolicies?.filter(p => {
@@ -262,11 +316,13 @@ export default async function DashboardPage() {
     const [year, month, day] = dateStr.split('-');
     const displayDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     
+    // Note: revenueData already includes admin adjustments from revenue_tracking table
+    // No need to add them again!
     monthlyRevenueData.push({
       date: displayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      revenue: dayRevenue?.revenue || 0,
+      revenue: dayRevenue?.revenue || 0,  // Already includes admin adjustments
       costs: dayRevenue?.total_ai_cost || 0,
-      profit: dayRevenue?.profit || 0,
+      profit: dayRevenue?.profit || 0,  // Already includes admin adjustments
     });
   }
 
@@ -275,7 +331,7 @@ export default async function DashboardPage() {
     return r.date >= startOf30DaysISO.split('T')[0]; // Compare date strings
   }).reduce((sum, r) => sum + (r.total_ai_cost || 0), 0) || 0;
 
-  const totalRevenue = revenueData?.reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;
+  const totalRevenue = revenueData?.reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;  // Already includes admin adjustments
   const totalCosts = costs30Days; // Only last 30 days, not all-time
   const totalProfit = totalRevenue - totalCosts;
 
@@ -288,15 +344,19 @@ export default async function DashboardPage() {
     return r.date >= startOf30DaysISO.split('T')[0]; // Compare date strings
   }).reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;
 
-  // Calculate TODAY's specific stats
+  // Calculate TODAY's specific stats (with admin adjustments)
   const connectedCallsToday = todayCalls?.filter(c => c.disposition === 'answered' || c.connected === true).length || 0;
-  const connectionRateToday = totalCallsToday > 0 ? ((connectedCallsToday / totalCallsToday) * 100).toFixed(1) : '0.0';
-  const notInterestedToday = todayCalls?.filter(c => c.outcome === 'not_interested').length || 0;
-  const callbacksToday = todayCalls?.filter(c => c.outcome === 'callback_later').length || 0;
-  const transfersToday = todayCalls?.filter(c => c.outcome === 'live_transfer').length || 0;
-  const policiesSoldToday = soldPolicies?.filter(p => {
+  const connectionRateToday = finalTotalCallsToday > 0 ? ((connectedCallsToday / finalTotalCallsToday) * 100).toFixed(1) : '0.0';
+  
+  // Add admin-adjusted outcome stats
+  const notInterestedToday = (todayCalls?.filter(c => c.outcome === 'not_interested').length || 0) + (adminStatsToday?.not_interested || 0);
+  const callbacksToday = (todayCalls?.filter(c => c.outcome === 'callback_later').length || 0) + (adminStatsToday?.callbacks || 0);
+  const transfersToday = (todayCalls?.filter(c => c.outcome === 'live_transfer').length || 0) + (adminStatsToday?.live_transfers || 0);
+  const policiesSoldToday = (soldPolicies?.filter(p => {
     return p.sold_at >= startOfTodayISO;
-  }).length || 0;
+  }).length || 0) + (adminStatsToday?.policies_sold || 0);
+  // Note: revenueData is from revenue_tracking table which already includes admin adjustments
+  // No need to add adminStatsToday?.revenue again!
   const revenueToday = revenueData?.filter(r => {
     return r.date === today; // Compare date strings
   }).reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;
@@ -323,17 +383,24 @@ export default async function DashboardPage() {
       return policy.sold_at >= dayStartISO && policy.sold_at < dayEndISO;
     }).length || 0;
     
+    // GET ADMIN ADJUSTMENTS FOR THIS SPECIFIC DATE
+    const adminStatsForDay = allAdminStats?.find(stat => stat.date === dateStr);
+    const adminCallsForDay = adminStatsForDay?.total_calls || 0;
+    const adminNotInterestedForDay = adminStatsForDay?.not_interested || 0;
+    const adminPoliciesForDay = adminStatsForDay?.policies_sold || 0;
+    const adminAppointmentsForDay = adminStatsForDay?.appointments_booked || 0;
+    
     // Create a date object from the string to format it
     const [year, month, day] = dateStr.split('-');
     const displayDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     
     callActivityData.push({
       date: displayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      totalCalls: dayCalls.length,
+      totalCalls: dayCalls.length + adminCallsForDay,  // Real + Admin
       answeredCalls: answeredCalls,
-      bookedCalls: bookedCalls,
-      notInterestedCalls: notInterestedCalls,
-      policiesSold: daySoldPolicies,
+      bookedCalls: bookedCalls + adminAppointmentsForDay,  // Real + Admin
+      notInterestedCalls: notInterestedCalls + adminNotInterestedForDay,  // Real + Admin
+      policiesSold: daySoldPolicies + adminPoliciesForDay,  // Real + Admin
     });
   }
 
@@ -397,9 +464,31 @@ export default async function DashboardPage() {
         </div>
 
         {/* Stats Grid with Period Filter (Always Visible) */}
+        {console.log('🔥🔥🔥 TODAY VALUES:', {
+          totalCalls: finalTotalCallsToday,
+          connectionRate: connectionRateToday,
+          connectedCalls: connectedCallsToday,
+          policiesSold: policiesSoldToday,
+          revenue: revenueToday,
+          notInterested: notInterestedToday,
+          callbacks: callbacksToday,
+          transfers: transfersToday,
+          appointments: appointmentsToday,
+        })}
+        {console.log('🔥🔥🔥 ALL-TIME VALUES:', {
+          totalCalls,
+          connectionRate,
+          connectedCalls,
+          policiesSold,
+          revenue: totalRevenue,
+          notInterested,
+          callbacks,
+          transfers,
+          appointments: totalAppointments,
+        })}
         <DashboardStatsGrid
           todayStats={{
-            totalCalls: totalCallsToday,
+            totalCalls: finalTotalCallsToday,
             connectionRate: connectionRateToday,
             connectedCalls: connectedCallsToday,
             policiesSold: policiesSoldToday,

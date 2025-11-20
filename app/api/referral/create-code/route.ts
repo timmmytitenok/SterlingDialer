@@ -72,6 +72,7 @@ export async function POST(req: Request) {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // Point directly to signup page
     const referralLink = `${baseUrl}/signup?ref=${trimmedCode}`;
 
     return NextResponse.json({ 

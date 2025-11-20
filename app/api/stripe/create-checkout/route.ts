@@ -106,15 +106,9 @@ export async function POST(request: Request) {
       cancel_url: `${request.headers.get('origin')}/dashboard/settings/billing?canceled=true`,
     };
 
-    // Apply 30% discount if user was referred
-    if (hasReferral) {
-      sessionConfig.discounts = [
-        {
-          coupon: 'REFERRAL30', // 30% off first month coupon (create this in Stripe Dashboard)
-        },
-      ];
-      console.log('✅ 30% referral discount applied to checkout');
-    }
+    // NO DISCOUNTS - Users already got 30 days FREE trial!
+    // Referral benefit: Referrer gets $200 credits (handled in webhook)
+    console.log('💰 Full price checkout - user already had 30-day trial');
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 

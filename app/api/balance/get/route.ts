@@ -42,10 +42,10 @@ export async function GET() {
         return NextResponse.json({ error: createError.message }, { status: 500 });
       }
 
-      // Get cost_per_minute and subscription_tier from profiles
+      // Get cost_per_minute, subscription_tier, and affiliate status from profiles
       const { data: profile } = await supabase
         .from('profiles')
-        .select('cost_per_minute, subscription_tier')
+        .select('cost_per_minute, subscription_tier, is_affiliate_partner')
         .eq('user_id', user.id)
         .single();
 
@@ -53,22 +53,28 @@ export async function GET() {
         ...newBalance,
         cost_per_minute: profile?.cost_per_minute || 0.30,
         subscription_tier: profile?.subscription_tier || 'none',
+        is_affiliate_partner: profile?.is_affiliate_partner || false,
       });
     }
 
-    // Get cost_per_minute and subscription_tier from profiles
+    // Get cost_per_minute, subscription_tier, and affiliate status from profiles
     const { data: profile } = await supabase
       .from('profiles')
-      .select('cost_per_minute, subscription_tier')
+      .select('cost_per_minute, subscription_tier, is_affiliate_partner')
       .eq('user_id', user.id)
       .single();
 
-    console.log('🔍 Fetched cost_per_minute from profiles:', profile?.cost_per_minute);
+    console.log('🔍 Fetched from profiles:', {
+      cost_per_minute: profile?.cost_per_minute,
+      subscription_tier: profile?.subscription_tier,
+      is_affiliate_partner: profile?.is_affiliate_partner,
+    });
 
     return NextResponse.json({
       ...balance,
       cost_per_minute: profile?.cost_per_minute || 0.30,
       subscription_tier: profile?.subscription_tier || 'none',
+      is_affiliate_partner: profile?.is_affiliate_partner || false,
     });
   } catch (error: any) {
     console.error('Balance get error:', error);

@@ -12,7 +12,7 @@ export default async function LeadsSettingsPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/signup');
   }
 
   return <LeadsSettingsManager userId={user.id} />;

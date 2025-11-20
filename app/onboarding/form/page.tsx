@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { CheckCircle, Loader2, ArrowRight, ExternalLink, Calendar, Key, FileSpreadsheet, AlertCircle } from 'lucide-react';
+import { CheckCircle, Loader2, ArrowRight, ExternalLink, Calendar, Key, AlertCircle } from 'lucide-react';
 
 export default function OnboardingFormPage() {
   const [formData, setFormData] = useState({
@@ -16,7 +16,7 @@ export default function OnboardingFormPage() {
     nicheDescription: '',
     calApiKey: '',
     calEventId: '',
-    googleSheetConfirmed: false
+    webhookCompleted: false
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +72,8 @@ export default function OnboardingFormPage() {
       }
 
       // Redirect to dashboard (AI Control Center will show "AI Setup In Progress")
-      router.push('/dashboard');
+      // Redirect back to onboarding steps
+      router.push('/dashboard/onboarding');
       router.refresh();
     } catch (err: any) {
       console.error('Onboarding error:', err);
@@ -97,15 +98,24 @@ export default function OnboardingFormPage() {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)] pointer-events-none"></div>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-3xl mx-auto px-3 py-4 md:px-4 md:py-10 overflow-y-auto max-h-screen scrollbar-hide">
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-3 py-4 md:px-4 md:py-10 overflow-y-auto max-h-screen scrollbar-hide">
         {/* Card */}
         <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-lg md:rounded-2xl p-3 md:p-8 border border-gray-800 shadow-2xl">
+          {/* Back Button - Top Left */}
+          <button
+            type="button"
+            onClick={() => router.push('/dashboard')}
+            className="mb-4 text-gray-400 hover:text-white transition-colors flex items-center gap-2 text-sm"
+          >
+            ← Back to Dashboard
+          </button>
+
           {/* Header */}
           <div className="text-center mb-3 md:mb-6">
             <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-2 md:mb-3 shadow-lg">
               <span className="text-lg md:text-2xl font-bold text-white">SA</span>
             </div>
-            <h1 className="text-lg md:text-3xl font-bold text-white mb-1 md:mb-2">AI Onboarding Setup</h1>
+            <h1 className="text-lg md:text-3xl font-bold text-white mb-1 md:mb-2">Configure Your AI Agent</h1>
             <p className="text-xs md:text-base text-gray-400">Complete these steps to activate your Sterling AI</p>
           </div>
 
@@ -118,6 +128,13 @@ export default function OnboardingFormPage() {
                 <span className="bg-blue-600 text-white w-5 h-5 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[10px] md:text-sm font-bold">1</span>
                 <span className="text-sm md:text-lg">Your Information</span>
               </h2>
+
+              {/* Clarification Box */}
+              <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <p className="text-xs md:text-sm text-blue-300">
+                  <strong>ℹ️ This information is for your AI:</strong> The AI will reference your name during calls, transfer qualified leads to your phone number, and send notifications to your email.
+                </p>
+              </div>
               
               <div className="space-y-2.5 md:space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 md:gap-4">
@@ -249,8 +266,8 @@ export default function OnboardingFormPage() {
                 <p className="text-[11px] md:text-sm text-gray-300 font-semibold">Follow these steps:</p>
                 
                 {/* Step 1 */}
-                <div className="space-y-1.5">
-                  <h3 className="text-xs md:text-base font-bold text-white">Step 1:</h3>
+                <div className="space-y-1.5 bg-purple-500/5 p-3 rounded-lg border border-purple-500/20">
+                  <h3 className="text-xs md:text-base font-bold text-white">Step 1: Account Creation</h3>
                   <ul className="space-y-1 text-[10px] md:text-sm text-gray-400 ml-3 md:ml-4 list-disc list-inside">
                     <li>
                       <a 
@@ -277,8 +294,8 @@ export default function OnboardingFormPage() {
                 </div>
 
                 {/* Step 2 */}
-                <div className="space-y-1.5">
-                  <h3 className="text-xs md:text-base font-bold text-white">Step 2:</h3>
+                <div className="space-y-1.5 bg-purple-500/5 p-3 rounded-lg border border-purple-500/20">
+                  <h3 className="text-xs md:text-base font-bold text-white">Step 2: Create Event & Get Event ID</h3>
                   <ul className="space-y-1 text-[10px] md:text-sm text-gray-400 ml-3 md:ml-4 list-disc list-inside">
                     <li>
                       <a 
@@ -292,7 +309,7 @@ export default function OnboardingFormPage() {
                     </li>
                     <li><strong className="text-white">Name:</strong> "Life Insurance"</li>
                     <li><strong className="text-red-400">⚠️ Set Duration: 20 minutes</strong></li>
-                    <li className="mt-1.5 pt-1.5 border-t border-gray-800">
+                    <li className="mt-1.5 pt-1.5 border-t border-gray-700">
                       <strong className="text-white">Get Event ID:</strong>
                       <ul className="ml-3 mt-0.5 space-y-0.5 list-disc list-inside">
                         <li>Look at URL while editing event</li>
@@ -301,10 +318,25 @@ export default function OnboardingFormPage() {
                       </ul>
                     </li>
                   </ul>
+                  
+                  {/* Event ID Input - Right here! */}
+                  <div className="mt-3 pt-3 border-t border-purple-500/30">
+                    <label className="block text-[11px] md:text-sm font-bold text-white mb-2">📝 Paste Event ID Here:</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.calEventId}
+                      onChange={(e) => handleInputChange('calEventId', e.target.value)}
+                      placeholder="3685354"
+                      className="w-full px-3 py-2.5 md:px-4 md:py-3 bg-gray-900 border-2 border-amber-500/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all text-sm md:text-base font-mono"
+                      disabled={loading}
+                      maxLength={7}
+                    />
+                  </div>
                 </div>
 
                 {/* Step 3 */}
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 bg-purple-500/5 p-3 rounded-lg border border-purple-500/20">
                   <h3 className="text-xs md:text-base font-bold text-white">Step 3: Create API Key</h3>
                   <ul className="space-y-1 text-[10px] md:text-sm text-gray-400 ml-3 md:ml-4 list-disc list-inside">
                     <li>
@@ -320,13 +352,30 @@ export default function OnboardingFormPage() {
                     </li>
                     <li>Click "Add API Key"</li>
                     <li>Name: "Sterling AI"</li>
-                    <li><strong className="text-red-400">Set "Never Expire"</strong></li>
+                    <li><strong className="text-red-400">⚠️ Set "Never Expire"</strong></li>
                     <li>Copy immediately (won't see again!)</li>
                   </ul>
+                  
+                  {/* API Key Input - Right here! */}
+                  <div className="mt-3 pt-3 border-t border-purple-500/30">
+                    <label className="block text-[11px] md:text-sm font-bold text-white mb-2 flex items-center gap-1.5">
+                      <Key className="w-4 h-4" />
+                      🔑 Paste API Key Here:
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.calApiKey}
+                      onChange={(e) => handleInputChange('calApiKey', e.target.value)}
+                      placeholder="cal_live_xxxxxxxx"
+                      className="w-full px-3 py-2.5 md:px-4 md:py-3 bg-gray-900 border-2 border-purple-500/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all text-xs md:text-sm font-mono"
+                      disabled={loading}
+                    />
+                  </div>
                 </div>
 
                 {/* Step 4 */}
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 bg-purple-500/5 p-3 rounded-lg border border-purple-500/20">
                   <h3 className="text-xs md:text-base font-bold text-white">Step 4: Setup Webhook</h3>
                   <ul className="space-y-1 text-[10px] md:text-sm text-gray-400 ml-3 md:ml-4 list-disc list-inside">
                     <li>
@@ -345,94 +394,24 @@ export default function OnboardingFormPage() {
                     <li>Trigger: <strong className="text-white">"Booking Created"</strong></li>
                     <li>Enable & save</li>
                   </ul>
+                  
+                  {/* Webhook Completion Checkbox */}
+                  <div className="mt-3 pt-3 border-t border-purple-500/30">
+                    <label className="flex items-center gap-3 cursor-pointer bg-gray-900 p-3 rounded-lg border-2 border-green-500/30 hover:border-green-500/50 transition-all">
+                      <input
+                        type="checkbox"
+                        required
+                        checked={formData.webhookCompleted}
+                        onChange={(e) => handleInputChange('webhookCompleted', e.target.checked)}
+                        className="w-5 h-5 rounded border-gray-600 text-green-600 focus:ring-2 focus:ring-green-500 flex-shrink-0"
+                        disabled={loading}
+                      />
+                      <span className="text-xs md:text-sm text-white">
+                        ✅ <strong>Confirmed:</strong> I've completed the webhook setup in Cal.com
+                      </span>
+                    </label>
+                  </div>
                 </div>
-              </div>
-
-              {/* Cal.ai Inputs */}
-              <div className="space-y-2.5 md:space-y-4">
-                <div>
-                  <label className="block text-[11px] md:text-sm font-medium text-gray-300 mb-1 flex items-center gap-1.5">
-                    <Key className="w-3 h-3 md:w-4 md:h-4" />
-                    <span>Cal.ai API Key *</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.calApiKey}
-                    onChange={(e) => handleInputChange('calApiKey', e.target.value)}
-                    placeholder="cal_live_xxxxxxxx"
-                    className="w-full px-2.5 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all text-xs md:text-sm font-mono"
-                    disabled={loading}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] md:text-sm font-medium text-gray-300 mb-1">Event ID (7 digits) *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.calEventId}
-                    onChange={(e) => handleInputChange('calEventId', e.target.value)}
-                    placeholder="3685354"
-                    className="w-full px-2.5 py-2 md:px-4 md:py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all text-sm md:text-sm font-mono"
-                    disabled={loading}
-                    maxLength={7}
-                  />
-                  <p className="text-[10px] md:text-xs text-gray-500 mt-1">From event URL</p>
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 3: Google Sheets */}
-            <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg p-2.5 md:p-5 border border-green-500/30">
-              <h2 className="text-sm md:text-lg font-bold text-white mb-2.5 md:mb-4 flex items-center gap-2">
-                <span className="bg-green-600 text-white w-5 h-5 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[10px] md:text-sm font-bold">3</span>
-                <FileSpreadsheet className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                <span className="text-sm md:text-lg">Share Your Leads</span>
-              </h2>
-
-              {/* Instructions */}
-              <div className="bg-gray-900/50 rounded-lg p-2.5 md:p-4 mb-2.5 md:mb-4">
-                <p className="text-[11px] md:text-sm text-gray-300 font-semibold mb-2">Share your Google Sheet:</p>
-                
-                <ol className="space-y-1.5 text-[10px] md:text-sm text-gray-400 list-decimal list-inside ml-3 md:ml-0">
-                  <li>Open your Google Sheet with leads</li>
-                  <li>Click <strong className="text-white">"Share"</strong> button</li>
-                  <li>
-                    Add: <span className="text-green-400 font-semibold break-all">SterlingDailer@gmail.com</span>
-                  </li>
-                  <li>
-                    Grant <strong className="text-white">"Editor"</strong> access
-                  </li>
-                </ol>
-              </div>
-
-              {/* Confirmation Checkbox */}
-              <div className="bg-gray-800/50 rounded-lg p-2.5 md:p-4 border border-green-500/50">
-                <label className="flex items-start gap-2 md:gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    required
-                    checked={formData.googleSheetConfirmed}
-                    onChange={(e) => handleInputChange('googleSheetConfirmed', e.target.checked)}
-                    className="mt-0.5 w-4 h-4 md:w-5 md:h-5 rounded border-gray-600 text-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-0 bg-gray-700 flex-shrink-0"
-                    disabled={loading}
-                  />
-                  <span className="text-[10px] md:text-sm text-gray-300 leading-tight">
-                    <strong className="text-white">✓ Confirmed:</strong> Shared Google Sheet with <span className="text-green-400 font-semibold break-all">SterlingDailer@gmail.com</span> as <strong className="text-white">Editor</strong>
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            {/* Important Notice */}
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5 md:p-4 flex gap-2 md:gap-3">
-              <AlertCircle className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-[10px] md:text-sm text-amber-300 font-semibold mb-0.5 md:mb-1">Important!</p>
-                <p className="text-[10px] md:text-sm text-amber-200 leading-tight">
-                  Double-check all info before submitting. Incorrect details will delay setup.
-                </p>
               </div>
             </div>
 
@@ -446,45 +425,35 @@ export default function OnboardingFormPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading || !formData.firstName || !formData.lastName || !formData.email || !formData.nicheDescription || !formData.calApiKey || !formData.calEventId || !formData.googleSheetConfirmed}
-              className={`w-full px-3 py-2.5 md:px-6 md:py-4 font-bold rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 md:gap-2 text-xs md:text-base ${
-                loading || !formData.firstName || !formData.lastName || !formData.email || !formData.nicheDescription || !formData.calApiKey || !formData.calEventId || !formData.googleSheetConfirmed
+              disabled={loading || !formData.firstName || !formData.lastName || !formData.email || !formData.nicheDescription || !formData.calApiKey || !formData.calEventId || !formData.webhookCompleted}
+              className={`group relative overflow-hidden w-full px-6 py-5 md:px-8 md:py-6 font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 md:gap-3 text-base md:text-xl ${
+                loading || !formData.firstName || !formData.lastName || !formData.email || !formData.nicheDescription || !formData.calApiKey || !formData.calEventId || !formData.webhookCompleted
                   ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white hover:scale-105 active:scale-95 shadow-lg hover:shadow-blue-500/50'
+                  : 'bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 text-white hover:scale-105 active:scale-95 shadow-2xl shadow-blue-500/40 hover:shadow-3xl hover:shadow-blue-500/60'
               }`}
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 md:w-5 md:h-5 animate-spin" />
-                  <span>Submitting...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                  <span>Complete Setup & Activate AI</span>
-                  <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
-                </>
+              {/* Animated gradient overlay */}
+              {!loading && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               )}
+              
+              <span className="relative z-10 flex items-center gap-2 md:gap-3">
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin" />
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-5 h-5 md:w-6 md:h-6" />
+                    <span>Complete Setup & Activate AI</span>
+                    <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
+                  </>
+                )}
+              </span>
             </button>
 
-            {/* Skip Link */}
-            <button
-              type="button"
-              onClick={() => router.push('/dashboard')}
-              disabled={loading}
-              className="w-full text-[10px] md:text-sm text-gray-400 hover:text-white transition-colors text-center disabled:opacity-50 py-1.5 md:py-2"
-            >
-              I'll complete this later
-            </button>
           </form>
-
-          {/* Help Text */}
-          <div className="text-center text-[10px] md:text-sm text-gray-500 mt-3 md:mt-6 pt-3 md:pt-6 border-t border-gray-800">
-            <p className="mb-1">Need help?</p>
-            <a href="mailto:SterlingDailer@gmail.com" className="text-blue-400 hover:text-blue-300 underline font-semibold break-all">
-              SterlingDailer@gmail.com
-            </a>
-          </div>
         </div>
       </div>
     </div>

@@ -34,6 +34,7 @@ export async function GET() {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // Point directly to signup page
     const referralLink = `${baseUrl}/signup?ref=${referralCode.code}`;
 
     return NextResponse.json({ 

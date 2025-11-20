@@ -3,7 +3,7 @@
 import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Settings, Sparkles, CalendarDays, Phone, Users, Wallet } from 'lucide-react';
+import { LayoutDashboard, Settings, Sparkles, CalendarDays, Phone, Users, Wallet, Rocket } from 'lucide-react';
 
 interface DashboardSidebarProps {
   user: User;
@@ -40,6 +40,19 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
 
       {/* Main Navigation */}
       <nav className="flex-1 p-4 space-y-1">
+        {/* Quick Setup - Highlighted Button */}
+        {(!profile?.onboarding_all_complete) && (
+          <Link
+            href="/dashboard/onboarding"
+            className="relative flex items-center gap-3 px-4 py-3 rounded-lg mb-3 transition-all duration-200 bg-gradient-to-r from-yellow-600/20 to-amber-600/20 border-2 border-yellow-500/50 text-yellow-400 hover:border-yellow-500/70 hover:scale-[1.02] animate-pulse-slow"
+          >
+            <Rocket className="w-5 h-5" />
+            <span className="font-bold">Quick Setup</span>
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-ping"></span>
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"></span>
+          </Link>
+        )}
+
         {mainNavigation.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;

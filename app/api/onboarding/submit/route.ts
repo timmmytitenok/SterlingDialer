@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 // Use separate Resend API key for onboarding emails
 const resend = new Resend(process.env.RESEND_ONBOARDING_API_KEY || process.env.RESEND_API_KEY);
@@ -19,6 +20,41 @@ export async function POST(request: Request) {
       userEmail,
       userId
     } = body;
+
+    // Mark onboarding step 1 as complete
+    if (userId) {
+      const supabase = await createClient();
+      await supabase
+        .from('profiles')
+        .update({ onboarding_step_1_form: true })
+        .eq('user_id', userId);
+      
+      console.log('✅ Onboarding Step 1 (Form) marked complete for user:', userId);
+
+      // Check if all onboarding steps are now complete
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_step_1_form, onboarding_step_2_balance, onboarding_step_3_sheet, onboarding_step_4_schedule')
+        .eq('user_id', userId)
+        .single();
+
+      const allComplete = profile?.onboarding_step_1_form &&
+                          profile?.onboarding_step_2_balance &&
+                          profile?.onboarding_step_3_sheet &&
+                          profile?.onboarding_step_4_schedule;
+
+      if (allComplete) {
+        console.log('🎉 All onboarding steps complete! Hiding Quick Setup forever.');
+        
+        await supabase
+          .from('profiles')
+          .update({
+            onboarding_all_complete: true,
+            onboarding_completed_at: new Date().toISOString(),
+          })
+          .eq('user_id', userId);
+      }
+    }
 
     // Send detailed onboarding email to Sterling AI team
     await resend.emails.send({

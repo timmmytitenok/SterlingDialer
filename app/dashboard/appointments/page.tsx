@@ -14,7 +14,7 @@ export default async function AppointmentsPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/signup');
   }
 
   // Get all appointments
@@ -24,10 +24,52 @@ export default async function AppointmentsPage() {
     .eq('user_id', user.id)
     .order('scheduled_at', { ascending: true });
 
-  // Active appointments (scheduled, not cancelled)
-  const activeAppointments = allAppointments?.filter(
-    apt => apt.status === 'scheduled' || apt.status === 'rescheduled'
-  ) || [];
+  // Auto-mark past appointments as no-show (older than 5 days ago)
+  const fiveDaysAgo = new Date();
+  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+  fiveDaysAgo.setHours(0, 0, 0, 0);
+
+  // Find appointments that are past the calendar view and still "scheduled"
+  const pastAppointments = allAppointments?.filter(apt => {
+    const aptDate = new Date(apt.scheduled_at);
+    return aptDate < fiveDaysAgo && (apt.status === 'scheduled' || apt.status === 'rescheduled');
+  }) || [];
+
+  // Auto-mark them as no-show
+  if (pastAppointments.length > 0) {
+    console.log(`🔄 Auto-marking ${pastAppointments.length} past appointments as no-show`);
+    
+    for (const apt of pastAppointments) {
+      await supabase
+        .from('appointments')
+        .update({ 
+          status: 'no_show',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', apt.id);
+    }
+  }
+
+  // Re-fetch appointments after auto-marking
+  const { data: updatedAppointments } = await supabase
+    .from('appointments')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('scheduled_at', { ascending: true });
+
+  // Active appointments (scheduled/rescheduled AND within the visible calendar range)
+  const calendarStartDate = new Date();
+  calendarStartDate.setHours(0, 0, 0, 0);
+  const calendarEndDate = new Date();
+  calendarEndDate.setDate(calendarEndDate.getDate() + 5);
+  calendarEndDate.setHours(23, 59, 59, 999);
+
+  const activeAppointments = updatedAppointments?.filter(apt => {
+    const aptDate = new Date(apt.scheduled_at);
+    const isActive = (apt.status === 'scheduled' || apt.status === 'rescheduled');
+    const isInRange = aptDate >= calendarStartDate && aptDate <= calendarEndDate;
+    return isActive && isInRange;
+  }) || [];
 
   // Today's appointments
   const today = new Date();
@@ -35,7 +77,7 @@ export default async function AppointmentsPage() {
   const endOfToday = new Date(startOfToday);
   endOfToday.setDate(endOfToday.getDate() + 1);
 
-  const todayAppointments = allAppointments?.filter(apt => {
+  const todayAppointments = updatedAppointments?.filter(apt => {
     const aptDate = new Date(apt.scheduled_at);
     return aptDate >= startOfToday && aptDate < endOfToday;
   }) || [];
@@ -46,12 +88,12 @@ export default async function AppointmentsPage() {
   const startOf30Days = new Date();
   startOf30Days.setDate(startOf30Days.getDate() - 30);
 
-  const last7DaysAppointments = allAppointments?.filter(apt => {
+  const last7DaysAppointments = updatedAppointments?.filter(apt => {
     const aptDate = new Date(apt.created_at);
     return aptDate >= startOf7Days;
   }) || [];
 
-  const last30DaysAppointments = allAppointments?.filter(apt => {
+  const last30DaysAppointments = updatedAppointments?.filter(apt => {
     const aptDate = new Date(apt.created_at);
     return aptDate >= startOf30Days;
   }) || [];
@@ -87,7 +129,7 @@ export default async function AppointmentsPage() {
           </div>
           {/* Hidden for now - can be re-enabled later */}
           <div className="hidden">
-            <AddAppointmentButton userId={user.id} existingAppointments={allAppointments || []} />
+            <AddAppointmentButton userId={user.id} existingAppointments={updatedAppointments || []} />
           </div>
         </div>
 
@@ -130,7 +172,7 @@ export default async function AppointmentsPage() {
 
         {/* Calendar View */}
         <AppointmentCalendar 
-          appointments={allAppointments || []} 
+          appointments={updatedAppointments || []} 
           userId={user.id}
           startHour={startHour}
           endHour={endHour}

@@ -83,7 +83,7 @@ export async function POST(req: Request) {
         amount: creditAmount,
         type: 'referral_credit',
         description: `Referral bonus - Friend subscribed`,
-        balance_after: newBalance
+        balance_after: newBalance,
       });
 
     if (txError) {

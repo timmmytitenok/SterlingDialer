@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { CallBalanceCard } from '@/components/call-balance-card';
 import { BalanceSuccessHandler } from '@/components/balance-success-handler';
+import { MobileBalanceRedirect } from '@/components/mobile-balance-redirect';
 import { getSubscriptionFeatures } from '@/lib/subscription-helpers';
 
 // Force dynamic rendering - no caching
@@ -16,7 +17,7 @@ export default async function CallBalancePage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/signup');
   }
 
   // Get subscription features
@@ -33,6 +34,9 @@ export default async function CallBalancePage() {
     <>
       {/* Handle successful balance refill redirect */}
       <BalanceSuccessHandler />
+      
+      {/* Redirect mobile users to billing page after payment */}
+      <MobileBalanceRedirect />
 
       {/* Page Header */}
       <div className="mb-4 md:mb-6">

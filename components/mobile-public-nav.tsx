@@ -16,16 +16,47 @@ export function MobilePublicNav() {
   const pathname = usePathname();
   const supabase = createClient();
 
-  // Check auth state
+  // Check auth state - only show dashboard if they have active subscription
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      
+      if (user) {
+        // Check if they have a subscription or profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_tier, has_active_subscription')
+          .eq('user_id', user.id)
+          .single();
+        
+        // Only show dashboard if they have completed onboarding
+        if (profile && (profile.subscription_tier !== 'none' || profile.has_active_subscription)) {
+          setUser(user);
+        } else {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
     };
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_tier, has_active_subscription')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        if (profile && (profile.subscription_tier !== 'none' || profile.has_active_subscription)) {
+          setUser(session.user);
+        } else {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -317,7 +348,7 @@ export function MobilePublicNav() {
                     animation: isOpen ? 'fadeInUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both' : 'none'
                   }}
                 >
-                  Sign In
+                  Already have an account? Sign In
                 </Link>
               </>
             ) : (
