@@ -102,14 +102,14 @@ export async function GET(req: Request) {
     // DEBUG: Log all transactions
     if (refillTransactions && refillTransactions.length > 0) {
       console.log('📋 REFILL TRANSACTIONS DETAILS:');
-      refillTransactions.forEach((t, i) => {
+      refillTransactions.forEach((t: any, i: number) => {
         console.log(`   ${i + 1}. Amount: $${t.amount}, Type: ${t.type}, Date: ${t.created_at}, PI: ${t.stripe_payment_intent_id?.substring(0, 20)}...`);
       });
     } else {
       console.log('⚠️ NO REFILL TRANSACTIONS FOUND IN DATABASE!');
     }
 
-    const minutesRevenue = refillTransactions?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+    const minutesRevenue = refillTransactions?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
     const totalRefills = refillTransactions?.length || 0; // Count actual transactions, not calculate from amount
     console.log(`💵 Minutes Revenue: $${minutesRevenue}, Total Refills: ${totalRefills}`);
 
@@ -123,34 +123,34 @@ export async function GET(req: Request) {
     const last30Days = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     // Today's revenue
-    const todayRefills = refillTransactions?.filter(t => {
+    const todayRefills = refillTransactions?.filter((t: any) => {
       const tDate = new Date(t.created_at);
       return tDate >= today;
-    }).reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+    }).reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
 
-    const todaySubs = activeSubscriptions.filter(s => {
+    const todaySubs = activeSubscriptions.filter((s: any) => {
       const sDate = new Date(s.created_at);
       return sDate >= today;
     }).length * 499;
 
     // Last 7 days
-    const last7DaysRefills = refillTransactions?.filter(t => {
+    const last7DaysRefills = refillTransactions?.filter((t: any) => {
       const tDate = new Date(t.created_at);
       return tDate >= last7Days;
-    }).reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+    }).reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
 
-    const last7DaysSubs = activeSubscriptions.filter(s => {
+    const last7DaysSubs = activeSubscriptions.filter((s: any) => {
       const sDate = new Date(s.created_at);
       return sDate >= last7Days;
     }).length * 499;
 
     // Last 30 days
-    const last30DaysRefills = refillTransactions?.filter(t => {
+    const last30DaysRefills = refillTransactions?.filter((t: any) => {
       const tDate = new Date(t.created_at);
       return tDate >= last30Days;
-    }).reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+    }).reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
 
-    const last30DaysSubs = activeSubscriptions.filter(s => {
+    const last30DaysSubs = activeSubscriptions.filter((s: any) => {
       const sDate = new Date(s.created_at);
       return sDate >= last30Days;
     }).length * 499;
@@ -165,12 +165,12 @@ export async function GET(req: Request) {
       const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const dateEnd = new Date(dateStart.getTime() + 24 * 60 * 60 * 1000);
 
-      const dayRefills = refillTransactions?.filter(t => {
+      const dayRefills = refillTransactions?.filter((t: any) => {
         const tDate = new Date(t.created_at);
         return tDate >= dateStart && tDate < dateEnd;
-      }).reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      }).reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
 
-      const daySubs = activeSubscriptions.filter(s => {
+      const daySubs = activeSubscriptions.filter((s: any) => {
         const sDate = new Date(s.created_at);
         return sDate >= dateStart && sDate < dateEnd;
       }).length * 499;
@@ -193,12 +193,12 @@ export async function GET(req: Request) {
       const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const dateEnd = new Date(dateStart.getTime() + 24 * 60 * 60 * 1000);
 
-      const dayRefills = refillTransactions?.filter(t => {
+      const dayRefills = refillTransactions?.filter((t: any) => {
         const tDate = new Date(t.created_at);
         return tDate >= dateStart && tDate < dateEnd;
-      }).reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      }).reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
 
-      const daySubs = activeSubscriptions.filter(s => {
+      const daySubs = activeSubscriptions.filter((s: any) => {
         const sDate = new Date(s.created_at);
         return sDate >= dateStart && sDate < dateEnd;
       }).length * 499;
