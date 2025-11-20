@@ -59,7 +59,6 @@ const statusConfig: Record<string, { bg: string; text: string; border: string; d
   // Dialer Run Status
   running: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30', dot: true },
   paused: { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/30' },
-  completed: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30' },
   budget_reached: { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/30' },
   no_leads: { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30' },
   user_stopped: { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30' },
