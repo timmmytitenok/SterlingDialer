@@ -191,7 +191,7 @@ export function AutomationSettingsSimple({ userId, initialSettings }: Automation
                     <input
                       type="range"
                       min="10"
-                      max="100"
+                      max="50"
                       value={dailyBudget}
                       onChange={(e) => setDailyBudget(parseInt(e.target.value))}
                       className="w-full h-3 rounded-full appearance-none cursor-pointer"

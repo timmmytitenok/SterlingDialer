@@ -11,7 +11,6 @@ interface AutomationSettingsRefactoredProps {
 
 export function AutomationSettingsRefactored({ userId, initialSettings }: AutomationSettingsRefactoredProps) {
   const [autoScheduleEnabled, setAutoScheduleEnabled] = useState(initialSettings?.schedule_enabled || false);
-  const [startTime, setStartTime] = useState(initialSettings?.schedule_time || '09:00');
   const [selectedDays, setSelectedDays] = useState<number[]>(initialSettings?.schedule_days || [1, 2, 3, 4, 5]);
   const [dailyBudget, setDailyBudget] = useState(initialSettings?.daily_spend_limit || 25);
   const [saving, setSaving] = useState(false);
@@ -49,7 +48,6 @@ export function AutomationSettingsRefactored({ userId, initialSettings }: Automa
         body: JSON.stringify({
           userId,
           scheduleEnabled: enabled,
-          scheduleTime: startTime,
           scheduleDays: selectedDays,
           dailySpendLimit: dailyBudget,
         }),
@@ -57,10 +55,9 @@ export function AutomationSettingsRefactored({ userId, initialSettings }: Automa
 
       if (response.ok) {
         const selectedDayNames = selectedDays.map(d => dayNames[d]).join(', ');
-        const formattedTime = new Date(`2000-01-01T${startTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
         setMessage({ 
           type: 'success', 
-          text: `Automation updated. Your AI will start at ${formattedTime}, ${selectedDayNames}, and stop after $${dailyBudget} of calls.` 
+          text: `Automation updated! Your AI will start at 9 AM PST / 12 PM EST on ${selectedDayNames}, and stop after $${dailyBudget} of calls.` 
         });
       } else {
         const error = await response.json();
@@ -78,18 +75,6 @@ export function AutomationSettingsRefactored({ userId, initialSettings }: Automa
     if (selectedDays.length === 0) return 'No days selected';
     if (selectedDays.length === 7) return 'Every day';
     return selectedDays.map(d => dayNames[d]).join(', ');
-  };
-
-  const formatTime = (time: string) => {
-    try {
-      return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit', 
-        hour12: true 
-      });
-    } catch {
-      return time;
-    }
   };
 
   return (
@@ -152,21 +137,17 @@ export function AutomationSettingsRefactored({ userId, initialSettings }: Automa
                   1. Set Your Schedule
                 </h4>
                 
-                {/* Start Time */}
-                <div className="mb-6">
-                  <label className="block text-white font-semibold mb-2 flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-blue-400" />
-                    Start Time
-                  </label>
-                  <p className="text-gray-400 text-sm mb-3">
-                    The AI will begin calling leads at this time
-                  </p>
-                  <input
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-4 py-3 bg-[#0B1437] border-2 border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl text-white focus:outline-none transition-all"
-                  />
+                {/* Fixed Start Time Info */}
+                <div className="mb-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-white font-semibold mb-1">Start Time: 9 AM PST / 12 PM EST</p>
+                      <p className="text-gray-400 text-sm">
+                        All automated sessions start at this time daily to comply with calling laws across all US time zones. Select which days to run below.
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Days to Run */}
@@ -247,19 +228,19 @@ export function AutomationSettingsRefactored({ userId, initialSettings }: Automa
                     <input
                       type="range"
                       min="10"
-                      max="100"
+                      max="50"
                       value={dailyBudget}
                       onChange={(e) => setDailyBudget(parseInt(e.target.value))}
                       className="w-full h-3 rounded-full appearance-none cursor-pointer"
                       style={{
-                        background: `linear-gradient(to right, #10B981 0%, #10B981 ${((dailyBudget - 10) / 90) * 100}%, #374151 ${((dailyBudget - 10) / 90) * 100}%, #374151 100%)`
+                        background: `linear-gradient(to right, #10B981 0%, #10B981 ${((dailyBudget - 10) / 40) * 100}%, #374151 ${((dailyBudget - 10) / 40) * 100}%, #374151 100%)`
                       }}
                     />
                   </div>
                   <div className="flex justify-between text-sm text-gray-500 px-2">
                     <span>$10</span>
-                    <span>$50</span>
-                    <span>$100 Max</span>
+                    <span>$30</span>
+                    <span>$50 Max</span>
                   </div>
                   <p className="text-blue-300 text-xs text-center italic mt-2">
                     💡 Most users choose $25–$50/day for healthy calling volume
@@ -308,7 +289,7 @@ export function AutomationSettingsRefactored({ userId, initialSettings }: Automa
                 <div className="space-y-2.5 text-sm">
                   <div className="flex items-start gap-2">
                     <span className="text-gray-400 min-w-[140px]">Starts at:</span>
-                    <span className="text-white font-semibold">{formatTime(startTime)}</span>
+                    <span className="text-white font-semibold">9 AM PST / 12 PM EST</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-gray-400 min-w-[140px]">Runs on:</span>

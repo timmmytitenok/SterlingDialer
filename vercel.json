@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/ai-control/cron-start",
-      "schedule": "0 9 * * *"
+      "schedule": "0 17 * * *"
     }
   ]
 }

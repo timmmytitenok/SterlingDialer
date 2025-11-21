@@ -110,12 +110,12 @@ export function DailyBudgetSelector({ onConfirm, onCancel }: DailyBudgetSelector
               <input
                 type="range"
                 min="10"
-                max="100"
+                max="50"
                 value={dailyBudget}
                 onChange={(e) => setDailyBudget(parseInt(e.target.value))}
                 className="w-full h-3 rounded-full appearance-none cursor-pointer"
                 style={{
-                  background: `linear-gradient(to right, #10B981 0%, #10B981 ${((dailyBudget - 10) / 90) * 100}%, #374151 ${((dailyBudget - 10) / 90) * 100}%, #374151 100%)`
+                  background: `linear-gradient(to right, #10B981 0%, #10B981 ${((dailyBudget - 10) / 40) * 100}%, #374151 ${((dailyBudget - 10) / 40) * 100}%, #374151 100%)`
                 }}
               />
             </div>
@@ -123,9 +123,8 @@ export function DailyBudgetSelector({ onConfirm, onCancel }: DailyBudgetSelector
             <div className="flex justify-between text-sm font-bold px-2">
               <span className="text-gray-500">$10</span>
               <span className="text-gray-500">$25</span>
-              <span className="text-gray-500">$50</span>
-              <span className="text-gray-500">$75</span>
-              <span className="text-gray-500">$100 Max</span>
+              <span className="text-gray-500">$30</span>
+              <span className="text-gray-500">$50 Max</span>
             </div>
           </div>
 

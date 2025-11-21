@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     const results = [];
 
     for (const userSettings of scheduledUsers) {
-      const { user_id, schedule_time, schedule_days, user_timezone, status, daily_call_limit } = userSettings;
+      const { user_id, schedule_days, user_timezone, status, daily_call_limit } = userSettings;
 
       // Skip if already running
       if (status === 'running') {
@@ -46,22 +46,16 @@ export async function GET(request: Request) {
         continue;
       }
 
-      // Get current time in user's timezone
+      // Get current day of week in user's timezone
       const now = new Date();
       const userTimezone = user_timezone || 'America/New_York';
       
       const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: userTimezone,
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
         weekday: 'short'
       });
 
-      const parts = formatter.formatToParts(now);
-      const currentHour = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
-      const currentMinute = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
-      const currentWeekday = parts.find(p => p.type === 'weekday')?.value;
+      const currentWeekday = formatter.format(now);
 
       // Map weekday to number (0 = Sunday, 1 = Monday, etc.)
       const weekdayMap: { [key: string]: number } = {
@@ -69,18 +63,12 @@ export async function GET(request: Request) {
       };
       const currentDay = weekdayMap[currentWeekday || 'Mon'] || 1;
 
-      // Parse scheduled time (format: "10:00")
-      const [scheduleHour, scheduleMinute] = (schedule_time || '10:00').split(':').map(Number);
-
-      // Check if today is a scheduled day
+      // Check if today is a scheduled day (cron runs at 9 AM PST / 12 PM EST for everyone)
       const isScheduledDay = schedule_days?.includes(currentDay);
 
-      // Check if current time matches scheduled time (within 1 hour window)
-      const isScheduledTime = currentHour === scheduleHour && currentMinute >= scheduleMinute && currentMinute < scheduleMinute + 60;
+      console.log(`👤 User ${user_id} - Timezone: ${userTimezone}, Today: day ${currentDay} (${currentWeekday}), Scheduled days: ${schedule_days}, Should start: ${isScheduledDay}`);
 
-      console.log(`👤 User ${user_id} - Timezone: ${userTimezone}, Current: ${currentHour}:${currentMinute} on day ${currentDay}, Scheduled: ${scheduleHour}:${scheduleMinute} on days ${schedule_days}, Match: ${isScheduledDay && isScheduledTime}`);
-
-      if (isScheduledDay && isScheduledTime) {
+      if (isScheduledDay) {
         console.log(`🚀 Starting AI for user ${user_id}`);
 
         // Update status to running
