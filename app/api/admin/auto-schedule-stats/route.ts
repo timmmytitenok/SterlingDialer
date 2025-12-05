@@ -51,7 +51,7 @@ export async function GET() {
     // So profit = budget * 0.57 (57% profit margin)
     const profitMargin = 14.25 / 25; // 0.57
 
-    autoScheduleUsers?.forEach(user => {
+    autoScheduleUsers?.forEach((user: { user_id: string; schedule_enabled: boolean; schedule_days: number[] | null; daily_spend_limit: number | null }) => {
       const dailyBudget = user.daily_spend_limit || 25;
       const profitPerDay = dailyBudget * profitMargin;
       const scheduleDays = user.schedule_days || [];
