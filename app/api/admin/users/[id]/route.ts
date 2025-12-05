@@ -293,7 +293,6 @@ export async function GET(
       has_active_subscription: profile.data?.has_active_subscription ?? 
         (profile.data?.subscription_status === 'trialing' || profile.data?.subscription_status === 'active' ? true : false),
       subscription_tier: profile.data?.subscription_tier ?? 'none',
-      subscription_status: profile.data?.subscription_status ?? null,
       
       // Dialer Settings - safely handle missing data
       dialer_automation_enabled: dialerSettings.data?.auto_start_enabled ?? false,
