@@ -19,6 +19,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Check if this specific tab from this specific sheet is already connected
+    if (tabName) {
+      const { data: existingConnection } = await supabase
+        .from('user_google_sheets')
+        .select('id, sheet_name, tab_name')
+        .eq('user_id', user.id)
+        .eq('sheet_id', googleSheetId)
+        .eq('tab_name', tabName)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (existingConnection) {
+        return NextResponse.json({
+          error: `You've already connected the "${tabName}" tab from this Google Sheet. Each tab can only be connected once per sheet.`,
+        }, { status: 400 });
+      }
+    }
+
     // Convert column indices to letters (return null if -1)
     const colToLetter = (col: number) => col >= 0 ? String.fromCharCode(65 + col) : null;
 
@@ -47,6 +65,14 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('❌ Database error:', error);
+      
+      // Handle unique constraint violation with a friendly message
+      if (error.code === '23505') {
+        return NextResponse.json({
+          error: `This tab "${tabName || 'default'}" from this Google Sheet is already connected. Each tab can only be connected once per sheet.`,
+        }, { status: 400 });
+      }
+      
       throw error;
     }
 

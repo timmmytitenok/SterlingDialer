@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { AutomationSettingsRefactored } from '@/components/automation-settings-refactored';
+import { SubscriptionEnded } from '@/components/subscription-ended';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,35 @@ export default async function DialerAutomationPage() {
 
   if (!user) {
     redirect('/signup');
+  }
+
+  // 🔒 CHECK SUBSCRIPTION STATUS FIRST
+  const { data: userProfile } = await supabase
+    .from('profiles')
+    .select('has_active_subscription, subscription_tier, free_trial_ends_at, is_vip')
+    .eq('user_id', user.id)
+    .single();
+
+  const isVIP = userProfile?.is_vip === true;
+  
+  // 🚨 ONLY BLOCK IF WE'RE SURE SUBSCRIPTION ENDED
+  // Don't block new users waiting for webhook to process!
+  const subscriptionExplicitlyEnded = userProfile?.subscription_tier === 'none' && 
+                                       userProfile?.has_active_subscription === false;
+  
+  const wasFreeTrial = userProfile?.subscription_tier === 'none' && userProfile?.free_trial_ends_at;
+
+  // 🔒 ONLY BLOCK if subscription explicitly ended (not new users!)
+  if (subscriptionExplicitlyEnded && !isVIP) {
+    console.log('🔒 Subscription ended - blocking Auto Schedule access');
+    return <SubscriptionEnded 
+      wasFreeTrial={wasFreeTrial} 
+      endDate={userProfile?.free_trial_ends_at} 
+    />;
+  }
+  
+  if (isVIP) {
+    console.log('👑 VIP user detected - granting full access to Auto Schedule');
   }
 
   // Mark Step 4 complete just by visiting this page

@@ -149,24 +149,9 @@ export async function POST(request: Request) {
     const userTimezone = aiSettings.user_timezone || 'America/New_York';
     const todayStr = getTodayDateString(userTimezone);
 
-    // Determine time period
-    const now = new Date();
-    const currentHour = parseInt(now.toLocaleString('en-US', { 
-      hour: 'numeric', 
-      hour12: false, 
-      timeZone: userTimezone 
-    }));
-    
-    let timePeriod = null;
-    if (currentHour >= 8 && currentHour < 12) {
-      timePeriod = 'morning';
-    } else if (currentHour >= 12 && currentHour < 17) {
-      timePeriod = 'daytime';
-    } else if (currentHour >= 18 && currentHour < 21) {
-      timePeriod = 'evening';
-    }
-    
-    console.log(`🕐 Current hour: ${currentHour}, Time period: ${timePeriod}`);
+    // Note: We no longer track time periods (morning/daytime/evening)
+    // Simple 20-attempt system now
+    console.log(`🕐 Processing call result for lead ${leadId}`);
 
     // CRITICAL: Check if call went to voicemail
     const inVoicemail = call_analysis?.in_voicemail === true;
@@ -246,8 +231,9 @@ export async function POST(request: Request) {
         outcome = 'appointment_booked';
         leadStatus = 'appointment_booked';
         console.log('🎉 APPOINTMENT BOOKED!');
-        
-        // TODO: Check Cal.AI webhook for appointment details
+        console.log('📅 Cal.ai will handle appointment creation with correct time via webhook');
+        // NOTE: Appointment record is created by Cal.ai webhook (/api/appointments/cal-webhook)
+        // which receives the booking with the correct scheduled time directly from Cal.ai
         
       } else if (customAnalysis.LIVE_TRANSFER === true) {
         outcome = 'live_transfer';
@@ -275,8 +261,8 @@ export async function POST(request: Request) {
     console.log(`   - Outcome: ${outcome}`);
     console.log(`   - Status: ${leadStatus}`);
     console.log(`   - In Voicemail: ${inVoicemail}`);
-    console.log(`   - Time Period: ${timePeriod}`);
     console.log(`   - Was Double Dial: ${wasDoubleDial}`);
+    console.log(`   - Call Was Answered: ${callWasAnswered}`);
     
     // Build update object with fields that exist
     const leadUpdate: any = {
@@ -287,79 +273,72 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
     };
     
-    // CRITICAL: Mark this lead as attempted today (prevent calling same lead twice today)
-    // Increment on double dial OR answered call (not on first attempt no-answer)
+    // CRITICAL: A DOUBLE-DIAL (2 physical calls) = 1 ATTEMPT
+    // Increment counter ONLY when lead session is complete:
+    // - First call answered → Session complete, increment by 1
+    // - First call no answer, then double-dial → Session complete after 2nd call, increment by 1
+    // 
+    // Logic: Increment if this is the FINAL call for this lead session
+    // That's either: (wasDoubleDial) OR (callWasAnswered and !wasDoubleDial)
     if (wasDoubleDial || callWasAnswered) {
-      // This lead was fully attempted (either answered or double-dialed)
-      leadUpdate.call_attempts_today = (lead.call_attempts_today || 0) + 1;
+      const currentAttempts = lead.call_attempts_today || 0;
+      
+      // CRITICAL: Only increment by 1, regardless of how many physical calls were made
+      leadUpdate.call_attempts_today = currentAttempts + 1;
       leadUpdate.last_attempt_date = todayStr;
-      console.log(`   - Marking lead as attempted today: call_attempts_today = ${leadUpdate.call_attempts_today}`);
-      console.log(`   - Last attempt date: ${todayStr}`);
-      console.log(`   - This lead will NOT be called again today!`);
+      
+      console.log(`   🔢 ATTEMPT COUNT: ${currentAttempts} → ${leadUpdate.call_attempts_today}`);
+      console.log(`   📅 Last attempt date: ${todayStr}`);
+      console.log(`   ✅ Lead session complete - counted as 1 attempt`);
+      console.log(`   ${wasDoubleDial ? '(Double-dial completed)' : '(Answered on first call)'}`);
     } else {
-      console.log(`   - First attempt no answer - NOT marking as attempted (will double dial)`);
+      console.log(`   ⏸️  First attempt no answer - NOT incrementing yet`);
+      console.log(`   🔁 Will double-dial before counting as attempt`);
+      console.log(`   📊 call_attempts_today stays at: ${lead.call_attempts_today || 0}`);
     }
     
-    // Try to update enhanced tracking columns if they exist
-    try {
-      // Increment counters on double dial OR if call was answered
-      if (wasDoubleDial || callWasAnswered) {
-        console.log('📊 Call completed - incrementing counters...');
-        
-        // Increment times_dialed
-        if (lead.times_dialed !== undefined) {
-          leadUpdate.times_dialed = (lead.times_dialed || 0) + 1;
-          console.log(`   - Incrementing times_dialed: ${lead.times_dialed || 0} → ${leadUpdate.times_dialed}`);
-        }
-        
-        // Update enhanced tracking if columns exist
-        if (lead.total_calls_made !== undefined) {
-          leadUpdate.total_calls_made = (lead.total_calls_made || 0) + 1;
-          console.log(`   - Incrementing total_calls_made: ${lead.total_calls_made || 0} → ${leadUpdate.total_calls_made}`);
-        }
-      } else {
-        console.log('📊 First attempt no answer - NOT incrementing counters (waiting for double dial)');
+    // ========================================================================
+    // SIMPLIFIED TRACKING - 20 ATTEMPT SYSTEM
+    // ========================================================================
+    // Increment counters on double dial OR if call was answered
+    if (wasDoubleDial || callWasAnswered) {
+      console.log('📊 Call completed - incrementing counters...');
+      
+      // Increment times_dialed (legacy column)
+      if (lead.times_dialed !== undefined) {
+        leadUpdate.times_dialed = (lead.times_dialed || 0) + 1;
+        console.log(`   - times_dialed: ${lead.times_dialed || 0} → ${leadUpdate.times_dialed}`);
       }
+      
+      // Increment total_calls_made (primary tracking)
+      const newTotalCalls = (lead.total_calls_made || 0) + 1;
+      leadUpdate.total_calls_made = newTotalCalls;
+      console.log(`   - total_calls_made: ${lead.total_calls_made || 0} → ${newTotalCalls}`);
       
       // Only count pickups if call was answered
-      if (callWasAnswered && lead.total_pickups !== undefined) {
+      if (callWasAnswered) {
         leadUpdate.total_pickups = (lead.total_pickups || 0) + 1;
-        console.log(`   - Incrementing total_pickups: ${lead.total_pickups || 0} → ${leadUpdate.total_pickups}`);
-    }
-
-      // Update missed calls by time period (ONLY on double dial + no answer)
-      if (!callWasAnswered && wasDoubleDial && timePeriod) {
-        console.log(`   - Recording missed call in ${timePeriod} period`);
+        console.log(`   - total_pickups: ${lead.total_pickups || 0} → ${leadUpdate.total_pickups}`);
         
-        if (timePeriod === 'morning' && lead.morning_missed_calls !== undefined) {
-          leadUpdate.morning_missed_calls = (lead.morning_missed_calls || 0) + 1;
-          console.log(`   - Incrementing morning_missed_calls: ${lead.morning_missed_calls || 0} → ${leadUpdate.morning_missed_calls}`);
-        } else if (timePeriod === 'daytime' && lead.daytime_missed_calls !== undefined) {
-          leadUpdate.daytime_missed_calls = (lead.daytime_missed_calls || 0) + 1;
-          console.log(`   - Incrementing daytime_missed_calls: ${lead.daytime_missed_calls || 0} → ${leadUpdate.daytime_missed_calls}`);
-        } else if (timePeriod === 'evening' && lead.evening_missed_calls !== undefined) {
-          leadUpdate.evening_missed_calls = (lead.evening_missed_calls || 0) + 1;
-          console.log(`   - Incrementing evening_missed_calls: ${lead.evening_missed_calls || 0} → ${leadUpdate.evening_missed_calls}`);
-        }
-        
-        if (lead.total_missed_calls !== undefined) {
-          leadUpdate.total_missed_calls = (lead.total_missed_calls || 0) + 1;
-          console.log(`   - Incrementing total_missed_calls: ${lead.total_missed_calls || 0} → ${leadUpdate.total_missed_calls}`);
+        // Calculate pickup rate
+        if (newTotalCalls > 0) {
+          leadUpdate.pickup_rate = (leadUpdate.total_pickups / newTotalCalls) * 100;
+          console.log(`   - pickup_rate: ${leadUpdate.pickup_rate.toFixed(1)}%`);
         }
       }
       
-      if (lead.last_call_time_period !== undefined) {
-        leadUpdate.last_call_time_period = timePeriod;
+      // ========================================================================
+      // CHECK IF LEAD HIT 20 ATTEMPTS - MARK AS DEAD
+      // ========================================================================
+      if (newTotalCalls >= 20 && !callWasAnswered) {
+        console.log('💀 ========== LEAD HIT 20 ATTEMPTS - MARKING AS DEAD ==========');
+        console.log(`   Lead ${lead.name} has been called 20 times with no pickup`);
+        leadUpdate.status = 'dead_lead';
+        leadStatus = 'dead_lead';
+        console.log('   ✅ Status changed to: dead_lead');
       }
-      
-      // Calculate pickup rate if columns exist
-      if (leadUpdate.total_calls_made && leadUpdate.total_pickups !== undefined) {
-        leadUpdate.pickup_rate = (leadUpdate.total_pickups / leadUpdate.total_calls_made) * 100;
-        console.log(`   - Pickup rate: ${leadUpdate.pickup_rate.toFixed(1)}%`);
-      }
-      
-    } catch (trackingError) {
-      console.error('⚠️ Error updating enhanced tracking (columns may not exist):', trackingError);
+    } else {
+      console.log('📊 First attempt no answer - NOT incrementing counters (waiting for double dial)');
     }
     
     console.log('📝 Final update object:', JSON.stringify(leadUpdate, null, 2));
@@ -380,24 +359,29 @@ export async function POST(request: Request) {
     // First attempt doesn't count as a dial
     if (wasDoubleDial || callWasAnswered) {
       console.log(`💾 Creating call record (double dial or answered)...`);
+      console.log(`   - Lead name: ${lead.name}`);
+      console.log(`   - Phone: ${lead.phone}`);
+      console.log(`   - Cost: $${callCost.toFixed(2)} (${durationMinutes.toFixed(2)} min @ $${costPerMinute}/min)`);
+      
     const { error: callInsertError } = await supabase
       .from('calls')
       .insert({
         user_id: userId,
         lead_id: leadId,
         call_id: call_id,
-          phone_number: lead.phone,
-          duration: durationMinutes,
-          disposition: callWasAnswered ? 'answered' : 'no_answer',
+        lead_name: lead.name || lead.first_name || 'Unknown',
+        phone_number: lead.phone || lead.phone_number || 'N/A',
+        duration: durationMinutes,
+        disposition: callWasAnswered ? 'answered' : 'no_answer',
         outcome: outcome,
-          connected: callWasAnswered,
+        connected: callWasAnswered,
+        cost: callCost,
         recording_url: recording_url,
         transcript: transcript,
         call_analysis: call_analysis,
         disconnection_reason: disconnection_reason,
-          in_voicemail: inVoicemail,
-          call_time_period: timePeriod,
-          was_double_dial: wasDoubleDial,
+        in_voicemail: inVoicemail,
+        was_double_dial: wasDoubleDial,
         created_at: new Date().toISOString(),
       });
     
@@ -421,17 +405,26 @@ export async function POST(request: Request) {
     
     if (callWasAnswered && callCost > 0) {
       // Only charge for answered calls
-      const currentSpend = aiSettings.today_spend || 0;
+      // IMPORTANT: Re-fetch current values to avoid race conditions!
+      const { data: freshSettings } = await supabase
+        .from('ai_control_settings')
+        .select('today_spend, calls_made_today')
+        .eq('user_id', userId)
+        .single();
+      
+      const currentSpend = freshSettings?.today_spend || 0;
+      const currentCallCount = freshSettings?.calls_made_today || 0;
       const newSpend = currentSpend + callCost;
+      const newCallCount = currentCallCount + 1;
 
       console.log(`💰 Updating spend: $${currentSpend.toFixed(2)} → $${newSpend.toFixed(2)}`);
-      console.log(`📞 Incrementing calls_made_today: ${aiSettings.calls_made_today || 0} → ${(aiSettings.calls_made_today || 0) + 1}`);
+      console.log(`📞 Incrementing calls_made_today: ${currentCallCount} → ${newCallCount}`);
 
       await supabase
         .from('ai_control_settings')
         .update({
           today_spend: newSpend,
-          calls_made_today: (aiSettings.calls_made_today || 0) + 1,
+          calls_made_today: newCallCount,
           last_call_status: outcome,
         })
         .eq('user_id', userId);
@@ -600,6 +593,38 @@ export async function POST(request: Request) {
           // Create new record for today
           console.log(`   No existing record - creating new one for ${todayStr}`);
           
+          // Calculate the daily retainer cost based on subscription tier
+          let dailyRetainerCost = 0;
+          try {
+            const { data: subscription } = await supabase
+              .from('subscriptions')
+              .select('subscription_tier, status')
+              .eq('user_id', userId)
+              .eq('status', 'active')
+              .single();
+            
+            if (subscription) {
+              // Get days in current month
+              const now = new Date();
+              const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+              
+              // Monthly prices
+              let monthlyPrice = 0;
+              switch (subscription.subscription_tier) {
+                case 'starter': monthlyPrice = 499; break;
+                case 'pro': monthlyPrice = 899; break;
+                case 'elite': monthlyPrice = 1499; break;
+              }
+              
+              dailyRetainerCost = monthlyPrice / daysInMonth;
+              console.log(`   📊 Subscription: ${subscription.subscription_tier} ($${monthlyPrice}/mo ÷ ${daysInMonth} days = $${dailyRetainerCost.toFixed(2)}/day)`);
+            } else {
+              console.log(`   ⚠️ No active subscription found - daily retainer cost: $0`);
+            }
+          } catch (subErr) {
+            console.error('   ⚠️ Failed to get subscription for retainer cost:', subErr);
+          }
+          
           // Don't include total_ai_cost - it's auto-calculated!
           // Don't include created_at - it has a default!
           const { error: insertError } = await supabase
@@ -608,15 +633,17 @@ export async function POST(request: Request) {
               user_id: userId,
               date: todayStr,
               revenue: 0,
-              ai_retainer_cost: 0, // Will be set by dashboard page
+              ai_retainer_cost: dailyRetainerCost,
               ai_daily_cost: callCost,
             });
           
           if (insertError) {
             console.error('❌ Failed to insert revenue_tracking:', insertError);
           } else {
-            console.log(`✅ Revenue tracking created with AI cost: $${callCost.toFixed(4)}`);
-            console.log(`   (total_ai_cost will be auto-calculated by database)`);
+            console.log(`✅ Revenue tracking created:`);
+            console.log(`   - Daily retainer: $${dailyRetainerCost.toFixed(2)}`);
+            console.log(`   - Call cost: $${callCost.toFixed(4)}`);
+            console.log(`   - Total AI cost: $${(dailyRetainerCost + callCost).toFixed(4)} (auto-calculated by DB)`);
           }
         }
       } catch (revenueError: any) {
@@ -646,13 +673,23 @@ export async function POST(request: Request) {
       }
     } else if (wasDoubleDial && !callWasAnswered) {
       // Double dial no answer - NOW increment counter (counts as 1 complete attempt)
-      console.log(`📞 Double dial no answer - incrementing calls_made_today: ${aiSettings.calls_made_today || 0} → ${(aiSettings.calls_made_today || 0) + 1}`);
+      // IMPORTANT: Re-fetch current value to avoid race conditions!
+      const { data: freshSettings } = await supabase
+        .from('ai_control_settings')
+        .select('calls_made_today')
+        .eq('user_id', userId)
+        .single();
+      
+      const currentCallCount = freshSettings?.calls_made_today || 0;
+      const newCallCount = currentCallCount + 1;
+      
+      console.log(`📞 Double dial no answer - incrementing calls_made_today: ${currentCallCount} → ${newCallCount}`);
       console.log(`   This counts as completing 1 lead attempt`);
       
       await supabase
         .from('ai_control_settings')
         .update({
-          calls_made_today: (aiSettings.calls_made_today || 0) + 1,
+          calls_made_today: newCallCount,
           last_call_status: 'no_answer',
         })
         .eq('user_id', userId);
@@ -804,53 +841,96 @@ export async function POST(request: Request) {
     
     console.log(`✅ Target NOT reached yet (${currentCount}/${targetCount}) - continuing...`);
     
-    // Check if there are more callable leads (simplified query)
-    console.log('🔍 Checking for more callable leads...');
+    // ========================================================================
+    // ALWAYS TRIGGER NEXT CALL - Let next-call route handle lead selection
+    // This is more reliable than checking leads here
+    // ========================================================================
     
-    const { data: callableLeads, error: leadCheckError } = await supabase
-      .from('leads')
-      .select('id, name, status')
-      .eq('user_id', userId)
-      .eq('is_qualified', true)
-      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer'])
-      .limit(5); // Get up to 5 to see what's available
-    
-    console.log(`   Found ${callableLeads?.length || 0} callable leads`);
-    if (leadCheckError) console.error('   Error:', leadCheckError);
-    if (callableLeads && callableLeads.length > 0) {
-      console.log('   Next lead:', callableLeads[0].name, '-', callableLeads[0].status);
-    }
-    
-    if (!callableLeads || callableLeads.length === 0) {
-      console.log('📭 No more callable leads, stopping AI');
-      await supabase
-        .from('ai_control_settings')
-        .update({ status: 'stopped', last_call_status: 'no_leads' })
-        .eq('user_id', userId);
-      
-      return NextResponse.json({
-        success: true,
-        message: 'Call processed, no more leads',
-        outcome: outcome,
-        cost: callCost,
-        aiStopped: true,
-        reason: 'no_more_leads',
-      });
-    }
-    
-    // Continue to next lead
     console.log('');
-    console.log('🔄 ========== TRIGGERING NEXT CALL ========== 🔄');
-    console.log(`   Will call next lead: ${callableLeads[0].name}`);
+    console.log('🔄🔄🔄 ========== TRIGGERING NEXT CALL ========== 🔄🔄🔄');
+    console.log(`📞 AI still running, target not reached - calling next lead!`);
     console.log('');
     
-    fetch('http://localhost:3000/api/ai-control/next-call', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
-    }).catch(error => {
-      console.error('❌ Error triggering next call:', error);
-    });
+    // Get the proper base URL (works in both local and production)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    
+    console.log(`   Base URL: ${baseUrl}`);
+    console.log(`   Endpoint: ${baseUrl}/api/ai-control/next-call`);
+    console.log(`   User ID: ${userId}`);
+    
+    let nextCallSuccess = false;
+    let nextCallError = null;
+    
+    // Add small delay to ensure database is updated before next query
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Try up to 2 times to trigger next call
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        console.log(`📞 Making fetch request to next-call (attempt ${attempt})...`);
+        
+        const nextCallResponse = await fetch(`${baseUrl}/api/ai-control/next-call`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId }),
+        });
+        
+        console.log(`📞 Response status: ${nextCallResponse.status}`);
+        
+        const responseText = await nextCallResponse.text();
+        console.log(`📞 Response body: ${responseText.substring(0, 500)}`);
+        
+        if (!nextCallResponse.ok) {
+          console.error('❌ Next call endpoint returned error!');
+          nextCallError = responseText;
+          
+          // If first attempt failed, wait and retry
+          if (attempt === 1) {
+            console.log('⏳ Waiting 1 second before retry...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            continue;
+          }
+        } else {
+          try {
+            const nextCallData = JSON.parse(responseText);
+            console.log('✅✅✅ NEXT CALL TRIGGERED SUCCESSFULLY!');
+            console.log('   Call ID:', nextCallData.callId);
+            console.log('   Lead:', nextCallData.leadName);
+            nextCallSuccess = true;
+            
+            // Check if next-call said "done" (no more leads, target reached, etc.)
+            if (nextCallData.done) {
+              console.log('🛑 Next-call returned done:', nextCallData.reason);
+              console.log('   Message:', nextCallData.message);
+            }
+          } catch (parseError) {
+            console.log('✅ Next call triggered (response not JSON)');
+            nextCallSuccess = true;
+          }
+          break; // Success, exit retry loop
+        }
+      } catch (error: any) {
+        console.error(`❌❌❌ FETCH ERROR triggering next call (attempt ${attempt}):`, error.message);
+        nextCallError = error.message;
+        
+        // If first attempt failed, wait and retry
+        if (attempt === 1) {
+          console.log('⏳ Waiting 1 second before retry...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+    
+    // Log final status
+    console.log('');
+    console.log('📊 CALL RESULT WEBHOOK COMPLETE');
+    console.log(`   Outcome: ${outcome}`);
+    console.log(`   Cost: $${callCost.toFixed(2)}`);
+    console.log(`   Next call triggered: ${nextCallSuccess ? 'YES ✅' : 'NO ❌'}`);
+    if (nextCallError) console.log(`   Error: ${nextCallError}`);
+    console.log('🔄🔄🔄 ============================================ 🔄🔄🔄');
+    console.log('');
 
     return NextResponse.json({
       success: true,
@@ -859,8 +939,8 @@ export async function POST(request: Request) {
       cost: callCost,
       inVoicemail: inVoicemail,
       hungUpBy: hungUpBy,
-      timePeriod: timePeriod,
-      nextCallTriggered: true,
+      nextCallTriggered: nextCallSuccess,
+      nextCallError: nextCallError,
     });
   } catch (error: any) {
     console.error('❌ Error processing call result:', error);
@@ -870,4 +950,5 @@ export async function POST(request: Request) {
     );
   }
 }
+
 

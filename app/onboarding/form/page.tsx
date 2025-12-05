@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { CheckCircle, Loader2, ArrowRight, ExternalLink, Calendar, Key, AlertCircle } from 'lucide-react';
@@ -20,8 +21,14 @@ export default function OnboardingFormPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+
+  // Smooth entrance animation
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,9 +105,13 @@ export default function OnboardingFormPage() {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)] pointer-events-none"></div>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-3 py-4 md:px-4 md:py-10 overflow-y-auto max-h-screen scrollbar-hide">
+      <div className={`relative z-10 w-full max-w-5xl mx-auto px-3 py-4 md:px-4 md:py-10 overflow-y-auto max-h-screen scrollbar-hide transition-all duration-700 ease-out ${
+        mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+      }`}>
         {/* Card */}
-        <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-lg md:rounded-2xl p-3 md:p-8 border border-gray-800 shadow-2xl">
+        <div className={`bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-lg md:rounded-2xl p-3 md:p-8 border border-gray-800 shadow-2xl transition-all duration-700 ease-out delay-150 ${
+          mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        }`}>
           {/* Back Button - Top Left */}
           <button
             type="button"
@@ -111,7 +122,9 @@ export default function OnboardingFormPage() {
           </button>
 
           {/* Header */}
-          <div className="text-center mb-3 md:mb-6">
+          <div className={`text-center mb-3 md:mb-6 transition-all duration-700 ease-out delay-200 ${
+            mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+          }`}>
             <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-2 md:mb-3 shadow-lg">
               <span className="text-lg md:text-2xl font-bold text-white">SA</span>
             </div>
@@ -123,7 +136,9 @@ export default function OnboardingFormPage() {
           <form onSubmit={handleSubmit} className="space-y-3 md:space-y-6">
             
             {/* SECTION 1: Personal Information */}
-            <div className="bg-gray-800/30 rounded-lg p-2.5 md:p-5 border border-gray-700/50">
+            <div className={`bg-gray-800/30 rounded-lg p-2.5 md:p-5 border border-gray-700/50 transition-all duration-700 ease-out delay-300 ${
+              mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+            }`}>
               <h2 className="text-sm md:text-lg font-bold text-white mb-2.5 md:mb-4 flex items-center gap-2">
                 <span className="bg-blue-600 text-white w-5 h-5 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[10px] md:text-sm font-bold">1</span>
                 <span className="text-sm md:text-lg">Your Information</span>
@@ -254,7 +269,9 @@ export default function OnboardingFormPage() {
             </div>
 
             {/* SECTION 2: Cal.ai Setup */}
-            <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-lg p-2.5 md:p-5 border border-purple-500/30">
+            <div className={`bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-lg p-2.5 md:p-5 border border-purple-500/30 transition-all duration-700 ease-out delay-500 ${
+              mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+            }`}>
               <h2 className="text-sm md:text-lg font-bold text-white mb-2.5 md:mb-4 flex items-center gap-2">
                 <span className="bg-purple-600 text-white w-5 h-5 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[10px] md:text-sm font-bold">2</span>
                 <Calendar className="w-3.5 h-3.5 md:w-5 md:h-5" />
@@ -390,7 +407,7 @@ export default function OnboardingFormPage() {
                       </a>
                     </li>
                     <li>Click "New Webhook"</li>
-                    <li className="break-all">Paste URL: <span className="text-green-400 font-mono text-[9px] md:text-xs">sterlingdialer.com/api/appointments/cal-webhook</span></li>
+                    <li className="break-all">Paste URL: <span className="text-green-400 font-mono text-[9px] md:text-xs">https://sterlingdialer.com/api/appointments/cal-webhook</span></li>
                     <li>Trigger: <strong className="text-white">"Booking Created"</strong></li>
                     <li>Enable & save</li>
                   </ul>
@@ -426,7 +443,9 @@ export default function OnboardingFormPage() {
             <button
               type="submit"
               disabled={loading || !formData.firstName || !formData.lastName || !formData.email || !formData.nicheDescription || !formData.calApiKey || !formData.calEventId || !formData.webhookCompleted}
-              className={`group relative overflow-hidden w-full px-6 py-5 md:px-8 md:py-6 font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 md:gap-3 text-base md:text-xl ${
+              className={`group relative overflow-hidden w-full px-6 py-5 md:px-8 md:py-6 font-bold rounded-xl flex items-center justify-center gap-2 md:gap-3 text-base md:text-xl transition-all duration-700 ease-out delay-700 ${
+                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              } ${
                 loading || !formData.firstName || !formData.lastName || !formData.email || !formData.nicheDescription || !formData.calApiKey || !formData.calEventId || !formData.webhookCompleted
                   ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                   : 'bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 text-white hover:scale-105 active:scale-95 shadow-2xl shadow-blue-500/40 hover:shadow-3xl hover:shadow-blue-500/60'
@@ -456,6 +475,40 @@ export default function OnboardingFormPage() {
           </form>
         </div>
       </div>
+
+      {/* Smooth Animations */}
+      <style jsx global>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }

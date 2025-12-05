@@ -41,11 +41,16 @@ export async function GET() {
       const retellConfig = retellConfigs.data?.find((r: any) => r.user_id === authUser.id);
 
       // Determine setup status - Check if AI is actually configured
+      // Step 1 = Form completion (onboarding_step_1_form)
+      // Needs Onboarding = Step 1 NOT complete
+      // Needs AI Setup = Step 1 complete BUT AI not configured
       let setupStatus = 'account_created';
       const hasAIConfigured = retellConfig && retellConfig.retell_agent_id && retellConfig.phone_number;
+      const hasCompletedStep1 = profile?.onboarding_step_1_form === true;
+      
       if (hasAIConfigured) {
         setupStatus = 'active';
-      } else if (profile?.onboarding_all_complete) {
+      } else if (hasCompletedStep1) {
         setupStatus = 'onboarding_complete';
       }
 
@@ -54,7 +59,13 @@ export async function GET() {
       let daysLeft = 0;
       let nextBillingDate = null;
 
-      if (subscription) {
+      // Check VIP status first (from profile table)
+      const isVIP = profile?.is_vip === true || subscription?.subscription_tier === 'vip';
+
+      if (isVIP) {
+        // VIP users always show as VIP regardless of subscription status
+        accountType = 'VIP ACCESS';
+      } else if (subscription) {
         if (subscription.status === 'trialing') {
           accountType = 'Free Trial';
           if (subscription.trial_end) {
@@ -65,8 +76,6 @@ export async function GET() {
         } else if (subscription.status === 'active') {
           accountType = 'Pro Access';
           nextBillingDate = subscription.current_period_end;
-        } else if (subscription.tier === 'vip') {
-          accountType = 'FREE VIP ACCESS';
         }
       }
 
@@ -74,6 +83,7 @@ export async function GET() {
         id: authUser.id,
         full_name: profile?.full_name || 'Unnamed User',
         email: authUser.email || 'No email',
+        phone: profile?.phone_number || null,
         setup_status: setupStatus,
         last_sign_in_at: authUser.last_sign_in_at,
         account_type: accountType,
@@ -83,6 +93,7 @@ export async function GET() {
         is_active: retellConfig?.is_active || false,
         has_ai_config: retellConfig ? true : false,
         call_balance: balance?.balance || 0,
+        is_vip: isVIP, // Add VIP flag for filtering
       };
     }));
 

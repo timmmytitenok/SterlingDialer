@@ -1,5 +1,46 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
+
+// Custom hook for smooth counting animation with dramatic slowdown at the end
+function useCountAnimation(targetValue: number, duration: number = 2000) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const previousValue = useRef(0);
+  const animationRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const startValue = previousValue.current;
+    const startTime = performance.now();
+    
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Easing function with strong deceleration at the end (easeOutExpo)
+      const easeOutExpo = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      
+      const currentValue = startValue + (targetValue - startValue) * easeOutExpo;
+      setDisplayValue(currentValue);
+      
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        previousValue.current = targetValue;
+      }
+    };
+    
+    animationRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [targetValue, duration]);
+
+  return displayValue;
+}
+
 interface SimpleStatCardProps {
   title: string;
   value: string | number;
@@ -19,6 +60,13 @@ const colorClasses = {
 
 export function SimpleStatCard({ title, value, subtitle, icon, color }: SimpleStatCardProps) {
   const colorClass = colorClasses[color];
+  
+  // Animate if value is a number
+  const numericValue = typeof value === 'number' ? value : 0;
+  const animatedValue = useCountAnimation(numericValue);
+  const displayValue = typeof value === 'number' 
+    ? Math.round(animatedValue).toLocaleString() 
+    : value;
 
   return (
     <div className={`bg-gradient-to-br ${colorClass} rounded-xl p-6 border transition-all duration-200 hover:scale-[1.02] hover:shadow-lg`}>
@@ -27,7 +75,7 @@ export function SimpleStatCard({ title, value, subtitle, icon, color }: SimpleSt
       </div>
       <p className="text-gray-300 text-sm mb-1 font-medium">{title}</p>
       <p className={`text-4xl font-bold ${color === 'blue' ? 'text-blue-400' : color === 'green' ? 'text-green-400' : color === 'red' ? 'text-red-400' : color === 'orange' ? 'text-orange-400' : color === 'purple' ? 'text-purple-400' : 'text-yellow-400'}`}>
-        {value}
+        {displayValue}
       </p>
       <p className={`text-xs mt-1 ${color === 'blue' ? 'text-blue-400/60' : color === 'green' ? 'text-green-400/60' : color === 'red' ? 'text-red-400/60' : color === 'orange' ? 'text-orange-400/60' : color === 'purple' ? 'text-purple-400/60' : 'text-yellow-400/60'}`}>
         {subtitle}

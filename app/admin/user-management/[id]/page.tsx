@@ -48,6 +48,8 @@ interface UserDetail {
   ai_maintenance_mode: boolean;
   retell_agent_id: string | null;
   retell_phone_number: string | null;
+  has_active_subscription: boolean;
+  subscription_tier: string | null;
 }
 
 export default function AdminUserDetailPage() {
@@ -208,56 +210,81 @@ export default function AdminUserDetailPage() {
         {/* Back Button */}
         <button
           onClick={() => router.push('/admin/user-management')}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-700/50 hover:bg-gray-600 rounded-lg transition-all mb-6 text-white"
+          className="relative flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-500/20 to-gray-600/20 backdrop-blur-sm border border-gray-500/30 hover:border-gray-400/50 rounded-lg transition-all duration-300 mb-6 text-white font-semibold shadow-lg shadow-gray-500/20 hover:shadow-xl hover:shadow-gray-400/40 hover:scale-105 hover:from-gray-500/30 hover:to-gray-600/30 group"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Users
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-500/10 to-gray-600/10 rounded-lg blur-sm group-hover:blur-md transition-all duration-300"></div>
+          <ArrowLeft className="w-4 h-4 relative z-10 group-hover:-translate-x-1 transition-transform duration-300" />
+          <span className="relative z-10">Back to Users</span>
         </button>
 
         {/* User Information Card */}
         <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-8 border border-gray-700/50 shadow-xl">
           {/* Header with Avatar and Name */}
-          <div className="flex items-center justify-between gap-6">
+          <div className="flex items-start justify-between gap-6">
             <div className="flex items-center gap-6">
               <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-4xl font-bold text-white shadow-lg">
                 {user.full_name.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1">
-                <h1 className="text-4xl font-bold text-white mb-1">{user.full_name}</h1>
-                <p className="text-sm text-gray-400 mb-3">{user.email}</p>
-                <div className="flex items-center gap-3">
-                  <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border font-semibold ${
-                user.account_type === 'FREE VIP ACCESS'
-                  ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
-                  : user.account_type === 'Pro Access'
-                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                <h1 className="text-4xl font-bold text-white mb-2">{user.full_name}</h1>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 text-sm text-gray-300">
+                    <Database className="w-4 h-4 text-gray-400" />
+                    <span className="font-mono text-xs">{user.id}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-300">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    <span className="font-mono">{user.phone || 'No phone number'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-300">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    <span className="font-mono">{user.email}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Side: Account Type Badge & View Dashboard Button */}
+            <div className="flex flex-col items-end gap-4">
+              {/* Account Type Badge */}
+              <span className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 font-bold text-sm tracking-wide ${
+                user.account_type?.includes('VIP') || user.subscription_tier === 'vip'
+                  ? 'bg-gradient-to-r from-yellow-500/20 via-amber-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/50 shadow-lg shadow-yellow-500/20'
+                  : user.account_type === 'Pro Access' || user.subscription_tier === 'pro' || user.account_type === 'Free Trial' || user.subscription_tier === 'trial'
+                  ? 'bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-blue-500/20 text-blue-400 border-blue-500/50 shadow-lg shadow-blue-500/20'
                   : 'bg-purple-500/10 text-purple-400 border-purple-500/30'
               }`}>
-                    <CreditCard className="w-4 h-4" />
-                    {user.account_type}
+                {user.account_type?.includes('VIP') || user.subscription_tier === 'vip' ? (
+                  <span className="text-lg">👑</span>
+                ) : user.account_type === 'Pro Access' || user.subscription_tier === 'pro' ? (
+                  <span className="text-lg">⚡</span>
+                ) : user.account_type === 'Free Trial' || user.subscription_tier === 'trial' ? (
+                  <span className="text-lg">🆓</span>
+                ) : (
+                  <CreditCard className="w-4 h-4" />
+                )}
+                {user.account_type}
               </span>
+
+              {/* View Dashboard Button */}
+              <a
+                href={`/login?email=${encodeURIComponent(user.email)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-blue-500/30 hover:border-blue-400/50 text-white rounded-lg font-semibold transition-all duration-300 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-400/40 hover:scale-105 hover:from-blue-500/30 hover:to-purple-500/30 group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg blur-sm group-hover:blur-md transition-all duration-300"></div>
+                <ExternalLink className="w-5 h-5 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
+                <span className="relative z-10">View Dashboard</span>
+              </a>
             </div>
           </div>
         </div>
 
-            {/* View Dashboard Button */}
-            <a
-              href={`/login?email=${encodeURIComponent(user.email)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl"
-            >
-              <ExternalLink className="w-5 h-5" />
-              View Dashboard
-            </a>
-            </div>
-
-            </div>
-
         {/* Stats Cards - Single Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
           {/* Last AI Active / Running */}
-          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-6 border border-emerald-500/30 shadow-xl">
+          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-6 border border-emerald-500/30 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/20 cursor-pointer">
             <div className="flex items-center gap-3 mb-3">
               <div className={`p-3 rounded-xl border ${
                 user.ai_is_running 
@@ -292,7 +319,7 @@ export default function AdminUserDetailPage() {
             </div>
 
           {/* Total Dials Made */}
-          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-6 border border-blue-500/30 shadow-xl">
+          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-6 border border-blue-500/30 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20 cursor-pointer">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/30">
                 <Phone className="w-6 h-6 text-blue-400" />
@@ -304,7 +331,7 @@ export default function AdminUserDetailPage() {
                   </div>
 
           {/* Total Appointments Booked */}
-          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-6 border border-purple-500/30 shadow-xl">
+          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-6 border border-purple-500/30 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 cursor-pointer">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-3 bg-purple-500/10 rounded-xl border border-purple-500/30">
                 <Calendar className="w-6 h-6 text-purple-400" />
@@ -316,7 +343,7 @@ export default function AdminUserDetailPage() {
           </div>
 
           {/* Total Profit */}
-          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-6 border-2 border-green-500/40 shadow-xl">
+          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-6 border-2 border-green-500/40 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20 cursor-pointer">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-3 bg-green-500/10 rounded-xl border border-green-500/30">
                 <DollarSign className="w-6 h-6 text-green-400" />
@@ -341,7 +368,7 @@ export default function AdminUserDetailPage() {
           {/* LEFT SIDE: Dashboard Stats Update Section */}
         <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-8 border border-gray-700/50 shadow-xl">
             <div className="mb-8">
-              <h3 className="text-3xl font-bold text-white mb-2">Modify User Stats (Admin Tool)</h3>
+              <h3 className="text-3xl font-bold text-white mb-2">Modify User Stats</h3>
               <p className="text-sm text-gray-400">Adjust dashboard numbers for a specific date.</p>
                   </div>
 
@@ -575,13 +602,13 @@ export default function AdminUserDetailPage() {
         {/* AI Agent Configuration Functions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Side: AI Agent Configuration */}
-          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-8 border border-gray-700/50 shadow-xl">
-            <h3 className="text-xl font-bold text-white mb-6">AI Agent Configuration</h3>
+          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-8 border border-gray-700/50 shadow-xl flex flex-col">
+            <h3 className="text-xl font-bold text-white mb-8">AI Agent Configuration</h3>
 
-            <div className="space-y-4">
+            <div className="flex-1 flex flex-col justify-between space-y-6">
               {/* Retell Agent ID */}
               <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-3">
                   Agent ID
                 </label>
                 <input
@@ -589,13 +616,13 @@ export default function AdminUserDetailPage() {
                   value={agentId}
                   onChange={(e) => setAgentId(e.target.value)}
                   placeholder="agent_xxxxxxxxxxxxx"
-                  className="w-full px-4 py-3 bg-[#0B1437] text-white rounded-lg border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none font-mono text-sm transition-all"
+                  className="w-full px-5 py-4 bg-[#0B1437] text-white rounded-xl border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none font-mono text-sm transition-all"
                 />
               </div>
 
               {/* Phone Number */}
               <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-3">
                   Phone Number
                 </label>
                 <input
@@ -603,7 +630,7 @@ export default function AdminUserDetailPage() {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="+15551234567"
-                  className="w-full px-4 py-3 bg-[#0B1437] text-white rounded-lg border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none font-mono text-sm transition-all"
+                  className="w-full px-5 py-4 bg-[#0B1437] text-white rounded-xl border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none font-mono text-sm transition-all"
                 />
               </div>
 
@@ -640,7 +667,7 @@ export default function AdminUserDetailPage() {
                   }
                 }}
                 disabled={saving}
-                className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 text-white rounded-lg font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 text-lg"
               >
                 {saving ? (
                   <>
@@ -654,107 +681,96 @@ export default function AdminUserDetailPage() {
                   </>
                 )}
               </button>
-            </div>
 
-            <div className="mt-6 p-4 bg-[#0B1437]/70 rounded-lg border border-gray-700/50">
-              <p className="text-xs text-gray-400 leading-relaxed">
-                Configure the Retell AI agent settings for this user. Agent ID and phone number are required for AI calling functionality.
-              </p>
+              <div className="p-5 bg-[#0B1437]/70 rounded-xl border border-gray-700/50">
+                <p className="text-sm text-gray-400 leading-relaxed">
+                  Configure the Retell AI agent settings for this user. Agent ID and phone number are required for AI calling functionality.
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Right Side: AI Dialer Access Control */}
-          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-8 border border-gray-700/50 shadow-xl">
-            <h3 className="text-xl font-bold text-white mb-6">AI Dialer Access Control</h3>
+          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-8 border border-gray-700/50 shadow-xl flex flex-col">
+            <h3 className="text-xl font-bold text-white mb-6 text-center">AI Dialer Access Control</h3>
 
-            {/* Big Dialer Access Toggle Button */}
-            <button
-              onClick={async () => {
-                const newMode = !user.ai_maintenance_mode;
-                
-                if (!confirm(`${newMode ? 'BLOCK' : 'UNBLOCK'} AI Dialer access for this user?\n\n${newMode ? 'User will see "AI Agent Setup in Progress" page and cannot use dialer.' : 'User can access and use the AI Dialer!'}`)) return;
-                
-                setSaving(true);
-                try {
-                  const response = await fetch('/api/admin/users/toggle-maintenance', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      userId: user.id,
-                      maintenanceMode: newMode,
-                    }),
-                  });
+            <div className="flex-1 flex items-center justify-center">
+              {/* Big Dialer Access Toggle Button */}
+              <button
+                onClick={async () => {
+                  const newMode = !user.ai_maintenance_mode;
+                  
+                  if (!confirm(`${newMode ? 'BLOCK' : 'UNBLOCK'} AI Dialer access for this user?\n\n${newMode ? 'User will see "AI Agent Setup in Progress" page and cannot use dialer.' : 'User can access and use the AI Dialer!'}`)) return;
+                  
+                  setSaving(true);
+                  try {
+                    const response = await fetch('/api/admin/users/toggle-maintenance', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        userId: user.id,
+                        maintenanceMode: newMode,
+                      }),
+                    });
 
-                  if (!response.ok) throw new Error('Failed to toggle');
+                    if (!response.ok) throw new Error('Failed to toggle');
 
-                  const notification = document.createElement('div');
-                  notification.className = 'fixed top-8 right-8 bg-green-500 text-white px-6 py-4 rounded-lg shadow-2xl z-50 flex items-center gap-3';
-                  notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI Dialer ' + (newMode ? 'BLOCKED' : 'UNBLOCKED') + '!</span>';
-                  document.body.appendChild(notification);
-                  setTimeout(() => notification.remove(), 3000);
+                    const notification = document.createElement('div');
+                    notification.className = 'fixed top-8 right-8 bg-green-500 text-white px-6 py-4 rounded-lg shadow-2xl z-50 flex items-center gap-3';
+                    notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI Dialer ' + (newMode ? 'BLOCKED' : 'UNBLOCKED') + '!</span>';
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 3000);
 
-                  loadUser();
-                } catch (err: any) {
-                  alert(`Error: ${err.message}`);
-                } finally {
-                  setSaving(false);
-                }
-              }}
-              disabled={saving}
-              className={`group relative overflow-hidden w-full px-8 py-12 rounded-2xl border-2 font-bold text-2xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed ${
-                user.ai_maintenance_mode
-                  ? 'bg-gradient-to-br from-red-600/20 to-rose-600/20 border-red-500/50 hover:border-red-400/70 text-red-400 hover:shadow-2xl hover:shadow-red-500/30'
-                  : 'bg-gradient-to-br from-green-600/20 to-emerald-600/20 border-green-500/50 hover:border-green-400/70 text-green-400 hover:shadow-2xl hover:shadow-green-500/30'
-              }`}
-            >
-              {saving ? (
-                <span className="flex items-center justify-center gap-3">
-                  <Loader2 className="w-8 h-8 animate-spin" />
-                  Updating...
-                </span>
-              ) : (
-                <div className="relative z-10">
-                  <div className="flex items-center justify-center gap-4 mb-3">
-                    {user.ai_maintenance_mode ? (
-                      <Activity className="w-10 h-10" />
-                    ) : (
-                      <AlertCircle className="w-10 h-10" />
-                    )}
-                    <span>
-                      {user.ai_maintenance_mode ? 'Unblock AI Dialer' : 'Block AI Dialer'}
-                    </span>
-                  </div>
-                  <div className="text-sm font-normal opacity-80">
-                    Status: {user.ai_maintenance_mode ? '🔴 DIALER BLOCKED' : '✅ DIALER ACTIVE'}
-                  </div>
-                </div>
-              )}
-              
-              {/* Animated shine effect */}
-              {!saving && (
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-              )}
-            </button>
-
-            <div className="mt-6 p-4 bg-[#0B1437]/70 rounded-lg border border-gray-700/50">
-              <p className="text-xs text-gray-400 leading-relaxed">
-                {user.ai_maintenance_mode ? (
-                  <>
-                    <span className="text-red-400 font-semibold">🚫 AI DIALER BLOCKED</span>
-                    <br />User sees "AI Agent Setup in Progress" page and CANNOT use the AI Dialer. Click button to unblock.
-                  </>
+                    loadUser();
+                  } catch (err: any) {
+                    alert(`Error: ${err.message}`);
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                disabled={saving}
+                className={`group relative overflow-hidden w-full max-w-sm py-8 px-8 rounded-2xl border-2 font-bold text-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center ${
+                  user.ai_maintenance_mode
+                    ? 'bg-gradient-to-br from-red-600/20 to-rose-600/20 border-red-500/50 hover:border-red-400/70 text-red-400 hover:shadow-2xl hover:shadow-red-500/30'
+                    : 'bg-gradient-to-br from-green-600/20 to-emerald-600/20 border-green-500/50 hover:border-green-400/70 text-green-400 hover:shadow-2xl hover:shadow-green-500/30'
+                }`}
+              >
+                {saving ? (
+                  <span className="flex items-center justify-center gap-3">
+                    <Loader2 className="w-7 h-7 animate-spin" />
+                    Updating...
+                  </span>
                 ) : (
-                  <>
-                    <span className="text-green-400 font-semibold">✅ AI DIALER ACTIVE</span>
-                    <br />User has FULL access to the AI Dialer. Click button to block access.
-                  </>
+                  <div className="relative z-10 text-center">
+                    <div className="flex items-center justify-center gap-3 mb-2">
+                      {user.ai_maintenance_mode ? (
+                        <Activity className="w-8 h-8" />
+                      ) : (
+                        <AlertCircle className="w-8 h-8" />
+                      )}
+                      <span>
+                        {user.ai_maintenance_mode ? 'Unblock AI Dialer' : 'Block AI Dialer'}
+                      </span>
+                    </div>
+                    <div className="text-sm font-normal opacity-80">
+                      Status: {user.ai_maintenance_mode ? '🔴 DIALER BLOCKED' : '✅ DIALER ACTIVE'}
+                    </div>
+                  </div>
                 )}
-              </p>
+                
+                {/* Animated shine effect */}
+                {!saving && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                )}
+              </button>
             </div>
           </div>
         </div>
         {/* End AI Agent Configuration Functions Grid */}
 
+        {/* Quick Setup Guide - Hidden when all steps complete */}
+        {!onboardingSteps.all_complete && (
+          <>
         {/* Divider */}
         <div className="my-10 flex items-center gap-3">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent"></div>
@@ -1064,6 +1080,8 @@ export default function AdminUserDetailPage() {
                   </div>
                 </div>
               </div>
+          </>
+        )}
 
         {/* Divider */}
         <div className="my-10 flex items-center gap-3">

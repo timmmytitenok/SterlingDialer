@@ -70,22 +70,6 @@ export async function POST(request: Request) {
     console.log('  - Age:', attendeeAge);
     console.log('  - State:', attendeeState);
 
-    // Get user_id from environment or metadata
-    const userId = process.env.CAL_AI_USER_ID || metadata?.userId;
-
-    if (!userId) {
-      console.error('❌ No user_id found! Set CAL_AI_USER_ID in .env.local or pass userId in metadata');
-      return NextResponse.json(
-        { 
-          error: 'Missing user_id. Please set CAL_AI_USER_ID environment variable or include userId in Cal.com metadata',
-          received: true 
-        },
-        { status: 400 }
-      );
-    }
-
-    console.log('👤 Using User ID:', userId);
-
     // Validate startTime exists
     if (!startTime) {
       console.error('❌ No startTime found in payload!');
@@ -101,6 +85,84 @@ export async function POST(request: Request) {
 
     const supabase = createServiceRoleClient();
 
+    // ========================================================================
+    // FIND USER BY MATCHING LEAD PHONE NUMBER (works for ALL users!)
+    // ========================================================================
+    let userId: string | null = null;
+    let leadId: string | null = null;
+    
+    if (attendeePhone) {
+      // Normalize phone number for matching (remove all non-digits)
+      const normalizedPhone = attendeePhone.replace(/\D/g, '');
+      const last10Digits = normalizedPhone.slice(-10);
+      
+      console.log('🔍 Looking for matching lead with phone:', attendeePhone);
+      console.log('🔍 Normalized (last 10 digits):', last10Digits);
+      
+      // Search for lead across ALL users by phone number
+      const { data: matchingLead, error: leadError } = await supabase
+        .from('leads')
+        .select('id, user_id, name, phone, status')
+        .or(`phone.ilike.%${last10Digits}%,phone.ilike.%${normalizedPhone}%`)
+        .order('created_at', { ascending: false }) // Get most recent lead first
+        .limit(1)
+        .maybeSingle();
+      
+      if (leadError) {
+        console.error('❌ Error searching for lead:', leadError);
+      }
+      
+      if (matchingLead) {
+        leadId = matchingLead.id;
+        userId = matchingLead.user_id;
+        console.log(`✅ Found matching lead!`);
+        console.log(`   - Lead: ${matchingLead.name} (ID: ${leadId})`);
+        console.log(`   - User ID: ${userId}`);
+        console.log(`   - Current status: ${matchingLead.status}`);
+        
+        // Update lead status to appointment_booked
+        const { error: updateError } = await supabase
+          .from('leads')
+          .update({ 
+            status: 'appointment_booked',
+            last_call_outcome: 'appointment_booked'
+          })
+          .eq('id', leadId);
+        
+        if (updateError) {
+          console.error('❌ Failed to update lead status:', updateError);
+        } else {
+          console.log('✅ Lead status updated to appointment_booked');
+        }
+      } else {
+        console.log('⚠️ No matching lead found for phone:', attendeePhone);
+      }
+    }
+    
+    // Fallback to metadata or env var if no lead found
+    if (!userId) {
+      userId = metadata?.userId || process.env.CAL_AI_USER_ID || null;
+      console.log('⚠️ Using fallback user_id:', userId);
+    }
+    
+    // If still no user_id, we can't create the appointment
+    if (!userId) {
+      console.error('❌ Could not determine user_id!');
+      console.error('   - No matching lead found by phone number');
+      console.error('   - No userId in metadata');
+      console.error('   - No CAL_AI_USER_ID in environment');
+      return NextResponse.json(
+        { 
+          error: 'Could not determine user. No matching lead found for this phone number.',
+          phone: attendeePhone,
+          received: true 
+        },
+        { status: 400 }
+      );
+    }
+    
+    console.log('👤 Final User ID:', userId);
+
     // Create appointment in database
     console.log('💾 Creating appointment in database...');
     
@@ -111,6 +173,7 @@ export async function POST(request: Request) {
     
     const appointmentData = {
       user_id: userId,
+      lead_id: leadId, // Link to lead if found
       prospect_name: attendeeName,
       prospect_phone: attendeePhone,
       prospect_age: attendeeAge,

@@ -12,25 +12,30 @@ export function PublicNav() {
   const [user, setUser] = useState<any>(null);
   const supabase = createClient();
 
-  // Check auth state - only show dashboard if they have active subscription
+  // Check auth state - only show dashboard if they have completed payment
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
       
       if (user) {
-        // Check if they have a subscription or profile
+        // Check if they have completed payment and have stripe customer ID
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_tier, has_active_subscription')
+          .select('subscription_tier, has_active_subscription, stripe_customer_id, onboarding_all_complete')
           .eq('user_id', user.id)
           .single();
         
-        // Only show dashboard if they have completed onboarding
-        if (profile && (profile.subscription_tier !== 'none' || profile.has_active_subscription)) {
-          console.log('🔍 Auth check in PublicNav: HAS SUBSCRIPTION');
+        // Only show dashboard if they have:
+        // 1. Completed onboarding AND have stripe customer (payment method added)
+        // 2. OR have an active subscription (already paying customers)
+        const hasCompletedPayment = profile?.stripe_customer_id && profile?.onboarding_all_complete;
+        const hasActiveSubscription = profile?.has_active_subscription === true;
+        
+        if (profile && (hasCompletedPayment || hasActiveSubscription)) {
+          console.log('🔍 Auth check in PublicNav: FULLY SIGNED UP (payment complete)');
           setUser(user);
         } else {
-          console.log('🔍 Auth check in PublicNav: NO SUBSCRIPTION');
+          console.log('🔍 Auth check in PublicNav: NOT FULLY SIGNED UP (no payment)');
           setUser(null);
         }
       } else {
@@ -45,15 +50,21 @@ export function PublicNav() {
       if (session?.user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_tier, has_active_subscription')
+          .select('subscription_tier, has_active_subscription, stripe_customer_id, onboarding_all_complete')
           .eq('user_id', session.user.id)
           .single();
         
-        if (profile && (profile.subscription_tier !== 'none' || profile.has_active_subscription)) {
-          console.log('🔄 Auth state changed: HAS SUBSCRIPTION');
+        // Only show dashboard if they have:
+        // 1. Completed onboarding AND have stripe customer (payment method added)
+        // 2. OR have an active subscription (already paying customers)
+        const hasCompletedPayment = profile?.stripe_customer_id && profile?.onboarding_all_complete;
+        const hasActiveSubscription = profile?.has_active_subscription === true;
+        
+        if (profile && (hasCompletedPayment || hasActiveSubscription)) {
+          console.log('🔄 Auth state changed: FULLY SIGNED UP (payment complete)');
           setUser(session.user);
         } else {
-          console.log('🔄 Auth state changed: NO SUBSCRIPTION');
+          console.log('🔄 Auth state changed: NOT FULLY SIGNED UP (no payment)');
           setUser(null);
         }
       } else {

@@ -20,9 +20,10 @@ export async function POST(request: Request) {
     const { 
       userId, 
       dailyCallLimit,
-      executionMode,      // 'leads' or 'time'
+      executionMode,      // 'leads' or 'budget'
       targetLeadCount,    // For leads mode
-      targetTime          // For time mode
+      targetTime,         // For time mode (legacy)
+      budget              // For budget mode (in dollars)
     } = await request.json();
 
     // Live transfer is always enabled - no longer a user choice
@@ -37,17 +38,20 @@ export async function POST(request: Request) {
       dailyCallLimit,
       executionMode,
       targetLeadCount,
-      targetTime
+      targetTime,
+      budget
     });
 
     // Prepare update data
+    // NOTE: We store 'leads' in execution_mode to pass DB constraint, 
+    // but use budget_limit_cents > 0 to detect actual budget mode
     const updateData: any = {
       status: 'running',
       queue_length: 0,
       calls_made_today: 0,
-      daily_call_limit: dailyCallLimit,
+      daily_call_limit: dailyCallLimit || 999, // High limit for budget mode
       auto_transfer_calls: true,
-      execution_mode: executionMode || 'leads',
+      execution_mode: 'leads', // Always 'leads' to pass DB constraint
       last_call_status: 'starting',
     };
 
@@ -55,16 +59,29 @@ export async function POST(request: Request) {
     if (executionMode === 'leads') {
       updateData.target_lead_count = targetLeadCount || dailyCallLimit;
       updateData.target_time_military = null;
+      updateData.budget_limit_cents = null; // NULL = lead count mode
+    } else if (executionMode === 'budget') {
+      // Budget mode: keep dialing until actual spend hits the budget
+      // We detect budget mode by checking if budget_limit_cents > 0
+      updateData.target_lead_count = 9999; // Very high so it doesn't stop by lead count
+      updateData.target_time_military = null;
+      updateData.budget_limit_cents = Math.round((budget || 1) * 100); // Convert dollars to cents
+      console.log(`💰 Budget mode: Will dial until $${budget} spent (${updateData.budget_limit_cents} cents)`);
     } else if (executionMode === 'time') {
       updateData.target_time_military = targetTime;
       updateData.target_lead_count = null;
+      updateData.budget_limit_cents = null;
     }
 
-    // Update AI status to running
+    // Update or create AI status to running (upsert ensures row exists)
     const { error } = await supabase
       .from('ai_control_settings')
-      .update(updateData)
-      .eq('user_id', user.id);
+      .upsert({
+        ...updateData,
+        user_id: user.id, // Include user_id for upsert
+      }, {
+        onConflict: 'user_id' // Upsert based on user_id
+      });
 
     if (error) throw error;
 
@@ -73,7 +90,9 @@ export async function POST(request: Request) {
     // ========================================================================
     // TRIGGER THE FIRST CALL
     // ========================================================================
-    const baseUrl = 'http://localhost:3000';
+    // Get the proper base URL (works in both local and production)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
     
     console.log('');
     console.log('🚀 ========== INITIATING FIRST CALL ==========');

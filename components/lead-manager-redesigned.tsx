@@ -1,8 +1,47 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+
+// Custom hook for smooth counting animation with dramatic slowdown at the end
+function useCountAnimation(targetValue: number, duration: number = 2000) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const previousValue = useRef(0);
+  const animationRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const startValue = previousValue.current;
+    const startTime = performance.now();
+    
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Easing function with strong deceleration at the end (easeOutExpo)
+      const easeOutExpo = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      
+      const currentValue = startValue + (targetValue - startValue) * easeOutExpo;
+      setDisplayValue(currentValue);
+      
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        previousValue.current = targetValue;
+      }
+    };
+    
+    animationRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [targetValue, duration]);
+
+  return displayValue;
+}
 import { 
   Plus, FileSpreadsheet, Upload, UserPlus, Search, Settings, 
   ExternalLink, Trash2, X, Check, AlertCircle,
@@ -64,8 +103,8 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   const router = useRouter();
   const supabase = createClient();
   
-  // Tab state
-  const [activeTab, setActiveTab] = useState<'google_sheets' | 'all_leads'>('google_sheets');
+  // Tab state - Default to 'all_leads' so users see their leads first
+  const [activeTab, setActiveTab] = useState<'google_sheets' | 'all_leads'>('all_leads');
   
   // Google Sheets state
   const [sheets, setSheets] = useState<GoogleSheet[]>([]);
@@ -110,6 +149,12 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
     pickupRate: 0
   });
   
+  // Animated counter values
+  const animatedTotal = useCountAnimation(leadStats.total);
+  const animatedPotential = useCountAnimation(leadStats.potential);
+  const animatedDead = useCountAnimation(leadStats.dead);
+  const animatedPickupRate = useCountAnimation(leadStats.pickupRate);
+  
   // UI state
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -120,43 +165,51 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
-    const initializeAndSync = async () => {
-      await fetchSheets();
-      await fetchLeadStats();
-      
-      // Auto-sync all Google Sheets on page load
-      const { data: sheetsToSync } = await supabase
+    const initializeAndLoadLeads = async () => {
+      // STEP 1: Load leads IMMEDIATELY so they appear right away
+      setLoading(true);
+      try {
+        const { data: activeSheets } = await supabase
         .from('user_google_sheets')
         .select('id')
         .eq('user_id', userId)
         .eq('is_active', true);
       
-      if (sheetsToSync && sheetsToSync.length > 0) {
-        console.log(`🔄 Auto-syncing ${sheetsToSync.length} Google Sheet(s)...`);
+        const activeSheetIds = activeSheets?.map(s => s.id) || [];
         
-        // Sync all sheets in parallel
-        await Promise.all(
-          sheetsToSync.map(async (sheet) => {
-            try {
-              await fetch('/api/google-sheets/sync', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sheetId: sheet.id }),
-              });
+        if (activeSheetIds.length > 0) {
+          const { data } = await supabase
+            .from('leads')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('is_qualified', true)
+            .in('google_sheet_id', activeSheetIds)
+            .order('sheet_row_number', { ascending: true, nullsFirst: false })
+            .order('created_at', { ascending: true })
+            .limit(10000);
+
+          setAllLeads(data || []);
+        } else {
+          setAllLeads([]);
+        }
             } catch (error) {
-              console.error(`Error syncing sheet ${sheet.id}:`, error);
+        console.error('Error loading leads:', error);
+        setAllLeads([]);
+      } finally {
+        setLoading(false);
             }
-          })
-        );
         
-        console.log('✅ Auto-sync complete');
-        // Refresh data after sync
+      // STEP 2: Load sheets and stats
         await fetchSheets();
         await fetchLeadStats();
-      }
+      
+      // NOTE: Auto-sync DISABLED to prevent duplicate leads
+      // Users can manually sync by reconnecting their sheet if needed
+      // The sync was causing duplicate leads due to phone formatting mismatches
     };
     
-    initializeAndSync();
+    initializeAndLoadLeads();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchSheets = async () => {
@@ -205,17 +258,40 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   };
 
   const fetchLeadStats = async () => {
+    // First, get only ACTIVE Google Sheets
+    const { data: activeSheets } = await supabase
+      .from('user_google_sheets')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('is_active', true);
+
+    const activeSheetIds = activeSheets?.map(s => s.id) || [];
+    
+    // If no active sheets, show 0 for everything
+    if (activeSheetIds.length === 0) {
+      setLeadStats({
+        total: 0,
+        potential: 0,
+        dead: 0,
+        pickupRate: 0
+      });
+      return;
+    }
+
+    // Only count leads from ACTIVE Google Sheets
     const { count: totalCount } = await supabase
       .from('leads')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .eq('is_qualified', true);
+      .eq('is_qualified', true)
+      .in('google_sheet_id', activeSheetIds);
 
     const { count: potentialCount } = await supabase
       .from('leads')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('is_qualified', true)
+      .in('google_sheet_id', activeSheetIds)
       .in('status', ['no_answer', 'callback_later', 'new', 'unclassified']);
 
     const { count: deadCount } = await supabase
@@ -223,21 +299,21 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('is_qualified', true)
+      .in('google_sheet_id', activeSheetIds)
       .in('status', ['not_interested', 'dead_lead']);
 
-    // Calculate pickup rate
-    const { data: pickupData } = await supabase
-      .from('leads')
-      .select('total_calls_made, total_pickups')
-      .eq('user_id', userId)
-      .eq('is_qualified', true)
-      .gt('total_calls_made', 0);
+    // Calculate pickup rate FROM CALLS TABLE (same as dashboard!)
+    // This ensures Lead Manager and Dashboard show the same Connected Rate
+    const { data: allCalls } = await supabase
+      .from('calls')
+      .select('disposition, connected')
+      .eq('user_id', userId);
 
     let pickupRate = 0;
-    if (pickupData && pickupData.length > 0) {
-      const totalCalls = pickupData.reduce((sum, lead) => sum + (lead.total_calls_made || 0), 0);
-      const totalPickups = pickupData.reduce((sum, lead) => sum + (lead.total_pickups || 0), 0);
-      pickupRate = totalCalls > 0 ? (totalPickups / totalCalls) * 100 : 0;
+    if (allCalls && allCalls.length > 0) {
+      const totalCalls = allCalls.length;
+      const connectedCalls = allCalls.filter(c => c.disposition === 'answered' || c.connected === true).length;
+      pickupRate = totalCalls > 0 ? (connectedCalls / totalCalls) * 100 : 0;
     }
 
     setLeadStats({
@@ -429,14 +505,34 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
     setMessage(null);
 
     try {
-      await supabase.from('leads').delete().eq('google_sheet_id', sheetToDelete.id).eq('user_id', userId);
-      await supabase.from('user_google_sheets').update({ is_active: false }).eq('id', sheetToDelete.id).eq('user_id', userId);
+      console.log(`🗑️ Deleting sheet ${sheetToDelete.id} and ${sheetToDelete.leadCount || 0} leads...`);
+      
+      // 1. Delete ALL leads from this sheet
+      const { error: leadsError } = await supabase
+        .from('leads')
+        .delete()
+        .eq('google_sheet_id', sheetToDelete.id)
+        .eq('user_id', userId);
+      
+      if (leadsError) throw leadsError;
+      console.log(`✅ Deleted ${sheetToDelete.leadCount || 0} leads`);
+      
+      // 2. Actually DELETE the Google Sheet record (not just mark inactive)
+      const { error: sheetError } = await supabase
+        .from('user_google_sheets')
+        .delete()
+        .eq('id', sheetToDelete.id)
+        .eq('user_id', userId);
+      
+      if (sheetError) throw sheetError;
+      console.log(`✅ Deleted Google Sheet record`);
 
       setMessage({ type: 'success', text: `Sheet and ${sheetToDelete.leadCount || 0} lead${sheetToDelete.leadCount !== 1 ? 's' : ''} deleted successfully!` });
       await fetchSheets();
       await fetchLeadStats();
       router.refresh();
     } catch (error: any) {
+      console.error('❌ Error deleting sheet:', error);
       setMessage({ type: 'error', text: 'Error deleting sheet: ' + error.message });
     } finally {
       setLoading(false);
@@ -521,12 +617,33 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   const fetchAllLeads = async () => {
     setLoading(true);
     try {
+      // First, get only ACTIVE Google Sheets
+      const { data: activeSheets } = await supabase
+        .from('user_google_sheets')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('is_active', true);
+
+      const activeSheetIds = activeSheets?.map(s => s.id) || [];
+      
+      // If no active sheets, show empty list
+      if (activeSheetIds.length === 0) {
+        setAllLeads([]);
+        setLoading(false);
+        return;
+      }
+
+      // Only fetch leads from ACTIVE Google Sheets
+      // Order by sheet_row_number ascending so leads appear in the same order as the Google Sheet
+      // This ensures page 1 shows the first leads from the sheet (top of the spreadsheet)
       const { data } = await supabase
         .from('leads')
         .select('*')
         .eq('user_id', userId)
         .eq('is_qualified', true)
-        .order('created_at', { ascending: false })
+        .in('google_sheet_id', activeSheetIds)
+        .order('sheet_row_number', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: true })
         .limit(10000);
 
       setAllLeads(data || []);
@@ -605,6 +722,23 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
     setCurrentPage(1);
   }, [activeTab]);
 
+  // Auto-scroll to top when error message appears
+  useEffect(() => {
+    if (message?.type === 'error') {
+      // Small delay to ensure DOM has updated
+      setTimeout(() => {
+        // Try multiple scroll methods for maximum compatibility
+        const messageBanner = document.getElementById('message-banner-area');
+        if (messageBanner) {
+          messageBanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }, 150);
+    }
+  }, [message]);
+
   return (
     <div className="min-h-screen bg-[#0B1437] relative overflow-hidden">
       {/* Animated Background */}
@@ -644,7 +778,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
               <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse" />
             </div>
             <p className="text-blue-300/70 text-sm font-semibold mb-1">TOTAL LEADS</p>
-            <p className="text-5xl font-bold text-white mb-1">{leadStats.total}</p>
+            <p className="text-5xl font-bold text-white mb-1">{Math.round(animatedTotal).toLocaleString()}</p>
             <p className="text-xs text-blue-400/60">All leads in system</p>
           </div>
 
@@ -655,7 +789,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
               <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
             </div>
             <p className="text-green-300/70 text-sm font-semibold mb-1">STILL POTENTIAL</p>
-            <p className="text-5xl font-bold text-white mb-1">{leadStats.potential}</p>
+            <p className="text-5xl font-bold text-white mb-1">{Math.round(animatedPotential).toLocaleString()}</p>
             <p className="text-xs text-green-400/60">Worth pursuing</p>
           </div>
 
@@ -666,7 +800,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
               <div className="w-3 h-3 bg-red-400 rounded-full animate-pulse" />
             </div>
             <p className="text-red-300/70 text-sm font-semibold mb-1">DEAD LEADS</p>
-            <p className="text-5xl font-bold text-white mb-1">{leadStats.dead}</p>
+            <p className="text-5xl font-bold text-white mb-1">{Math.round(animatedDead).toLocaleString()}</p>
             <p className="text-xs text-red-400/60">Unqualified</p>
           </div>
 
@@ -677,12 +811,13 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
               <div className="w-3 h-3 bg-purple-400 rounded-full animate-pulse" />
             </div>
             <p className="text-purple-300/70 text-sm font-semibold mb-1">PICKUP RATE</p>
-            <p className="text-5xl font-bold text-white mb-1">{leadStats.pickupRate.toFixed(0)}%</p>
+            <p className="text-5xl font-bold text-white mb-1">{animatedPickupRate.toFixed(0)}%</p>
             <p className="text-xs text-purple-400/60">Answer rate</p>
           </div>
         </div>
 
         {/* Message Banner */}
+        <div id="message-banner-area" />
         {message && (
           <div className={`mb-6 p-4 rounded-xl border-2 backdrop-blur-sm animate-in slide-in-from-top-2 duration-300 ${
             message.type === 'success' 
@@ -706,28 +841,6 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
         {/* Tab Navigation */}
         <div className="flex items-center gap-3 mb-8 overflow-x-auto pb-2 pl-2">
           <button
-            onClick={() => setActiveTab('google_sheets')}
-            className={`flex items-center gap-3 px-6 py-4 rounded-xl font-bold transition-all duration-300 ${
-              activeTab === 'google_sheets'
-                ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white scale-105'
-                : 'bg-[#1A2647]/60 text-gray-400 hover:bg-[#1A2647] hover:text-white border-2 border-gray-700/50 hover:border-blue-500/30'
-            }`}
-          >
-            <FileSpreadsheet className="w-5 h-5 flex-shrink-0" />
-            <div className="flex flex-col items-start">
-              <span className="whitespace-nowrap">Google Sheets</span>
-              <span className={`text-xs font-normal italic ${
-                activeTab === 'google_sheets' ? 'text-blue-100' : 'text-gray-500'
-              }`}>
-                Manage lead sources
-              </span>
-            </div>
-            {sheets.length > 0 && (
-              <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">{sheets.length}</span>
-            )}
-          </button>
-
-          <button
             onClick={() => {
               setActiveTab('all_leads');
               fetchAllLeads();
@@ -749,6 +862,28 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
             </div>
             {leadStats.total > 0 && (
               <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">{leadStats.total}</span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('google_sheets')}
+            className={`flex items-center gap-3 px-6 py-4 rounded-xl font-bold transition-all duration-300 ${
+              activeTab === 'google_sheets'
+                ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white scale-105'
+                : 'bg-[#1A2647]/60 text-gray-400 hover:bg-[#1A2647] hover:text-white border-2 border-gray-700/50 hover:border-blue-500/30'
+            }`}
+          >
+            <FileSpreadsheet className="w-5 h-5 flex-shrink-0" />
+            <div className="flex flex-col items-start">
+              <span className="whitespace-nowrap">Google Sheets</span>
+              <span className={`text-xs font-normal italic ${
+                activeTab === 'google_sheets' ? 'text-blue-100' : 'text-gray-500'
+              }`}>
+                Manage lead sources
+              </span>
+            </div>
+            {sheets.length > 0 && (
+              <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">{sheets.length}</span>
             )}
           </button>
         </div>
@@ -780,7 +915,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
 
               {/* Add Sheet Form */}
               {showAddSheet && (
-                <div className="bg-gradient-to-br from-[#1A2647] to-[#0F172A] rounded-2xl border-2 border-blue-500/40 p-8 shadow-2xl shadow-blue-500/20 animate-in fade-in slide-in-from-top duration-500">
+                <div className="bg-gradient-to-br from-[#1A2647] to-[#0F172A] rounded-2xl border-2 border-blue-500/40 p-8 shadow-2xl shadow-blue-500/20 animate-in fade-in zoom-in-95 duration-300">
                   <div className="flex items-center gap-4 mb-6">
                     <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
                       <Sparkles className="w-7 h-7 text-white" />
@@ -822,7 +957,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                             </p>
                             <div className="p-3 bg-[#0F172A]/80 rounded-lg border border-blue-500/20 backdrop-blur-sm mb-3">
                               <code className="text-blue-300 text-sm break-all">
-                                sterlingdiailer@sterlingdialer.iam.gserviceaccount.com
+                                sterlingdailer@sterlingdialer.iam.gserviceaccount.com
                               </code>
                             </div>
                             <p className="text-gray-300 text-sm mb-2">
@@ -1072,11 +1207,42 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                 {/* Table */}
                 <div className="overflow-x-auto">
                   {loading ? (
+                    sheets.length === 0 ? (
+                      <div className="text-center py-16">
+                        <FileSpreadsheet className="w-20 h-20 text-gray-600 mx-auto mb-4" />
+                        <h3 className="text-2xl font-bold text-white mb-3">No Leads Found</h3>
+                        <p className="text-gray-400 mb-6">Upload a Google Sheet to get started!</p>
+                        <button
+                          onClick={() => setActiveTab('google_sheets')}
+                          className="group relative px-8 py-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 backdrop-blur-sm border-2 border-blue-500/50 hover:border-blue-400/70 text-white rounded-xl font-bold transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105 inline-flex items-center gap-3"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl blur-sm group-hover:blur-md transition-all duration-300"></div>
+                          <Plus className="w-5 h-5 relative z-10" />
+                          <span className="relative z-10">Upload Lead Sheet</span>
+                        </button>
+                      </div>
+                    ) : (
                     <div className="text-center py-12">
                       <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
                       <p className="text-gray-400">Loading all leads...</p>
                     </div>
+                    )
                   ) : filteredLeads.length === 0 ? (
+                    sheets.length === 0 ? (
+                      <div className="text-center py-16">
+                        <FileSpreadsheet className="w-20 h-20 text-gray-600 mx-auto mb-4" />
+                        <h3 className="text-2xl font-bold text-white mb-3">No Leads Found</h3>
+                        <p className="text-gray-400 mb-6">Upload a Google Sheet to get started!</p>
+                        <button
+                          onClick={() => setActiveTab('google_sheets')}
+                          className="group relative px-8 py-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 backdrop-blur-sm border-2 border-blue-500/50 hover:border-blue-400/70 text-white rounded-xl font-bold transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105 inline-flex items-center gap-3"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl blur-sm group-hover:blur-md transition-all duration-300"></div>
+                          <Plus className="w-5 h-5 relative z-10" />
+                          <span className="relative z-10">Upload Lead Sheet</span>
+                        </button>
+                      </div>
+                    ) : (
                     <div className="text-center py-12">
                       <Search className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                       <h3 className="text-xl font-bold text-white mb-2">No Leads Found</h3>
@@ -1084,6 +1250,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                         {searchQuery ? `No leads match "${searchQuery}"` : 'No leads in your system yet'}
                       </p>
                     </div>
+                    )
                   ) : (
                     <>
                       <table className="w-full">
@@ -1222,6 +1389,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       {showTabSelector && availableTabs.length > 0 && (
         <SheetTabSelector
           tabs={availableTabs}
+          existingTabs={sheets.map(s => s.tab_name).filter(Boolean) as string[]}
           onSelect={handleSelectTab}
           onCancel={() => {
             setShowTabSelector(false);
@@ -1229,7 +1397,6 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
             setAvailableTabs([]);
             setSheetUrl('');
           }}
-          usedTabs={sheets.map(s => s.tab_name).filter(Boolean) as string[]}
         />
       )}
 

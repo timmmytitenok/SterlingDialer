@@ -80,21 +80,77 @@ export async function POST(req: Request) {
       updated_at: now.toISOString(),
     };
 
+    // ========================================================================
+    // Check for existing Stripe subscriptions to cancel when changing tiers
+    // ========================================================================
+    console.log('🔍 Checking for existing Stripe subscriptions...');
+    const { data: existingSub } = await supabase
+      .from('subscriptions')
+      .select('stripe_subscription_id, stripe_price_id, subscription_tier as current_tier')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (existingSub) {
+      console.log(`📋 Current subscription: Tier=${existingSub.current_tier}, Stripe ID=${existingSub.stripe_subscription_id}`);
+    } else {
+      console.log('ℹ️ No existing subscription found - this is a new subscription');
+    }
+
     if (tier === 'free_trial') {
       const days = trialDays || 30; // Default to 30 days for admin grants
       const trialEnd = new Date();
       trialEnd.setDate(trialEnd.getDate() + days);
       
+      // Cancel any existing paid Stripe subscriptions when downgrading to FREE
+      if (existingSub?.stripe_subscription_id) {
+        const isRealStripeSubscription = existingSub.stripe_subscription_id && 
+          !existingSub.stripe_subscription_id.startsWith('free_trial_') &&
+          !existingSub.stripe_subscription_id.startsWith('free_access_');
+        
+        if (isRealStripeSubscription) {
+          console.log(`🗑️ Canceling existing Stripe subscription: ${existingSub.stripe_subscription_id}`);
+          try {
+            await stripe.subscriptions.cancel(existingSub.stripe_subscription_id);
+            console.log('✅ Stripe subscription canceled - user moved to FREE tier');
+          } catch (stripeError: any) {
+            console.error('❌ Failed to cancel Stripe subscription:', stripeError.message);
+            console.error('⚠️ Admin must manually cancel in Stripe dashboard!');
+          }
+        }
+      }
+      
       subscriptionData.status = 'trialing';
       subscriptionData.tier = 'trial';
       subscriptionData.trial_end = trialEnd.toISOString();
       subscriptionData.current_period_end = trialEnd.toISOString();
+      subscriptionData.stripe_subscription_id = null; // Clear Stripe ID for free tier
       console.log(`🆓 FREE tier granted with ${days}-day trial ending ${trialEnd.toISOString()}`);
       console.log('⚠️  NO AUTO-CHARGE: FREE tier is manual access only');
     } else if (tier === 'pro') {
       const days = trialDays || 30; // Default to 30 days for admin grants
       const trialEndTimestamp = Math.floor(Date.now() / 1000) + (days * 24 * 60 * 60); // Unix timestamp
       const trialEndDate = new Date(trialEndTimestamp * 1000);
+      
+      // Cancel any existing Stripe subscriptions before creating new PRO subscription
+      if (existingSub?.stripe_subscription_id) {
+        const isRealStripeSubscription = existingSub.stripe_subscription_id && 
+          !existingSub.stripe_subscription_id.startsWith('free_trial_') &&
+          !existingSub.stripe_subscription_id.startsWith('free_access_');
+        
+        if (isRealStripeSubscription) {
+          console.log(`🗑️ Canceling existing Stripe subscription: ${existingSub.stripe_subscription_id}`);
+          try {
+            await stripe.subscriptions.cancel(existingSub.stripe_subscription_id);
+            console.log('✅ Old Stripe subscription canceled - will create new PRO subscription');
+          } catch (stripeError: any) {
+            console.error('❌ Failed to cancel old Stripe subscription:', stripeError.message);
+            console.error('⚠️ Admin must manually cancel in Stripe dashboard before creating new one!');
+            return NextResponse.json({ 
+              error: `Failed to cancel existing subscription: ${stripeError.message}. Please cancel manually in Stripe first.` 
+            }, { status: 500 });
+          }
+        }
+      }
       
       console.log(`⚡ Creating Stripe subscription for PRO tier with ${days}-day trial...`);
       
@@ -142,11 +198,49 @@ export async function POST(req: Request) {
       const periodEnd = new Date();
       periodEnd.setFullYear(periodEnd.getFullYear() + 100); // 100 years = lifetime
       
+      // ========================================================================
+      // CRITICAL: Cancel any existing Stripe subscriptions
+      // ========================================================================
+      // VIP users should NEVER be charged - cancel their Stripe subscription immediately
+      console.log('🚨 VIP GRANTED - Canceling any existing Stripe subscriptions...');
+      
+      if (existingSub?.stripe_subscription_id) {
+        // Check if it's a real Stripe subscription (not a manual free trial)
+        const isRealStripeSubscription = existingSub.stripe_subscription_id && 
+          !existingSub.stripe_subscription_id.startsWith('free_trial_') &&
+          !existingSub.stripe_subscription_id.startsWith('free_access_');
+        
+        if (isRealStripeSubscription) {
+          console.log(`🗑️ Canceling existing Stripe subscription: ${existingSub.stripe_subscription_id}`);
+          console.log(`💳 Price ID: ${existingSub.stripe_price_id}`);
+          
+          try {
+            // Cancel immediately (not at period end) - VIP is immediate lifetime access
+            await stripe.subscriptions.cancel(existingSub.stripe_subscription_id, {
+              prorate: false, // No prorating - they're getting VIP (better than refund!)
+            });
+            console.log('✅ Stripe subscription CANCELED - User will NOT be charged');
+            console.log('👑 User now has VIP access instead (much better than a refund!)');
+          } catch (stripeError: any) {
+            console.error('❌ Failed to cancel Stripe subscription:', stripeError.message);
+            console.error('⚠️ Admin must manually cancel in Stripe dashboard!');
+            // Continue anyway - VIP will be granted in database
+            // Admin can manually cancel in Stripe if needed
+          }
+        } else {
+          console.log(`ℹ️ Subscription is manual/free trial (${existingSub.stripe_subscription_id}) - no Stripe cancellation needed`);
+        }
+      } else {
+        console.log('ℹ️ No existing Stripe subscription found - user may be new or manually added');
+      }
+      
       subscriptionData.status = 'active';
       subscriptionData.tier = 'vip';
       subscriptionData.current_period_end = periodEnd.toISOString();
       subscriptionData.trial_end = null;
+      subscriptionData.stripe_subscription_id = null; // Clear Stripe subscription ID for VIP
       console.log(`👑 VIP tier granted - LIFETIME ACCESS until ${periodEnd.toISOString()}`);
+      console.log(`✅ User will NEVER be charged - VIP is lifetime free access`);
     } else {
       return NextResponse.json({ error: 'Invalid tier' }, { status: 400 });
     }

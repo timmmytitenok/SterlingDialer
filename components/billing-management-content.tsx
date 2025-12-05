@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { StripeBilling } from './stripe-billing';
 import { SubscriptionTierSelector } from './subscription-tier-selector';
 import { CallBalanceCard } from './call-balance-card';
-import { Wallet } from 'lucide-react';
+import { Wallet, CreditCard } from 'lucide-react';
 
 interface BillingManagementContentProps {
   userId: string;
@@ -38,19 +38,28 @@ export function BillingManagementContent({
 
   return (
     <>
-      {/* Page Title */}
-      <div className="pt-6 md:pt-8 pb-6 md:pb-8 px-4 md:px-0">
-        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-          <span className="md:hidden">Billing & Balance</span>
-          <span className="hidden md:inline">Billing</span>
-        </h1>
-        <p className="text-sm md:text-base text-gray-400">
-          <span className="md:hidden">Manage your subscription and call minutes</span>
-          <span className="hidden md:inline">Manage your subscription and payment information</span>
-        </p>
+      {/* Page Title - Mobile: Big with icon, Desktop: Simple */}
+      <div className="pt-4 md:pt-0 pb-6 md:pb-8 px-4 md:px-0">
+        {/* Mobile Header - With Icon */}
+        <div className="md:hidden flex items-center gap-4 mb-2">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 flex items-center justify-center shadow-lg shadow-green-500/30">
+            <CreditCard className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
+              Billing & Balance
+            </h1>
+            <p className="text-sm text-gray-400">Manage subscription & minutes</p>
+          </div>
+        </div>
+        {/* Desktop Header - Simple */}
+        <div className="hidden md:block">
+          <h1 className="text-3xl font-bold text-white mb-2">Billing</h1>
+          <p className="text-base text-gray-400">Manage your subscription and payment information</p>
+        </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 md:px-0 space-y-8">
+      <div className="max-w-4xl mx-auto px-4 md:px-0 space-y-8 pb-12 md:pb-8">
         {/* Call Balance Section - Mobile Only */}
         <div className="md:hidden">
           <div className="mb-4">

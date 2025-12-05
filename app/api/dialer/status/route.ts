@@ -17,13 +17,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get dialer session (runtime state)
-    const { data: session } = await supabase
-      .from('dialer_sessions')
+    // Get AI control settings (runtime state)
+    const { data: aiSettings } = await supabase
+      .from('ai_control_settings')
       .select('*')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
       .single();
 
     // Get dialer settings for budget
@@ -36,39 +34,49 @@ export async function GET() {
     // Show 0 if no settings exist (user hasn't configured yet)
     const dailyBudgetCents = settings?.daily_budget_cents || 0;
 
-    // Get today's metrics
-    const today = new Date().toISOString().split('T')[0];
+    // Get today's metrics - use LOCAL time, not UTC!
+    // This ensures "today" matches what the user sees on their clock
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    const todayStart = startOfToday.toISOString();
+    const todayEnd = endOfToday.toISOString();
     
-    // Get today's calls
+    // Get today's calls using LOCAL day boundaries
     const { data: todaysCalls } = await supabase
       .from('calls')
       .select('*')
       .eq('user_id', user.id)
-      .gte('created_at', `${today}T00:00:00Z`)
-      .lte('created_at', `${today}T23:59:59Z`);
+      .gte('created_at', todayStart)
+      .lte('created_at', todayEnd);
 
     const todayCalls = todaysCalls?.length || 0;
-    const todayMinutes = todaysCalls?.reduce((sum, call) => sum + (call.duration_seconds || 0), 0) / 60 || 0;
-    const todaySpendCents = Math.round(todayMinutes * 30); // $0.30/min
+    // Use the 'duration' field (already in minutes) and 'cost' field from calls table
+    const todayMinutes = todaysCalls?.reduce((sum, call) => sum + (call.duration || 0), 0) || 0;
+    // Use actual cost saved in calls table (more accurate than recalculating)
+    const todaySpendDollars = todaysCalls?.reduce((sum, call) => sum + (call.cost || 0), 0) || 0;
+    const todaySpendCents = Math.round(todaySpendDollars * 100);
 
     // Calculate pickup percentage (calls answered / total calls)
     const answeredCalls = todaysCalls?.filter(call => call.disposition === 'answered').length || 0;
     const pickupPercentage = todayCalls > 0 ? Math.round((answeredCalls / todayCalls) * 100) : 0;
 
-    // Get yesterday's calls for trend comparison
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayDate = yesterday.toISOString().split('T')[0];
+    // Get yesterday's calls for trend comparison - also use LOCAL time
+    const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+    const endOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+    const yesterdayStart = startOfYesterday.toISOString();
+    const yesterdayEnd = endOfYesterday.toISOString();
     
     const { data: yesterdaysCalls } = await supabase
       .from('calls')
       .select('*')
       .eq('user_id', user.id)
-      .gte('created_at', `${yesterdayDate}T00:00:00Z`)
-      .lte('created_at', `${yesterdayDate}T23:59:59Z`);
+      .gte('created_at', yesterdayStart)
+      .lte('created_at', yesterdayEnd);
 
     const yesterdayCalls = yesterdaysCalls?.length || 0;
-    const yesterdayMinutes = yesterdaysCalls?.reduce((sum, call) => sum + (call.duration_seconds || 0), 0) / 60 || 0;
+    // Use 'duration' field (already in minutes)
+    const yesterdayMinutes = yesterdaysCalls?.reduce((sum, call) => sum + (call.duration || 0), 0) || 0;
     const yesterdayAnswered = yesterdaysCalls?.filter(call => call.disposition === 'answered').length || 0;
     const yesterdayPickupPercentage = yesterdayCalls > 0 ? Math.round((yesterdayAnswered / yesterdayCalls) * 100) : 0;
     
@@ -77,23 +85,23 @@ export async function GET() {
     const callsTrend = todayCalls - yesterdayCalls;
     const minutesTrend = Math.round((todayMinutes - yesterdayMinutes) * 10) / 10;
 
-    // Get today's appointments
+    // Get today's appointments - using LOCAL time boundaries
     const { data: todaysAppointments } = await supabase
       .from('appointments')
       .select('*')
       .eq('user_id', user.id)
-      .gte('created_at', `${today}T00:00:00Z`)
-      .lte('created_at', `${today}T23:59:59Z`);
+      .gte('created_at', todayStart)
+      .lte('created_at', todayEnd);
 
     const todayAppointments = todaysAppointments?.length || 0;
 
-    // Get yesterday's appointments for trend
+    // Get yesterday's appointments for trend - using LOCAL time boundaries
     const { data: yesterdaysAppointments } = await supabase
       .from('appointments')
       .select('*')
       .eq('user_id', user.id)
-      .gte('created_at', `${yesterdayDate}T00:00:00Z`)
-      .lte('created_at', `${yesterdayDate}T23:59:59Z`);
+      .gte('created_at', yesterdayStart)
+      .lte('created_at', yesterdayEnd);
 
     const yesterdayAppointments = yesterdaysAppointments?.length || 0;
     const appointmentsTrend = todayAppointments - yesterdayAppointments;
@@ -135,9 +143,36 @@ export async function GET() {
     const callBalanceCents = Math.round((callBalance?.balance || 0) * 100);
     const lowBalance = callBalanceCents < 500; // < $5
 
-    // Determine status
-    let status = session?.status || 'idle';
+    // Determine status from ai_control_settings
+    let status = aiSettings?.status || 'stopped';
     let reason = null;
+    
+    // Map 'stopped' to 'idle' for UI consistency
+    if (status === 'stopped') {
+      status = 'idle';
+    }
+
+    // Check calling hours (8am - 9pm in user's timezone)
+    const userTimezone = aiSettings?.user_timezone || 'America/New_York';
+    const nowInUserTZ = new Date(new Date().toLocaleString('en-US', { timeZone: userTimezone }));
+    const currentHour = nowInUserTZ.getHours();
+    const withinCallingHours = currentHour >= 8 && currentHour < 21;
+    const callingHoursDisabled = aiSettings?.disable_calling_hours === true;
+    
+    // Format current time for display
+    const currentTimeStr = nowInUserTZ.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true 
+    });
+
+    // If outside calling hours and not disabled, show that status
+    const outsideCallingHours = !withinCallingHours && !callingHoursDisabled;
+    
+    if (outsideCallingHours && status === 'idle') {
+      status = 'outside-hours';
+      reason = `Calling hours: 8:00 AM - 9:00 PM ${userTimezone.replace('America/', '').replace('_', ' ')}`;
+    }
 
     // Check if budget reached
     if (status === 'running' && todaySpendCents >= dailyBudgetCents) {
@@ -157,6 +192,10 @@ export async function GET() {
       reason = 'No pending leads to call';
     }
 
+    // Detect budget mode by budget_limit_cents > 0
+    const isBudgetMode = aiSettings?.budget_limit_cents && aiSettings.budget_limit_cents > 0;
+    const budgetLimitCents = aiSettings?.budget_limit_cents || 0;
+    
     return NextResponse.json({
       success: true,
       status,
@@ -177,6 +216,21 @@ export async function GET() {
       reason,
       lowBalance,
       callBalanceCents,
+      // Execution mode data from ai_control_settings
+      // isBudgetMode takes priority - if budget_limit_cents > 0, it's budget mode
+      executionMode: isBudgetMode ? 'budget' : (aiSettings?.execution_mode || 'leads'),
+      targetLeadCount: aiSettings?.target_lead_count || 0,
+      callsMadeToday: aiSettings?.calls_made_today || 0,
+      dailySpendLimit: aiSettings?.daily_spend_limit || 0,
+      todaySpend: aiSettings?.today_spend || 0,
+      // Budget mode specific
+      budgetLimitCents: budgetLimitCents,
+      isBudgetMode: isBudgetMode,
+      // Calling hours info
+      outsideCallingHours,
+      currentTime: currentTimeStr,
+      userTimezone,
+      callingHoursDisabled,
     });
   } catch (error: any) {
     console.error('Error fetching dialer status:', error);

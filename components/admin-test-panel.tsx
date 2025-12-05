@@ -39,6 +39,7 @@ export function AdminTestPanel({
         body: JSON.stringify({
           userId: userId,
           testPhoneNumber: '+16149403824', // Your test number
+          testName: 'Timmy', // Name for the AI to use
         }),
       });
 
@@ -50,7 +51,7 @@ export function AdminTestPanel({
 
       setResult({
         success: true,
-        message: '🎯 Test call launched to +1 (614) 940-3824!',
+        message: '🎯 Test call launched!',
         details: data,
       });
     } catch (error: any) {

@@ -62,7 +62,8 @@ export async function GET(
       appointmentsTotal,
       appointmentsLast30Days,
       lastDialerSession,
-      adminStats
+      adminStats,
+      lastCall
     ] = await Promise.all([
       supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
       supabase.from('subscriptions').select('*').eq('user_id', userId).maybeSingle(),
@@ -77,7 +78,8 @@ export async function GET(
       supabase.from('appointments').select('id', { count: 'exact' }).eq('user_id', userId),
       supabase.from('appointments').select('id', { count: 'exact' }).eq('user_id', userId).gte('created_at', thirtyDaysAgoISO),
       supabase.from('dialer_sessions').select('started_at').eq('user_id', userId).not('started_at', 'is', null).order('started_at', { ascending: false }).limit(1).maybeSingle(),
-      supabase.from('revenue_tracking').select('*').eq('user_id', userId)
+      supabase.from('revenue_tracking').select('*').eq('user_id', userId),
+      supabase.from('calls').select('created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle()
     ]);
 
     // Calculate revenue - safely handle missing data
@@ -167,8 +169,16 @@ export async function GET(
     const totalLeadsCount = leadsCount.count || 0;
     const totalAppointmentsCount = (appointmentsTotal.count || 0) + totalAdminAppointments;
     
-    // Get last AI activity
-    const lastAIActivity = lastDialerSession.data?.started_at || null;
+    // Get last AI activity - use the most recent of dialer session OR last call
+    const dialerSessionTime = lastDialerSession.data?.started_at ? new Date(lastDialerSession.data.started_at).getTime() : 0;
+    const lastCallTime = lastCall.data?.created_at ? new Date(lastCall.data.created_at).getTime() : 0;
+    
+    let lastAIActivity = null;
+    if (dialerSessionTime > lastCallTime && lastDialerSession.data?.started_at) {
+      lastAIActivity = lastDialerSession.data.started_at;
+    } else if (lastCall.data?.created_at) {
+      lastAIActivity = lastCall.data.created_at;
+    }
 
     // Setup status - safely handle missing profile
     let setupStatus = 'account_created';
@@ -242,7 +252,7 @@ export async function GET(
       id: authUser.user.id,
       full_name: profile.data?.full_name || 'Unnamed User',
       email: authUser.user.email || 'No email',
-      phone: authUser.user.phone || profile.data?.phone || null,
+      phone: profile.data?.phone_number || authUser.user.phone || null,
       created_at: authUser.user.created_at,
       last_sign_in_at: authUser.user.last_sign_in_at,
       
@@ -277,6 +287,13 @@ export async function GET(
       retell_agent_name: retellConfig.data?.agent_name ?? null,
       ai_is_active: retellConfig.data?.is_active ?? false,
       ai_maintenance_mode: profile.data?.ai_maintenance_mode ?? false,
+      
+      // Subscription Status - safely handle missing data
+      // Default to true if user has active trial/subscription status, false otherwise
+      has_active_subscription: profile.data?.has_active_subscription ?? 
+        (profile.data?.subscription_status === 'trialing' || profile.data?.subscription_status === 'active' ? true : false),
+      subscription_tier: profile.data?.subscription_tier ?? 'none',
+      subscription_status: profile.data?.subscription_status ?? null,
       
       // Dialer Settings - safely handle missing data
       dialer_automation_enabled: dialerSettings.data?.auto_start_enabled ?? false,

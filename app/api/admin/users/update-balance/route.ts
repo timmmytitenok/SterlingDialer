@@ -19,32 +19,35 @@ export async function POST(req: Request) {
 
     const supabase = createServiceRoleClient();
 
-    // Get current balance
+    // Get current balance (use maybeSingle to handle users without existing balance)
     const { data: currentBalance, error: fetchError } = await supabase
       .from('call_balance')
       .select('balance')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (fetchError) {
       console.error('❌ Error fetching current balance:', fetchError);
       return NextResponse.json({ error: 'Failed to fetch current balance' }, { status: 500 });
     }
 
-    const newBalance = (currentBalance?.balance || 0) + amount;
+    const oldBalance = currentBalance?.balance || 0;
+    const newBalance = oldBalance + amount;
 
     if (newBalance < 0) {
       return NextResponse.json({ error: 'Balance cannot be negative' }, { status: 400 });
     }
 
-    // Update balance
+    // Update or create balance using upsert
     const { error: updateError } = await supabase
       .from('call_balance')
-      .update({ 
+      .upsert({ 
+        user_id: userId,
         balance: newBalance,
         updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', userId);
+      }, {
+        onConflict: 'user_id'
+      });
 
     if (updateError) {
       console.error('❌ Error updating balance:', updateError);
@@ -66,11 +69,11 @@ export async function POST(req: Request) {
       console.error('⚠️ Failed to log transaction (balance still updated):', transactionError);
     }
 
-    console.log(`✅ Balance updated successfully. New balance: $${newBalance.toFixed(2)}`);
+    console.log(`✅ Balance updated successfully. Old: $${oldBalance.toFixed(2)} → New: $${newBalance.toFixed(2)}`);
 
     return NextResponse.json({ 
       success: true,
-      oldBalance: currentBalance?.balance || 0,
+      oldBalance: oldBalance,
       newBalance: newBalance,
     });
 

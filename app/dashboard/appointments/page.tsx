@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { AppointmentCalendar } from '@/components/appointment-calendar';
 import { AppointmentStats } from '@/components/appointment-stats';
 import { AddAppointmentButton } from '@/components/add-appointment-button';
+import { Calendar } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,9 +124,16 @@ export default async function AppointmentsPage() {
       <main className="container mx-auto px-4 lg:px-8 py-8 relative z-10">
         {/* Header */}
         <div className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Appointments</h1>
-            <p className="text-gray-400">Manage and view your scheduled appointments</p>
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-600 via-amber-600 to-yellow-600 flex items-center justify-center shadow-2xl shadow-orange-500/30">
+              <Calendar className="w-9 h-9 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-white bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent">
+                Appointments
+              </h1>
+              <p className="text-gray-400 mt-1">Manage and view your scheduled appointments</p>
+            </div>
           </div>
           {/* Hidden for now - can be re-enabled later */}
           <div className="hidden">

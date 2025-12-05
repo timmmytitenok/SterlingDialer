@@ -6,439 +6,401 @@ import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { Upload, Settings, Rocket, Calendar, TrendingUp, Play, Pause, Gift, ArrowRight, Sparkles, Zap, Phone, CheckCircle, BarChart3 } from 'lucide-react';
+import { Upload, Rocket, Calendar, Play, Pause, DollarSign, Phone, CheckCircle, ArrowRight, Headphones, Clock, Target, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
-export default function HowItWorksPage() {
+export default function DemoPage() {
   // Audio player state
-  const [isPlaying1, setIsPlaying1] = useState(false);
-  const [isPlaying2, setIsPlaying2] = useState(false);
-  const [isPlaying3, setIsPlaying3] = useState(false);
-  const [progress1, setProgress1] = useState(0);
-  const [progress2, setProgress2] = useState(0);
-  const [progress3, setProgress3] = useState(0);
-  const audio1Ref = useRef<HTMLAudioElement>(null);
-  const audio2Ref = useRef<HTMLAudioElement>(null);
-  const audio3Ref = useRef<HTMLAudioElement>(null);
+  const [activePlayer, setActivePlayer] = useState<number | null>(null);
+  const [progress, setProgress] = useState<{[key: number]: number}>({1: 0, 2: 0, 3: 0, 4: 0});
+  
+  const audioRefs = {
+    1: useRef<HTMLAudioElement>(null),
+    2: useRef<HTMLAudioElement>(null),
+    3: useRef<HTMLAudioElement>(null),
+    4: useRef<HTMLAudioElement>(null),
+  };
 
-  const togglePlay1 = () => {
-    if (audio1Ref.current) {
-      if (isPlaying1) {
-        audio1Ref.current.pause();
-      } else {
-        audio1Ref.current.play();
+  const togglePlay = (playerNum: number) => {
+    // Stop all other players
+    Object.entries(audioRefs).forEach(([num, ref]) => {
+      if (parseInt(num) !== playerNum && ref.current) {
+        ref.current.pause();
+        ref.current.currentTime = 0;
       }
-      setIsPlaying1(!isPlaying1);
-    }
-  };
-
-  const togglePlay2 = () => {
-    if (audio2Ref.current) {
-      if (isPlaying2) {
-        audio2Ref.current.pause();
+    });
+    
+    const audioRef = audioRefs[playerNum as keyof typeof audioRefs];
+    if (audioRef.current) {
+      if (activePlayer === playerNum) {
+        audioRef.current.pause();
+        setActivePlayer(null);
       } else {
-        audio2Ref.current.play();
+        audioRef.current.volume = 1.0;
+        audioRef.current.play();
+        setActivePlayer(playerNum);
       }
-      setIsPlaying2(!isPlaying2);
     }
   };
 
-  const togglePlay3 = () => {
-    if (audio3Ref.current) {
-      if (isPlaying3) {
-        audio3Ref.current.pause();
-      } else {
-        audio3Ref.current.play();
-      }
-      setIsPlaying3(!isPlaying3);
+  const handleTimeUpdate = (playerNum: number) => {
+    const audioRef = audioRefs[playerNum as keyof typeof audioRefs];
+    if (audioRef.current) {
+      const prog = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+      setProgress(prev => ({...prev, [playerNum]: prog}));
     }
   };
 
-  const handleTimeUpdate1 = () => {
-    if (audio1Ref.current) {
-      const progress = (audio1Ref.current.currentTime / audio1Ref.current.duration) * 100;
-      setProgress1(progress);
-    }
+  const handleEnded = (playerNum: number) => {
+    setActivePlayer(null);
+    setProgress(prev => ({...prev, [playerNum]: 0}));
   };
 
-  const handleTimeUpdate2 = () => {
-    if (audio2Ref.current) {
-      const progress = (audio2Ref.current.currentTime / audio2Ref.current.duration) * 100;
-      setProgress2(progress);
-    }
+  const recordings = [
+    { id: 1, title: 'Busy at Work → Closed', tag: 'Callback', tagColor: 'emerald', desc: 'AI scheduled callback, Agent closed for $112/mo', src: '/recordings/busy-at-work.mp3' },
+    { id: 2, title: '"Not Interested" Handled', tag: 'Objection', tagColor: 'violet', desc: 'AI turns a hard "no" into engagement', src: '/recordings/not-interested-objection.mp3' },
+    { id: 3, title: '"Never Filled Form" → Sold', tag: 'Confused', tagColor: 'cyan', desc: 'Confused lead → Agent sold him a $172/month policy', src: '/recordings/never-filled-form.mp3' },
+    { id: 4, title: 'Appointment Booked Live', tag: 'Booked', tagColor: 'amber', desc: 'AI books appointment straight to your calendar', src: '/recordings/appointment-booked.mp3' },
+  ];
+
+  const tagColors: {[key: string]: string} = {
+    emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    violet: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
+    cyan: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+    amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   };
 
-  const handleTimeUpdate3 = () => {
-    if (audio3Ref.current) {
-      const progress = (audio3Ref.current.currentTime / audio3Ref.current.duration) * 100;
-      setProgress3(progress);
-    }
+  const playerColors: {[key: string]: {bg: string, glow: string, bar: string}} = {
+    emerald: { bg: 'bg-emerald-500', glow: 'shadow-emerald-500/50', bar: 'from-emerald-500 to-emerald-400' },
+    violet: { bg: 'bg-violet-500', glow: 'shadow-violet-500/50', bar: 'from-violet-500 to-violet-400' },
+    cyan: { bg: 'bg-cyan-500', glow: 'shadow-cyan-500/50', bar: 'from-cyan-500 to-cyan-400' },
+    amber: { bg: 'bg-amber-500', glow: 'shadow-amber-500/50', bar: 'from-amber-500 to-amber-400' },
   };
 
   return (
-    <div className="min-h-screen bg-[#0B1437] relative">
+    <div className="min-h-screen bg-[#0B1437] relative overflow-hidden">
       <PublicNav />
       <MobilePublicNav />
       
-      {/* Animated Background - Fixed to cover entire page */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      {/* Animated Background - Same as Landing Page */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute w-[800px] h-[800px] bg-blue-500/10 rounded-full blur-3xl top-0 -left-40 animate-pulse" />
         <div className="absolute w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-3xl top-1/3 -right-40 animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute w-[700px] h-[700px] bg-pink-500/10 rounded-full blur-3xl bottom-0 left-1/4 animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      {/* Grid Pattern - Fixed to cover entire page */}
-      <div className="fixed inset-0 bg-[linear-gradient(rgba(59,130,246,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
+      {/* Grid Pattern - Same as Landing Page */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
 
-      <div className="relative z-10 pt-16">
-        {/* Hero */}
-        {/* Header - Hidden on Mobile */}
-        <div className="hidden lg:block max-w-6xl mx-auto px-4 py-20 text-center animate-in fade-in slide-in-from-bottom duration-700">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-12">
-            <Sparkles className="w-4 h-4 text-blue-400 animate-pulse" />
-            <span className="text-blue-400 font-semibold">Simple & Powerful</span>
-          </div>
-          <h1 className="text-4xl md:text-7xl font-bold mb-8 text-center">
-            <div className="flex justify-center">
-              <BlurText
-                text="Turn Old Leads Into"
-                delay={100}
-                className="text-white"
-                animateBy="words"
-                direction="top"
-              />
+      <div className="relative z-10">
+        {/* HERO SECTION - Mobile Optimized */}
+        <section className="pt-28 pb-6 sm:pt-32 sm:pb-12 px-4 animate-in fade-in slide-in-from-bottom duration-700">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Pill Badge - Smaller on mobile */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-5 sm:mb-8 animate-in fade-in zoom-in duration-500">
+              <Rocket className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
+              <span className="text-xs sm:text-sm text-blue-400 font-semibold">See Sterling AI In Action</span>
             </div>
-            <div className="flex justify-center mt-2">
-              <BlurText
-                text="Booked Appointments"
-                delay={120}
-                className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
-                animateBy="words"
-                direction="top"
-              />
-            </div>
-          </h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-            Have thousands of old life insurance leads collecting dust? Let Sterling AI revive them into booked appointments — automatically.
-          </p>
-          
-        </div>
-
-        {/* Hear It In Action */}
-        <div className="max-w-6xl mx-auto px-4 mb-20 pt-20 lg:pt-0">
-          <div className="text-center mb-12 lg:mb-12">
-            {/* Mobile: Two-row title */}
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 lg:hidden">
-              <div className="flex justify-center mb-2">
-                <BlurText
-                  text="Hear Sterling AI"
-                  delay={100}
-                  className="text-white"
-                  animateBy="words"
-                  direction="top"
-                />
-              </div>
-              <div className="text-6xl flex justify-center">
-                <BlurText
-                  text="In Action"
-                  delay={120}
-                  className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
-                  animateBy="words"
-                  direction="top"
-                />
-              </div>
-            </h2>
             
-            {/* Desktop: Single line, white */}
-            <h2 className="hidden lg:block text-4xl md:text-5xl font-bold mb-4 text-white">
-              Hear Sterling AI In Action
-            </h2>
+            {/* Desktop Title */}
+            <h1 className="hidden lg:block text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+              <div className="flex justify-center">
+                <BlurText text="Turn Old Leads Into" delay={100} className="text-white" animateBy="words" direction="top" />
+              </div>
+              <div className="flex justify-center mt-2">
+                <BlurText text="Booked Appointments" delay={120} className="bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400 bg-clip-text text-transparent" animateBy="words" direction="top" />
+              </div>
+            </h1>
             
-            <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-8 lg:mb-0">
-              Real calls. Real conversations. Real results.
+            {/* Mobile Title - Optimized sizing */}
+            <h1 className="lg:hidden text-[30px] sm:text-4xl font-bold mb-4 sm:mb-6 leading-tight px-2">
+              <BlurText text="Turn Old Leads Into" delay={80} className="text-white block" animateBy="words" direction="top" />
+              <BlurText text="Booked Appointments" delay={100} className="bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400 bg-clip-text text-transparent block mt-1" animateBy="words" direction="top" />
+            </h1>
+            
+            {/* Subtitle - Better mobile sizing */}
+            <p className="text-1sm sm:text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed px-2 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '200ms' }}>
+              Have old life insurance leads collecting dust? Let Sterling AI revive them into booked appointments — automatically.
             </p>
           </div>
+        </section>
 
-          <div className="grid md:grid-cols-3 gap-y-14 md:gap-6 mt-18 md:mt-0">
-            {/* Call Recording 1 - Busy at Work */}
-            <div className="group relative animate-in fade-in slide-in-from-left duration-700 transition-transform hover:scale-105 hover:-translate-y-2" style={{ animationDelay: '0.2s' }}>
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-50 group-hover:opacity-100 transition duration-500 animate-pulse" />
-              <div className="relative bg-[#1A2647] rounded-2xl p-6 border border-gray-800 hover:border-blue-500/50 transition-all hover:shadow-2xl hover:shadow-blue-500/50">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center border-2 border-blue-500/40 group-hover:scale-110 group-hover:rotate-6 transition-all">
-                    <Phone className="w-6 h-6 text-blue-400" />
+        {/* LISTEN TO STERLING AI SECTION - Mobile Optimized */}
+        <section className="py-8 sm:py-20 px-3 sm:px-4">
+          <div className="max-w-3xl mx-auto">
+            {/* Section Header - Compact on mobile */}
+            <div className="text-center mb-6 sm:mb-10 animate-in fade-in slide-in-from-bottom duration-700">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-3 sm:mb-6">
+                <Headphones className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
+                <span className="text-xs sm:text-sm font-medium text-blue-400">Real AI Conversations</span>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Busy → Closed</h3>
-                    <p className="text-gray-400 text-xs">Called back on weekend</p>
-                  </div>
-                </div>
-                
-                {/* Audio Player */}
-                <div className="bg-[#0B1437] rounded-xl p-6 border border-gray-700 hover:border-blue-500/30 transition-colors">
-                  <div className="flex items-center justify-center gap-3 mb-3">
-                    <div 
-                      onClick={togglePlay1}
-                      className="w-14 h-14 rounded-full bg-blue-600/20 hover:bg-blue-600/30 border-2 border-blue-500/50 flex items-center justify-center cursor-pointer transition-all hover:scale-110 hover:shadow-xl hover:shadow-blue-500/50"
-                    >
-                      {isPlaying1 ? (
-                        <Pause className="w-6 h-6 text-blue-400" />
-                      ) : (
-                        <Play className="w-6 h-6 text-blue-400 ml-1" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-200"
-                          style={{ width: `${progress1}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <audio 
-                    ref={audio1Ref}
-                    src="/recordings/busy-at-work.mp3"
-                    onTimeUpdate={handleTimeUpdate1}
-                    onEnded={() => {
-                      setIsPlaying1(false);
-                      setProgress1(0);
-                    }}
-                    className="hidden"
-                  />
-                </div>
-                
-                <div className="mt-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                  <p className="text-blue-300 text-xs leading-relaxed">
-                    💡 Vet was busy at work, AI scheduled callback. Client closed on weekend for $112/month!
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Call Recording 2 - Not Interested */}
-            <div className="group relative animate-in fade-in slide-in-from-bottom duration-700 transition-transform hover:scale-105 hover:-translate-y-2" style={{ animationDelay: '0.3s' }}>
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur opacity-50 group-hover:opacity-100 transition duration-500 animate-pulse" />
-              <div className="relative bg-[#1A2647] rounded-2xl p-6 border border-gray-800 hover:border-purple-500/50 transition-all hover:shadow-2xl hover:shadow-purple-500/50">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center border-2 border-purple-500/40 group-hover:scale-110 group-hover:rotate-6 transition-all">
-                    <Phone className="w-6 h-6 text-purple-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Objection Handled</h3>
-                    <p className="text-gray-400 text-xs">Simply marked "Not interested" in CRM</p>
-                  </div>
-                </div>
-                
-                {/* Audio Player */}
-                <div className="bg-[#0B1437] rounded-xl p-6 border border-gray-700 hover:border-purple-500/30 transition-colors">
-                  <div className="flex items-center justify-center gap-3 mb-3">
-                    <div 
-                      onClick={togglePlay2}
-                      className="w-14 h-14 rounded-full bg-purple-600/20 hover:bg-purple-600/30 border-2 border-purple-500/50 flex items-center justify-center cursor-pointer transition-all hover:scale-110 hover:shadow-xl hover:shadow-purple-500/50"
-                    >
-                      {isPlaying2 ? (
-                        <Pause className="w-6 h-6 text-purple-400" />
-                      ) : (
-                        <Play className="w-6 h-6 text-purple-400 ml-1" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-200"
-                          style={{ width: `${progress2}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <audio 
-                    ref={audio2Ref}
-                    src="/recordings/not-interested-objection.mp3"
-                    onTimeUpdate={handleTimeUpdate2}
-                    onEnded={() => {
-                      setIsPlaying2(false);
-                      setProgress2(0);
-                    }}
-                    className="hidden"
-                  />
-                </div>
-                
-                <div className="mt-4 p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                  <p className="text-purple-300 text-xs leading-relaxed">
-                    💡 Example of Sterling AI handling the "Not Interested" objection smoothly!
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Call Recording 3 - Never Filled Form */}
-            <div className="group relative animate-in fade-in slide-in-from-right duration-700 transition-transform hover:scale-105 hover:-translate-y-2" style={{ animationDelay: '0.4s' }}>
-              <div className="absolute -inset-1 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl blur opacity-50 group-hover:opacity-100 transition duration-500 animate-pulse" />
-              <div className="relative bg-[#1A2647] rounded-2xl p-6 border border-gray-800 hover:border-green-500/50 transition-all hover:shadow-2xl hover:shadow-green-500/50">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center border-2 border-green-500/40 group-hover:scale-110 group-hover:rotate-6 transition-all">
-                    <Phone className="w-6 h-6 text-green-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Confused → Closed</h3>
-                    <p className="text-gray-400 text-xs">Never filled form → Sold</p>
-                  </div>
-                </div>
-                
-                {/* Audio Player */}
-                <div className="bg-[#0B1437] rounded-xl p-6 border border-gray-700 hover:border-green-500/30 transition-colors">
-                  <div className="flex items-center justify-center gap-3 mb-3">
-                    <div 
-                      onClick={togglePlay3}
-                      className="w-14 h-14 rounded-full bg-green-600/20 hover:bg-green-600/30 border-2 border-green-500/50 flex items-center justify-center cursor-pointer transition-all hover:scale-110 hover:shadow-xl hover:shadow-green-500/50"
-                    >
-                      {isPlaying3 ? (
-                        <Pause className="w-6 h-6 text-green-400" />
-                      ) : (
-                        <Play className="w-6 h-6 text-green-400 ml-1" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-200"
-                          style={{ width: `${progress3}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <audio 
-                    ref={audio3Ref}
-                    src="/recordings/never-filled-form.mp3"
-                    onTimeUpdate={handleTimeUpdate3}
-                    onEnded={() => {
-                      setIsPlaying3(false);
-                      setProgress3(0);
-                    }}
-                    className="hidden"
-                  />
-                </div>
-                
-                <div className="mt-4 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-                  <p className="text-green-300 text-xs leading-relaxed">
-                    💡 "I never filled the form" → "I wanna see what I qualify for" → Booked! Client sold $172/month policy!
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* How It Works Steps */}
-        <div className="max-w-6xl mx-auto px-4 py-5 pb-32">
-          <div className="text-center mb-16">
-            <h2 className="text-5xl md:text-5xl font-bold text-white mb-4">
-              3 Simple Steps to Success
-            </h2>
-            <p className="text-1xl md:text-xl text-gray-400">
-              From dusty leads to booked calendar
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Step 1 */}
-            <div className="group relative bg-[#1A2647] rounded-2xl p-8 border border-gray-800 hover:border-blue-500/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/30 animate-in fade-in slide-in-from-bottom duration-700 flex flex-col" style={{ animationDelay: '0.1s' }}>
-              <div className="hidden md:flex absolute -top-4 -left-4 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all">
-                1
-              </div>
-              <div className="flex-1">
-                <div className="w-16 h-16 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all border border-blue-500/30">
-                  <Upload className="w-8 h-8 text-blue-400" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-3">Upload Your Old Leads</h3>
-                <p className="text-gray-400">
-                  Import those leads from 6 months, 1 year, even 2 years ago. The ones collecting dust in your CRM. Sterling AI will call them ALL.
-                </p>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="group relative bg-[#1A2647] rounded-2xl p-8 border border-gray-800 hover:border-purple-500/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30 animate-in fade-in slide-in-from-bottom duration-700 flex flex-col" style={{ animationDelay: '0.2s' }}>
-              <div className="hidden md:flex absolute -top-4 -left-4 w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-purple-500 items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all">
-                2
-              </div>
-              <div className="flex-1">
-                <div className="w-16 h-16 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all border border-purple-500/30">
-                  <Settings className="w-8 h-8 text-purple-400" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-3">Set Budget & Launch</h3>
-                <p className="text-gray-400">
-                  Set your daily call budget or let it run unlimited. Click "Launch AI Agent." That's it.
-                </p>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="group relative bg-[#1A2647] rounded-2xl p-8 border border-gray-800 hover:border-green-500/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/30 animate-in fade-in slide-in-from-bottom duration-700 flex flex-col" style={{ animationDelay: '0.3s' }}>
-              <div className="hidden md:flex absolute -top-4 -left-4 w-12 h-12 rounded-xl bg-gradient-to-br from-green-600 to-green-500 items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all">
-                3
-              </div>
-              <div className="flex-1">
-                <div className="w-16 h-16 rounded-2xl bg-green-500/20 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all border border-green-500/30">
-                  <Calendar className="w-8 h-8 text-green-400" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-3">Watch Calendar Fill Up</h3>
-                <p className="text-gray-400">
-                  AI calls, qualifies, and books appointments automatically. You wake up to a full calendar. No manual dialing. No chasing. Just appointments.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-
-        {/* The Problem/Solution - Hidden on Mobile */}
-        <div className="hidden lg:block max-w-4xl mx-auto px-4 py-12">
-          <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-12 border border-gray-800 text-center animate-in fade-in zoom-in duration-700">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Still chasing new leads when you haven't even worked the old ones?
-            </h2>
-            <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-              Sterling AI does it all — automatically calling, and booking your calendar full. 
-              You already paid for those leads. Let's make sure you get your money's worth.
-            </p>
-            <div className="inline-flex items-center gap-2 px-6 py-3 bg-green-600/20 border border-green-500/40 rounded-xl">
-              <CheckCircle className="w-5 h-5 text-green-400" />
-              <span className="text-green-400 font-bold">$499/month. Unlimited leads. What's one policy worth to you?</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Final CTA */}
-        <div className="max-w-4xl mx-auto px-2 sm:px-4 py-30 text-center">
-          <div className="relative overflow-hidden bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-xl sm:rounded-2xl p-6 sm:p-10 md:p-12 border-2 border-blue-500/30 group hover:border-blue-500/50 transition-all animate-in fade-in zoom-in duration-700">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse" />
-            <div className="relative">
-              <h2 className="text-4xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-4 leading-tight">
-                Ready to Revive Those Old Leads?
+              <h2 className="text-2xl sm:text-4xl font-bold text-white mb-2 sm:mb-3">
+                Hear Sterling AI In Action
               </h2>
-              <p className="text-gray-300 mb-6 sm:mb-8 text-xl sm:text-base md:text-lg leading-relaxed">
-                Sterling AI pays for itself by lunch. What are you waiting for?
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <p className="text-sm sm:text-base text-gray-400">Tap any recording to listen</p>
+                  </div>
+
+            {/* Audio Players - Mobile Optimized */}
+            <div className="space-y-2.5 sm:space-y-3">
+              {recordings.map((rec, index) => {
+                const isPlaying = activePlayer === rec.id;
+                const colors = playerColors[rec.tagColor];
+                
+                return (
+                  <div
+                    key={rec.id}
+                    onClick={() => togglePlay(rec.id)}
+                    className={`group relative rounded-xl sm:rounded-2xl p-3 sm:p-5 cursor-pointer transition-all duration-300 active:scale-[0.98] animate-in fade-in slide-in-from-bottom ${
+                      isPlaying 
+                        ? `bg-[#1A2647] border-2 border-blue-500/50 shadow-xl ${colors.glow}` 
+                        : 'bg-[#1A2647] border border-gray-800 hover:border-blue-500/30'
+                    }`}
+                    style={{ animationDelay: `${index * 100}ms`, animationDuration: '500ms' }}
+                  >
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      {/* Play Button - Smaller on mobile */}
+                      <div className={`w-11 h-11 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl flex items-center justify-center transition-all flex-shrink-0 ${
+                        isPlaying 
+                          ? `${colors.bg} shadow-lg ${colors.glow}` 
+                          : 'bg-blue-500/20 group-hover:bg-blue-500/30'
+                      }`}>
+                        {isPlaying ? (
+                          <Pause className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                        ) : (
+                          <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white ml-0.5" />
+                      )}
+                    </div>
+                      
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
+                          <h3 className="text-sm sm:text-lg font-semibold text-white truncate">{rec.title}</h3>
+                          <span className={`px-1.5 py-0.5 text-[9px] sm:text-xs font-bold rounded-full border ${tagColors[rec.tagColor]} flex-shrink-0`}>
+                            {rec.tag}
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-gray-500 line-clamp-1">{rec.desc}</p>
+                        
+                        {/* Progress Bar */}
+                        <div className="mt-2 sm:mt-3 h-1 bg-gray-800 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full bg-gradient-to-r ${colors.bar} rounded-full transition-all duration-150`}
+                            style={{ width: `${progress[rec.id]}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                  <audio 
+                      ref={audioRefs[rec.id as keyof typeof audioRefs]}
+                      src={rec.src}
+                      onTimeUpdate={() => handleTimeUpdate(rec.id)}
+                      onEnded={() => handleEnded(rec.id)}
+                    className="hidden"
+                  />
+                </div>
+                );
+              })}
+                </div>
+              </div>
+        </section>
+
+        {/* HOW IT WORKS SECTION - Mobile Optimized */}
+        <section className="py-10 sm:py-24 px-3 sm:px-4">
+          <div className="max-w-5xl mx-auto">
+            {/* Section Header */}
+            <div className="text-center mb-8 sm:mb-14 animate-in fade-in slide-in-from-bottom duration-700">
+              <h2 className="text-2xl sm:text-4xl font-bold text-white mb-2 sm:mb-3">
+                How It Works
+              </h2>
+              <p className="text-sm sm:text-base text-gray-400">Three simple steps. That's it.</p>
+            </div>
+
+            {/* Steps - Stack on mobile */}
+            <div className="grid md:grid-cols-3 gap-4 sm:gap-8">
+              {/* Step 1 */}
+              <div className="group relative bg-[#1A2647] rounded-xl sm:rounded-2xl p-5 sm:p-8 border border-gray-800 hover:border-blue-500/50 transition-all duration-300 sm:hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20 animate-in fade-in slide-in-from-bottom" style={{ animationDelay: '100ms', animationDuration: '600ms' }}>
+                <div className="flex items-start gap-4 sm:block">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-blue-500/20 flex items-center justify-center sm:mb-5 group-hover:scale-110 transition-all border border-blue-500/30 flex-shrink-0">
+                    <Upload className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-blue-400 text-xs sm:text-sm font-bold mb-1 sm:mb-2">STEP 1</div>
+                    <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">Upload Your Leads</h3>
+                    <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
+                      Import your old leads — The ones collecting dust. Sterling AI will start calling them all.
+                    </p>
+                  </div>
+                  </div>
+                </div>
+                
+              {/* Step 2 */}
+              <div className="group relative bg-[#1A2647] rounded-xl sm:rounded-2xl p-5 sm:p-8 border border-gray-800 hover:border-purple-500/50 transition-all duration-300 sm:hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 animate-in fade-in slide-in-from-bottom" style={{ animationDelay: '200ms', animationDuration: '600ms' }}>
+                <div className="flex items-start gap-4 sm:block">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-purple-500/20 flex items-center justify-center sm:mb-5 group-hover:scale-110 transition-all border border-purple-500/30 flex-shrink-0">
+                    <Rocket className="w-6 h-6 sm:w-7 sm:h-7 text-purple-400" />
+                    </div>
+                    <div className="flex-1">
+                    <div className="text-purple-400 text-xs sm:text-sm font-bold mb-1 sm:mb-2">STEP 2</div>
+                    <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">Launch AI Agent</h3>
+                    <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
+                      Set your daily budget and Hit "Launch." AI starts calling immediately.
+                    </p>
+                </div>
+              </div>
+            </div>
+
+              {/* Step 3 */}
+              <div className="group relative bg-[#1A2647] rounded-xl sm:rounded-2xl p-5 sm:p-8 border border-gray-800 hover:border-green-500/50 transition-all duration-300 sm:hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20 animate-in fade-in slide-in-from-bottom" style={{ animationDelay: '300ms', animationDuration: '600ms' }}>
+                <div className="flex items-start gap-4 sm:block">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-green-500/20 flex items-center justify-center sm:mb-5 group-hover:scale-110 transition-all border border-green-500/30 flex-shrink-0">
+                    <Calendar className="w-6 h-6 sm:w-7 sm:h-7 text-green-400" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-green-400 text-xs sm:text-sm font-bold mb-1 sm:mb-2">STEP 3</div>
+                    <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">Get Appointments</h3>
+                    <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
+                      AI books appointments directly on your calendar. Wake up to a full schedule.
+                    </p>
+                  </div>
+                </div>
+                      </div>
+                    </div>
+                  </div>
+        </section>
+
+        {/* ROI CALCULATOR SECTION - Mobile Optimized */}
+        <section className="py-10 sm:py-24 px-3 sm:px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl sm:rounded-2xl p-5 sm:p-12 border border-gray-800 animate-in fade-in zoom-in-95 duration-700">
+              {/* Header */}
+              <div className="text-center mb-6 sm:mb-10">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-green-500/10 border border-green-500/20 rounded-full mb-3 sm:mb-4">
+                  <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" />
+                  <span className="text-xs sm:text-sm font-bold text-green-400">ROI CALCULATOR</span>
+                </div>
+                <h2 className="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">
+                  The Math Is Simple
+                </h2>
+                <p className="text-sm sm:text-base text-gray-400">See why Sterling AI pays for itself</p>
+              </div>
+
+              {/* ROI Grid - Stack on mobile */}
+              <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-10">
+                {/* Left: Costs */}
+                <div className="bg-[#0B1437] border border-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                    Your Investment
+                  </h3>
+                  <div className="space-y-2 sm:space-y-3">
+                    <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-800">
+                      <span className="text-xs sm:text-sm text-gray-400">Sterling AI Monthly</span>
+                      <span className="text-sm sm:text-base text-white font-semibold">$499</span>
+                    </div>
+                    <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-800">
+                      <span className="text-xs sm:text-sm text-gray-400">~300 calls per day</span>
+                      <span className="text-sm sm:text-base text-white font-semibold">~$18/day</span>
+            </div>
+                    <div className="flex justify-between items-center py-1.5 sm:py-2">
+                      <span className="text-xs sm:text-sm text-gray-400 font-semibold">Total Monthly</span>
+                      <span className="text-lg sm:text-xl text-white font-bold">~$1040</span>
+                  </div>
+                  </div>
+                </div>
+                
+                {/* Right: Returns */}
+                <div className="bg-green-500/10 border border-green-500/30 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                    <Target className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+                    Your Return
+                  </h3>
+                  <div className="space-y-2 sm:space-y-3">
+                    <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-green-500/20">
+                      <span className="text-xs sm:text-sm text-gray-300">Avg. Policy Value</span>
+                      <span className="text-sm sm:text-base text-white font-semibold">$1,200/yr</span>
+                    </div>
+                    <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-green-500/20">
+                      <span className="text-xs sm:text-sm text-gray-300">Break Even</span>
+                      <span className="text-sm sm:text-base text-green-400 font-bold">Just 1 Policy</span>
+                      </div>
+                    <div className="flex justify-between items-center py-1.5 sm:py-2">
+                      <span className="text-xs sm:text-sm text-green-400 font-semibold">Every Policy After</span>
+                      <span className="text-lg sm:text-xl text-green-400 font-bold">Profit 💰</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+              {/* Bottom Stats - Compact on mobile */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 p-4 sm:p-6 bg-[#0B1437] rounded-xl sm:rounded-2xl border border-gray-800">
+                <div className="text-center">
+                  <div className="text-xl sm:text-3xl font-bold text-white">300+</div>
+                  <div className="text-[10px] sm:text-sm text-gray-400">Calls/Day</div>
+                </div>
+                <div className="text-center border-x border-gray-800">
+                  <div className="text-xl sm:text-3xl font-bold text-white">50+</div>
+                  <div className="text-[10px] sm:text-sm text-gray-400">Appts/Mo</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl sm:text-3xl font-bold text-green-400">10+</div>
+                  <div className="text-[10px] sm:text-sm text-gray-400">Sold/Mo</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FINAL CTA - Mobile Optimized */}
+        <section className="py-10 sm:py-24 px-3 sm:px-4 pb-20 sm:pb-24">
+          <div className="max-w-3xl mx-auto">
+            <div className="relative overflow-hidden bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-xl sm:rounded-2xl p-6 sm:p-12 border-2 border-blue-500/30 text-center animate-in fade-in zoom-in-95 duration-700">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-purple-500/0 animate-pulse" />
+              <div className="relative">
+                <h2 className="text-4xl sm:text-4xl font-bold text-white mb-6 sm:mb-4">
+                  Ready to Revive Your Leads?
+            </h2>
+                <p className="text-1sm sm:text-lg text-gray-300 mb-8 sm:mb-8">
+                  Sterling AI pays for itself with just one policy. Start today.
+                </p>
+                
+                {/* Buttons - Full width on mobile */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 sm:justify-center">
                 <Link
                   href="/signup"
-                  className="group/btn px-6 py-3 sm:px-10 sm:py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-base sm:text-lg rounded-xl transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50 flex items-center justify-center gap-2"
+                    className="group px-6 py-3.5 sm:px-8 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-base sm:text-lg rounded-xl transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50 flex items-center justify-center gap-2"
                 >
-                  <Rocket className="w-5 h-5 sm:w-6 sm:h-6 group-hover/btn:translate-y-[-4px] transition-transform" />
-                  Launch My AI Agent
+                    <Rocket className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
+                    Get Started Now
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
                   href="/pricing"
-                  className="px-6 py-3 sm:px-10 sm:py-5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold text-base sm:text-lg rounded-xl transition-all hover:scale-105"
+                    className="px-6 py-3.5 sm:px-8 sm:py-4 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold text-base sm:text-lg rounded-xl transition-all hover:scale-105"
                 >
                   View Pricing
                 </Link>
+                </div>
+                
+                {/* Trust badges - All in 1 line on mobile */}
+                <div className="mt-8 sm:mt-10 flex items-center justify-center gap-2.5 sm:gap-6 text-[10px] sm:text-sm text-gray-400">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+                    <span className="whitespace-nowrap">No contracts</span>
+                  </div>
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+                    <span className="whitespace-nowrap">Cancel anytime</span>
+                  </div>
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+                    <span className="whitespace-nowrap">15 min setup</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </section>
       </div>
 
       <PublicFooter />
@@ -446,4 +408,3 @@ export default function HowItWorksPage() {
     </div>
   );
 }
-

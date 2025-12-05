@@ -36,14 +36,38 @@ export async function GET() {
       return NextResponse.json({ paymentMethod: null });
     }
 
-    const defaultPaymentMethodId = customer.invoice_settings?.default_payment_method;
+    let paymentMethodId = customer.invoice_settings?.default_payment_method;
 
-    if (!defaultPaymentMethodId || typeof defaultPaymentMethodId !== 'string') {
+    // If no default payment method, try to list attached payment methods
+    if (!paymentMethodId || typeof paymentMethodId !== 'string') {
+      console.log('No default payment method, listing all attached cards...');
+      
+      const paymentMethods = await stripe.paymentMethods.list({
+        customer: profile.stripe_customer_id,
+        type: 'card',
+      });
+
+      if (paymentMethods.data.length > 0) {
+        // Use the first card found
+        const firstCard = paymentMethods.data[0];
+        console.log(`Found ${paymentMethods.data.length} card(s), using: ${firstCard.card?.brand} ending in ${firstCard.card?.last4}`);
+        
+        return NextResponse.json({
+          paymentMethod: {
+            brand: firstCard.card?.brand,
+            last4: firstCard.card?.last4,
+            exp_month: firstCard.card?.exp_month,
+            exp_year: firstCard.card?.exp_year,
+          },
+        });
+      }
+      
+      console.log('No payment methods found for customer');
       return NextResponse.json({ paymentMethod: null });
     }
 
-    // Retrieve payment method details
-    const paymentMethod = await stripe.paymentMethods.retrieve(defaultPaymentMethodId);
+    // Retrieve default payment method details
+    const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId as string);
 
     return NextResponse.json({
       paymentMethod: {

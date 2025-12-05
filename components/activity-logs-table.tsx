@@ -66,8 +66,9 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
 
     const q = searchQuery.toLowerCase();
     return statusFilteredCalls.filter(call => {
-      const name = (call.contact_name || '').toLowerCase();
-      const phone = (call.contact_phone || '').toLowerCase();
+      // Support both old and new field names
+      const name = (call.lead_name || call.contact_name || '').toLowerCase();
+      const phone = (call.phone_number || call.contact_phone || '').toLowerCase();
       const dateStr = formatDateForSearch(call.created_at).toLowerCase();
       
       return name.includes(q) || phone.includes(q) || dateStr.includes(q);
@@ -104,6 +105,13 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
     return 'text-emerald-400';
   };
 
+  // Helper: Get duration in seconds (handles both duration in minutes and duration_seconds)
+  const getDurationSeconds = (call: any): number | null => {
+    if (call.duration_seconds) return call.duration_seconds;
+    if (call.duration) return Math.round(call.duration * 60); // Convert minutes to seconds
+    return null;
+  };
+
   // PDF Export Handler
   const handleExportPdf = async () => {
     try {
@@ -123,7 +131,7 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
       doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 22);
       doc.text(`Total Calls: ${visibleCalls.length}`, 14, 27);
       
-      // Prepare table data
+      // Prepare table data (support both old and new field names)
       const tableData = visibleCalls.map(call => [
         formatDateForSearch(call.created_at),
         new Date(call.created_at).toLocaleTimeString('en-US', {
@@ -131,9 +139,9 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
           minute: '2-digit',
           hour12: true,
         }),
-        call.contact_name || 'Unknown',
-        call.contact_phone || 'N/A',
-        formatDuration(call.duration_seconds),
+        call.lead_name || call.contact_name || 'Unknown',
+        call.phone_number || call.contact_phone || 'N/A',
+        formatDuration(call.duration ? call.duration * 60 : call.duration_seconds), // duration is in minutes, convert to seconds
         call.outcome?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'N/A',
       ]);
       
@@ -392,21 +400,21 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
                 {/* Name */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-white">
-                    {call.contact_name || 'Unknown'}
+                    {call.lead_name || call.contact_name || 'Unknown'}
                   </div>
                 </td>
 
                 {/* Phone */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-300 font-mono">
-                    {formatPhoneNumber(call.contact_phone)}
+                    {formatPhoneNumber(call.phone_number || call.contact_phone)}
                   </div>
                 </td>
 
                 {/* Duration */}
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className={`text-sm font-semibold ${getDurationClass(call.duration_seconds)}`}>
-                    {formatDuration(call.duration_seconds)}
+                  <div className={`text-sm font-semibold ${getDurationClass(getDurationSeconds(call))}`}>
+                    {formatDuration(getDurationSeconds(call))}
                   </div>
                 </td>
 

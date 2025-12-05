@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { X, Sparkles, DollarSign, TrendingUp, HelpCircle, Mail, ChevronRight, Rocket, ChevronDown, Scale } from 'lucide-react';
+import { X, Sparkles, DollarSign, TrendingUp, HelpCircle, Mail, ChevronRight, Rocket, Scale, ArrowLeft, FileText, Shield, RotateCcw } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export function MobilePublicNav() {
@@ -14,23 +14,29 @@ export function MobilePublicNav() {
   const [user, setUser] = useState<any>(null);
   const [legalOpen, setLegalOpen] = useState(false);
   const pathname = usePathname();
+  const navRef = useRef<HTMLElement>(null);
   const supabase = createClient();
 
-  // Check auth state - only show dashboard if they have active subscription
+  // Check auth state - only show dashboard if they have completed payment
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // Check if they have a subscription or profile
+        // Check if they have completed payment and have stripe customer ID
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_tier, has_active_subscription')
+          .select('subscription_tier, has_active_subscription, stripe_customer_id, onboarding_all_complete')
           .eq('user_id', user.id)
           .single();
         
-        // Only show dashboard if they have completed onboarding
-        if (profile && (profile.subscription_tier !== 'none' || profile.has_active_subscription)) {
+        // Only show dashboard if they have:
+        // 1. Completed onboarding AND have stripe customer (payment method added)
+        // 2. OR have an active subscription (already paying customers)
+        const hasCompletedPayment = profile?.stripe_customer_id && profile?.onboarding_all_complete;
+        const hasActiveSubscription = profile?.has_active_subscription === true;
+        
+        if (profile && (hasCompletedPayment || hasActiveSubscription)) {
           setUser(user);
         } else {
           setUser(null);
@@ -45,11 +51,17 @@ export function MobilePublicNav() {
       if (session?.user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_tier, has_active_subscription')
+          .select('subscription_tier, has_active_subscription, stripe_customer_id, onboarding_all_complete')
           .eq('user_id', session.user.id)
           .single();
         
-        if (profile && (profile.subscription_tier !== 'none' || profile.has_active_subscription)) {
+        // Only show dashboard if they have:
+        // 1. Completed onboarding AND have stripe customer (payment method added)
+        // 2. OR have an active subscription (already paying customers)
+        const hasCompletedPayment = profile?.stripe_customer_id && profile?.onboarding_all_complete;
+        const hasActiveSubscription = profile?.has_active_subscription === true;
+        
+        if (profile && (hasCompletedPayment || hasActiveSubscription)) {
           setUser(session.user);
         } else {
           setUser(null);
@@ -101,6 +113,13 @@ export function MobilePublicNav() {
     return () => {
       document.body.style.overflow = 'unset';
     };
+  }, [isOpen]);
+
+  // Reset legal submenu when main menu closes
+  useEffect(() => {
+    if (!isOpen) {
+      setLegalOpen(false);
+    }
   }, [isOpen]);
 
   const navigation = [
@@ -210,9 +229,16 @@ export function MobilePublicNav() {
             </button>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="flex-1 overflow-y-auto py-4 px-3">
-            <div className="space-y-1">
+          {/* Navigation Links - Sliding Panels */}
+          <nav ref={navRef} className="flex-1 overflow-hidden py-4 px-3 relative">
+            {/* Main Menu */}
+            <div 
+              className={`space-y-1 transition-all duration-400 ease-out ${
+                legalOpen 
+                  ? 'opacity-0 -translate-x-full absolute inset-x-3 top-4' 
+                  : 'opacity-100 translate-x-0'
+              }`}
+            >
               {navigation.map((item, index) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
@@ -227,7 +253,7 @@ export function MobilePublicNav() {
                         : 'bg-gray-800/20 border border-transparent hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-purple-600/20 hover:border-blue-500/30'
                     }`}
                     style={{
-                      animation: isOpen ? `slideInRightBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 0.08}s both` : 'none'
+                      animation: isOpen && !legalOpen ? `slideInRightBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 0.08}s both` : 'none'
                     }}
                   >
                     <div className="flex items-center gap-3">
@@ -253,57 +279,111 @@ export function MobilePublicNav() {
                 );
               })}
 
-              {/* Legal Dropdown */}
-              <div className="mt-2">
-                <button
-                  onClick={() => setLegalOpen(!legalOpen)}
-                  className="group w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 bg-gray-800/20 border border-transparent hover:bg-gradient-to-r hover:from-amber-600/20 hover:to-orange-600/20 hover:border-amber-500/30"
-                  style={{
-                    animation: isOpen ? `slideInRightBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${navigation.length * 0.08}s both` : 'none'
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 bg-gray-800/50 group-hover:bg-gradient-to-br group-hover:from-amber-500/20 group-hover:to-orange-600/20">
-                      <Scale className="w-4 h-4 text-gray-400 group-hover:text-amber-400" />
-                    </div>
-                    <span className="font-medium text-base text-gray-300 group-hover:text-white">
-                      Legal
-                    </span>
+              {/* Legal Button - Opens Submenu */}
+              <button
+                onClick={() => setLegalOpen(true)}
+                className="group w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 bg-gray-800/20 border border-transparent hover:bg-gradient-to-r hover:from-amber-600/20 hover:to-orange-600/20 hover:border-amber-500/30 mt-2"
+                style={{
+                  animation: isOpen && !legalOpen ? `slideInRightBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${navigation.length * 0.08}s both` : 'none'
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 bg-gray-800/50 group-hover:bg-gradient-to-br group-hover:from-amber-500/20 group-hover:to-orange-600/20">
+                    <Scale className="w-4 h-4 text-gray-400 group-hover:text-amber-400" />
                   </div>
-                  <ChevronDown className={`w-4 h-4 text-gray-600 group-hover:text-amber-400 transition-all duration-300 ${
-                    legalOpen ? 'rotate-180' : ''
-                  }`} />
-                </button>
-
-                {/* Legal Submenu */}
-                <div className={`overflow-hidden transition-all duration-300 ${
-                  legalOpen ? 'max-h-48 mt-1' : 'max-h-0'
-                }`}>
-                  <div className="space-y-1 ml-4 mt-1">
-                    <Link
-                      href="/terms"
-                      onClick={() => setIsOpen(false)}
-                      className="block px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800/30 transition-colors"
-                    >
-                      Terms of Service
-                    </Link>
-                    <Link
-                      href="/privacy"
-                      onClick={() => setIsOpen(false)}
-                      className="block px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800/30 transition-colors"
-                    >
-                      Privacy Policy
-                    </Link>
-                    <Link
-                      href="/refund-policy"
-                      onClick={() => setIsOpen(false)}
-                      className="block px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800/30 transition-colors"
-                    >
-                      Refund & Cancellation
-                    </Link>
-                  </div>
+                  <span className="font-medium text-base text-gray-300 group-hover:text-white">
+                    Legal
+                  </span>
                 </div>
+                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-amber-400 group-hover:translate-x-1 transition-all duration-300" />
+              </button>
+            </div>
+
+            {/* Legal Submenu - Full Size Buttons */}
+            <div 
+              className={`space-y-1 transition-all duration-400 ease-out ${
+                legalOpen 
+                  ? 'opacity-100 translate-x-0' 
+                  : 'opacity-0 translate-x-full absolute inset-x-3 top-4'
+              }`}
+            >
+              {/* Back Button */}
+              <button
+                onClick={() => setLegalOpen(false)}
+                className="group w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 bg-gray-800/30 border border-gray-700/50 hover:bg-gray-800/50 hover:border-gray-600/50 mb-3"
+              >
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-gray-800/50 group-hover:bg-gray-700/50 transition-all duration-300">
+                  <ArrowLeft className="w-4 h-4 text-gray-400 group-hover:text-white" />
+                </div>
+                <span className="font-medium text-base text-gray-400 group-hover:text-white">
+                  Back to Menu
+                </span>
+              </button>
+
+              {/* Legal Title */}
+              <div className="px-4 py-2 mb-1">
+                <span className="text-xs font-semibold text-amber-400/80 uppercase tracking-wider">Legal Pages</span>
               </div>
+
+              {/* Terms of Service */}
+              <Link
+                href="/terms"
+                onClick={() => setIsOpen(false)}
+                className="group flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 bg-gray-800/20 border border-transparent hover:bg-gradient-to-r hover:from-amber-600/20 hover:to-orange-600/20 hover:border-amber-500/30"
+                style={{
+                  animation: legalOpen ? 'slideInRightBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both' : 'none'
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-gray-800/50 group-hover:bg-gradient-to-br group-hover:from-amber-500/20 group-hover:to-orange-600/20 transition-all duration-300">
+                    <FileText className="w-4 h-4 text-gray-400 group-hover:text-amber-400" />
+                  </div>
+                  <span className="font-medium text-base text-gray-300 group-hover:text-white">
+                    Terms of Service
+                  </span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-amber-400 group-hover:translate-x-1 transition-all duration-300" />
+              </Link>
+
+              {/* Privacy Policy */}
+              <Link
+                href="/privacy"
+                onClick={() => setIsOpen(false)}
+                className="group flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 bg-gray-800/20 border border-transparent hover:bg-gradient-to-r hover:from-amber-600/20 hover:to-orange-600/20 hover:border-amber-500/30"
+                style={{
+                  animation: legalOpen ? 'slideInRightBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both' : 'none'
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-gray-800/50 group-hover:bg-gradient-to-br group-hover:from-amber-500/20 group-hover:to-orange-600/20 transition-all duration-300">
+                    <Shield className="w-4 h-4 text-gray-400 group-hover:text-amber-400" />
+                  </div>
+                  <span className="font-medium text-base text-gray-300 group-hover:text-white">
+                    Privacy Policy
+                  </span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-amber-400 group-hover:translate-x-1 transition-all duration-300" />
+              </Link>
+
+              {/* Cancel & Refund */}
+              <Link
+                href="/refund-policy"
+                onClick={() => setIsOpen(false)}
+                className="group flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 bg-gray-800/20 border border-transparent hover:bg-gradient-to-r hover:from-amber-600/20 hover:to-orange-600/20 hover:border-amber-500/30"
+                style={{
+                  animation: legalOpen ? 'slideInRightBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both' : 'none'
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-gray-800/50 group-hover:bg-gradient-to-br group-hover:from-amber-500/20 group-hover:to-orange-600/20 transition-all duration-300">
+                    <RotateCcw className="w-4 h-4 text-gray-400 group-hover:text-amber-400" />
+                  </div>
+                  <span className="font-medium text-base text-gray-300 group-hover:text-white">
+                    Cancel & Refund
+                  </span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-amber-400 group-hover:translate-x-1 transition-all duration-300" />
+              </Link>
             </div>
           </nav>
 

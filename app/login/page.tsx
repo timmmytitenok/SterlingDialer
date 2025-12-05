@@ -150,10 +150,10 @@ function LoginPageContent() {
       {/* Back Button */}
       <Link 
         href="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-800 border border-gray-700 hover:border-gray-600 text-gray-400 hover:text-white rounded-lg transition-all hover:scale-105 group"
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gray-500/20 to-gray-600/20 backdrop-blur-sm border border-gray-500/30 hover:border-gray-400/50 text-white rounded-lg transition-all duration-300 shadow-lg shadow-gray-500/20 hover:shadow-xl hover:shadow-gray-400/40 hover:scale-110 hover:from-gray-500/30 hover:to-gray-600/30 group"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-        <span className="text-sm font-medium">Back to Home</span>
+        <span className="text-sm font-semibold">Back to Home</span>
       </Link>
 
       <div className="relative z-10 w-full max-w-md">

@@ -348,120 +348,154 @@ export default function AdminAffiliatePage() {
 
         {/* Create Affiliate Modal */}
         {showCreateModal && (
-          <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-            <div className="bg-gradient-to-br from-[#1A2647] to-[#0F1629] rounded-2xl border-2 border-blue-500/40 max-w-md w-full overflow-hidden shadow-2xl">
-              {/* Modal Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-white">Create Affiliate Partner</h2>
-                  <p className="text-blue-100 text-sm mt-1">Generate an affiliate link for a user</p>
-        </div>
-                <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setNewAffiliateUserId('');
-                    setNewAffiliateCode('');
-                  }}
-                  className="text-white hover:bg-white/10 p-2 rounded-lg transition-all"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-      </div>
-
-              {/* Modal Body */}
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="text-white font-semibold block mb-2">Supabase User ID</label>
-                  <input
-                    type="text"
-                    value={newAffiliateUserId}
-                    onChange={(e) => setNewAffiliateUserId(e.target.value)}
-                    placeholder="3c8d1265-0997-4305-a830-..."
-                    className="w-full px-4 py-3 bg-[#0B1437] text-white rounded-lg border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none font-mono text-sm transition-all"
-                  />
-                  <p className="text-xs text-gray-400 mt-1">
-                    Get this from User Management page
-                  </p>
-                </div>
-
-                <div>
-                  <label className="text-white font-semibold block mb-2">Affiliate Code (Unique)</label>
-                  <input
-                    type="text"
-                    value={newAffiliateCode}
-                    onChange={(e) => setNewAffiliateCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-                    placeholder="JOHN2025"
-                    className="w-full px-4 py-3 bg-[#0B1437] text-white rounded-lg border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none font-mono transition-all"
-                    maxLength={20}
-                  />
-                  <p className="text-xs text-gray-400 mt-2">
-                    Link will be: {window.location.origin}/signup?ref={newAffiliateCode || 'CODE'}
-                  </p>
-                </div>
-
-                <button
-                  onClick={async () => {
-                    if (!newAffiliateUserId || !newAffiliateCode) {
-                      alert('Please fill in both fields');
-                      return;
-                    }
-
-                    setProcessing('creating');
-                    try {
-                      const response = await fetch('/api/admin/affiliates/create', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          userId: newAffiliateUserId,
-                          code: newAffiliateCode,
-                        }),
-                      });
-
-                      if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error || 'Failed to create');
-                      }
-
-                      const notification = document.createElement('div');
-                      notification.className = 'fixed top-8 right-8 bg-green-500 text-white px-6 py-4 rounded-lg shadow-2xl z-50 flex items-center gap-3';
-                      notification.innerHTML = `
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        <span class="font-semibold">Affiliate created!</span>
-                      `;
-                      document.body.appendChild(notification);
-                      setTimeout(() => notification.remove(), 3000);
-
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+            {/* Modal Container with Glow */}
+            <div className="relative animate-in zoom-in-95 fade-in duration-300">
+              {/* Background Glows */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/30 via-cyan-500/30 to-purple-500/30 rounded-3xl blur-2xl animate-pulse" />
+              <div className="absolute -inset-2 bg-gradient-to-r from-blue-600/20 via-cyan-600/20 to-purple-600/20 rounded-3xl blur-xl" />
+              
+              {/* Main Modal */}
+              <div className="relative bg-gradient-to-br from-[#1A2647] via-[#15203a] to-[#0F172A] rounded-2xl border border-blue-500/40 max-w-md w-full overflow-hidden shadow-2xl shadow-blue-500/30">
+                {/* Header Glow Line */}
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-500 via-cyan-500 to-purple-500" />
+                
+                {/* Modal Header */}
+                <div className="relative bg-gradient-to-r from-blue-600/90 to-cyan-600/90 p-6 flex items-center justify-between overflow-hidden">
+                  {/* Header Glow Effects */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-400/20 rounded-full blur-2xl" />
+                  
+                  <div className="relative z-10 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                      <Gift className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">Create Affiliate Partner</h2>
+                      <p className="text-blue-100 text-sm mt-1">Generate an affiliate link for a user</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
                       setShowCreateModal(false);
                       setNewAffiliateUserId('');
                       setNewAffiliateCode('');
-                      loadAffiliates();
-                    } catch (err: any) {
-                      alert(`Error: ${err.message}`);
-                    } finally {
-                      setProcessing(null);
-                    }
-                  }}
-                  disabled={processing === 'creating' || !newAffiliateUserId || !newAffiliateCode}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:opacity-50 text-white rounded-lg font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                >
-                  {processing === 'creating' ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-5 h-5" />
-                      Create Affiliate Partner
-                    </>
-                  )}
-              </button>
+                    }}
+                    className="relative z-10 text-white hover:bg-white/20 p-2 rounded-lg transition-all"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Modal Body */}
+                <div className="p-6 space-y-5">
+                  <div className="group">
+                    <label className="text-white font-semibold block mb-2 flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-md bg-blue-500/20 flex items-center justify-center text-blue-400 text-xs font-bold">1</span>
+                      Supabase User ID
+                    </label>
+                    <input
+                      type="text"
+                      value={newAffiliateUserId}
+                      onChange={(e) => setNewAffiliateUserId(e.target.value)}
+                      placeholder="3c8d1265-0997-4305-a830-..."
+                      className="w-full px-4 py-3 bg-[#0B1437] text-white rounded-xl border-2 border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none font-mono text-sm transition-all hover:border-gray-600"
+                    />
+                    <p className="text-xs text-gray-400 mt-2">
+                      Get this from User Management page
+                    </p>
+                  </div>
+
+                  <div className="group">
+                    <label className="text-white font-semibold block mb-2 flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-md bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-xs font-bold">2</span>
+                      Affiliate Code (Unique)
+                    </label>
+                    <input
+                      type="text"
+                      value={newAffiliateCode}
+                      onChange={(e) => setNewAffiliateCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                      placeholder="JOHN2025"
+                      className="w-full px-4 py-3 bg-[#0B1437] text-white rounded-xl border-2 border-gray-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30 focus:outline-none font-mono transition-all hover:border-gray-600"
+                      maxLength={20}
+                    />
+                    <div className="mt-3 p-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-500/20">
+                      <p className="text-xs text-blue-300 font-medium">
+                        🔗 Link will be:
+                      </p>
+                      <p className="text-sm text-cyan-400 font-mono mt-1 break-all">
+                        {typeof window !== 'undefined' ? window.location.origin : ''}/signup?ref={newAffiliateCode || 'CODE'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={async () => {
+                      if (!newAffiliateUserId || !newAffiliateCode) {
+                        alert('Please fill in both fields');
+                        return;
+                      }
+
+                      setProcessing('creating');
+                      try {
+                        const response = await fetch('/api/admin/affiliates/create', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            userId: newAffiliateUserId,
+                            code: newAffiliateCode,
+                          }),
+                        });
+
+                        if (!response.ok) {
+                          const error = await response.json();
+                          throw new Error(error.error || 'Failed to create');
+                        }
+
+                        const notification = document.createElement('div');
+                        notification.className = 'fixed top-8 right-8 bg-green-500 text-white px-6 py-4 rounded-lg shadow-2xl z-50 flex items-center gap-3';
+                        notification.innerHTML = `
+                          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                          </svg>
+                          <span class="font-semibold">Affiliate created!</span>
+                        `;
+                        document.body.appendChild(notification);
+                        setTimeout(() => notification.remove(), 3000);
+
+                        setShowCreateModal(false);
+                        setNewAffiliateUserId('');
+                        setNewAffiliateCode('');
+                        loadAffiliates();
+                      } catch (err: any) {
+                        alert(`Error: ${err.message}`);
+                      } finally {
+                        setProcessing(null);
+                      }
+                    }}
+                    disabled={processing === 'creating' || !newAffiliateUserId || !newAffiliateCode}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 hover:from-blue-500 hover:via-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-cyan-500/40 hover:scale-[1.02] flex items-center justify-center gap-2 relative overflow-hidden group"
+                  >
+                    {/* Shimmer effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                    
+                    {processing === 'creating' ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin relative z-10" />
+                        <span className="relative z-10">Creating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-5 h-5 relative z-10" />
+                        <span className="relative z-10">Create Affiliate Partner</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );

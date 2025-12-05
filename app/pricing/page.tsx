@@ -24,7 +24,7 @@ export default function PricingPage() {
       <PublicNav />
       <MobilePublicNav />
 
-      <main className="relative z-10 pt-20 sm:pt-28 lg:pt-32 pb-12 sm:pb-20">
+      <main className="relative z-10 pt-28 sm:pt-28 lg:pt-32 pb-12 sm:pb-20">
         <div className="container mx-auto px-4 sm:px-6">
 
           {/* Header */}
@@ -117,7 +117,7 @@ export default function PricingPage() {
                 {/* CTA Button - Mobile optimized */}
                 <Link
                   href="/signup"
-                  className="relative mt-5 sm:mt-6 md:mt-8 w-full flex items-center justify-center gap-1.5 sm:gap-2 px-5 sm:px-6 md:px-8 py-3 sm:py-3.5 md:py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white font-bold text-sm sm:text-base md:text-lg rounded-lg sm:rounded-xl transition-all duration-300 shadow-2xl hover:shadow-purple-500/80 group/btn overflow-hidden"
+                  className="relative mt-7 sm:mt-6 md:mt-8 w-full flex items-center justify-center gap-1.5 sm:gap-2 px-5 sm:px-6 md:px-8 py-3 sm:py-3.5 md:py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white font-bold text-sm sm:text-base md:text-lg rounded-lg sm:rounded-xl transition-all duration-300 shadow-2xl hover:shadow-purple-500/80 group/btn overflow-hidden"
                 >
                   <span className="relative z-10 flex items-center gap-1.5 sm:gap-2">
                     <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 animate-pulse" />
@@ -319,25 +319,25 @@ export default function PricingPage() {
                 </div>
               </div>
 
-              <div className="mt-4 sm:mt-5 md:mt-6 lg:mt-8 p-3 sm:p-4 md:p-5 lg:p-6 bg-green-500/10 rounded-lg sm:rounded-xl border border-green-500/20">
-                <div className="flex items-start gap-2 sm:gap-2.5 md:gap-3">
+              <div className="mt-5 sm:mt-5 md:mt-6 lg:mt-8 p-3.5 sm:p-4 md:p-5 lg:p-6 bg-green-500/10 rounded-xl sm:rounded-xl border border-green-500/20">
+                <div className="sm:flex sm:items-start sm:gap-2.5 md:gap-3">
                   <div className="hidden sm:flex w-7 h-7 md:w-8 md:h-8 rounded-full bg-green-500/20 items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1">
                     <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-white font-bold mb-2 sm:mb-2.5 md:mb-3 text-sm sm:text-base md:text-lg">The Math:</div>
+                    <div className="text-white font-bold mb-2 sm:mb-2.5 md:mb-3 text-[15px] sm:text-base md:text-lg">The Math:</div>
                     <div className="space-y-1.5 sm:space-y-2 md:space-y-2.5">
-                      <p className="text-gray-300 text-[11px] sm:text-xs md:text-sm leading-relaxed">
-                        3 appointments/day × 20 business days = <span className="text-white font-semibold">60 appt.</span>
+                      <p className="text-gray-300 text-[12px] sm:text-xs md:text-sm">
+                        3 appts/day × 20 days = <span className="text-white font-semibold">60 appt.</span>
                       </p>
-                      <p className="text-gray-300 text-[11px] sm:text-xs md:text-sm leading-relaxed">
+                      <p className="text-gray-300 text-[12px] sm:text-xs md:text-sm">
                         Close 1 in 10 appointments = <span className="text-white font-semibold">6 policies</span>
                       </p>
-                      <p className="text-gray-300 text-[11px] sm:text-xs md:text-sm leading-relaxed">
-                        6 policies × $1,000 avg commission = <span className="text-green-400 font-bold text-sm sm:text-base md:text-lg lg:text-xl">$6,000 profit</span>
+                      <p className="text-gray-300 text-[12px] sm:text-xs md:text-sm">
+                        6 policies × $1,000 commission = <span className="text-green-400 font-bold text-base sm:text-base md:text-lg lg:text-xl">$6,000</span>
                       </p>
-                      <p className="text-green-400 font-semibold text-[11px] sm:text-xs md:text-sm mt-2 sm:mt-2.5 md:mt-3 lg:mt-4">
-                        That's lost money sitting in your leads sheet!
+                      <p className="text-green-400 font-semibold text-[12px] sm:text-xs md:text-sm mt-2 sm:mt-2.5 md:mt-3 lg:mt-4">
+                        That's lost money sitting in your CRM!!
                       </p>
                     </div>
                   </div>
@@ -419,22 +419,22 @@ export default function PricingPage() {
 
           {/* Old Leads Section - Moved to Bottom */}
           <div className="max-w-5xl mx-auto mb-12 sm:mb-16 md:mb-20 animate-in fade-in zoom-in duration-700 px-3 sm:px-4 md:px-0">
-            <div className="relative overflow-hidden bg-gradient-to-br from-blue-600/10 to-purple-600/10 rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 lg:p-12 border border-blue-500/30">
+            <div className="relative overflow-hidden bg-gradient-to-br from-blue-600/10 to-purple-600/10 rounded-xl sm:rounded-2xl p-6 sm:p-6 md:p-8 lg:p-12 border border-blue-500/30">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-purple-500/0 animate-pulse" />
               <div className="relative text-center">
-                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl xl:text-6xl font-bold text-white mb-3 sm:mb-4 md:mb-5 lg:mb-6 leading-tight px-2">
+                <h2 className="text-[22px] sm:text-2xl md:text-3xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 sm:mb-4 md:mb-5 lg:mb-6 leading-tight">
                   Have thousands of old leads collecting dust?
                 </h2>
-                <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-gray-300 mb-3 sm:mb-4 md:mb-6 lg:mb-8 leading-relaxed px-2">
+                <p className="text-[13.5px] sm:text-base md:text-lg lg:text-xl xl:text-2xl text-gray-300 mb-4 sm:mb-4 md:mb-6 lg:mb-8 leading-relaxed">
                   Let Sterling AI revive them into booked appointments, automatically. 
                   Those leads from 6 months, 1 year, even 2 years ago? We'll call them ALL!
                 </p>
-                <p className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-400 mb-4 sm:mb-5 md:mb-8 lg:mb-10 leading-relaxed px-2">
+                <p className="text-[12.5px] sm:text-sm md:text-base lg:text-lg text-gray-400 mb-5 sm:mb-5 md:mb-8 lg:mb-10 leading-relaxed">
                   You already paid for those leads. Sterling AI just makes sure you get your money's worth.
                 </p>
-                <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 md:px-6 md:py-3 bg-green-600/20 border border-green-500/40 rounded-lg sm:rounded-xl">
-                  <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-green-400" />
-                  <span className="text-green-400 font-bold text-xs sm:text-sm md:text-base">Sterling AI pays for itself by lunch</span>
+                <div className="inline-flex items-center gap-2 sm:gap-2 px-4 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 bg-green-600/20 border border-green-500/40 rounded-xl sm:rounded-xl">
+                  <CheckCircle2 className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 text-green-400" />
+                  <span className="text-green-400 font-bold text-sm sm:text-sm md:text-base">Sterling AI pays for itself!</span>
                 </div>
               </div>
             </div>

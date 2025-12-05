@@ -47,6 +47,17 @@ export async function getSubscriptionFeatures(userId: string): Promise<Subscript
   console.log('🔍 Subscription Helper - Profile tier:', profile?.subscription_tier);
   console.log('🔍 Subscription Helper - Has active sub:', profile?.has_active_subscription);
 
+  // If free trial exists, return free trial features (CHECK THIS FIRST!)
+  if (profile?.subscription_tier === 'free_trial') {
+    console.log('✅ Returning FREE TRIAL features');
+    return {
+      tier: 'free_trial',
+      maxDailyCalls: getTierDefaults('free_trial').maxDailyCalls,
+      aiCallerCount: getTierDefaults('free_trial').aiCallerCount,
+      hasActiveSubscription: true, // Free trial counts as active subscription
+    };
+  }
+
   // If Pro Access manually granted, return Pro features
   if (profile?.subscription_tier === 'pro' || profile?.has_active_subscription === true) {
     console.log('✅ Returning PRO ACCESS features (from profile)');
@@ -55,17 +66,6 @@ export async function getSubscriptionFeatures(userId: string): Promise<Subscript
       maxDailyCalls: getTierDefaults('pro').maxDailyCalls,
       aiCallerCount: getTierDefaults('pro').aiCallerCount,
       hasActiveSubscription: true,
-    };
-  }
-
-  // If free trial exists, return free trial features
-  if (profile?.subscription_tier === 'free_trial') {
-    console.log('✅ Returning FREE TRIAL features');
-    return {
-      tier: 'free_trial',
-      maxDailyCalls: getTierDefaults('free_trial').maxDailyCalls,
-      aiCallerCount: getTierDefaults('free_trial').aiCallerCount,
-      hasActiveSubscription: true, // Free trial counts as active subscription
     };
   }
 

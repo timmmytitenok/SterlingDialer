@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { userId, testPhoneNumber } = await request.json();
+    const { userId, testPhoneNumber, testName } = await request.json();
 
     if (!userId) {
       return NextResponse.json(
@@ -76,6 +76,10 @@ export async function POST(request: Request) {
       );
     }
 
+    // Use the test name provided, or default to "there"
+    const leadName = testName || 'there';
+    console.log('👤 Using lead name for test call:', leadName);
+
     const retellResponse = await fetch('https://api.retellai.com/v2/create-phone-call', {
       method: 'POST',
       headers: {
@@ -86,10 +90,15 @@ export async function POST(request: Request) {
         agent_id: retellConfig.retell_agent_id,
         from_number: retellConfig.phone_number,
         to_number: adminTestPhone,
+        retell_llm_dynamic_variables: {
+          customer_name: leadName,
+          name: leadName,
+        },
         metadata: {
           user_id: userId,
           admin_test: true,
           test_by: requestingUser.email,
+          lead_name: leadName,
         },
       }),
     });
@@ -116,12 +125,13 @@ export async function POST(request: Request) {
     await supabase.from('calls').insert({
       user_id: userId,
       phone_number: adminTestPhone,
+      lead_name: leadName,
       retell_call_id: retellData.call_id,
       status: 'initiated',
       disposition: 'admin_test',
       connected: false,
       outcome: null,
-      notes: `Admin test call by ${requestingUser.email}`,
+      notes: `Admin test call by ${requestingUser.email} (testing as ${leadName})`,
     });
 
     return NextResponse.json({

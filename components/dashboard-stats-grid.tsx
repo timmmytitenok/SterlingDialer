@@ -53,12 +53,22 @@ type Period = 'today' | 'all' | '7days' | '30days';
 
 // Counter animation component
 function AnimatedNumber({ value, prefix = '', suffix = '' }: { value: number | string; prefix?: string; suffix?: string }) {
-  const [displayValue, setDisplayValue] = useState(0);
-  const previousValueRef = useRef(0);
+  // Parse the numeric value immediately
+  const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : (value || 0);
+  
+  const [displayValue, setDisplayValue] = useState(numericValue);
+  const previousValueRef = useRef(numericValue);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
-    // Parse the value to handle percentages and numbers
-    const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+    // On first render, just set the value directly (no animation)
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      setDisplayValue(numericValue);
+      previousValueRef.current = numericValue;
+      return;
+    }
+    
     const startValue = previousValueRef.current;
     const endValue = numericValue;
     
@@ -87,7 +97,7 @@ function AnimatedNumber({ value, prefix = '', suffix = '' }: { value: number | s
     };
     
     animate();
-  }, [value]);
+  }, [numericValue]);
 
   // Format the display value
   const formattedValue = typeof value === 'string' && value.includes('.')

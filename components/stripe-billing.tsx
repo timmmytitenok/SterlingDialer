@@ -17,24 +17,91 @@ interface StripeBillingProps {
 export function StripeBilling({ userId, userEmail, hasSubscription, currentTier = 'none', subscriptionData, accountCreatedAt, referralBonusDays = 0, trialEndsAt }: StripeBillingProps) {
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<any>(null);
+  const [realTimeStatus, setRealTimeStatus] = useState<any>(null);
+  
+  // Debug: Log subscription data to see what we're working with
+  console.log('🔍 StripeBilling Full Debug:', {
+    subscriptionStatus: subscriptionData?.status,
+    subscriptionTier: subscriptionData?.tier,
+    subscriptionTrialEnd: subscriptionData?.trial_end,
+    cancelAtPeriodEnd: subscriptionData?.cancel_at_period_end,
+    currentTier,
+    trialEndsAt,
+    fullSubscriptionData: subscriptionData
+  });
+  
+  // Check if user is on a trial based on subscription status
+  // Use subscription_tier field from subscriptions table
+  const isOnTrial = subscriptionData?.status === 'trialing' || 
+                    subscriptionData?.subscription_tier === 'free_trial' ||
+                    currentTier === 'trial' || 
+                    currentTier === 'free_trial' || 
+                    trialEndsAt;
+  
+  // Check if they canceled their subscription
+  // Use real-time Stripe data if available (fixes issue when subscriptionData is null)
+  const isCanceled = realTimeStatus?.cancelAtPeriodEnd === true || subscriptionData?.cancel_at_period_end === true;
+  
+  console.log('🎯 Is On Trial:', isOnTrial);
+  console.log('🚫 Is Canceled (from DB):', subscriptionData?.cancel_at_period_end);
+  console.log('🔴 Is Canceled (from Stripe):', realTimeStatus?.cancelAtPeriodEnd);
+  console.log('✅ Final Is Canceled:', isCanceled);
 
-  // Fetch payment method
+  // Fetch payment method AND real-time subscription status
   useEffect(() => {
     const fetchBillingData = async () => {
       try {
+        console.log('🚀 FETCHING BILLING DATA...');
+        
+        // Fetch payment method
         const pmResponse = await fetch('/api/stripe/get-payment-method');
         if (pmResponse.ok) {
           const pmData = await pmResponse.json();
           setPaymentMethod(pmData.paymentMethod);
+          console.log('✅ Payment method fetched');
+        } else {
+          console.log('❌ Payment method fetch failed:', pmResponse.status);
+        }
+        
+        // Fetch real-time subscription status from Stripe
+        console.log('🚀 CALLING STRIPE STATUS API...');
+        const statusResponse = await fetch('/api/stripe/check-subscription-status');
+        console.log('📥 Stripe status response status:', statusResponse.status);
+        
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+          setRealTimeStatus(statusData);
+          console.log('🔴 Real-time Stripe status RECEIVED:', statusData);
+        } else {
+          console.log('❌ Stripe status fetch failed:', statusResponse.status);
+          const errorText = await statusResponse.text();
+          console.log('❌ Error details:', errorText);
         }
       } catch (error) {
-        console.error('Error fetching billing data:', error);
+        console.error('❌ Error fetching billing data:', error);
       }
     };
 
     if (hasSubscription) {
+      console.log('✅ Has subscription - fetching billing data');
       fetchBillingData();
+    } else {
+      console.log('⚠️ No subscription - skipping billing data fetch');
     }
+    
+    // Auto-refresh when user returns from Stripe portal
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('👀 Page visible again - refreshing billing data...');
+        window.location.reload();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [hasSubscription]);
 
   const handleManageBilling = async () => {
@@ -75,8 +142,6 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
 
   // Calculate next billing date or show appropriate status
   const getNextBillingDate = () => {
-    const isOnTrial = currentTier === 'trial' || currentTier === 'free_trial' || trialEndsAt;
-    
     // If on trial, show trial end date
     if (isOnTrial && trialEndsAt) {
       const trialEnd = new Date(trialEndsAt);
@@ -102,8 +167,16 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
 
   // Get billing status message
   const getBillingStatus = () => {
-    // Check if user is on free trial tier
-    const isOnTrial = currentTier === 'trial' || currentTier === 'free_trial' || trialEndsAt;
+    // If canceled, show canceled status
+    if (isCanceled && isOnTrial && trialEndsAt) {
+      const trialEnd = new Date(trialEndsAt);
+      const endDate = trialEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return { text: `Canceled — Access Until ${endDate}`, color: 'red' };
+    }
+    
+    if (isCanceled) {
+      return { text: 'Canceled — Ends at Period', color: 'red' };
+    }
     
     if (isOnTrial && trialEndsAt) {
       const trialEnd = new Date(trialEndsAt);
@@ -185,14 +258,18 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
           
           {/* Status Badge */}
           <div className={`inline-flex items-center gap-2 px-2.5 md:px-3 py-1.5 rounded-full ${
-            billingStatus.color === 'purple'
+            billingStatus.color === 'red'
+              ? 'bg-red-500/10 border border-red-500/30'
+              : billingStatus.color === 'purple'
               ? 'bg-purple-500/10 border border-purple-500/30'
               : 'bg-green-500/10 border border-green-500/30'
           }`}>
             <div className={`w-2 h-2 rounded-full ${
+              billingStatus.color === 'red' ? 'bg-red-400' : 
               billingStatus.color === 'purple' ? 'bg-purple-400' : 'bg-green-400'
             } animate-pulse`} />
             <span className={`font-medium text-[10px] md:text-xs ${
+              billingStatus.color === 'red' ? 'text-red-400' : 
               billingStatus.color === 'purple' ? 'text-purple-400' : 'text-green-400'
             }`}>
               {billingStatus.text}
@@ -203,16 +280,26 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
         {/* Divider */}
         <div className="border-t border-gray-800 my-4 md:my-6"></div>
 
-        {/* Next Billing Date / First Billing Date */}
+        {/* First Billing Date / Next Billing Date / Canceled Message */}
         <div className="mb-4 md:mb-5">
           <div className="flex items-center gap-2 md:gap-3 mb-2">
             <Calendar className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
             <p className="text-xs md:text-sm font-semibold text-gray-300">
-              {(currentTier === 'trial' || currentTier === 'free_trial' || trialEndsAt) ? 'First Billing Date' : 'Next Billing Date'}
+              {isCanceled ? 'Trial Ends' : isOnTrial ? 'First Billing Date' : 'Next Billing Date'}
             </p>
           </div>
           <p className="text-base md:text-lg text-white font-medium pl-6 md:pl-8">{getNextBillingDate()}</p>
-              </div>
+          {/* Show explanation based on status */}
+          {isCanceled && isOnTrial ? (
+            <p className="text-xs text-red-400 pl-6 md:pl-8 mt-2">
+              🚫 You canceled your free trial. You'll keep access until this date, then your account will be closed out!
+            </p>
+          ) : isOnTrial ? (
+            <p className="text-xs text-gray-400 pl-6 md:pl-8 mt-2">
+              💳 Your card will be charged $499 on this date unless you cancel before then
+            </p>
+          ) : null}
+        </div>
 
         {/* Divider */}
         <div className="border-t border-gray-800 my-4 md:my-6"></div>
@@ -259,9 +346,17 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
         {hasSubscription && (
           <button
             onClick={handleManageBilling}
-            className="w-full px-4 py-2 mt-3 md:mt-4 text-red-400 hover:text-red-300 text-xs md:text-sm font-medium transition-colors"
+            className={`w-full px-4 py-2 mt-3 md:mt-4 text-xs md:text-sm font-medium transition-colors ${
+              isCanceled 
+                ? 'text-green-400 hover:text-green-300' 
+                : 'text-red-400 hover:text-red-300'
+            }`}
           >
-            {(currentTier === 'free_trial' || currentTier === 'trial') ? 'Cancel Free Trial' : 'Cancel Subscription'}
+            {isCanceled 
+              ? 'Reactivate Subscription' 
+              : isOnTrial 
+              ? 'Cancel Free Trial' 
+              : 'Cancel Subscription'}
           </button>
         )}
       </div>

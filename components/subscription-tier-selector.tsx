@@ -40,14 +40,16 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
   const handleStartFreeTrial = async () => {
     setTrialLoading(true);
     try {
-      const response = await fetch('/api/trial/start', {
+      // Use trial/activate endpoint which REQUIRES card on file
+      const response = await fetch('/api/trial/activate', {
         method: 'POST',
       });
 
       const data = await response.json();
 
-      if (data.success) {
-        window.location.href = '/onboarding';
+      if (data.url) {
+        // Redirect to Stripe checkout to add payment method
+        window.location.href = data.url;
       } else {
         alert(data.error || 'Failed to start trial');
         setTrialLoading(false);
@@ -68,7 +70,7 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
               <Sparkles className="w-8 h-8 text-green-400" />
             </div>
             <h3 className="text-3xl font-bold text-white mb-2">🎁 Start Your Free Trial</h3>
-            <p className="text-green-300 text-lg">Try all features FREE for 30 days - No credit card required!</p>
+            <p className="text-green-300 text-lg">Try all features FREE for 30 days - Card required (no charge for 30 days)</p>
           </div>
 
           <button

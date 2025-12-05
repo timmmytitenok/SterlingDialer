@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { AIDialerControl } from '@/components/ai-dialer-control';
+import { SubscriptionEnded } from '@/components/subscription-ended';
 import { Clock, Wrench } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -17,20 +18,47 @@ export default async function AIDialerPage() {
     redirect('/signup');
   }
 
-  // Check AI setup status - ONLY controlled by admin toggle
+  // Check AI setup status and subscription status
   const { data: profile } = await supabase
     .from('profiles')
-    .select('ai_maintenance_mode')
+    .select('ai_maintenance_mode, has_active_subscription, subscription_tier, free_trial_ends_at, is_vip')
     .eq('user_id', user.id)
     .single();
 
   const isBlocked = profile?.ai_maintenance_mode === true;
+  const isVIP = profile?.is_vip === true;
+  
+  // 🚨 ONLY BLOCK IF WE'RE SURE SUBSCRIPTION ENDED
+  // Don't block new users waiting for webhook to process!
+  const subscriptionExplicitlyEnded = profile?.subscription_tier === 'none' && 
+                                       profile?.has_active_subscription === false;
+  
+  const wasFreeTrial = profile?.subscription_tier === 'none' && profile?.free_trial_ends_at;
 
   console.log('🎯 AI Dialer Access Check:', { 
     userId: user.id, 
     ai_maintenance_mode: profile?.ai_maintenance_mode,
+    subscription_tier: profile?.subscription_tier,
+    has_active_subscription: profile?.has_active_subscription,
+    is_vip: isVIP,
+    subscriptionExplicitlyEnded,
     isBlocked 
   });
+
+  // 🔒 ONLY BLOCK if subscription explicitly ended (not new users!)
+  // New users: Allow access (webhook will process)
+  // Existing users with ended subscription: Block
+  if (subscriptionExplicitlyEnded && !isVIP) {
+    console.log('🔒 Subscription ended - blocking AI Dialer access');
+    return <SubscriptionEnded 
+      wasFreeTrial={wasFreeTrial} 
+      endDate={profile?.free_trial_ends_at} 
+    />;
+  }
+  
+  if (isVIP) {
+    console.log('👑 VIP user detected - granting full access');
+  }
 
   // If admin blocked access, show maintenance message
   if (isBlocked) {

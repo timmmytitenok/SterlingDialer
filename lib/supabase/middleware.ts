@@ -65,6 +65,14 @@ export async function updateSession(request: NextRequest) {
       !isAdminApiRoute); // Don't require user auth for admin API routes
 
   if (isProtectedRoute && !user) {
+    // For API routes, return JSON error instead of redirecting (prevents HTML parse errors)
+    if (request.nextUrl.pathname.startsWith('/api')) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in', success: false },
+        { status: 401 }
+      );
+    }
+    // For page routes, redirect to login
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
@@ -78,58 +86,18 @@ export async function updateSession(request: NextRequest) {
     );
   }
 
-  // 🔥 BRAND NEW SIMPLE LOGIC - ONE CHECK
+  // ✅ LOGGED IN USERS ALWAYS HAVE DASHBOARD ACCESS
+  // AI Dialer and Auto Schedule pages handle their own blocking
   if (user) {
-    // Check if user has EVER completed a checkout (subscription record exists) OR has active free trial
-    const { data: subscription } = await supabase
-      .from('subscriptions')
-      .select('stripe_subscription_id')
-      .eq('user_id', user.id)
-      .limit(1)
-      .maybeSingle();
-
-    // Check if user has Pro Access or active subscription
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('subscription_tier, has_active_subscription')
-      .eq('user_id', user.id)
-      .single();
-
-    const hasEverSubscribed = !!subscription;
-    const hasFreeTrial = profile?.subscription_tier === 'free_trial';
-    const hasProAccess = profile?.subscription_tier === 'pro';
-    const hasActiveSubscription = profile?.has_active_subscription === true;
-    const hasVIPAccess = profile?.subscription_tier === 'free_access';
-    const hasAccess = hasEverSubscribed || hasFreeTrial || hasProAccess || hasActiveSubscription || hasVIPAccess;
-
-    // RULE 1: Trying to access DASHBOARD
-    if (request.nextUrl.pathname.startsWith('/dashboard')) {
-      if (!hasAccess) {
-        // Never subscribed AND no free trial → Must subscribe first
-        const url = request.nextUrl.clone();
-        url.pathname = '/subscribe';
-        return NextResponse.redirect(url);
-      }
-      // Has subscribed before OR has free trial → FULL ACCESS
-    }
-
-    // RULE 2: Trying to access /subscribe
-    if (request.nextUrl.pathname === '/subscribe') {
-      if (hasAccess) {
-        // Already has access (subscribed or free trial) → Go to dashboard
-        const url = request.nextUrl.clone();
-        url.pathname = '/dashboard';
-        return NextResponse.redirect(url);
-      }
-      // No access → Show them subscribe page
-    }
-
-    // RULE 3: Logged in user trying to access /login
+    // RULE 1: Logged in user trying to access /login → redirect to dashboard
     if (request.nextUrl.pathname === '/login') {
       const url = request.nextUrl.clone();
-      url.pathname = hasAccess ? '/dashboard' : '/subscribe';
+      url.pathname = '/dashboard';
       return NextResponse.redirect(url);
     }
+    
+    // RULE 2: Dashboard access → ALWAYS ALLOWED for logged in users
+    // Specific pages (AI Dialer, Auto Schedule) will show "Subscription Ended" if needed
   }
 
   return supabaseResponse;

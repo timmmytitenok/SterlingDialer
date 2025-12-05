@@ -23,22 +23,67 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Get AI settings
-    const { data: aiSettings, error: settingsError } = await supabase
+    // Get AI settings - try to fetch first
+    let { data: aiSettings, error: settingsError } = await supabase
       .from('ai_control_settings')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     console.log('📋 AI settings query result:', { found: !!aiSettings, error: settingsError });
 
-    if (settingsError || !aiSettings) {
-      console.error('❌ AI settings not found for user:', userId, settingsError);
+    // If no settings exist, create default settings
+    if (!aiSettings && !settingsError) {
+      console.log('⚠️ No AI settings found, creating default settings...');
+      
+      const { data: newSettings, error: createError } = await supabase
+        .from('ai_control_settings')
+        .upsert({
+          user_id: userId,
+          status: 'running',
+          daily_spend_limit: 10.00,
+          today_spend: 0.00,
+          calls_made_today: 0,
+          execution_mode: 'leads',
+          queue_length: 0,
+          auto_transfer_calls: true,
+        }, {
+          onConflict: 'user_id'
+        })
+        .select()
+        .single();
+      
+      if (createError) {
+        console.error('❌ Failed to create AI settings:', createError);
+        return NextResponse.json({ 
+          error: 'AI settings not found and could not be created',
+          details: createError.message,
+          userId 
+        }, { status: 500 });
+      }
+      
+      aiSettings = newSettings;
+      console.log('✅ Created default AI settings');
+    }
+
+    // If there was an error fetching, return error
+    if (settingsError) {
+      console.error('❌ Error fetching AI settings:', userId, settingsError);
+      return NextResponse.json({ 
+        error: 'AI settings error',
+        details: settingsError.message,
+        userId 
+      }, { status: 500 });
+    }
+
+    // Final check - should have settings now
+    if (!aiSettings) {
+      console.error('❌ AI settings still not found after creation attempt');
       return NextResponse.json({ 
         error: 'AI settings not found',
-        details: settingsError?.message || 'No AI control settings exist for this user',
+        details: 'Failed to initialize AI control settings',
         userId 
-      }, { status: 404 });
+      }, { status: 500 });
     }
 
     console.log('✅ AI settings found, status:', aiSettings.status);
@@ -101,9 +146,39 @@ export async function POST(request: Request) {
       });
     }
 
-    // Check if daily call limit reached (if using lead count mode)
-    if (aiSettings.execution_mode === 'leads') {
+    // Check stopping condition based on execution mode
+    // Budget mode is detected by budget_limit_cents > 0
+    const isBudgetMode = aiSettings.budget_limit_cents && aiSettings.budget_limit_cents > 0;
+    
+    if (isBudgetMode) {
+      // BUDGET MODE: Stop when actual spend reaches budget limit
+      const budgetLimitCents = aiSettings.budget_limit_cents;
+      const currentSpendCents = Math.round((currentSpend || 0) * 100); // Convert to cents
+      console.log(`💰 Budget Mode: $${(currentSpendCents / 100).toFixed(2)} / $${(budgetLimitCents / 100).toFixed(2)} spent`);
+      
+      if (currentSpendCents >= budgetLimitCents) {
+        console.log('🛑 Budget limit reached!');
+        
+        await supabase
+          .from('ai_control_settings')
+          .update({ status: 'stopped' })
+          .eq('user_id', userId);
+
+        return NextResponse.json({
+          done: true,
+          reason: 'budget_reached',
+          message: `Budget of $${(budgetLimitCents / 100).toFixed(2)} reached`,
+          spent: currentSpendCents / 100,
+          budget: budgetLimitCents / 100,
+        });
+      } else {
+        const remainingCents = budgetLimitCents - currentSpendCents;
+        console.log(`✅ Within budget, continuing ($${(remainingCents / 100).toFixed(2)} remaining)`);
+      }
+    } else {
+      // LEAD COUNT MODE: Stop when target leads reached
       const targetLeadCount = aiSettings.target_lead_count || 100;
+      console.log(`📊 Lead Count Mode: ${callsMadeToday} / ${targetLeadCount} calls made`);
       if (callsMadeToday >= targetLeadCount) {
         console.log('🛑 Daily call limit reached');
         
@@ -118,10 +193,12 @@ export async function POST(request: Request) {
           message: `Target of ${targetLeadCount} calls reached`,
           callsMade: callsMadeToday,
         });
+      } else {
+        console.log(`✅ Within limit, continuing (${targetLeadCount - callsMadeToday} calls remaining)`);
       }
     }
 
-    // Determine current time period IN USER'S TIMEZONE
+    // Check calling hours IN USER'S TIMEZONE
     const now = new Date();
     
     // Get current time in user's timezone
@@ -140,35 +217,19 @@ export async function POST(request: Request) {
     console.log(`🕐 User's local time: ${userTimeString} (${currentHour}:${currentMinute.toString().padStart(2, '0')})`);
     console.log(`🕐 Current hour (24h): ${currentHour}`);
     
-    let currentTimePeriod = null;
-    if (currentHour >= 8 && currentHour < 12) {
-      currentTimePeriod = 'morning';
-      console.log('   → Morning (8am-12pm)');
-    } else if (currentHour >= 12 && currentHour < 18) {
-      currentTimePeriod = 'daytime';
-      console.log('   → Daytime (12pm-6pm)');
-    } else if (currentHour >= 18 && currentHour < 21) {
-      currentTimePeriod = 'evening';
-      console.log('   → Evening (6pm-9pm)');
-    } else {
-      console.log('   → OUTSIDE HOURS');
-      console.log(`   → Hour ${currentHour} is not in range 8-20`);
-    }
-    
-    console.log(`🕐 Time period: ${currentTimePeriod || 'OUTSIDE HOURS'}`);
+    // Simple calling hours check: 8am-9pm
+    const withinCallingHours = currentHour >= 8 && currentHour < 21;
     
     // Check if calling hours are disabled (for testing)
     const callingHoursDisabled = aiSettings.disable_calling_hours === true;
     
+    console.log(`⚙️ disable_calling_hours setting: ${aiSettings.disable_calling_hours} (type: ${typeof aiSettings.disable_calling_hours})`);
+    console.log(`⚙️ callingHoursDisabled: ${callingHoursDisabled}`);
+    
     if (callingHoursDisabled) {
       console.log('⚠️  CALLING HOURS CHECK DISABLED (testing mode)');
-      console.log(`   Current time: ${userTimeString} (would normally be outside hours)`);
-      // Use a default time period for tracking
-      if (!currentTimePeriod) {
-        currentTimePeriod = 'evening'; // Default to evening if outside normal hours
-        console.log(`   Using default time period: ${currentTimePeriod}`);
-      }
-    } else if (!currentTimePeriod) {
+      console.log(`   Current time: ${userTimeString}`);
+    } else if (!withinCallingHours) {
       // Normal mode - enforce calling hours
       console.log(`🛑 Outside calling hours! Current time: ${currentHour}:${currentMinute.toString().padStart(2, '0')}`);
       console.log(`   Calling hours: 8am-9pm (${userTimezone})`);
@@ -188,25 +249,51 @@ export async function POST(request: Request) {
       });
     }
     
-    console.log(`✅ ${callingHoursDisabled ? 'Calling hours disabled - continuing anyway' : 'Within calling hours'}! Time period: ${currentTimePeriod}`);
+    console.log(`✅ ${callingHoursDisabled ? 'Calling hours disabled - continuing anyway' : 'Within calling hours (8am-9pm)'}`);
 
     // ========================================================================
-    // SUPER SIMPLE LEAD QUERY - NO FANCY FILTERING
+    // SIMPLIFIED LEAD SELECTION - 20 ATTEMPT LIMIT
     // ========================================================================
     console.log('🔍 ========== LOOKING FOR LEADS ==========');
     console.log(`📞 User ID: ${userId}`);
     
-    // STEP 1: Count ALL leads for this user
-    const { count: totalLeadsCount, error: countError } = await supabase
+    // Get active Google Sheets for this user
+    const { data: activeSheets } = await supabase
+      .from('user_google_sheets')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('is_active', true);
+    
+    const activeSheetIds = activeSheets?.map(s => s.id) || [];
+    console.log(`📊 Active Google Sheets: ${activeSheetIds.length}`);
+    
+    if (activeSheetIds.length === 0) {
+      console.log('❌ NO ACTIVE GOOGLE SHEETS!');
+      await supabase
+        .from('ai_control_settings')
+        .update({ status: 'stopped', last_call_status: 'no_leads' })
+        .eq('user_id', userId);
+      
+      return NextResponse.json({
+        done: true,
+        reason: 'no_active_sheets',
+        message: 'No active Google Sheets found. Please upload and activate a sheet first.',
+      });
+    }
+    
+    // STEP 1: Count total callable leads
+    const { count: totalLeadsCount } = await supabase
       .from('leads')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .eq('is_qualified', true)
+      .in('google_sheet_id', activeSheetIds)
+      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer']);
     
-    console.log(`📊 Total leads in database: ${totalLeadsCount}`);
-    if (countError) console.error('❌ Error counting leads:', countError);
+    console.log(`📊 Total callable leads in active sheets: ${totalLeadsCount || 0}`);
     
     if (!totalLeadsCount || totalLeadsCount === 0) {
-      console.log('❌ NO LEADS FOUND IN DATABASE!');
+      console.log('❌ NO CALLABLE LEADS FOUND!');
       await supabase
         .from('ai_control_settings')
         .update({ status: 'stopped', last_call_status: 'no_leads' })
@@ -215,64 +302,51 @@ export async function POST(request: Request) {
       return NextResponse.json({
         done: true,
         reason: 'no_leads',
-        message: 'No leads found in database. Please add leads first.',
+        message: 'No callable leads found. All leads may have been exhausted or marked as dead.',
       });
     }
     
-    // STEP 2: Try the simplest possible query - just get ANY lead
-    console.log('🔍 Fetching first available lead (no filters)...');
-    const { data: anyLead, error: anyLeadError } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('user_id', userId)
-      .limit(1)
-      .maybeSingle();
-
-    console.log('📋 First lead (any):', {
-      found: !!anyLead,
-      error: anyLeadError,
-      id: anyLead?.id,
-      name: anyLead?.name,
-      phone: anyLead?.phone,
-      status: anyLead?.status,
-      is_qualified: anyLead?.is_qualified
-    });
+    // STEP 2: Get next callable lead
+    // SIMPLIFIED LOGIC:
+    // - Callable statuses: new, callback_later, unclassified, no_answer
+    // - Total attempts < 20 (not dead yet)
+    // - Not called already today (respects call_attempts_today)
+    // - From active sheets only
     
-    // STEP 3: Check if is_qualified column exists
-    const hasQualifiedColumn = anyLead && 'is_qualified' in anyLead;
-    console.log(`📊 Has is_qualified column: ${hasQualifiedColumn}`);
+    console.log('🔍 Searching for next callable lead...');
+    console.log(`   Today's date: ${todayStr}`);
+    console.log(`   Criteria:`);
+    console.log(`   - Status: new, callback_later, unclassified, no_answer`);
+    console.log(`   - Total attempts < 20`);
+    console.log(`   - Not called today`);
+    console.log(`   - From active sheets`);
     
-    // STEP 4: Get a callable lead
     let nextLead = null;
     let leadError = null;
-    
-    console.log('🔍 Searching for callable lead...');
-    console.log(`   Today's date: ${todayStr}`);
     
     try {
       let query = supabase
         .from('leads')
         .select('*')
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .eq('is_qualified', true)
+        .in('google_sheet_id', activeSheetIds)
+        .in('status', ['new', 'callback_later', 'unclassified', 'no_answer']);
       
-      // Only filter by is_qualified if the column exists
-      if (hasQualifiedColumn) {
-        console.log('   ✓ Filtering by is_qualified = true');
-        query = query.eq('is_qualified', true);
-      } else {
-        console.log('   ⚠️ is_qualified column not found, skipping filter');
-      }
+      // Exclude leads that hit 20 attempts (marked as dead)
+      // Use total_calls_made if it exists, otherwise check status != 'dead_lead'
+      query = query.neq('status', 'dead_lead');
+      query = query.or('total_calls_made.is.null,total_calls_made.lt.20');
       
-      // Filter by status - include callable statuses
-      console.log('   ✓ Filtering by callable statuses');
-      query = query.in('status', ['new', 'callback_later', 'unclassified', 'no_answer']);
-      
-      // CRITICAL: Exclude ALL leads already called today (no exceptions!)
-      // Once a lead is called, don't call it again the same day
-      console.log('   ✓ Excluding ALL leads already called today');
+      // Exclude leads already called today
       query = query.or(`call_attempts_today.is.null,call_attempts_today.eq.0,last_attempt_date.neq.${todayStr}`);
       
+      // Order by fewest attempts first (prioritize fresh leads)
+      // Then by sheet_row_number to follow the same order as the Google Sheet
+      // This ensures the AI calls leads from the top of the spreadsheet first
       query = query
+        .order('total_calls_made', { ascending: true, nullsFirst: true })
+        .order('sheet_row_number', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: true })
         .limit(1);
       
@@ -287,13 +361,15 @@ export async function POST(request: Request) {
         leadName: nextLead?.name,
         leadStatus: nextLead?.status,
         leadPhone: nextLead?.phone,
-        callAttemptsToday: nextLead?.call_attempts_today,
-        lastAttemptDate: nextLead?.last_attempt_date
+        totalCallsMade: nextLead?.total_calls_made || 0,
+        callAttemptsToday: nextLead?.call_attempts_today || 0,
+        lastAttemptDate: nextLead?.last_attempt_date || 'never'
       });
       
       if (nextLead) {
         console.log(`✅ Found lead to call: ${nextLead.name}`);
         console.log(`   - Status: ${nextLead.status}`);
+        console.log(`   - Total calls made: ${nextLead.total_calls_made || 0} / 20`);
         console.log(`   - Call attempts today: ${nextLead.call_attempts_today || 0}`);
         console.log(`   - Last attempt date: ${nextLead.last_attempt_date || 'never'}`);
       }
@@ -375,11 +451,24 @@ export async function POST(request: Request) {
     console.log(`📞 Preparing to call lead ${nextLead.id} (${nextLead.name})`);
     console.log(`   - Phone to call: ${phoneToCall}`);
     console.log(`   - Current status: ${nextLead.status}`);
-    console.log(`   - Total missed calls: ${nextLead.total_missed_calls || 0}/18`);
-    console.log(`   - Morning missed: ${nextLead.morning_missed_calls || 0}/6`);
-    console.log(`   - Daytime missed: ${nextLead.daytime_missed_calls || 0}/6`);
-    console.log(`   - Evening missed: ${nextLead.evening_missed_calls || 0}/6`);
-    console.log(`   - Calling in time period: ${currentTimePeriod}`);
+    console.log(`   - Total attempts: ${nextLead.total_calls_made || 0}/20`);
+    console.log(`   - Calls made today: ${nextLead.call_attempts_today || 0}`);
+
+    // ========================================================================
+    // IMMEDIATELY MARK LEAD AS "IN PROGRESS" TO PREVENT DUPLICATE CALLS
+    // ========================================================================
+    // This prevents race conditions when multiple calls are triggered rapidly
+    // We set last_attempt_date to "lock" the lead, but DON'T increment call_attempts_today yet
+    // (the webhook will increment it after the call is complete)
+    console.log(`🔒 Locking lead ${nextLead.id} to prevent duplicate calls...`);
+    await supabase
+      .from('leads')
+      .update({
+        last_attempt_date: todayStr, // Lock the lead for today
+        status: 'calling_in_progress', // Mark as currently being called
+      })
+      .eq('id', nextLead.id);
+    console.log(`✅ Lead ${nextLead.id} locked (last_attempt_date = ${todayStr}) - won't be selected again`);
 
     // Get user's Retell agent ID and phone number
     console.log('📋 Fetching Retell config for user:', userId);
@@ -462,6 +551,90 @@ export async function POST(request: Request) {
     console.log('📞 Authorization header:', `Bearer ${retellApiKey.substring(0, 15)}...${retellApiKey.substring(retellApiKey.length - 5)}`);
     console.log('📞 API Endpoint:', 'https://api.retellai.com/v2/create-phone-call');
 
+    // ========================================================================
+    // FINAL SAFEGUARD: Re-check target JUST before making the call
+    // This prevents race conditions where another call just completed
+    // ========================================================================
+    const { data: finalCheck } = await supabase
+      .from('ai_control_settings')
+      .select('calls_made_today, target_lead_count, today_spend, budget_limit_cents, status')
+      .eq('user_id', userId)
+      .single();
+    
+    if (finalCheck?.status !== 'running') {
+      console.log('🛑 AI was stopped by another process - aborting this call');
+      // Unlock the lead since we're not calling
+      await supabase
+        .from('leads')
+        .update({ status: 'new', last_attempt_date: null })
+        .eq('id', nextLead.id);
+      
+      return NextResponse.json({
+        done: true,
+        reason: 'ai_stopped',
+        message: 'AI was stopped before this call could be made',
+      });
+    }
+    
+    // Check budget mode by budget_limit_cents > 0
+    const finalIsBudgetMode = finalCheck?.budget_limit_cents && finalCheck.budget_limit_cents > 0;
+    
+    if (finalIsBudgetMode) {
+      const finalSpendCents = Math.round((finalCheck?.today_spend || 0) * 100);
+      const finalBudgetCents = finalCheck.budget_limit_cents;
+      
+      console.log(`🔒 FINAL SAFEGUARD (Budget Mode): $${(finalSpendCents / 100).toFixed(2)} / $${(finalBudgetCents / 100).toFixed(2)} spent`);
+      
+      if (finalSpendCents >= finalBudgetCents) {
+        console.log(`🛑 Budget already reached - NOT making this call!`);
+        // Unlock the lead since we're not calling
+        await supabase
+          .from('leads')
+          .update({ status: 'new', last_attempt_date: null })
+          .eq('id', nextLead.id);
+        
+        // Stop AI
+        await supabase
+          .from('ai_control_settings')
+          .update({ status: 'stopped', last_call_status: 'budget_reached' })
+          .eq('user_id', userId);
+        
+        return NextResponse.json({
+          done: true,
+          reason: 'budget_already_reached',
+          message: `Budget of $${(finalBudgetCents / 100).toFixed(2)} was already reached`,
+          spent: finalSpendCents / 100,
+        });
+      }
+    } else {
+      const finalCallCount = finalCheck?.calls_made_today || 0;
+      const finalTarget = finalCheck?.target_lead_count || 100;
+      
+      console.log(`🔒 FINAL SAFEGUARD (Lead Mode): ${finalCallCount}/${finalTarget} calls made`);
+      
+      if (finalCallCount >= finalTarget) {
+        console.log(`🛑 Target already reached (${finalCallCount}/${finalTarget}) - NOT making this call!`);
+        // Unlock the lead since we're not calling
+        await supabase
+          .from('leads')
+          .update({ status: 'new', last_attempt_date: null })
+          .eq('id', nextLead.id);
+        
+        // Stop AI
+        await supabase
+          .from('ai_control_settings')
+          .update({ status: 'stopped', last_call_status: 'target_reached' })
+          .eq('user_id', userId);
+        
+        return NextResponse.json({
+          done: true,
+          reason: 'target_already_reached',
+          message: `Target of ${finalTarget} calls was already reached`,
+          callsMade: finalCallCount,
+        });
+      }
+    }
+
     // Create call via Retell - using agent_id (not override_agent_id)
     const callResponse = await fetch('https://api.retellai.com/v2/create-phone-call', {
       method: 'POST',
@@ -493,21 +666,24 @@ export async function POST(request: Request) {
       console.log('🔧 Marking lead as needs_review and moving to next lead...');
       
       // Mark this lead as needing review (bad phone number or other issue)
+      // Note: call_attempts_today and last_attempt_date were already updated above
       await supabase
         .from('leads')
         .update({
           status: 'needs_review',
           last_call_outcome: `error: ${errorMessage.substring(0, 100)}`,
-          call_attempts_today: (nextLead.call_attempts_today || 0) + 1,
-          last_attempt_date: todayStr,
         })
         .eq('id', nextLead.id);
       
       console.log(`✅ Lead ${nextLead.name} marked as needs_review`);
       console.log('🔄 Recursively calling next-call to try the next lead...');
       
+      // Get the proper base URL (works in both local and production)
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+      
       // Try the next lead recursively
-      return fetch('http://localhost:3000/api/ai-control/next-call', {
+      return fetch(`${baseUrl}/api/ai-control/next-call`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -525,12 +701,10 @@ export async function POST(request: Request) {
     const callData = await callResponse.json();
     console.log('✅ Call created successfully:', callData.call_id);
 
-    // Update lead with new attempt
+    // Update lead with call timestamp (already marked as "called today" above)
     await supabase
       .from('leads')
       .update({
-        call_attempts_today: (nextLead.call_attempts_today || 0) + 1,
-        last_attempt_date: todayStr,
         last_called: new Date().toISOString(),
       })
       .eq('id', nextLead.id);

@@ -206,12 +206,13 @@ export function AppointmentModal({ appointment, userId, onClose }: AppointmentMo
     }
   };
 
-  // Pre-fill monthly payment if appointment is already sold
+  // Pre-fill monthly payment if appointment is already sold (only on initial load)
   useEffect(() => {
-    if (appointment.is_sold && appointment.monthly_payment && !monthlyPayment) {
+    if (appointment.is_sold && appointment.monthly_payment) {
       setMonthlyPayment(appointment.monthly_payment.toString());
     }
-  }, [appointment, monthlyPayment]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointment.id]); // Only run when appointment changes, NOT when monthlyPayment changes
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 overflow-y-auto">

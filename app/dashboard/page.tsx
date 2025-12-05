@@ -6,7 +6,10 @@ import { CallActivityChart } from '@/components/call-activity-chart';
 import { DashboardStatsGrid } from '@/components/dashboard-stats-grid';
 import { TrialCountdownBanner } from '@/components/trial-countdown-banner';
 import { DashboardRefresher } from '@/components/dashboard-refresher';
+import { FirstVisitConfetti } from '@/components/first-visit-confetti';
+import { DashboardGreeting } from '@/components/dashboard-greeting';
 import { getStartOfTodayInUserTimezone, getDaysAgoInUserTimezone, getTodayDateString, getDateStringDaysAgo } from '@/lib/timezone-helpers';
+import { LayoutDashboard } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -66,6 +69,10 @@ export default async function DashboardPage() {
   
   console.log(`📊 Dashboard: Found ${allCalls?.length || 0} total calls for user`);
   if (allCallsError) console.error('❌ Error fetching calls:', allCallsError);
+  
+  // Debug: Calculate total costs from calls table directly
+  const totalCostFromCalls = allCalls?.reduce((sum, call) => sum + (call.cost || 0), 0) || 0;
+  console.log(`💰 Total cost from calls table: $${totalCostFromCalls.toFixed(2)}`);
 
   const { data: todayCalls } = await supabase
     .from('calls')
@@ -296,14 +303,60 @@ export default async function DashboardPage() {
       .eq('date', today);
   }
 
-  // Revenue data - fetch after ensuring today's record exists
-  const { data: revenueData } = await supabase
+  // BACKFILL: Fix past records that have ai_retainer_cost = 0 (created by webhook before fix)
+  if (dailyBaseCost > 0 && subscription) {
+    const { data: recordsToFix } = await supabase
+      .from('revenue_tracking')
+      .select('date')
+      .eq('user_id', user.id)
+      .or('ai_retainer_cost.is.null,ai_retainer_cost.eq.0')
+      .neq('date', today); // Don't touch today's - already handled above
+    
+    if (recordsToFix && recordsToFix.length > 0) {
+      console.log(`📊 Backfilling ${recordsToFix.length} past records with missing ai_retainer_cost`);
+      
+      // For each record, calculate the correct daily cost based on subscription
+      // For simplicity, we'll use the current tier's price divided by days in that month
+      for (const record of recordsToFix) {
+        const recordDate = new Date(record.date + 'T12:00:00'); // Add time to avoid timezone issues
+        const daysInRecordMonth = new Date(recordDate.getFullYear(), recordDate.getMonth() + 1, 0).getDate();
+        
+        let monthlyPrice = 0;
+        switch (subscription.subscription_tier) {
+          case 'starter': monthlyPrice = 499; break;
+          case 'pro': monthlyPrice = 899; break;
+          case 'elite': monthlyPrice = 1499; break;
+        }
+        
+        const dailyCostForRecord = monthlyPrice / daysInRecordMonth;
+        
+        await supabase
+          .from('revenue_tracking')
+          .update({ ai_retainer_cost: dailyCostForRecord })
+          .eq('user_id', user.id)
+          .eq('date', record.date);
+        
+        console.log(`   ✅ Fixed ${record.date}: $${dailyCostForRecord.toFixed(2)}/day`);
+      }
+    }
+  }
+
+  // Revenue data - fetch after ensuring today's record exists and backfill is done
+  const { data: revenueData, error: revenueError } = await supabase
     .from('revenue_tracking')
     .select('*')
     .eq('user_id', user.id)
     .order('date', { ascending: true });
 
   console.log(`📊 Revenue data fetched: ${revenueData?.length || 0} records`);
+  if (revenueError) console.error('❌ Revenue fetch error:', revenueError);
+  
+  // Debug: Log all revenue records
+  console.log('💰 ALL REVENUE RECORDS:');
+  revenueData?.forEach(r => {
+    const calculatedTotal = (r.ai_retainer_cost || 0) + (r.ai_daily_cost || 0);
+    console.log(`   📅 ${r.date}: revenue=$${r.revenue || 0}, ai_retainer=$${r.ai_retainer_cost || 0}, ai_daily=$${r.ai_daily_cost || 0}, TOTAL=$${calculatedTotal.toFixed(2)}`);
+  });
 
   // Prepare chart data (using user's timezone for accurate date boundaries!)
   const monthlyRevenueData = [];
@@ -318,18 +371,34 @@ export default async function DashboardPage() {
     
     // Note: revenueData already includes admin adjustments from revenue_tracking table
     // No need to add them again!
+    // Calculate total AI cost manually (ai_retainer_cost + ai_daily_cost)
+    const dayCosts = (dayRevenue?.ai_retainer_cost || 0) + (dayRevenue?.ai_daily_cost || 0);
     monthlyRevenueData.push({
       date: displayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       revenue: dayRevenue?.revenue || 0,  // Already includes admin adjustments
-      costs: dayRevenue?.total_ai_cost || 0,
-      profit: dayRevenue?.profit || 0,  // Already includes admin adjustments
+      costs: dayCosts,
+      profit: (dayRevenue?.revenue || 0) - dayCosts,  // Calculate profit from revenue - costs
     });
   }
 
   // Calculate costs for LAST 30 DAYS only (to match the chart period)
-  const costs30Days = revenueData?.filter(r => {
+  // Note: total_ai_cost may be null if it's not a generated column, so calculate manually
+  const costs30DaysFromRevenue = revenueData?.filter(r => {
     return r.date >= startOf30DaysISO.split('T')[0]; // Compare date strings
-  }).reduce((sum, r) => sum + (r.total_ai_cost || 0), 0) || 0;
+  }).reduce((sum, r) => {
+    // Calculate total AI cost: base retainer + per-call costs
+    const totalAICost = (r.ai_retainer_cost || 0) + (r.ai_daily_cost || 0);
+    return sum + totalAICost;
+  }, 0) || 0;
+  
+  // FALLBACK: Also calculate costs from calls table directly
+  const costs30DaysFromCalls = last30DaysCalls?.reduce((sum, call) => sum + (call.cost || 0), 0) || 0;
+  
+  console.log(`💰 Costs from revenue_tracking: $${costs30DaysFromRevenue.toFixed(2)}`);
+  console.log(`💰 Costs from calls table: $${costs30DaysFromCalls.toFixed(2)}`);
+  
+  // Use the higher of the two (in case one source is incomplete)
+  const costs30Days = Math.max(costs30DaysFromRevenue, costs30DaysFromCalls);
 
   const totalRevenue = revenueData?.reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;  // Already includes admin adjustments
   const totalCosts = costs30Days; // Only last 30 days, not all-time
@@ -406,6 +475,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#0B1437] relative overflow-hidden">
+      {/* First Visit Confetti - shoots once on first dashboard visit */}
+      <FirstVisitConfetti userId={user.id} />
+      
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-3xl -top-40 -left-40 animate-pulse" />
@@ -424,15 +496,20 @@ export default async function DashboardPage() {
 
         {/* Welcome */}
         <div className="mb-8">
-          {/* Mobile: Just "Welcome back" */}
-          <h2 className="text-3xl font-bold text-white mb-2 md:hidden">
-            Welcome back 👋
-          </h2>
-          {/* Desktop: Full name + emoji */}
-          <h2 className="hidden md:block text-3xl font-bold text-white mb-2">
-            Welcome back, {displayName}! 👋
-          </h2>
-          <p className="text-gray-400">Here's how your AI is performing</p>
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-2xl shadow-blue-500/30">
+              <LayoutDashboard className="w-9 h-9 text-white" />
+            </div>
+            <div>
+              {/* Mobile: Just "Dashboard" */}
+              <h1 className="text-4xl font-bold text-white bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent md:hidden">
+                Dashboard
+              </h1>
+              {/* Desktop: Welcome + name (dynamic based on last visit) */}
+              <DashboardGreeting displayName={displayName} />
+              <p className="text-gray-400 mt-1">Here's how your AI is performing</p>
+            </div>
+          </div>
         </div>
 
         {/* Top Stats - All Time (Desktop Only) */}

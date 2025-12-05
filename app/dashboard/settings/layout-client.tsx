@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, CreditCard, Wallet, Sparkles, TrendingUp } from 'lucide-react';
+import { User, CreditCard, Wallet, Sparkles, TrendingUp, HeadphonesIcon } from 'lucide-react';
 
 export function SettingsLayoutClient({
   children,
@@ -21,6 +21,7 @@ export function SettingsLayoutClient({
     { name: 'Balance', href: '/dashboard/settings/balance', icon: Wallet },
     { name: 'Affiliate', href: '/dashboard/settings/affiliate', icon: TrendingUp }, // Always visible!
     { name: 'Dialer', href: '/dashboard/settings/dialer-automation', icon: Sparkles },
+    { name: 'Support', href: '/dashboard/settings/support', icon: HeadphonesIcon },
   ];
 
   // No more conditional nav - affiliate always shows

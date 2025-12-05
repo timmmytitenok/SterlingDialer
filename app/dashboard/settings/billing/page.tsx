@@ -4,6 +4,7 @@ import { SimpleProSelector } from '@/components/simple-pro-selector';
 import { SubscriptionSuccessHandler } from '@/components/subscription-success-handler';
 import { BalanceSuccessHandler } from '@/components/balance-success-handler';
 import { BillingManagementContent } from '@/components/billing-management-content';
+import { SubscriptionEnded } from '@/components/subscription-ended';
 import { getSubscriptionFeatures } from '@/lib/subscription-helpers';
 
 // Force dynamic rendering - no caching
@@ -19,6 +20,35 @@ export default async function BillingPage() {
 
   if (!user) {
     redirect('/signup');
+  }
+
+  // 🔒 CHECK SUBSCRIPTION STATUS FIRST
+  const { data: userProfile } = await supabase
+    .from('profiles')
+    .select('has_active_subscription, subscription_tier, free_trial_ends_at, is_vip')
+    .eq('user_id', user.id)
+    .single();
+
+  const isVIP = userProfile?.is_vip === true;
+  
+  // 🚨 ONLY BLOCK IF WE'RE SURE SUBSCRIPTION ENDED
+  // Don't block new users waiting for webhook to process!
+  const subscriptionExplicitlyEnded = userProfile?.subscription_tier === 'none' && 
+                                       userProfile?.has_active_subscription === false;
+  
+  const wasFreeTrial = userProfile?.subscription_tier === 'none' && userProfile?.free_trial_ends_at;
+
+  // 🔒 ONLY BLOCK if subscription explicitly ended (not new users!)
+  if (subscriptionExplicitlyEnded && !isVIP) {
+    console.log('🔒 Subscription ended - showing subscription ended page on billing');
+    return <SubscriptionEnded 
+      wasFreeTrial={wasFreeTrial} 
+      endDate={userProfile?.free_trial_ends_at} 
+    />;
+  }
+  
+  if (isVIP) {
+    console.log('👑 VIP user detected - showing billing page with VIP status');
   }
 
   // Get user's subscription info from subscriptions table (NEW - not profiles!)
@@ -72,34 +102,27 @@ export default async function BillingPage() {
     trialEndsAt,
   });
 
+  // 🚨 NEW USERS: Always show billing management page (don't show trial signup)
+  // If user has an account, they should see their billing info, not a signup page!
   return (
     <>
       <SubscriptionSuccessHandler />
       <BalanceSuccessHandler />
       
-      {/* Show subscription status */}
-      {(subscriptionFeatures.hasActiveSubscription || hasProAccess || hasFreeAccess || hasVIPAccess) ? (
-        <BillingManagementContent
-          userId={user.id}
-          userEmail={user.email!}
-          hasSubscription={true}
-          currentTier={subscription?.tier || subscriptionFeatures.tier || 'trial'}
-          subscriptionData={subscription || { created_at: accountCreatedAt }}
-          accountCreatedAt={accountCreatedAt}
-          referralBonusDays={0}
-          trialEndsAt={trialEndsAt}
-          initialBalance={currentBalance}
-          initialAutoRefill={autoRefillEnabled}
-          initialRefillAmount={autoRefillAmount}
-        />
-      ) : (
-        <div className="mb-8">
-          <SimpleProSelector 
-            currentTier={subscriptionFeatures.tier} 
-            hideFreeTrial={subscriptionFeatures.tier === 'free_trial'}
-          />
-        </div>
-      )}
+      {/* Always show billing management for logged-in users */}
+      <BillingManagementContent
+        userId={user.id}
+        userEmail={user.email!}
+        hasSubscription={true}
+        currentTier={subscription?.tier || subscriptionFeatures.tier || 'trial'}
+        subscriptionData={subscription || { created_at: accountCreatedAt }}
+        accountCreatedAt={accountCreatedAt}
+        referralBonusDays={0}
+        trialEndsAt={trialEndsAt}
+        initialBalance={currentBalance}
+        initialAutoRefill={autoRefillEnabled}
+        initialRefillAmount={autoRefillAmount}
+      />
     </>
   );
 }

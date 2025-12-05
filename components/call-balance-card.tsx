@@ -317,84 +317,115 @@ export function CallBalanceCard({
 
       {/* Consent Modal */}
       {showConsent && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-4">
-          <div className="bg-[#1A2647] rounded-xl md:rounded-2xl border-2 border-blue-500/40 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="p-4 md:p-6 border-b border-gray-800">
-              <h2 className="text-xl md:text-2xl font-bold text-white mb-1 md:mb-2">Before You Continue</h2>
-              <p className="text-sm md:text-base text-gray-400">Please read and accept the terms below</p>
-            </div>
-
-            {/* Consent Content */}
-            <div className="p-4 md:p-6 space-y-3 md:space-y-4">
-              <div className="bg-blue-500/10 border-2 border-blue-500/30 rounded-lg md:rounded-xl p-4 md:p-5">
-                <h3 className="text-white font-semibold mb-2 md:mb-3 flex items-center gap-2 text-sm md:text-base">
-                  <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
-                  Auto-Refill Terms
-                </h3>
-                <div className="space-y-2 md:space-y-3 text-xs md:text-sm text-gray-300">
-                  <p>
-                    ✓ When your balance drops below <strong className="text-white">$10</strong>, we'll automatically charge your card <strong className="text-white">$25</strong>
-                  </p>
-                  <p>
-                    ✓ This ensures your AI never stops calling due to low balance
-                  </p>
-                  <p>
-                    ✓ You can disable auto-refill anytime from the Call Balance settings
-                  </p>
-                  <p className="text-yellow-400 font-semibold">
-                    ⚠️ If auto-refill is disabled, this may prevent you from using the AI!
-                  </p>
-                </div>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 md:p-4 animate-in fade-in duration-300">
+          <div className="relative max-w-2xl w-full shadow-[0_0_80px_rgba(59,130,246,0.3)] animate-in fade-in zoom-in-95 duration-400">
+            {/* Outer Glow Ring */}
+            <div className="absolute -inset-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 rounded-3xl opacity-60 blur-sm animate-pulse" style={{ animationDuration: '2s' }} />
+            
+            {/* Inner Card */}
+            <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto">
+              {/* Animated Background Glows */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute w-80 h-80 bg-blue-500/20 rounded-full blur-[100px] -top-32 -right-32 animate-pulse" style={{ animationDuration: '3s' }} />
+                <div className="absolute w-64 h-64 bg-indigo-500/20 rounded-full blur-[80px] -bottom-20 -left-20 animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }} />
+                <div className="absolute w-40 h-40 bg-purple-500/15 rounded-full blur-[60px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
               </div>
 
-              {/* Checkbox */}
-              <label className="flex items-start gap-3 p-3 md:p-4 bg-[#0B1437] border-2 border-gray-700 hover:border-blue-500/40 rounded-lg md:rounded-xl cursor-pointer transition-all">
-                <input
-                  type="checkbox"
-                  checked={consentChecked}
-                  onChange={(e) => setConsentChecked(e.target.checked)}
-                  className="mt-0.5 md:mt-1 w-4 h-4 md:w-5 md:h-5 rounded border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer shrink-0"
-                />
-                <span className="text-xs md:text-sm text-gray-300">
-                  I understand and agree that Sterling AI will automatically charge $25 when my balance drops below $10. I can cancel auto-refill anytime.
-                </span>
-              </label>
-            </div>
+              {/* Top Glow Line */}
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-400 to-transparent" />
 
-            {/* Actions */}
-            <div className="p-4 md:p-6 border-t border-gray-800 flex flex-col md:flex-row gap-3">
-              <button
-                onClick={() => {
-                  setShowConsent(false);
-                  setConsentChecked(false);
-                }}
-                className="w-full md:flex-1 px-4 md:px-6 py-3 border-2 border-gray-700 bg-gray-800/20 text-gray-400 hover:text-white hover:bg-gray-800/40 rounded-lg transition-all font-medium text-sm md:text-base"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleContinueToStripe}
-                disabled={!consentChecked || loading}
-                className="group relative overflow-hidden w-full md:flex-1 px-4 md:px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 border-2 border-blue-500/60 text-white font-bold text-sm md:text-base rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  {loading ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    <>
-                      Continue to Payment
-                      <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
-                    </>
-                  )}
-                </span>
-                {!loading && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
-                )}
-              </button>
+              <div className="relative">
+                {/* Header */}
+                <div className="p-4 md:p-6 border-b border-blue-500/20">
+                  <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-300 to-indigo-300 bg-clip-text text-transparent mb-1 md:mb-2">Before You Continue</h2>
+                  <p className="text-sm md:text-base text-gray-400">Please read and accept the terms below</p>
+                </div>
+
+                {/* Consent Content */}
+                <div className="p-4 md:p-6 space-y-3 md:space-y-4">
+                  <div className="relative bg-gradient-to-br from-blue-500/15 to-indigo-500/10 border border-blue-500/40 rounded-2xl p-4 md:p-5 shadow-inner">
+                    {/* Inner glow */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent rounded-2xl pointer-events-none" />
+                    <h3 className="relative text-white font-semibold mb-2 md:mb-3 flex items-center gap-2 text-sm md:text-base">
+                      <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
+                        <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+                      </div>
+                      Auto-Refill Terms
+                    </h3>
+                    <div className="relative space-y-2 md:space-y-3 text-xs md:text-sm text-gray-300">
+                      <p className="flex items-start gap-2">
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        <span>When your balance drops below <strong className="text-blue-300">$10</strong>, we'll automatically charge your card <strong className="text-blue-300">$25</strong></span>
+                      </p>
+                      <p className="flex items-start gap-2">
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        <span>This ensures your AI never stops calling due to low balance</span>
+                      </p>
+                      <p className="flex items-start gap-2">
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        <span>You can disable auto-refill anytime from the Call Balance settings</span>
+                      </p>
+                      <div className="mt-3 pt-3 border-t border-yellow-500/30">
+                        <p className="text-yellow-400 font-semibold flex items-center gap-2">
+                          <span className="text-lg">⚠️</span>
+                          If auto-refill is disabled, this may prevent you from using the AI!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Checkbox */}
+                  <label className={`flex items-start gap-3 p-3 md:p-4 bg-gradient-to-br from-[#0B1437] to-[#0F1629] border-2 rounded-2xl cursor-pointer transition-all duration-300 ${consentChecked ? 'border-green-500/50 shadow-lg shadow-green-500/20' : 'border-gray-700/50 hover:border-blue-500/40'}`}>
+                    <input
+                      type="checkbox"
+                      checked={consentChecked}
+                      onChange={(e) => setConsentChecked(e.target.checked)}
+                      className="mt-0.5 md:mt-1 w-4 h-4 md:w-5 md:h-5 rounded border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer shrink-0"
+                    />
+                    <span className="text-xs md:text-sm text-gray-300">
+                      I understand and agree that Sterling AI will automatically charge $25 when my balance drops below $10. I can cancel auto-refill anytime.
+                    </span>
+                    {consentChecked && (
+                      <span className="ml-auto text-green-400 text-lg">✓</span>
+                    )}
+                  </label>
+                </div>
+
+                {/* Actions */}
+                <div className="p-4 md:p-6 border-t border-gray-800/50 flex flex-col md:flex-row gap-3">
+                  <button
+                    onClick={() => {
+                      setShowConsent(false);
+                      setConsentChecked(false);
+                    }}
+                    className="w-full md:flex-1 px-4 md:px-6 py-3.5 border border-gray-600/50 bg-gray-800/40 text-gray-400 hover:text-white hover:bg-gray-800/60 hover:border-gray-500/50 rounded-xl transition-all duration-300 font-medium text-sm md:text-base"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleContinueToStripe}
+                    disabled={!consentChecked || loading}
+                    className="group relative overflow-hidden w-full md:flex-1 px-4 md:px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm md:text-base rounded-xl transition-all duration-300 hover:scale-[1.02] shadow-xl shadow-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  >
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      {loading ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          Continue to Payment
+                          <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
+                        </>
+                      )}
+                    </span>
+                    {!loading && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

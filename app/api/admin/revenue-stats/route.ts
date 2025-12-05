@@ -27,8 +27,8 @@ export async function GET(req: Request) {
     console.log('📊 Fetching subscriptions...');
     const { data: allSubscriptions, error: subsError } = await supabase
       .from('subscriptions')
-      .select('user_id, tier, status, created_at, current_period_end, stripe_subscription_id')
-      .in('tier', ['pro', 'vip']); // Only count paid tiers
+      .select('user_id, subscription_tier, status, created_at, current_period_end, stripe_subscription_id')
+      .in('subscription_tier', ['pro', 'vip']); // Only count paid tiers
 
     if (subsError) {
       console.error('❌ Error fetching subscriptions:', subsError);
@@ -40,7 +40,7 @@ export async function GET(req: Request) {
     // PRO = $499/month, VIP = lifetime (no recurring charges)
     // Only count 'active' or 'trialing' subscriptions that have been billed
     const activeSubscriptions = allSubscriptions?.filter((s: any) => 
-      s.status === 'active' && s.tier === 'pro' && s.stripe_subscription_id
+      s.status === 'active' && s.subscription_tier === 'pro' && s.stripe_subscription_id
     ) || [];
 
     // Count total subscription months billed (estimate based on created_at)
@@ -72,7 +72,8 @@ export async function GET(req: Request) {
       }
     }
 
-    const subscriptionRevenue = totalSubMonths * 499; // $499 per month (revenue is same for both)
+    // Revenue from Stripe subscriptions
+    const stripeSubscriptionRevenue = totalSubMonths * 499; // $499 per month (revenue is same for both)
     const commissionsPaid = referredMonths * 100; // $100 commission per referred month
     
     console.log(`💰 Subscription breakdown:`);
@@ -250,10 +251,49 @@ export async function GET(req: Request) {
 
     if (userCountError) throw userCountError;
 
-    // Pro access users (active pro or vip subscriptions)
+    // Active AI Users (users with AI configured)
+    const { data: retellConfigs, error: retellError } = await supabase
+      .from('user_retell_config')
+      .select('user_id, retell_agent_id, phone_number')
+      .not('retell_agent_id', 'is', null)
+      .not('phone_number', 'is', null);
+    
+    if (retellError) throw retellError;
+    const activeUsers = retellConfigs?.length || 0;
+
+    // Pro access users (active pro subscriptions ONLY - exclude VIP)
     const proUsers = allSubscriptions?.filter((s: any) => 
-      s.status === 'active' && (s.tier === 'pro' || s.tier === 'vip')
+      s.status === 'active' && s.subscription_tier === 'pro'
     ).length || 0;
+
+    // VIP users - check BOTH subscriptions table AND profiles table (is_vip = true)
+    // BUT only count if they have AI configured!
+    
+    // Also check profiles table for is_vip = true
+    const { data: vipProfiles, error: vipProfilesError } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('is_vip', true);
+    
+    if (vipProfilesError) {
+      console.error('❌ Error fetching VIP profiles:', vipProfilesError);
+    }
+    
+    // Get unique VIP user IDs (combine both sources, avoid duplicates)
+    const vipUserIds = new Set<string>();
+    
+    // Add VIP users from subscriptions
+    allSubscriptions?.filter((s: any) => s.status === 'active' && s.subscription_tier === 'vip')
+      .forEach((s: any) => vipUserIds.add(s.user_id));
+    
+    // Add VIP users from profiles
+    vipProfiles?.forEach((p: any) => vipUserIds.add(p.user_id));
+    
+    // Get set of user IDs who have AI configured
+    const configuredUserIds = new Set(retellConfigs?.map((r: any) => r.user_id) || []);
+    
+    // Only count VIP users who ALSO have AI configured
+    const vipUsers = Array.from(vipUserIds).filter(userId => configuredUserIds.has(userId)).length;
 
     // ============================================
     // 8. CALL ACTIVITY STATS
@@ -274,6 +314,10 @@ export async function GET(req: Request) {
     const appointmentsToday = todayCalls?.filter((c: any) => 
       c.outcome === 'appointment_booked'
     ).length || 0;
+    
+    // Active Users Today = distinct users who made at least 1 call today
+    const uniqueUsersToday = new Set(todayCalls?.map((c: any) => c.user_id).filter(Boolean));
+    const activeUsersToday = uniqueUsersToday.size;
 
     // All-time calls
     const { count: totalCallsAllTime, error: allCallsError } = await supabase
@@ -291,7 +335,67 @@ export async function GET(req: Request) {
     if (allApptsError) throw allApptsError;
 
     // ============================================
-    // 9. PROFIT CALCULATIONS
+    // 9. CUSTOM REVENUE & EXPENSES (Production, Consulting, etc.)
+    // ============================================
+    
+    console.log('💰 Fetching custom revenue and expenses...');
+    const { data: customItems, error: customItemsError } = await supabase
+      .from('custom_revenue_expenses')
+      .select('type, category, amount, date, description');
+
+    if (customItemsError) {
+      console.error('❌ Error fetching custom revenue/expenses:', customItemsError);
+      // Don't throw - just continue without custom items
+    }
+
+    // Separate revenue and expenses
+    const customRevenueItems = customItems?.filter((item: any) => item.type === 'revenue') || [];
+    const customExpenseItems = customItems?.filter((item: any) => item.type === 'expense') || [];
+
+    // Separate custom revenue by type
+    const customSubscriptionItems = customRevenueItems.filter((item: any) => item.category === 'Subscription');
+    const customBalanceRefillItems = customRevenueItems.filter((item: any) => item.category === 'Balance Refill');
+    const otherCustomRevenueItems = customRevenueItems.filter((item: any) => 
+      item.category !== 'Subscription' && item.category !== 'Balance Refill'
+    );
+
+    const customSubscriptionRevenue = customSubscriptionItems.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+    const customBalanceRefillRevenue = customBalanceRefillItems.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+    const otherCustomRevenue = otherCustomRevenueItems.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+    
+    // Count manual uploads (each entry represents quantity, so we need to count how many $25 chunks)
+    const customBalanceRefillCount = Math.round(customBalanceRefillRevenue / 25); // Each refill is $25
+    const customSubscriptionCount = Math.round(customSubscriptionRevenue / 499); // Each subscription is $499
+
+    const totalCustomRevenue = customSubscriptionRevenue + customBalanceRefillRevenue + otherCustomRevenue;
+    const totalCustomExpenses = customExpenseItems.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+    
+    console.log(`💵 Custom Subscriptions: ${customSubscriptionCount} (${customSubscriptionRevenue})`);
+    console.log(`💵 Custom Balance Refills: ${customBalanceRefillCount} (${customBalanceRefillRevenue})`);
+    console.log(`💵 Other Custom Revenue: $${otherCustomRevenue}`);
+    console.log(`💵 Total Custom Revenue: $${totalCustomRevenue}`);
+    console.log(`💵 Total Custom Expenses: $${totalCustomExpenses}`);
+
+    // Group custom expenses by category for breakdown
+    const customExpensesByCategory: { [key: string]: number } = {};
+    customExpenseItems.forEach((exp: any) => {
+      if (!customExpensesByCategory[exp.category]) {
+        customExpensesByCategory[exp.category] = 0;
+      }
+      customExpensesByCategory[exp.category] += exp.amount || 0;
+    });
+
+    // Group custom revenue by category for breakdown
+    const customRevenueByCategory: { [key: string]: number } = {};
+    customRevenueItems.forEach((rev: any) => {
+      if (!customRevenueByCategory[rev.category]) {
+        customRevenueByCategory[rev.category] = 0;
+      }
+      customRevenueByCategory[rev.category] += rev.amount || 0;
+    });
+
+    // ============================================
+    // 10. PROFIT CALCULATIONS
     // ============================================
     
     // Call minutes profit: $14.25 per $25 refill (already accounts for AI cost + Stripe fee)
@@ -305,22 +409,28 @@ export async function GET(req: Request) {
     const referredSubProfit = referredMonths * 384; // $384 profit per referred month
     const subscriptionProfit = directSubProfit + referredSubProfit;
     
-    // Expenses: Stripe fees (3% ≈ $15/month) + commissions paid
+    // Expenses: Stripe fees (3% ≈ $15/month) + commissions paid + custom expenses
     const stripeFees = totalSubMonths * 15; // $15 Stripe fee per $499 subscription
     const subscriptionExpense = stripeFees + commissionsPaid;
     
-    const totalRevenue = subscriptionRevenue + minutesRevenue;
-    const totalProfit = minutesProfit + subscriptionProfit;
-    const totalExpenses = minutesExpense + subscriptionExpense;
+    // Combine Stripe revenue with custom revenue
+    const totalSubscriptionRevenue = stripeSubscriptionRevenue + customSubscriptionRevenue;
+    const totalMinutesRevenue = minutesRevenue + customBalanceRefillRevenue;
+    
+    const totalRevenue = totalSubscriptionRevenue + totalMinutesRevenue + otherCustomRevenue; // All revenue sources
+    const totalProfit = minutesProfit + subscriptionProfit + totalCustomRevenue - totalCustomExpenses; // Add custom revenue, subtract custom expenses
+    const totalExpenses = minutesExpense + subscriptionExpense + totalCustomExpenses; // Add custom expenses to total
     
     console.log(`💰 Profit breakdown:`);
     console.log(`   Minutes profit: $${minutesProfit.toFixed(2)} (${totalRefills} refills)`);
     console.log(`   Direct subs profit: $${directSubProfit.toFixed(2)} (${directMonths} months × $484)`);
     console.log(`   Referred subs profit: $${referredSubProfit.toFixed(2)} (${referredMonths} months × $384)`);
     console.log(`   Total subscription profit: $${subscriptionProfit.toFixed(2)}`);
+    console.log(`   Custom revenue: $${totalCustomRevenue.toFixed(2)}`);
+    console.log(`   Custom expenses: $${totalCustomExpenses.toFixed(2)}`);
 
     // ============================================
-    // 10. RETURN DATA
+    // 11. RETURN DATA
     // ============================================
     
     console.log('✅ Returning revenue stats...');
@@ -331,8 +441,13 @@ export async function GET(req: Request) {
     return NextResponse.json({
       // All-time totals
       allTime: {
-        subscriptionRevenue,
-        minutesRevenue,
+        subscriptionRevenue: totalSubscriptionRevenue, // Includes custom subscriptions
+        minutesRevenue: totalMinutesRevenue, // Includes custom balance refills
+        customRevenue: otherCustomRevenue, // Only "other" custom revenue (not subscriptions or refills)
+        customSubscriptionRevenue, // Separate for breakdown
+        customBalanceRefillRevenue, // Separate for breakdown
+        customSubscriptionCount, // Count of manual subscriptions
+        customBalanceRefillCount, // Count of manual refills
         totalRevenue,
         totalProfit,
         totalExpenses,
@@ -341,6 +456,9 @@ export async function GET(req: Request) {
         referredSubMonths: referredMonths,
         totalRefills,
         commissionsPaid,
+        customExpenses: totalCustomExpenses,
+        customExpensesByCategory,
+        customRevenueByCategory,
       },
       
       // Time-based breakdowns
@@ -370,9 +488,12 @@ export async function GET(req: Request) {
       // User stats
       users: {
         total: totalUsers || 0,
-        proAccess: proUsers,
+        activeUsers: activeUsers, // Users with AI configured
+        activeUsersToday: activeUsersToday, // Users who made at least 1 call today
+        proAccess: proUsers, // Pro subscribers only (excluding VIP)
+        vipAccess: vipUsers, // VIP subscribers only
         conversionRate: totalUsers && totalUsers > 0 ? ((proUsers / totalUsers) * 100).toFixed(1) : '0.0',
-        avgRevenuePerUser: totalUsers && totalUsers > 0 ? (totalRevenue / totalUsers).toFixed(0) : '0',
+        avgRevenuePerUser: activeUsers && activeUsers > 0 ? (totalRevenue / activeUsers).toFixed(0) : '0',
       },
       
       // Call activity

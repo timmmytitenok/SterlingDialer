@@ -235,6 +235,40 @@ export async function POST(req: Request) {
           
           console.log('✅ Found user for customer:', userProfile.user_id);
 
+          // 🔒 SECURITY: Check if this is a trial activation (card was required)
+          const isTrialActivation = session.metadata?.type === 'trial_activation';
+          
+          if (isTrialActivation) {
+            console.log('🎁 TRIAL ACTIVATION DETECTED - User added payment method!');
+            console.log('🔒 Card required: YES ✅');
+            
+            // Grant free trial access NOW (card is on file)
+            const trialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            
+            const { error: trialError } = await supabase
+              .from('profiles')
+              .update({
+                subscription_tier: 'free_trial',
+                free_trial_started_at: new Date().toISOString(),
+                free_trial_ends_at: trialEnd.toISOString(),
+                cost_per_minute: 0.30,
+                stripe_customer_id: customerId,
+                has_active_subscription: true,
+                // DON'T set onboarding_all_complete - they need to do Quick Setup!
+              })
+              .eq('user_id', userProfile.user_id);
+            
+            if (trialError) {
+              console.error('❌ Error granting trial access:', trialError);
+            } else {
+              console.log('✅ FREE TRIAL ACTIVATED - 30 days of access granted');
+              console.log('✅ Payment method on file - will charge $499 after 30 days');
+            }
+            
+            // Continue to regular subscription processing below
+            // (The subscription record still needs to be created)
+          }
+
           // Single tier: SterlingAI Pro Access ($499/month)
           const tier = 'pro';
           const maxCalls = 999999; // Unlimited
@@ -703,12 +737,13 @@ export async function POST(req: Request) {
       }
     }
 
-    // Handle subscription deletion
+    // Handle subscription deletion (subscription period ended after cancellation)
     if (event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId = subscription.customer as string;
 
       console.log('🗑️ Processing subscription deletion:', subscription.id);
+      console.log('📅 Subscription period has ENDED - blocking AI features now');
 
       // Update subscription status
       const { error: deleteError } = await supabase
@@ -721,9 +756,9 @@ export async function POST(req: Request) {
         throw deleteError;
       }
 
-      console.log('✅ Subscription canceled:', subscription.id);
+      console.log('✅ Subscription canceled in database:', subscription.id);
 
-      // Mark referral as cancelled (stops future commissions, but keeps earned ones!)
+      // Get user profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('user_id')
@@ -731,6 +766,69 @@ export async function POST(req: Request) {
         .single();
 
       if (profile?.user_id) {
+        console.log('👤 Found user:', profile.user_id);
+        
+        // 🔒 BLOCK AI FEATURES - Subscription period has ended
+        console.log('🔒 BLOCKING AI FEATURES:');
+        console.log('   - Setting has_active_subscription = false');
+        console.log('   - Setting subscription_tier = none');
+        console.log('   - Clearing free trial data (if applicable)');
+        console.log('   - AI Dialer page will be blocked');
+        console.log('   - Auto schedule will stop working');
+        
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ 
+            has_active_subscription: false,
+            subscription_tier: 'none',
+            subscription_status: 'canceled',
+            // Clear trial data if they were on trial
+            free_trial_started_at: null,
+            free_trial_ends_at: null,
+            free_trial_days_remaining: null,
+          })
+          .eq('user_id', profile.user_id);
+        
+        if (profileError) {
+          console.error('❌ Error updating profile:', profileError);
+        } else {
+          console.log('✅ Profile updated - AI features blocked');
+        }
+
+        // 🛑 TURN OFF AUTO SCHEDULE
+        console.log('🛑 Disabling auto schedule...');
+        const { error: scheduleError } = await supabase
+          .from('dialer_settings')
+          .update({ 
+            auto_schedule_enabled: false,
+            // Keep the schedule config (days/time) so they can see what it was
+          })
+          .eq('user_id', profile.user_id);
+        
+        if (scheduleError) {
+          console.error('❌ Error disabling auto schedule:', scheduleError);
+        } else {
+          console.log('✅ Auto schedule disabled');
+        }
+
+        // 🧹 CLEAR AI AGENT CONFIGURATION
+        console.log('🧹 Clearing AI agent configuration (Agent ID & Phone Number)...');
+        const { error: retellError } = await supabase
+          .from('user_retell_config')
+          .update({ 
+            retell_agent_id: null,
+            phone_number: null,
+            is_active: false,
+          })
+          .eq('user_id', profile.user_id);
+        
+        if (retellError) {
+          console.error('❌ Error clearing agent config:', retellError);
+        } else {
+          console.log('✅ Agent configuration cleared (prevents accidental AI usage)');
+        }
+
+        // Mark referral as cancelled (stops future commissions, but keeps earned ones!)
         console.log('🎯 Marking referral as cancelled for user:', profile.user_id);
         
         const { error: refCancelError } = await supabase
@@ -747,6 +845,12 @@ export async function POST(req: Request) {
           console.log('✅ Referral marked as cancelled - no more monthly commissions!');
           console.log('💰 Already earned commissions are kept - affiliate earned them!');
         }
+
+        console.log('🎯 SUBSCRIPTION CANCELLATION COMPLETE');
+        console.log('   ✅ User can still access dashboard, settings, leads, etc.');
+        console.log('   🔒 AI Dialer page is now blocked');
+        console.log('   🔒 Auto Schedule is now blocked');
+        console.log('   🧹 Agent configuration cleared (no accidental usage)');
       }
     }
 

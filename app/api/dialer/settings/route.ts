@@ -52,6 +52,7 @@ export async function GET() {
       throw error;
     }
 
+    console.log('📤 Returning dialer settings, auto_start_enabled:', settings?.auto_start_enabled);
     return NextResponse.json({ success: true, settings });
   } catch (error: any) {
     console.error('Error fetching dialer settings:', error);

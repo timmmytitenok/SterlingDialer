@@ -74,20 +74,13 @@ export async function POST(request: Request) {
       },
     });
 
-    // Start the free trial (Stripe will handle the rest)
-    const trialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    await supabase
-      .from('profiles')
-      .update({
-        subscription_tier: 'free_trial',
-        free_trial_started_at: new Date().toISOString(),
-        free_trial_ends_at: trialEnd.toISOString(),
-        cost_per_minute: 0.30,
-      })
-      .eq('user_id', user.id);
+    // 🔒 SECURITY: DO NOT grant trial access here!
+    // Trial access will be granted by the webhook AFTER user adds payment method
+    // This prevents users from getting free trial without a card on file
 
-    console.log('✅ Trial activation session created');
-    console.log('🎯 User will be redirected to onboarding steps after checkout');
+    console.log('✅ Trial activation checkout session created');
+    console.log('🎯 User must complete checkout with card before trial access is granted');
+    console.log('🔒 Webhook will activate trial after checkout.session.completed event');
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {

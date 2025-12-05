@@ -15,7 +15,7 @@ export default function WelcomePage() {
   }, []);
 
   const handleContinue = () => {
-    router.push('/dashboard/onboarding');
+    router.push('/dashboard');
   };
 
   return (

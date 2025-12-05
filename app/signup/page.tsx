@@ -220,7 +220,13 @@ function SignupPageContent() {
         router.push('/trial-activate');
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to create account');
+      console.error('Signup error:', err);
+      // Handle network errors gracefully
+      if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+        setError('Network error. Please check your internet connection and try again.');
+      } else {
+        setError(err.message || 'Failed to create account');
+      }
       setLoading(false);
     }
   };
@@ -239,10 +245,10 @@ function SignupPageContent() {
       {/* Back Button */}
       <Link
         href="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-800 border border-gray-700 hover:border-gray-600 text-gray-400 hover:text-white rounded-lg transition-all hover:scale-105 group"
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gray-500/20 to-gray-600/20 backdrop-blur-sm border border-gray-500/30 hover:border-gray-400/50 text-white rounded-lg transition-all duration-300 shadow-lg shadow-gray-500/20 hover:shadow-xl hover:shadow-gray-400/40 hover:scale-110 hover:from-gray-500/30 hover:to-gray-600/30 group"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-        <span className="text-sm font-medium">Back to Home</span>
+        <span className="text-sm font-semibold">Back to Home</span>
       </Link>
 
       <div className="relative z-10 w-full max-w-md">
@@ -331,8 +337,7 @@ function SignupPageContent() {
                   placeholder="(555) 123-4567"
                   className="w-full pl-10 sm:pl-11 pr-4 py-2.5 sm:py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm sm:text-base"
                 />
-              </div>
-              <p className="text-xs text-gray-400 mt-1">10 digits - auto-formatted</p>
+                </div>
             </div>
 
             {/* Email */}
@@ -423,16 +428,16 @@ function SignupPageContent() {
           </div>
         </div>
 
-        {/* Trust Badges - Compact on mobile */}
-        <div className="mt-3 sm:mt-4 flex items-center justify-center gap-3 sm:gap-6 text-xs text-gray-500">
+        {/* Trust Badges - All visible on mobile */}
+        <div className="mt-3 sm:mt-4 flex items-center justify-center gap-2 sm:gap-6 text-[10px] sm:text-xs text-gray-500">
           <div className="flex items-center gap-1">
-            <Lock className="w-3 h-3" />
-            <span>Secure</span>
+            <Lock className="w-3 h-3 flex-shrink-0" />
+            <span className="whitespace-nowrap">Secure</span>
           </div>
-          <span className="hidden sm:inline">•</span>
-          <span className="hidden sm:inline">No charge for 30 days</span>
-          <span className="hidden sm:inline">•</span>
-          <span className="hidden sm:inline">Cancel anytime</span>
+          <span>•</span>
+          <span className="whitespace-nowrap">No charge 30 days</span>
+          <span>•</span>
+          <span className="whitespace-nowrap">Cancel anytime</span>
         </div>
       </div>
     </div>

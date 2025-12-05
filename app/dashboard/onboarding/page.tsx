@@ -145,7 +145,14 @@ export default function OnboardingStepsPage() {
         />
       )}
 
-      <div className="container mx-auto px-4 lg:px-8 py-8">
+      {/* Animated Background Glows */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '4s' }} />
+        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-blue-600/20 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }} />
+      </div>
+
+      <div className="container mx-auto px-4 lg:px-8 py-8 relative z-10">
         <div className="max-w-3xl mx-auto">
           {/* Mobile-Only Message */}
           <div className="md:hidden flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
@@ -157,7 +164,7 @@ export default function OnboardingStepsPage() {
               Desktop Required
             </h1>
             
-            <p className="text-lg text-gray-300 mb-2 leading-relaxed">
+            <p className="text-1lg text-gray-300 mb-2 leading-relaxed">
               Head over to <span className="text-blue-400 font-semibold">desktop</span> to complete setup
             </p>
             <p className="text-lg text-gray-300 leading-relaxed">
@@ -174,60 +181,58 @@ export default function OnboardingStepsPage() {
           {/* Desktop-Only Content */}
           <div className="hidden md:block">
             {/* Header */}
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/20 rounded-full mb-4">
-                <Zap className="w-4 h-4 text-purple-400" />
-                <span className="text-purple-400 font-semibold text-sm">Quick Setup</span>
+            <div className="text-center mb-10">
+              {/* Animated Pill Badge */}
+              <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-full mb-6 shadow-lg shadow-purple-500/20 animate-pulse" style={{ animationDuration: '3s' }}>
+                <Zap className="w-5 h-5 text-purple-400" />
+                <span className="text-purple-300 font-bold text-sm tracking-wide">QUICK SETUP</span>
+                <span className="text-purple-400">⚡</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                Let's Get You Started
+              <h1 className="text-5xl md:text-6xl font-bold mb-5">
+                <span className="bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent">
+                  Let's Get You Started
+                </span>
               </h1>
               
-              <p className="text-gray-300 text-lg mb-6">
-                Complete these 4 steps to activate your AI calling agent
+              <p className="text-gray-300 text-xl max-w-lg mx-auto">
+                Complete these <span className="text-purple-400 font-semibold">4 quick steps</span> to activate your AI agent
               </p>
-
-              {/* Progress Bar */}
-              <div className="max-w-md mx-auto">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400">Progress</span>
-                  <span className="text-sm font-bold text-purple-400">{completedSteps} of {steps.length} complete</span>
-                </div>
-                <div className="h-3 bg-gray-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-purple-600 to-blue-600 transition-all duration-500 ease-out"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
             </div>
 
             {/* Steps */}
-            <div className="space-y-4">
+            <div className="space-y-5">
               {steps.map((step, idx) => {
                 const Icon = step.icon;
                 return (
                   <div
                     key={step.number}
-                    className={`bg-gradient-to-br from-[#1A2647] to-[#0F1629] rounded-2xl p-6 border-2 transition-all duration-300 ${
+                    className={`relative bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-sm rounded-2xl p-6 border-2 transition-all duration-500 group ${
                       step.completed
-                        ? 'border-green-500/50 shadow-lg shadow-green-500/20'
-                        : 'border-gray-700/50 hover:border-purple-500/50 hover:shadow-lg'
+                        ? 'border-green-500/50 shadow-xl shadow-green-500/20'
+                        : 'border-gray-700/50 hover:border-purple-500/50 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-1'
                     }`}
-                    style={{ animationDelay: `${idx * 0.1}s` }}
+                    style={{ 
+                      animation: `fadeInUp 0.6s ease-out forwards`,
+                      animationDelay: `${idx * 0.1}s`
+                    }}
                   >
-                    <div className="flex items-start gap-4">
+                    {/* Glow effect on hover */}
+                    {!step.completed && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/5 to-blue-500/0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    )}
+                    
+                    <div className="flex items-start gap-5 relative z-10">
                       {/* Step Number/Icon */}
-                      <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
+                      <div className={`flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${
                         step.completed
-                          ? 'bg-green-500/20'
-                          : 'bg-purple-500/20'
+                          ? 'bg-gradient-to-br from-green-500/30 to-emerald-600/20 shadow-lg shadow-green-500/30'
+                          : 'bg-gradient-to-br from-purple-500/30 to-blue-600/20 group-hover:shadow-lg group-hover:shadow-purple-500/30'
                       }`}>
                         {step.completed ? (
-                          <CheckCircle className="w-7 h-7 text-green-400" />
+                          <CheckCircle className="w-8 h-8 text-green-400" />
                         ) : (
-                          <Icon className="w-7 h-7 text-purple-400" />
+                          <Icon className="w-8 h-8 text-purple-400 group-hover:scale-110 transition-transform duration-300" />
                         )}
                       </div>
 
@@ -235,14 +240,14 @@ export default function OnboardingStepsPage() {
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-2">
                           <div>
-                            <h3 className="text-xl font-bold text-white mb-1">
+                            <h3 className="text-xl font-bold text-white mb-1 group-hover:text-purple-100 transition-colors">
                               Step {step.number}: {step.title}
                             </h3>
                             <p className="text-gray-400 text-sm">{step.description}</p>
                           </div>
                           
                           {step.completed && (
-                            <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30">
+                            <span className="px-4 py-1.5 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/40 shadow-lg shadow-green-500/20">
                               ✓ Complete
                             </span>
                           )}
@@ -251,10 +256,10 @@ export default function OnboardingStepsPage() {
                         {!step.completed && (
                           <button
                             onClick={step.action}
-                            className="mt-3 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold rounded-lg transition-all hover:scale-105 shadow-lg"
+                            className="mt-4 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 group/btn"
                           >
                             {step.buttonText}
-                            <ArrowRight className="w-4 h-4" />
+                            <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
                           </button>
                         )}
                       </div>
@@ -263,9 +268,32 @@ export default function OnboardingStepsPage() {
                 );
               })}
             </div>
+            
+            {/* Completion message when all done */}
+            {completedSteps === steps.length && (
+              <div className="mt-8 text-center p-6 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-2xl shadow-xl shadow-green-500/20">
+                <div className="text-4xl mb-3">🎉</div>
+                <h3 className="text-2xl font-bold text-green-400 mb-2">All Steps Complete!</h3>
+                <p className="text-gray-300">You're all set to start using Sterling AI</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
+      
+      {/* Animation Keyframes */}
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </>
   );
 }

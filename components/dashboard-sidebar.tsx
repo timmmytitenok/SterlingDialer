@@ -3,7 +3,7 @@
 import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Settings, Sparkles, CalendarDays, Phone, Users, Wallet, Rocket } from 'lucide-react';
+import { LayoutDashboard, Settings, Sparkles, CalendarDays, Phone, Users, Wallet, Rocket, MessageSquare, Headphones } from 'lucide-react';
 
 interface DashboardSidebarProps {
   user: User;
@@ -17,6 +17,7 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Lead Manager', href: '/dashboard/leads', icon: Users },
     { name: 'AI Dialer', href: '/dashboard/ai-dialer', icon: Sparkles },
+    { name: 'AI Messenger', href: '/dashboard/ai-messenger', icon: MessageSquare },
     { name: 'Appointments', href: '/dashboard/appointments', icon: CalendarDays },
     { name: 'Call History', href: '/dashboard/activity-logs', icon: Phone },
   ];
@@ -88,6 +89,19 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
         >
           <Wallet className="w-5 h-5" />
           <span className="font-medium">Minutes & Balance</span>
+        </Link>
+
+        {/* Support Button */}
+        <Link
+          href="/dashboard/settings/support"
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+            pathname === '/dashboard/settings/support'
+              ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
+              : 'text-gray-400 hover:bg-gray-800/50 hover:text-white hover:scale-[1.02] hover:translate-x-1'
+          }`}
+        >
+          <Headphones className="w-5 h-5" />
+          <span className="font-medium">Support</span>
         </Link>
       </nav>
 

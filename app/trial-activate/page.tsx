@@ -62,7 +62,7 @@ export default function TrialActivatePage() {
             <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-green-400 animate-pulse" />
             <span className="text-green-400 font-semibold text-xs sm:text-sm">Step 2 of 2</span>
           </div>
-          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-2 sm:mb-4 px-2">
+          <h1 className="text-4xl sm:text-4xl md:text-5xl font-bold text-white mb-2 sm:mb-4 px-2">
             Activate Your<br className="sm:hidden" /> Free Trial
           </h1>
           <p className="text-gray-300 text-sm sm:text-lg md:text-xl px-4">
@@ -135,8 +135,8 @@ export default function TrialActivatePage() {
                 onChange={(e) => setTermsAccepted(e.target.checked)}
                 className="mt-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer flex-shrink-0"
               />
-              <span className="text-[10px] sm:text-xs md:text-sm text-gray-300 leading-relaxed">
-                I have read and agree to Sterling AI's{' '}
+              <span className="text-[10.5px] sm:text-[10px] md:text-sm text-gray-300 leading-relaxed">
+                By continuing, I confirm I have read and agree to Sterling AI's{' '}
                 <a 
                   href="/terms-of-service" 
                   target="_blank"
@@ -145,8 +145,7 @@ export default function TrialActivatePage() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   Terms of Service
-                </a>{' '}
-                and{' '}
+                </a>,{' '}
                 <a 
                   href="/privacy-policy" 
                   target="_blank"
@@ -155,7 +154,7 @@ export default function TrialActivatePage() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   Privacy Policy
-                </a>
+                </a>, and TCPA-compliant usage guidelines, and I consent to receive service-related SMS updates.
               </span>
             </label>
           </div>

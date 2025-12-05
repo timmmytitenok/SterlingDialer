@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { getTodayDateString } from '@/lib/timezone-helpers';
 
 export async function POST(request: Request) {
   try {
@@ -23,6 +24,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid monthly payment' }, { status: 400 });
     }
 
+    // Get user's timezone from ai_control_settings
+    const { data: aiSettings } = await supabase
+      .from('ai_control_settings')
+      .select('user_timezone')
+      .eq('user_id', user.id)
+      .single();
+    
+    const userTimezone = aiSettings?.user_timezone || 'America/New_York';
+
     // Get current appointment data to check if it was previously sold
     const { data: appointment } = await supabase
       .from('appointments')
@@ -35,8 +45,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    // Use user's timezone to get today's date (not UTC!)
+    const today = getTodayDateString(userTimezone);
     const annualPremium = monthlyPayment * 12;
+    
+    console.log('');
+    console.log('💰💰💰 ========== MARKING APPOINTMENT AS SOLD ========== 💰💰💰');
+    console.log(`🌍 User timezone: ${userTimezone}`);
+    console.log(`📅 Today's date (user TZ): ${today}`);
+    console.log(`💵 Monthly payment: $${monthlyPayment}`);
+    console.log(`💵 Annual premium: $${annualPremium}`);
+    console.log(`📋 Appointment ID: ${appointmentId}`);
+    console.log(`👤 User ID: ${userId}`);
 
     // If appointment was previously sold with different amount, adjust revenue
     if (appointment.is_sold && appointment.monthly_payment) {
@@ -81,39 +101,64 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
-    // Add new revenue for today
-    const { error: revenueError } = await supabase
+    // Add new revenue for today - check if record exists first
+    console.log(`🔍 Checking for existing revenue_tracking record for ${today}...`);
+    const { data: existingToday, error: lookupError } = await supabase
       .from('revenue_tracking')
-      .insert([{
-        user_id: user.id,
-        date: today,
-        revenue: annualPremium,
-        ai_retainer_cost: 33,
-        ai_daily_cost: 0,
-      }])
-      .select();
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('date', today)
+      .maybeSingle();
 
-    // If today already exists, update it instead
-    if (revenueError) {
-      const { data: existing } = await supabase
+    if (lookupError) {
+      console.error('❌ Error looking up revenue record:', lookupError);
+    }
+    console.log(`📊 Existing record found:`, existingToday);
+
+    if (existingToday) {
+      // Update existing record - ADD to current revenue
+      const newRevenue = (existingToday.revenue || 0) + annualPremium;
+      const { error: updateError } = await supabase
         .from('revenue_tracking')
-        .select('revenue')
+        .update({ revenue: newRevenue })
         .eq('user_id', user.id)
-        .eq('date', today)
-        .single();
-
-      if (existing) {
-        await supabase
-          .from('revenue_tracking')
-          .update({
-            revenue: (existing.revenue || 0) + annualPremium,
-          })
-          .eq('user_id', user.id)
-          .eq('date', today);
+        .eq('date', today);
+      
+      if (updateError) {
+        console.error('❌ Failed to update revenue:', updateError);
+      } else {
+        console.log(`💰 Revenue UPDATED: $${existingToday.revenue || 0} + $${annualPremium} = $${newRevenue}`);
+      }
+    } else {
+      // Create new record for today (only include columns that exist in the table!)
+      const { error: insertError } = await supabase
+        .from('revenue_tracking')
+        .insert({
+          user_id: user.id,
+          date: today,
+          revenue: annualPremium,
+        });
+      
+      if (insertError) {
+        console.error('❌ Failed to insert revenue:', insertError);
+      } else {
+        console.log(`💰 Revenue INSERTED: $${annualPremium} for new day`);
       }
     }
 
-    console.log(`💰 Revenue added: $${annualPremium} for sold appointment`);
+    console.log(`✅ Total revenue for sold appointment: $${annualPremium} (annual premium)`);
+    
+    // Verify the update worked
+    const { data: verifyRecord } = await supabase
+      .from('revenue_tracking')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('date', today)
+      .maybeSingle();
+    
+    console.log(`🔍 VERIFICATION - Record after update:`, verifyRecord);
+    console.log('💰💰💰 ========================================= 💰💰💰');
+    console.log('');
 
     // Send webhook to n8n with status update
     try {

@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Button } from './ui/button';
 import { User } from '@supabase/supabase-js';
-import { UserCircle, Mail, Save, LogOut, CheckCircle, AlertCircle, Sparkles, Phone, Crown, CreditCard, Lock } from 'lucide-react';
+import { UserCircle, Mail, Save, LogOut, CheckCircle, AlertCircle, Sparkles, Phone, Lock } from 'lucide-react';
 
 interface ProfileFormProps {
   user: User;
@@ -20,42 +19,6 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
   const [phoneNumber, setPhoneNumber] = useState(profile?.phone_number || '');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
-
-  // Fetch subscription info
-  useEffect(() => {
-    const fetchSubscription = async () => {
-      try {
-        // First check if user has free_access in their profile
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('subscription_tier')
-          .eq('user_id', user.id)
-          .single();
-        
-        // Don't show Current Plan component for free_access users
-        if (profileData?.subscription_tier === 'free_access') {
-          setSubscriptionInfo(null);
-          return;
-        }
-
-        const { data: sub } = await supabase
-          .from('subscriptions')
-          .select('subscription_tier, status')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .single();
-        
-        if (sub) {
-          setSubscriptionInfo(sub);
-        }
-      } catch (error) {
-        console.error('Error fetching subscription:', error);
-      }
-    };
-
-    fetchSubscription();
-  }, [user.id, supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,21 +54,6 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
     router.refresh();
   };
 
-  const getTierInfo = () => {
-    if (!subscriptionInfo) return null;
-    
-    const tier = subscriptionInfo.subscription_tier;
-    const tierData = {
-      starter: { name: 'Starter', price: 499, leads: 600, callers: 1, color: 'blue' },
-      pro: { name: 'Pro', price: 899, leads: 1200, callers: 2, color: 'purple' },
-      elite: { name: 'Elite', price: 1499, leads: 1800, callers: 3, color: 'amber' },
-    };
-    
-    return tierData[tier as keyof typeof tierData] || null;
-  };
-
-  const tierInfo = getTierInfo();
-
   return (
     <>
       {/* Page Title */}
@@ -115,48 +63,6 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
       </div>
 
       <div className="space-y-6 max-w-3xl">
-          {/* Current Plan Display */}
-          {tierInfo && (
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl border border-gray-800 group/plan">
-          {/* Glow Effect */}
-          <div className={`absolute inset-0 bg-gradient-to-r from-${tierInfo.color}-600/0 via-${tierInfo.color}-600/5 to-${tierInfo.color}-600/0 opacity-0 group-hover/plan:opacity-100 transition-opacity duration-500`} />
-          
-          <div className="relative p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`p-3 bg-${tierInfo.color}-500/20 rounded-xl border border-${tierInfo.color}-500/30`}>
-                  <Crown className={`w-6 h-6 text-${tierInfo.color}-400`} />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400 mb-1">Current Plan</p>
-                  <h3 className={`text-2xl font-bold text-${tierInfo.color}-400`}>{tierInfo.name}</h3>
-                  <p className="text-gray-400 text-sm mt-1">${tierInfo.price}/month</p>
-                </div>
-              </div>
-              <a
-                href="/dashboard/settings/billing"
-                className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-800 border border-gray-700 hover:border-gray-600 text-gray-400 hover:text-white rounded-lg transition-all text-sm"
-              >
-                <CreditCard className="w-4 h-4" />
-                Manage Billing
-              </a>
-            </div>
-            
-            {/* Plan Features */}
-            <div className="mt-4 flex items-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <Sparkles className={`w-4 h-4 text-${tierInfo.color}-400`} />
-                <span className="text-gray-300">{tierInfo.callers} AI Caller{tierInfo.callers > 1 ? 's' : ''}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className={`w-4 h-4 text-${tierInfo.color}-400`} />
-                <span className="text-gray-300">{tierInfo.leads.toLocaleString()} leads/day</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Profile Information Card */}
       <div className="relative overflow-hidden bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl border border-gray-800 group">
         {/* Glow Effect */}
