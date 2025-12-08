@@ -468,7 +468,7 @@ export async function POST(request: Request) {
               // Import Stripe
               const Stripe = (await import('stripe')).default;
               const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-                apiVersion: '2025-09-30.clover' as any,
+                apiVersion: '2025-10-29.clover' as any,
               });
               
               // Get customer
