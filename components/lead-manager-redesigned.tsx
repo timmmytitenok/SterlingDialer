@@ -1,8 +1,25 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+
+// Debounce hook for search
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 // Custom hook for smooth counting animation with dramatic slowdown at the end
 function useCountAnimation(targetValue: number, duration: number = 2000) {
@@ -50,6 +67,69 @@ import {
 } from 'lucide-react';
 import { ColumnMapperRedesigned } from './column-mapper-redesigned';
 import { SheetTabSelector } from './sheet-tab-selector';
+
+// Skeleton Loading Component for Leads Table
+function LeadsTableSkeleton() {
+  return (
+    <div className="animate-pulse">
+      {/* Skeleton rows */}
+      {[...Array(8)].map((_, i) => (
+        <div 
+          key={i} 
+          className="flex items-center gap-4 px-6 py-4 border-b border-gray-800"
+          style={{ animationDelay: `${i * 50}ms` }}
+        >
+          {/* Name */}
+          <div className="flex-1 min-w-[120px]">
+            <div className="h-4 bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 rounded w-3/4 animate-shimmer"></div>
+          </div>
+          {/* Phone */}
+          <div className="flex-1 min-w-[120px]">
+            <div className="h-4 bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 rounded w-2/3 animate-shimmer" style={{ animationDelay: '100ms' }}></div>
+          </div>
+          {/* State */}
+          <div className="w-16">
+            <div className="h-4 bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 rounded w-full animate-shimmer" style={{ animationDelay: '200ms' }}></div>
+          </div>
+          {/* Attempts */}
+          <div className="w-16">
+            <div className="h-4 bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 rounded w-8 animate-shimmer" style={{ animationDelay: '300ms' }}></div>
+          </div>
+          {/* Last Called */}
+          <div className="w-32">
+            <div className="h-4 bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 rounded w-full animate-shimmer" style={{ animationDelay: '400ms' }}></div>
+          </div>
+          {/* Status */}
+          <div className="w-24">
+            <div className="h-6 bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 rounded-full w-full animate-shimmer" style={{ animationDelay: '500ms' }}></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Skeleton for Stats Cards
+function StatsCardsSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      {[...Array(4)].map((_, i) => (
+        <div 
+          key={i} 
+          className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 animate-pulse"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-gray-700 rounded-lg"></div>
+            <div className="w-3 h-3 bg-gray-700 rounded-full"></div>
+          </div>
+          <div className="h-3 bg-gray-700 rounded w-24 mb-2"></div>
+          <div className="h-10 bg-gray-700 rounded w-20 mb-2"></div>
+          <div className="h-2 bg-gray-700 rounded w-16"></div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 type Lead = {
   id: string;
@@ -141,6 +221,14 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showLeadDetail, setShowLeadDetail] = useState(false);
   
+  // Server-side pagination state
+  const [totalLeadCount, setTotalLeadCount] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
+  
+  // Debounce search to prevent too many API calls
+  const debouncedSearch = useDebounce(searchQuery, 300);
+  
   // Summary stats
   const [leadStats, setLeadStats] = useState({
     total: 0,
@@ -166,18 +254,31 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
 
   useEffect(() => {
     const initializeAndLoadLeads = async () => {
-      // STEP 1: Load leads IMMEDIATELY so they appear right away
+      // STEP 1: Load first page of leads with server-side pagination (FAST!)
+      setIsInitialLoad(true);
       setLoading(true);
+      
       try {
         const { data: activeSheets } = await supabase
-        .from('user_google_sheets')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('is_active', true);
+          .from('user_google_sheets')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('is_active', true);
       
         const activeSheetIds = activeSheets?.map(s => s.id) || [];
         
         if (activeSheetIds.length > 0) {
+          // Get total count first (fast - uses head: true)
+          const { count } = await supabase
+            .from('leads')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('is_qualified', true)
+            .in('google_sheet_id', activeSheetIds);
+          
+          setTotalLeadCount(count || 0);
+          
+          // Only fetch first page (50 leads) - MUCH FASTER!
           const { data } = await supabase
             .from('leads')
             .select('*')
@@ -186,26 +287,25 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
             .in('google_sheet_id', activeSheetIds)
             .order('sheet_row_number', { ascending: true, nullsFirst: false })
             .order('created_at', { ascending: true })
-            .limit(10000);
+            .range(0, leadsPerPage - 1);
 
           setAllLeads(data || []);
         } else {
           setAllLeads([]);
+          setTotalLeadCount(0);
         }
-            } catch (error) {
+      } catch (error) {
         console.error('Error loading leads:', error);
         setAllLeads([]);
+        setTotalLeadCount(0);
       } finally {
         setLoading(false);
-            }
+        setIsInitialLoad(false);
+      }
         
-      // STEP 2: Load sheets and stats
-        await fetchSheets();
-        await fetchLeadStats();
-      
-      // NOTE: Auto-sync DISABLED to prevent duplicate leads
-      // Users can manually sync by reconnecting their sheet if needed
-      // The sync was causing duplicate leads due to phone formatting mismatches
+      // STEP 2: Load sheets and stats in background
+      fetchSheets();
+      fetchLeadStats();
     };
     
     initializeAndLoadLeads();
@@ -614,8 +714,9 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   };
 
   // Fetch all leads from all sources
-  const fetchAllLeads = async () => {
-    setLoading(true);
+  // Server-side paginated fetch - only loads one page at a time!
+  const fetchLeadsPage = useCallback(async (page: number, filter: string = 'all', search: string = '') => {
+    setPageLoading(true);
     try {
       // First, get only ACTIVE Google Sheets
       const { data: activeSheets } = await supabase
@@ -629,27 +730,56 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       // If no active sheets, show empty list
       if (activeSheetIds.length === 0) {
         setAllLeads([]);
-        setLoading(false);
+        setTotalLeadCount(0);
+        setPageLoading(false);
         return;
       }
 
-      // Only fetch leads from ACTIVE Google Sheets
-      // Order by sheet_row_number ascending so leads appear in the same order as the Google Sheet
-      // This ensures page 1 shows the first leads from the sheet (top of the spreadsheet)
-      const { data } = await supabase
+      // Build query based on filters
+      let query = supabase
         .from('leads')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('user_id', userId)
         .eq('is_qualified', true)
-        .in('google_sheet_id', activeSheetIds)
+        .in('google_sheet_id', activeSheetIds);
+
+      // Apply status filter
+      if (filter === 'potential') {
+        query = query.in('status', ['no_answer', 'callback_later', 'new', 'unclassified']);
+      } else if (filter === 'dead') {
+        query = query.in('status', ['not_interested', 'dead_lead']);
+      } else if (filter !== 'all') {
+        query = query.eq('status', filter);
+      }
+
+      // Apply search filter (server-side)
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%,state.ilike.%${search}%`);
+      }
+
+      // Calculate offset for pagination
+      const from = (page - 1) * leadsPerPage;
+      const to = from + leadsPerPage - 1;
+
+      // Fetch with pagination
+      const { data, count } = await query
         .order('sheet_row_number', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: true })
-        .limit(10000);
+        .range(from, to);
 
       setAllLeads(data || []);
+      setTotalLeadCount(count || 0);
+    } catch (error) {
+      console.error('Error loading leads:', error);
     } finally {
-      setLoading(false);
+      setPageLoading(false);
     }
+  }, [supabase, userId, leadsPerPage]);
+
+  // Legacy function for compatibility (now uses paginated fetch)
+  const fetchAllLeads = async () => {
+    setCurrentPage(1);
+    await fetchLeadsPage(1, statusFilter, searchQuery);
   };
 
   const formatPhone = (phone: string) => {
@@ -682,45 +812,23 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
     );
   };
 
-  // Filter leads for all leads view
-  // Step 1: Filter by status
-  const statusFilteredLeads = allLeads.filter(lead => {
-    if (statusFilter === 'all') return true;
-    if (statusFilter === 'potential') {
-      return ['no_answer', 'callback_later', 'new', 'unclassified'].includes(lead.status);
-    }
-    if (statusFilter === 'dead') {
-      return ['not_interested', 'dead_lead'].includes(lead.status);
-    }
-    return lead.status === statusFilter;
-  });
-  
-  // Step 2: Filter by search query
-  const filteredLeads = statusFilteredLeads.filter(lead => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    const cleanQuery = query.replace(/\D/g, '');
-    const cleanPhone = lead.phone.replace(/\D/g, '');
-    
-    return (
-      lead.name.toLowerCase().includes(query) ||
-      lead.phone.includes(query) ||
-      (cleanQuery.length > 0 && cleanPhone.includes(cleanQuery)) ||
-      lead.state?.toLowerCase().includes(query)
-    );
-  });
-
-  const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
-  const paginatedLeads = filteredLeads.slice(
-    (currentPage - 1) * leadsPerPage,
-    currentPage * leadsPerPage
-  );
+  // Server-side pagination - leads are already filtered and paginated from the server!
+  // allLeads now contains only the current page's leads
+  const totalPages = Math.ceil(totalLeadCount / leadsPerPage);
+  const paginatedLeads = allLeads; // Already paginated from server
 
   // Reset search when switching tabs
   useEffect(() => {
     setSearchQuery('');
     setCurrentPage(1);
   }, [activeTab]);
+
+  // Fetch leads when page, filter, or search changes (server-side pagination)
+  useEffect(() => {
+    if (!isInitialLoad && activeTab === 'all_leads') {
+      fetchLeadsPage(currentPage, statusFilter, debouncedSearch);
+    }
+  }, [currentPage, statusFilter, debouncedSearch, isInitialLoad, activeTab, fetchLeadsPage]);
 
   // Auto-scroll to top when error message appears
   useEffect(() => {
@@ -1197,16 +1305,52 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                       value={searchQuery}
                       onChange={(e) => {
                         setSearchQuery(e.target.value);
-                        setCurrentPage(1);
+                        setCurrentPage(1); // Reset to first page when searching
                       }}
                       className="w-full pl-10 pr-4 py-2 bg-[#1A2647] border border-gray-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
+                    {searchQuery && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery('');
+                          setCurrentPage(1);
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 {/* Table */}
                 <div className="overflow-x-auto">
-                  {loading ? (
+                  {(loading || pageLoading) && isInitialLoad ? (
+                    // Beautiful skeleton loading on initial load
+                    <div>
+                      <table className="w-full">
+                        <thead className="bg-[#0B1437] border-b border-gray-800">
+                          <tr>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Name</th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Phone</th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">State</th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Attempts</th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Last Called</th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                          </tr>
+                        </thead>
+                      </table>
+                      <LeadsTableSkeleton />
+                      <div className="text-center py-4 text-gray-400 text-sm">
+                        <div className="inline-flex items-center gap-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                          <span className="ml-2">Loading your leads...</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : totalLeadCount === 0 ? (
                     sheets.length === 0 ? (
                       <div className="text-center py-16">
                         <FileSpreadsheet className="w-20 h-20 text-gray-600 mx-auto mb-4" />
@@ -1222,34 +1366,13 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                         </button>
                       </div>
                     ) : (
-                    <div className="text-center py-12">
-                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-                      <p className="text-gray-400">Loading all leads...</p>
-                    </div>
-                    )
-                  ) : filteredLeads.length === 0 ? (
-                    sheets.length === 0 ? (
-                      <div className="text-center py-16">
-                        <FileSpreadsheet className="w-20 h-20 text-gray-600 mx-auto mb-4" />
-                        <h3 className="text-2xl font-bold text-white mb-3">No Leads Found</h3>
-                        <p className="text-gray-400 mb-6">Upload a Google Sheet to get started!</p>
-                        <button
-                          onClick={() => setActiveTab('google_sheets')}
-                          className="group relative px-8 py-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 backdrop-blur-sm border-2 border-blue-500/50 hover:border-blue-400/70 text-white rounded-xl font-bold transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105 inline-flex items-center gap-3"
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl blur-sm group-hover:blur-md transition-all duration-300"></div>
-                          <Plus className="w-5 h-5 relative z-10" />
-                          <span className="relative z-10">Upload Lead Sheet</span>
-                        </button>
+                      <div className="text-center py-12">
+                        <Search className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                        <h3 className="text-xl font-bold text-white mb-2">No Leads Found</h3>
+                        <p className="text-gray-400">
+                          {searchQuery ? `No leads match "${searchQuery}"` : statusFilter !== 'all' ? 'No leads with this status' : 'No leads in your system yet'}
+                        </p>
                       </div>
-                    ) : (
-                    <div className="text-center py-12">
-                      <Search className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                      <h3 className="text-xl font-bold text-white mb-2">No Leads Found</h3>
-                      <p className="text-gray-400">
-                        {searchQuery ? `No leads match "${searchQuery}"` : 'No leads in your system yet'}
-                      </p>
-                    </div>
                     )
                   ) : (
                     <>
@@ -1310,8 +1433,11 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                       {/* Pagination */}
                       {totalPages > 1 && (
                         <div className="p-6 border-t border-gray-800 flex items-center justify-between">
-                          <div className="text-gray-400 text-sm">
-                            Showing {((currentPage - 1) * leadsPerPage) + 1} - {Math.min(currentPage * leadsPerPage, filteredLeads.length)} of {filteredLeads.length} lead{filteredLeads.length !== 1 ? 's' : ''}
+                          <div className="text-gray-400 text-sm flex items-center gap-2">
+                            {pageLoading && (
+                              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                            )}
+                            Showing {((currentPage - 1) * leadsPerPage) + 1} - {Math.min(currentPage * leadsPerPage, totalLeadCount)} of {totalLeadCount.toLocaleString()} lead{totalLeadCount !== 1 ? 's' : ''}
                           </div>
                           <div className="flex items-center gap-2">
                             <button
@@ -1660,6 +1786,18 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
           </div>
         </div>
       )}
+
+      {/* Shimmer Animation Styles */}
+      <style jsx>{`
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .animate-shimmer {
+          background-size: 200% 100%;
+          animation: shimmer 1.5s ease-in-out infinite;
+        }
+      `}</style>
 
     </div>
   );
