@@ -11,6 +11,8 @@ interface ColumnMapperRedesignedProps {
     email?: { index: number; confidence: string };
     age?: { index: number; confidence: string };
     state?: { index: number; confidence: string };
+    lead_vendor?: { index: number; confidence: string };
+    street_address?: { index: number; confidence: string };
   };
   onSave: (mapping: {
     name: number;
@@ -18,9 +20,12 @@ interface ColumnMapperRedesignedProps {
     email: number;
     age: number;
     state: number;
+    lead_vendor?: number;
+    street_address?: number;
   }) => void;
   onCancel: () => void;
   sheetName: string;
+  scriptType?: 'final_expense' | 'mortgage_protection';
 }
 
 export function ColumnMapperRedesigned({
@@ -29,16 +34,22 @@ export function ColumnMapperRedesigned({
   onSave,
   onCancel,
   sheetName,
+  scriptType = 'final_expense',
 }: ColumnMapperRedesignedProps) {
+  const isMortgageProtection = scriptType === 'mortgage_protection';
+  
   const [mapping, setMapping] = useState({
     name: detections?.name?.index ?? -1,
     phone: detections?.phone?.index ?? -1,
     email: detections?.email?.index ?? -1,
     age: detections?.age?.index ?? -1,
     state: detections?.state?.index ?? -1,
+    lead_vendor: detections?.lead_vendor?.index ?? -1,
+    street_address: detections?.street_address?.index ?? -1,
   });
 
-  const fields = [
+  // Base fields for all script types
+  const baseFields = [
     {
       key: 'name' as const,
       label: 'Name',
@@ -86,11 +97,39 @@ export function ColumnMapperRedesigned({
     },
   ];
 
+  // Additional fields for Mortgage Protection
+  const mortgageProtectionFields = [
+    {
+      key: 'lead_vendor' as const,
+      label: 'Lead Vendor',
+      required: false,
+      icon: '🏢',
+      description: 'Lead vendor/source name (optional)',
+      gradient: 'from-cyan-600 to-blue-600',
+      glowColor: 'cyan',
+    },
+    {
+      key: 'street_address' as const,
+      label: 'Street Address',
+      required: false,
+      icon: '🏠',
+      description: 'Property street address (optional)',
+      gradient: 'from-amber-600 to-orange-600',
+      glowColor: 'amber',
+    },
+  ];
+
+  // Combine fields based on script type
+  const fields = isMortgageProtection 
+    ? [...baseFields, ...mortgageProtectionFields]
+    : baseFields;
+
   const handleSave = () => {
     if (mapping.name === -1 || mapping.phone === -1) {
       alert('Name and Phone Number are required fields!');
       return;
     }
+    
     onSave(mapping);
   };
 

@@ -98,27 +98,49 @@ export async function GET(request: Request) {
 
         const userTimezone = aiSettings?.user_timezone || 'America/New_York';
         
-        // Get current day in user's timezone
-        const formatter = new Intl.DateTimeFormat('en-US', {
+        // Get current day and hour in user's timezone
+        const dayFormatter = new Intl.DateTimeFormat('en-US', {
           timeZone: userTimezone,
           weekday: 'long'
         });
-        const currentDayName = formatter.format(now);
+        const hourFormatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: userTimezone,
+          hour: 'numeric',
+          hour12: false
+        });
+        
+        const currentDayName = dayFormatter.format(now);
+        const currentHour = parseInt(hourFormatter.format(now));
 
+        // Check if it's 9 AM in user's timezone
+        const is9AM = currentHour === 9;
+        
         // Check if today is in their scheduled days
         const isScheduledDay = auto_start_days?.includes(currentDayName);
 
         console.log(`👤 User ${user_id}:`);
         console.log(`   Timezone: ${userTimezone}`);
         console.log(`   Today: ${currentDayName}`);
+        console.log(`   Current hour: ${currentHour} (is 9 AM: ${is9AM})`);
         console.log(`   Scheduled days: ${JSON.stringify(auto_start_days)}`);
-        console.log(`   Should start: ${isScheduledDay}`);
+        console.log(`   Should start: ${isScheduledDay && is9AM}`);
         console.log(`   Budget: $${(daily_budget_cents || 0) / 100}`);
+
+        // Skip if it's not 9 AM in user's timezone (unless test mode)
+        if (!is9AM && !testMode) {
+          console.log(`   ⏭️  Not 9 AM in user's timezone (${currentHour}:00), skipping`);
+          results.push({ user_id, success: false, reason: `Not 9 AM (currently ${currentHour}:00 in ${userTimezone})` });
+          continue;
+        }
 
         if (!isScheduledDay && !testMode) {
           console.log(`   ⏭️  Not a scheduled day, skipping`);
           results.push({ user_id, success: false, reason: `Not scheduled for ${currentDayName}` });
           continue;
+        }
+        
+        if (testMode && !is9AM) {
+          console.log(`   🧪 TEST MODE: Ignoring 9 AM check (currently ${currentHour}:00)`);
         }
         
         if (testMode && !isScheduledDay) {

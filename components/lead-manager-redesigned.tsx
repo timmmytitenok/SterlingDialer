@@ -150,6 +150,9 @@ type Lead = {
   pickup_rate?: number;
   source_type?: 'google_sheet' | 'csv' | 'manual';
   source_name?: string;
+  // Mortgage Protection specific fields
+  lead_vendor?: string;
+  street_address?: string;
 };
 
 type GoogleSheet = {
@@ -225,9 +228,13 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   const [totalLeadCount, setTotalLeadCount] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [pageLoading, setPageLoading] = useState(false);
+  const [dataReady, setDataReady] = useState(false);
   
   // Debounce search to prevent too many API calls
   const debouncedSearch = useDebounce(searchQuery, 300);
+  
+  // Script type for Mortgage Protection support
+  const [scriptType, setScriptType] = useState<'final_expense' | 'mortgage_protection'>('final_expense');
   
   // Summary stats
   const [leadStats, setLeadStats] = useState({
@@ -290,14 +297,17 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
             .range(0, leadsPerPage - 1);
 
           setAllLeads(data || []);
+          setDataReady(true);
         } else {
           setAllLeads([]);
           setTotalLeadCount(0);
+          setDataReady(true);
         }
       } catch (error) {
         console.error('Error loading leads:', error);
         setAllLeads([]);
         setTotalLeadCount(0);
+        setDataReady(true);
       } finally {
         setLoading(false);
         setIsInitialLoad(false);
@@ -306,6 +316,17 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       // STEP 2: Load sheets and stats in background
       fetchSheets();
       fetchLeadStats();
+      
+      // STEP 3: Fetch user's script type for Mortgage Protection support
+      const { data: retellConfig } = await supabase
+        .from('user_retell_config')
+        .select('script_type')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (retellConfig?.script_type) {
+        setScriptType(retellConfig.script_type as 'final_expense' | 'mortgage_protection');
+      }
     };
     
     initializeAndLoadLeads();
@@ -519,7 +540,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
     }
   };
 
-  const handleSaveColumnMapping = async (mapping: { name: number; phone: number; email: number; age: number; state: number }) => {
+  const handleSaveColumnMapping = async (mapping: { name: number; phone: number; email: number; age: number; state: number; lead_vendor?: number; street_address?: number }) => {
     if (!currentSheet) return;
 
     setLoading(true);
@@ -540,7 +561,13 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
           googleSheetId: currentSheet.googleSheetId,
           sheetName: currentSheet.name,
           tabName: selectedTabName,
-          columnMapping: { ...mapping, date: -1 }, // No date column needed
+          columnMapping: { 
+            ...mapping, 
+            date: -1,
+            // Include mortgage protection fields if present
+            lead_vendor: mapping.lead_vendor ?? -1,
+            street_address: mapping.street_address ?? -1,
+          },
           minLeadAgeDays: 0, // No age filtering
         }),
       });
@@ -664,15 +691,16 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
     reader.readAsText(file);
   };
 
-  const handleSaveCsvMapping = async (mapping: { name: number; phone: number; email: number; age: number; state: number }) => {
+  const handleSaveCsvMapping = async (mapping: { name: number; phone: number; email: number; age: number; state: number; lead_vendor?: number; street_address?: number }) => {
     if (!csvFile) return;
 
     setLoading(true);
     setShowCsvColumnMapper(false);
     setMessage({ type: 'success', text: `CSV uploaded successfully! Imported leads from ${csvFile.name}` });
     
-    // TODO: Implement actual CSV import API
+    // TODO: Implement actual CSV import API with lead_vendor and street_address support
     // For now, just show success message
+    console.log('CSV mapping with mortgage protection fields:', mapping);
     
     await fetchLeadStats();
     setCsvFile(null);
@@ -797,6 +825,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       no_answer: { label: 'No Answer', colors: 'bg-gray-500/20 text-gray-400 border-gray-500/30' },
       not_interested: { label: 'Not Interested', colors: 'bg-red-500/20 text-red-400 border-red-500/30' },
       callback_later: { label: 'Call Back', colors: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+      potential_appointment: { label: 'Potential Appt', colors: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 animate-pulse' },
       appointment_booked: { label: 'Appointment', colors: 'bg-green-500/20 text-green-400 border-green-500/30' },
       live_transfer: { label: 'Live Transfer', colors: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
       unclassified: { label: 'Unclassified', colors: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
@@ -1283,7 +1312,8 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                         <option value="new">New Leads</option>
                         <option value="no_answer">No Answer</option>
                         <option value="callback_later">Callback</option>
-                        <option value="appointment_booked">Appointments</option>
+                        <option value="potential_appointment">Potential Appointments</option>
+                        <option value="appointment_booked">Confirmed Appointments</option>
                         <option value="live_transfer">Live Transfers</option>
                         <option value="dead">Dead Leads</option>
                         <option value="not_interested">Not Interested</option>
@@ -1325,7 +1355,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
 
                 {/* Table */}
                 <div className="overflow-x-auto">
-                  {(loading || pageLoading) && isInitialLoad ? (
+                  {!dataReady ? (
                     // Beautiful skeleton loading on initial load
                     <div>
                       <table className="w-full">
@@ -1539,6 +1569,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
             setColumnDetections(null);
             setSheetUrl('');
           }}
+          scriptType={scriptType}
           sheetName={currentSheet.name}
         />
       )}
@@ -1555,6 +1586,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
             setCsvHeaders([]);
           }}
           sheetName={csvFile?.name || 'CSV File'}
+          scriptType={scriptType}
         />
       )}
 
@@ -1583,45 +1615,95 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                 {getStatusBadge(selectedLead.status)}
               </div>
 
-              {/* Contact Info */}
-              <div className="space-y-3">
-                {/* Phone */}
-                <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
-                  <Phone className="w-5 h-5 text-blue-400" />
-                  <div>
-                    <p className="text-xs text-gray-400">Phone Number</p>
-                    <p className="text-white font-semibold">{formatPhone(selectedLead.phone)}</p>
+              {/* Contact Information Card */}
+              <div className="p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg border border-green-500/20">
+                <p className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Phone className="w-4 h-4" /> Contact Information
+                </p>
+                <div className="space-y-3">
+                  {/* Phone */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                      <Phone className="w-4 h-4 text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Phone Number</p>
+                      <p className="text-white font-semibold">{formatPhone(selectedLead.phone)}</p>
+                    </div>
                   </div>
-                </div>
-
-                {/* Email - Always show */}
-                <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
-                  <Mail className="w-5 h-5 text-green-400" />
-                  <div>
-                    <p className="text-xs text-gray-400">Email</p>
-                    <p className="text-white font-semibold">{selectedLead.email || 'N/A'}</p>
-                  </div>
-                </div>
-
-                {/* Age and State */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-gray-800/50 rounded-lg">
-                    <p className="text-xs text-gray-400 mb-1">Age</p>
-                    <p className="text-white font-semibold text-lg">{selectedLead.age || 'N/A'}</p>
-                  </div>
-                  <div className="p-3 bg-gray-800/50 rounded-lg">
-                    <p className="text-xs text-gray-400 mb-1">State</p>
-                    <p className="text-white font-semibold text-lg">{selectedLead.state || 'N/A'}</p>
+                  {/* Email */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                      <Mail className="w-4 h-4 text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Email</p>
+                      <p className="text-white font-semibold">{selectedLead.email || 'N/A'}</p>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Demographics Card */}
+              <div className="p-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg border border-purple-500/20">
+                <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Users className="w-4 h-4" /> Demographics
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-sm">🎂</div>
+                    <div>
+                      <p className="text-xs text-gray-400">Age</p>
+                      <p className="text-white font-semibold text-lg">{selectedLead.age || 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                      <MapPin className="w-4 h-4 text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">State</p>
+                      <p className="text-white font-semibold text-lg">{selectedLead.state || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+                
+              {/* Mortgage Protection Fields - Only show if data exists */}
+              {(selectedLead.lead_vendor || selectedLead.street_address) && (
+                <div className="p-4 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-lg border border-cyan-500/30">
+                  <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <span>🏠</span> Mortgage Protection Data
+                  </p>
+                  <div className="space-y-3">
+                    {selectedLead.lead_vendor && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-sm">🏢</div>
+                        <div>
+                          <p className="text-xs text-gray-400">Lead Vendor</p>
+                          <p className="text-white font-semibold">{selectedLead.lead_vendor}</p>
+                        </div>
+                      </div>
+                    )}
+                    {selectedLead.street_address && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-sm">📍</div>
+                        <div>
+                          <p className="text-xs text-gray-400">Street Address</p>
+                          <p className="text-white font-semibold">{selectedLead.street_address}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Google Sheet Location */}
               {selectedLead.google_sheet_id && (
                 <div className="p-4 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-500/20">
                   <div className="flex items-center gap-2 mb-2">
-                    <FileSpreadsheet className="w-5 h-5 text-blue-400" />
-                    <p className="text-sm font-semibold text-gray-300">Lead Location</p>
+                    <FileSpreadsheet className="w-4 h-4 text-blue-400" />
+                    <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Lead Location</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-white font-semibold text-sm">

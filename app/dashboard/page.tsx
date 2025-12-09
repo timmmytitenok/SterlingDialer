@@ -280,27 +280,55 @@ export default async function DashboardPage() {
     .select('*')
     .eq('user_id', user.id)
     .eq('date', today)
-    .single();
+    .maybeSingle(); // Use maybeSingle to avoid errors when no row exists
 
-  if (!todayRevenue && dailyBaseCost > 0) {
-    console.log(`📊 Creating today's revenue record with base cost: $${dailyBaseCost.toFixed(2)}`);
-    await supabase
-      .from('revenue_tracking')
-      .insert({
-        user_id: user.id,
-        date: today,
-        revenue: 0,
-        ai_retainer_cost: dailyBaseCost,
-        ai_daily_cost: 0,
-      });
-  } else if (todayRevenue && todayRevenue.ai_retainer_cost !== dailyBaseCost) {
-    // Update base cost if tier changed
-    console.log(`📊 Updating today's base cost to: $${dailyBaseCost.toFixed(2)}`);
-    await supabase
-      .from('revenue_tracking')
-      .update({ ai_retainer_cost: dailyBaseCost })
-      .eq('user_id', user.id)
-      .eq('date', today);
+  // Get today's spend from ai_control_settings (source of truth for live costs)
+  const { data: aiControlSettings } = await supabase
+    .from('ai_control_settings')
+    .select('today_spend')
+    .eq('user_id', user.id)
+    .maybeSingle(); // Use maybeSingle to avoid errors
+  
+  const todaySpendFromAI = aiControlSettings?.today_spend || 0;
+  
+  console.log(`💰 CHART SYNC DEBUG:`);
+  console.log(`   Today's date: ${today}`);
+  console.log(`   Today's spend from AI settings: $${todaySpendFromAI}`);
+  console.log(`   Today's revenue_tracking record exists: ${!!todayRevenue}`);
+  if (todayRevenue) {
+    console.log(`   Current ai_daily_cost in revenue_tracking: $${todayRevenue.ai_daily_cost || 0}`);
+  }
+
+  // Sync today's AI costs to revenue_tracking for the chart
+  // Only attempt if we have spend data to sync
+  if (todaySpendFromAI > 0) {
+    console.log(`💰 CHART SYNC:`);
+    console.log(`   Today: ${today}`);
+    console.log(`   AI daily cost (from settings): $${todaySpendFromAI}`);
+    
+    try {
+      // Use upsert to handle both insert and update
+      const { error: upsertError } = await supabase
+        .from('revenue_tracking')
+        .upsert({
+          user_id: user.id,
+          date: today,
+          revenue: todayRevenue?.revenue || 0,
+          ai_retainer_cost: dailyBaseCost,
+          ai_daily_cost: Math.max(todayRevenue?.ai_daily_cost || 0, todaySpendFromAI),
+        }, {
+          onConflict: 'user_id,date'
+        });
+      
+      if (upsertError) {
+        // If column doesn't exist, just log a warning (don't break the page)
+        console.warn(`⚠️ Chart sync skipped (run SQL migration):`, upsertError.message);
+      } else {
+        console.log(`✅ Chart synced!`);
+      }
+    } catch (syncError: any) {
+      console.warn(`⚠️ Chart sync error:`, syncError.message);
+    }
   }
 
   // BACKFILL: Fix past records that have ai_retainer_cost = 0 (created by webhook before fix)

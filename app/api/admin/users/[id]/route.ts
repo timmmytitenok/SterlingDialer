@@ -285,6 +285,7 @@ export async function GET(
       retell_agent_id: retellConfig.data?.retell_agent_id ?? null,
       retell_phone_number: retellConfig.data?.phone_number ?? null,
       retell_agent_name: retellConfig.data?.agent_name ?? null,
+      script_type: retellConfig.data?.script_type ?? 'final_expense',
       ai_is_active: retellConfig.data?.is_active ?? false,
       ai_maintenance_mode: profile.data?.ai_maintenance_mode ?? false,
       

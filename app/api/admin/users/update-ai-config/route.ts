@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const { userId, agentId, phoneNumber, agentName, maintenanceMode } = await req.json();
+    const { userId, agentId, phoneNumber, agentName, maintenanceMode, scriptType } = await req.json();
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
@@ -33,6 +33,7 @@ export async function POST(req: Request) {
           retell_agent_id: agentId,
           phone_number: phoneNumber,
           agent_name: agentName,
+          script_type: scriptType || 'final_expense',
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', userId);
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
           retell_agent_id: agentId,
           phone_number: phoneNumber,
           agent_name: agentName,
+          script_type: scriptType || 'final_expense',
           retell_api_key: 'placeholder', // Required field
           is_active: true,
         });

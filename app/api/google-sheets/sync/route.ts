@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     };
 
     // Check if we have saved column mappings
-    let nameCol, phoneCol, emailCol, dateCol, ageCol, stateCol, statusCol;
+    let nameCol, phoneCol, emailCol, dateCol, ageCol, stateCol, statusCol, leadVendorCol, streetAddressCol;
 
     if (sheetConfig.name_column && sheetConfig.phone_column) {
       // Use saved column mappings
@@ -92,8 +92,11 @@ export async function POST(request: Request) {
       ageCol = letterToCol(sheetConfig.age_column);
       stateCol = letterToCol(sheetConfig.state_column);
       statusCol = letterToCol(sheetConfig.status_column);
+      // Mortgage Protection columns
+      leadVendorCol = letterToCol(sheetConfig.lead_vendor_column);
+      streetAddressCol = letterToCol(sheetConfig.street_address_column);
       
-      console.log('✅ Using saved column mappings:', { nameCol, phoneCol, emailCol, stateCol, dateCol, ageCol, statusCol });
+      console.log('✅ Using saved column mappings:', { nameCol, phoneCol, emailCol, stateCol, dateCol, ageCol, statusCol, leadVendorCol, streetAddressCol });
     } else {
       // Auto-detect column positions
       const tabPrefix = sheetConfig.tab_name ? `'${sheetConfig.tab_name}'!` : '';
@@ -138,8 +141,11 @@ export async function POST(request: Request) {
       dateCol = detectColumn(['date', 'date generated', 'date created', 'created date', 'lead date', 'generated', 'timestamp', 'created at', 'created_at']);
       ageCol = -1; // Not used anymore
       statusCol = -1; // Not used anymore
+      // Mortgage Protection columns (auto-detect)
+      leadVendorCol = detectColumn(['vendor', 'lead vendor', 'source', 'lead source', 'vendor name']);
+      streetAddressCol = detectColumn(['address', 'street address', 'street', 'property address', 'home address']);
 
-      console.log('🔍 Auto-detected columns:', { nameCol, phoneCol, emailCol, stateCol, dateCol });
+      console.log('🔍 Auto-detected columns:', { nameCol, phoneCol, emailCol, stateCol, dateCol, leadVendorCol, streetAddressCol });
       
       if (nameCol === -1 || phoneCol === -1) {
         console.error('❌ Could not detect required columns (Name, Phone)!');
@@ -307,6 +313,9 @@ export async function POST(request: Request) {
       const rawState = stateCol >= 0 && row[stateCol] ? row[stateCol].toString().trim() : null;
       const state = normalizeState(rawState); // Normalize state to abbreviation
       const dateStr = dateCol >= 0 && row[dateCol] ? row[dateCol].toString().trim() : null;
+      // Mortgage Protection fields
+      const leadVendor = leadVendorCol >= 0 && row[leadVendorCol] ? row[leadVendorCol].toString().trim() : null;
+      const streetAddress = streetAddressCol >= 0 && row[streetAddressCol] ? row[streetAddressCol].toString().trim() : null;
 
       // Parse date if available
       let leadGeneratedAt: Date | null = null;
@@ -405,6 +414,10 @@ export async function POST(request: Request) {
         if (leadGeneratedAt) {
           updateData.lead_generated_at = leadGeneratedAt.toISOString();
         }
+        
+        // Add Mortgage Protection fields if present
+        if (leadVendor) updateData.lead_vendor = leadVendor;
+        if (streetAddress) updateData.street_address = streetAddress;
 
         const { error: updateError } = await supabase
           .from('leads')
@@ -437,6 +450,10 @@ export async function POST(request: Request) {
         if (leadGeneratedAt) {
           insertData.lead_generated_at = leadGeneratedAt.toISOString();
         }
+        
+        // Add Mortgage Protection fields if present
+        if (leadVendor) insertData.lead_vendor = leadVendor;
+        if (streetAddress) insertData.street_address = streetAddress;
 
         const { error: insertError} = await supabase
           .from('leads')
@@ -466,6 +483,9 @@ export async function POST(request: Request) {
         lead_date_column: colToLetter(dateCol),
         age_column: null,
         status_column: null,
+        // Mortgage Protection columns
+        lead_vendor_column: colToLetter(leadVendorCol),
+        street_address_column: colToLetter(streetAddressCol),
       })
       .eq('id', sheetConfig.id);
 

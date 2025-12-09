@@ -288,7 +288,7 @@ export async function POST(request: Request) {
       .eq('user_id', userId)
       .eq('is_qualified', true)
       .in('google_sheet_id', activeSheetIds)
-      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer']);
+      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment']);
     
     console.log(`📊 Total callable leads in active sheets: ${totalLeadsCount || 0}`);
     
@@ -308,15 +308,16 @@ export async function POST(request: Request) {
     
     // STEP 2: Get next callable lead
     // SIMPLIFIED LOGIC:
-    // - Callable statuses: new, callback_later, unclassified, no_answer
+    // - Callable statuses: new, callback_later, unclassified, no_answer, potential_appointment
     // - Total attempts < 20 (not dead yet)
     // - Not called already today (respects call_attempts_today)
+    // NOTE: potential_appointment = time discussed but Cal.ai webhook not confirmed yet
     // - From active sheets only
     
     console.log('🔍 Searching for next callable lead...');
     console.log(`   Today's date: ${todayStr}`);
     console.log(`   Criteria:`);
-    console.log(`   - Status: new, callback_later, unclassified, no_answer`);
+    console.log(`   - Status: new, callback_later, unclassified, no_answer, potential_appointment`);
     console.log(`   - Total attempts < 20`);
     console.log(`   - Not called today`);
     console.log(`   - From active sheets`);
@@ -331,7 +332,7 @@ export async function POST(request: Request) {
         .eq('user_id', userId)
         .eq('is_qualified', true)
         .in('google_sheet_id', activeSheetIds)
-        .in('status', ['new', 'callback_later', 'unclassified', 'no_answer']);
+        .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment']);
       
       // Exclude leads that hit 20 attempts (marked as dead)
       // Use total_calls_made if it exists, otherwise check status != 'dead_lead'
@@ -372,6 +373,14 @@ export async function POST(request: Request) {
         console.log(`   - Total calls made: ${nextLead.total_calls_made || 0} / 20`);
         console.log(`   - Call attempts today: ${nextLead.call_attempts_today || 0}`);
         console.log(`   - Last attempt date: ${nextLead.last_attempt_date || 'never'}`);
+        console.log(`   🏠 MORTGAGE PROTECTION FIELDS:`);
+        console.log(`   - Lead Vendor column exists: ${'lead_vendor' in nextLead}`);
+        console.log(`   - Lead Vendor value: "${nextLead.lead_vendor || '(EMPTY - NOT IN DATABASE!)'}"`);
+        console.log(`   - Street Address column exists: ${'street_address' in nextLead}`);
+        console.log(`   - Street Address value: "${nextLead.street_address || '(EMPTY - NOT IN DATABASE!)'}"`);
+        
+        // Show all keys in the lead for debugging
+        console.log(`   - All lead fields: ${Object.keys(nextLead).join(', ')}`);
       }
     } catch (queryError: any) {
       console.error('❌ EXCEPTION in lead query:', queryError);
@@ -485,9 +494,17 @@ export async function POST(request: Request) {
       config: retellConfig ? {
         has_agent_id: !!retellConfig.retell_agent_id,
         has_phone: !!retellConfig.phone_number,
-        agent_name: retellConfig.agent_name
+        agent_name: retellConfig.agent_name,
+        script_type: retellConfig.script_type || 'final_expense'
       } : null
     });
+    
+    // Log script type for Mortgage Protection debugging
+    const scriptType = retellConfig?.script_type || 'final_expense';
+    console.log(`🏠 Script Type: ${scriptType}`);
+    if (scriptType === 'mortgage_protection') {
+      console.log(`   ⚠️ MORTGAGE PROTECTION MODE - lead_vendor and street_address SHOULD be sent!`);
+    }
 
     if (configError || !retellConfig) {
       console.error('❌ No Retell config found for user');
@@ -525,6 +542,28 @@ export async function POST(request: Request) {
 
     console.log(`📞 Making call with Agent: ${retellConfig.retell_agent_id}, From: ${retellConfig.phone_number}, To: ${nextLead.phone}`);
 
+    // Build dynamic variables for Retell
+    // ALWAYS include lead_vendor and street_address (even if empty) for Mortgage Protection scripts
+    const dynamicVariables: any = {
+      customer_name: nextLead.name || 'there',
+      lead_name: nextLead.name,
+      lead_phone: phoneToCall, // Use formatted phone!
+      userId: userId,
+      leadId: nextLead.id,
+      live_transfer: "true",
+      attempt_number: String((nextLead.call_attempts_today || 0) + 1),
+      // Mortgage Protection variables - ALWAYS send these so Retell script can reference them
+      // In Retell, reference as {{lead_vendor}} and {{street_address}}
+      lead_vendor: nextLead.lead_vendor || '',
+      street_address: nextLead.street_address || '',
+    };
+    
+    // Log mortgage protection data for debugging
+    console.log('🏠 Mortgage Protection Data:');
+    console.log(`   Lead Vendor: "${nextLead.lead_vendor || '(not set)'}"`);
+    console.log(`   Street Address: "${nextLead.street_address || '(not set)'}"`);
+    console.log(`   Sending to Retell: lead_vendor="${dynamicVariables.lead_vendor}", street_address="${dynamicVariables.street_address}"`);
+
     const callPayload = {
       agent_id: retellConfig.retell_agent_id,
       to_number: phoneToCall, // Use formatted phone!
@@ -535,16 +574,11 @@ export async function POST(request: Request) {
         lead_name: nextLead.name,
         lead_phone: phoneToCall, // Use formatted phone!
         attempt_number: (nextLead.call_attempts_today || 0) + 1,
+        // Include mortgage protection data in metadata too
+        lead_vendor: nextLead.lead_vendor || null,
+        street_address: nextLead.street_address || null,
       },
-      retell_llm_dynamic_variables: {
-        customer_name: nextLead.name || 'there',
-        lead_name: nextLead.name,
-        lead_phone: phoneToCall, // Use formatted phone!
-        userId: userId,
-        leadId: nextLead.id,
-        live_transfer: "true",
-        attempt_number: String((nextLead.call_attempts_today || 0) + 1),
-      },
+      retell_llm_dynamic_variables: dynamicVariables,
     };
 
     console.log('📞 Call payload:', JSON.stringify(callPayload, null, 2));

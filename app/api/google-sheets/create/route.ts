@@ -53,6 +53,9 @@ export async function POST(request: Request) {
       email_column: colToLetter(columnMapping.email),
       state_column: colToLetter(columnMapping.state),
       lead_date_column: colToLetter(columnMapping.date),
+      // Mortgage Protection specific columns
+      lead_vendor_column: colToLetter(columnMapping.lead_vendor),
+      street_address_column: colToLetter(columnMapping.street_address),
       min_lead_age_days: minLeadAgeDays || 0,
       is_active: true,
     };

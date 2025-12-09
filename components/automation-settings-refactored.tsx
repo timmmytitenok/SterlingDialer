@@ -3,28 +3,54 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Clock, Calendar, DollarSign, Zap, Check, X, AlertCircle, Info, CheckCircle } from 'lucide-react';
+import { Clock, Calendar, DollarSign, Zap, Check, X, AlertCircle, Info, CheckCircle, Lock } from 'lucide-react';
 
 interface AutomationSettingsRefactoredProps {
   userId: string;
   initialSettings: any;
 }
 
+// Helper to get timezone abbreviation
+function getTimezoneAbbreviation(timezone?: string): string {
+  try {
+    const tz = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const date = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      timeZoneName: 'short'
+    });
+    const parts = formatter.formatToParts(date);
+    const tzPart = parts.find(p => p.type === 'timeZoneName');
+    return tzPart?.value || 'local time';
+  } catch {
+    return 'local time';
+  }
+}
+
 export function AutomationSettingsRefactored({ userId, initialSettings }: AutomationSettingsRefactoredProps) {
   const router = useRouter();
   const [autoScheduleEnabled, setAutoScheduleEnabled] = useState(initialSettings?.schedule_enabled || false);
-  const [selectedDays, setSelectedDays] = useState<number[]>(initialSettings?.schedule_days || [1, 2, 3, 4, 5]);
+  // Filter out Sunday (0) from initial settings - Sunday is blocked
+  const [selectedDays, setSelectedDays] = useState<number[]>(
+    (initialSettings?.schedule_days || [1, 2, 3, 4, 5]).filter((d: number) => d !== 0)
+  );
   const [dailyBudget, setDailyBudget] = useState(initialSettings?.daily_spend_limit || 25);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
   const [budgetChanging, setBudgetChanging] = useState(false);
   const [budgetJitter, setBudgetJitter] = useState(false);
+  
+  // Get user's timezone abbreviation (e.g., "EST", "PST")
+  const userTimezoneAbbr = getTimezoneAbbreviation(initialSettings?.user_timezone);
 
   const supabase = createClient();
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const toggleDay = (dayIndex: number) => {
+    // Sunday (index 0) is blocked
+    if (dayIndex === 0) return;
+    
     if (selectedDays.includes(dayIndex)) {
       setSelectedDays(selectedDays.filter(d => d !== dayIndex));
     } else {
@@ -104,7 +130,7 @@ export function AutomationSettingsRefactored({ userId, initialSettings }: Automa
         const selectedDayNames = selectedDays.map(d => dayNames[d]).join(', ');
         setMessage({ 
           type: 'success', 
-          text: `Automation updated! Your AI will start at 9 AM PST / 12 PM EST on ${selectedDayNames}, and stop after $${dailyBudget} of calls.` 
+          text: `Automation updated! Your AI will start at 9 AM ${userTimezoneAbbr} on ${selectedDayNames}, and stop after $${dailyBudget} of calls.` 
         });
         
         // Redirect to AI Dialer after a brief delay to show success message
@@ -193,9 +219,9 @@ export function AutomationSettingsRefactored({ userId, initialSettings }: Automa
                   <div className="flex items-start gap-3">
                     <Clock className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-white font-semibold mb-1">Start Time: 9 AM PST / 12 PM EST</p>
+                      <p className="text-white font-semibold mb-1">Start Time: 9 AM {userTimezoneAbbr}</p>
                       <p className="text-gray-400 text-sm">
-                        Automated sessions start at a unified time to maintain consistent performance and call quality.
+                        Your AI will automatically start at 9 AM in your local timezone.
                         <br /><br />
                         Select which days you'd like the AI to run below.
                       </p>
@@ -212,22 +238,35 @@ export function AutomationSettingsRefactored({ userId, initialSettings }: Automa
                     Select which days the AI should run
                   </p>
                   <div className="grid grid-cols-7 gap-2">
-                    {dayNames.map((day, index) => (
-                      <button
-                        key={index}
-                        onClick={() => toggleDay(index)}
-                        className={`py-3 px-2 rounded-xl font-bold text-sm transition-all duration-300 backdrop-blur-sm ${
-                          selectedDays.includes(index)
-                            ? 'bg-blue-500/30 text-white border-2 border-blue-400 scale-110 shadow-lg shadow-blue-500/50 animate-pulse-slow'
-                            : 'bg-white/5 text-gray-400 border-2 border-gray-600/30 hover:bg-white/10 hover:border-blue-500/50 hover:text-white hover:scale-105'
-                        }`}
-                        style={selectedDays.includes(index) ? {
-                          boxShadow: '0 0 25px rgba(59, 130, 246, 0.6), 0 0 40px rgba(59, 130, 246, 0.3)'
-                        } : undefined}
-                      >
-                        {day}
-                      </button>
-                    ))}
+                    {dayNames.map((day, index) => {
+                      const isSunday = index === 0;
+                      const isSelected = selectedDays.includes(index);
+                      
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => toggleDay(index)}
+                          disabled={isSunday}
+                          className={`relative py-3 px-2 rounded-xl font-bold text-sm transition-all duration-300 backdrop-blur-sm ${
+                            isSunday
+                              ? 'bg-gray-800/50 text-gray-600 border-2 border-gray-700/30 cursor-not-allowed opacity-50'
+                              : isSelected
+                                ? 'bg-blue-500/30 text-white border-2 border-blue-400 scale-110 shadow-lg shadow-blue-500/50 animate-pulse-slow'
+                                : 'bg-white/5 text-gray-400 border-2 border-gray-600/30 hover:bg-white/10 hover:border-blue-500/50 hover:text-white hover:scale-105'
+                          }`}
+                          style={isSelected && !isSunday ? {
+                            boxShadow: '0 0 25px rgba(59, 130, 246, 0.6), 0 0 40px rgba(59, 130, 246, 0.3)'
+                          } : undefined}
+                        >
+                          {isSunday && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Lock className="w-4 h-4 text-gray-500" />
+                            </div>
+                          )}
+                          <span className={isSunday ? 'opacity-30' : ''}>{day}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -336,23 +375,23 @@ export function AutomationSettingsRefactored({ userId, initialSettings }: Automa
                   <div className="p-4 bg-[#0B1437]/50 rounded-xl border-2 border-green-500/30 shadow-lg shadow-green-500/10">
                     <input
                       type="range"
-                      min="5"
-                      max="50"
+                      min="10"
+                      max="60"
                       value={dailyBudget}
                       onChange={(e) => handleBudgetChange(parseInt(e.target.value))}
                       className="w-full h-3 rounded-full appearance-none cursor-pointer transition-all"
                       style={{
-                        background: `linear-gradient(to right, #10B981 0%, #10B981 ${((dailyBudget - 5) / 45) * 100}%, #374151 ${((dailyBudget - 5) / 45) * 100}%, #374151 100%)`
+                        background: `linear-gradient(to right, #10B981 0%, #10B981 ${((dailyBudget - 10) / 50) * 100}%, #374151 ${((dailyBudget - 10) / 50) * 100}%, #374151 100%)`
                       }}
                     />
                   </div>
                   <div className="flex justify-between text-sm font-semibold px-2">
-                    <span className="text-gray-500">$5</span>
-                    <span className="text-gray-400">$25</span>
-                    <span className="text-green-400">$50 Max</span>
+                    <span className="text-gray-500">$10</span>
+                    <span className="text-gray-400">$35</span>
+                    <span className="text-green-400">$60 Max</span>
                   </div>
                   <p className="text-blue-300 text-xs text-center italic mt-2 font-medium">
-                    💡 Most users choose $20–$35/day for healthy calling volume
+                    💡 Most users choose $25–$40/day for healthy calling volume
                   </p>
                 </div>
               </div>
@@ -366,7 +405,7 @@ export function AutomationSettingsRefactored({ userId, initialSettings }: Automa
                 <div className="space-y-2.5 text-sm">
                   <div className="flex items-start gap-2">
                     <span className="text-gray-400 min-w-[140px]">Starts at:</span>
-                    <span className="text-white font-semibold">9 AM PST / 12 PM EST</span>
+                    <span className="text-white font-semibold">9 AM {userTimezoneAbbr}</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-gray-400 min-w-[140px]">Runs on:</span>

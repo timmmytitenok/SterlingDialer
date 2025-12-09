@@ -78,6 +78,7 @@ export default function AdminUserDetailPage() {
   // AI Agent configuration
   const [agentId, setAgentId] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [scriptType, setScriptType] = useState<'final_expense' | 'mortgage_protection'>('final_expense');
   
 
   // Quick Setup / Onboarding steps
@@ -145,6 +146,7 @@ export default function AdminUserDetailPage() {
       // Set AI config values if they exist
       if (data.user.retell_agent_id) setAgentId(data.user.retell_agent_id);
       if (data.user.retell_phone_number) setPhoneNumber(data.user.retell_phone_number);
+      if (data.user.script_type) setScriptType(data.user.script_type);
       
     } catch (err: any) {
       console.error('❌ Error loading user:', err);
@@ -606,6 +608,46 @@ export default function AdminUserDetailPage() {
             <h3 className="text-xl font-bold text-white mb-8">AI Agent Configuration</h3>
 
             <div className="flex-1 flex flex-col justify-between space-y-6">
+              {/* Script Type Selector */}
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-3">
+                  Script Type
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setScriptType('final_expense')}
+                    className={`flex-1 px-4 py-3 rounded-xl font-semibold text-sm transition-all border ${
+                      scriptType === 'final_expense'
+                        ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white border-emerald-500 shadow-lg shadow-emerald-500/30'
+                        : 'bg-[#0B1437] text-gray-400 border-gray-700 hover:border-emerald-500/50 hover:text-emerald-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <span>💚</span>
+                      <span>Final Expense</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setScriptType('mortgage_protection')}
+                    className={`flex-1 px-4 py-3 rounded-xl font-semibold text-sm transition-all border ${
+                      scriptType === 'mortgage_protection'
+                        ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-blue-500 shadow-lg shadow-blue-500/30'
+                        : 'bg-[#0B1437] text-gray-400 border-gray-700 hover:border-blue-500/50 hover:text-blue-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <span>🏠</span>
+                      <span>Mortgage Protection</span>
+                    </div>
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {scriptType === 'mortgage_protection' 
+                    ? '📋 Mortgage Protection requires Lead Vendor & Street Address when uploading leads'
+                    : '✓ Final Expense uses the standard lead fields'}
+                </p>
+              </div>
+
               {/* Retell Agent ID */}
               <div>
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-3">
@@ -648,6 +690,7 @@ export default function AdminUserDetailPage() {
                         phoneNumber: phoneNumber.trim() || null,
                         agentName: null,
                         maintenanceMode: user.ai_maintenance_mode,
+                        scriptType: scriptType,
                       }),
                     });
 

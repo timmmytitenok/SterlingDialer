@@ -228,12 +228,16 @@ export async function POST(request: Request) {
         console.log('❌ Lead is NOT INTERESTED - marking as dead lead');
         
       } else if (customAnalysis.BOOKED === true) {
-        outcome = 'appointment_booked';
-        leadStatus = 'appointment_booked';
-        console.log('🎉 APPOINTMENT BOOKED!');
-        console.log('📅 Cal.ai will handle appointment creation with correct time via webhook');
-        // NOTE: Appointment record is created by Cal.ai webhook (/api/appointments/cal-webhook)
-        // which receives the booking with the correct scheduled time directly from Cal.ai
+        // Mark as POTENTIAL appointment until Cal.ai webhook confirms the actual booking
+        // This prevents false "Appointment" status when someone confirms a time but hangs up before booking completes
+        outcome = 'potential_appointment';
+        leadStatus = 'potential_appointment';
+        console.log('🎯 POTENTIAL APPOINTMENT - time was discussed');
+        console.log('⏳ Waiting for Cal.ai webhook to confirm actual booking...');
+        console.log('📅 If Cal.ai webhook fires → will change to appointment_booked');
+        console.log('🔄 If not confirmed → lead can be called again later');
+        // NOTE: Actual appointment_booked status is set by Cal.ai webhook (/api/appointments/cal-webhook)
+        // which only fires when the appointment is ACTUALLY created in Cal.com
         
       } else if (customAnalysis.LIVE_TRANSFER === true) {
         outcome = 'live_transfer';
