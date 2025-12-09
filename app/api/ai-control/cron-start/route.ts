@@ -155,9 +155,11 @@ export async function GET(request: Request) {
         const { count: callableLeads } = await supabase
           .from('leads')
           .select('*', { count: 'exact', head: true })
-          .in('sheet_id', sheetIds)
-          .in('status', ['new', 'no_answer', 'callback', 'voicemail'])
-          .lt('total_calls_made', 20);
+          .eq('user_id', user_id)
+          .eq('is_qualified', true)
+          .in('google_sheet_id', sheetIds)
+          .in('status', ['new', 'callback_later', 'unclassified', 'no_answer'])
+          .lt('times_dialed', 20);
 
         if (!callableLeads || callableLeads === 0) {
           console.log(`   ⚠️  No callable leads found, skipping`);
