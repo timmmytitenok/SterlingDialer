@@ -13,11 +13,12 @@ interface LiveCallStatusProps {
 export function LiveCallStatus({ userId, aiStatus, onStop }: LiveCallStatusProps) {
   const [currentLead, setCurrentLead] = useState<any>(null);
   const [callsMade, setCallsMade] = useState(0);
-  const [todaySpend, setTodaySpend] = useState(0);
+  const [sessionSpend, setSessionSpend] = useState(0); // Spend in THIS session only
   const [spendLimit, setSpendLimit] = useState(10);
   const [targetLeads, setTargetLeads] = useState(100);
   const [lastCallStatus, setLastCallStatus] = useState('');
   const [stopping, setStopping] = useState(false);
+  const [isBudgetMode, setIsBudgetMode] = useState(false);
 
   const supabase = createClient();
 
@@ -37,10 +38,25 @@ export function LiveCallStatus({ userId, aiStatus, onStop }: LiveCallStatusProps
 
       if (settings) {
         setCallsMade(settings.calls_made_today || 0);
-        setTodaySpend(settings.today_spend || 0);
-        setSpendLimit(settings.daily_spend_limit || 10);
         setTargetLeads(settings.target_lead_count || 100);
         setLastCallStatus(settings.last_call_status || '');
+        
+        // Check if budget mode (budget_limit_cents > 0)
+        const budgetMode = settings.budget_limit_cents && settings.budget_limit_cents > 0;
+        setIsBudgetMode(budgetMode);
+        
+        if (budgetMode) {
+          // SESSION-BASED BUDGET: Calculate spend within THIS session only
+          const sessionStartSpend = settings.session_start_spend || 0;
+          const todaySpend = settings.today_spend || 0;
+          const currentSessionSpend = Math.max(0, todaySpend - sessionStartSpend);
+          setSessionSpend(currentSessionSpend);
+          setSpendLimit(settings.budget_limit_cents / 100); // Convert cents to dollars
+        } else {
+          // Non-budget mode: show daily spend
+          setSessionSpend(settings.today_spend || 0);
+          setSpendLimit(settings.daily_spend_limit || 10);
+        }
 
         // Get current lead being called
         if (settings.current_lead_id) {
@@ -73,7 +89,7 @@ export function LiveCallStatus({ userId, aiStatus, onStop }: LiveCallStatusProps
   }
 
   const progress = Math.min((callsMade / targetLeads) * 100, 100);
-  const spendProgress = Math.min((todaySpend / spendLimit) * 100, 100);
+  const spendProgress = Math.min((sessionSpend / spendLimit) * 100, 100);
 
   return (
     <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 backdrop-blur-xl rounded-2xl border-2 border-blue-500/40 p-6 animate-pulse-border">
@@ -151,14 +167,14 @@ export function LiveCallStatus({ userId, aiStatus, onStop }: LiveCallStatusProps
           </div>
         </div>
 
-        {/* Daily Spend Progress */}
+        {/* Session/Budget Spend Progress */}
         <div className="p-4 bg-[#0B1437]/60 rounded-lg border border-gray-700/30">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4 text-green-400" />
-            <span className="text-gray-400 text-xs">Daily Spend</span>
+            <span className="text-gray-400 text-xs">{isBudgetMode ? 'Session Budget' : 'Daily Spend'}</span>
           </div>
           <div className="flex items-baseline gap-2 mb-2">
-            <span className="text-white font-bold text-2xl">${todaySpend.toFixed(2)}</span>
+            <span className="text-white font-bold text-2xl">${sessionSpend.toFixed(2)}</span>
             <span className="text-gray-400 text-sm">/ ${spendLimit.toFixed(2)}</span>
           </div>
           <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
