@@ -151,13 +151,22 @@ export async function POST(request: Request) {
     const isBudgetMode = aiSettings.budget_limit_cents && aiSettings.budget_limit_cents > 0;
     
     if (isBudgetMode) {
-      // BUDGET MODE: Stop when actual spend reaches budget limit
+      // BUDGET MODE: Stop when SESSION spend reaches budget limit
+      // Session spend = today_spend - session_start_spend
       const budgetLimitCents = aiSettings.budget_limit_cents;
-      const currentSpendCents = Math.round((currentSpend || 0) * 100); // Convert to cents
-      console.log(`💰 Budget Mode: $${(currentSpendCents / 100).toFixed(2)} / $${(budgetLimitCents / 100).toFixed(2)} spent`);
+      const sessionStartSpend = aiSettings.session_start_spend || 0;
+      const sessionSpend = (currentSpend || 0) - sessionStartSpend;
+      const sessionSpendCents = Math.round(sessionSpend * 100); // Convert to cents
       
-      if (currentSpendCents >= budgetLimitCents) {
-        console.log('🛑 Budget limit reached!');
+      console.log(`💰 Budget Mode (Session-Based):`);
+      console.log(`   - Today's total spend: $${(currentSpend || 0).toFixed(2)}`);
+      console.log(`   - Session started at: $${sessionStartSpend.toFixed(2)}`);
+      console.log(`   - This session spent: $${sessionSpend.toFixed(2)}`);
+      console.log(`   - Session budget: $${(budgetLimitCents / 100).toFixed(2)}`);
+      console.log(`   - Progress: $${sessionSpend.toFixed(2)} / $${(budgetLimitCents / 100).toFixed(2)}`);
+      
+      if (sessionSpendCents >= budgetLimitCents) {
+        console.log('🛑 Session budget limit reached!');
         
         await supabase
           .from('ai_control_settings')
@@ -167,13 +176,14 @@ export async function POST(request: Request) {
         return NextResponse.json({
           done: true,
           reason: 'budget_reached',
-          message: `Budget of $${(budgetLimitCents / 100).toFixed(2)} reached`,
-          spent: currentSpendCents / 100,
+          message: `Session budget of $${(budgetLimitCents / 100).toFixed(2)} reached`,
+          sessionSpent: sessionSpend,
           budget: budgetLimitCents / 100,
+          totalTodaySpend: currentSpend,
         });
       } else {
-        const remainingCents = budgetLimitCents - currentSpendCents;
-        console.log(`✅ Within budget, continuing ($${(remainingCents / 100).toFixed(2)} remaining)`);
+        const remainingCents = budgetLimitCents - sessionSpendCents;
+        console.log(`✅ Within session budget, continuing ($${(remainingCents / 100).toFixed(2)} remaining)`);
       }
     } else {
       // LEAD COUNT MODE: Stop when target leads reached
@@ -591,7 +601,7 @@ export async function POST(request: Request) {
     // ========================================================================
     const { data: finalCheck } = await supabase
       .from('ai_control_settings')
-      .select('calls_made_today, target_lead_count, today_spend, budget_limit_cents, status')
+      .select('calls_made_today, target_lead_count, today_spend, budget_limit_cents, session_start_spend, status')
       .eq('user_id', userId)
       .single();
     
@@ -614,13 +624,17 @@ export async function POST(request: Request) {
     const finalIsBudgetMode = finalCheck?.budget_limit_cents && finalCheck.budget_limit_cents > 0;
     
     if (finalIsBudgetMode) {
-      const finalSpendCents = Math.round((finalCheck?.today_spend || 0) * 100);
+      // Session-based budget check
+      const finalSessionStartSpend = finalCheck?.session_start_spend || 0;
+      const finalTodaySpend = finalCheck?.today_spend || 0;
+      const finalSessionSpend = finalTodaySpend - finalSessionStartSpend;
+      const finalSessionSpendCents = Math.round(finalSessionSpend * 100);
       const finalBudgetCents = finalCheck.budget_limit_cents;
       
-      console.log(`🔒 FINAL SAFEGUARD (Budget Mode): $${(finalSpendCents / 100).toFixed(2)} / $${(finalBudgetCents / 100).toFixed(2)} spent`);
+      console.log(`🔒 FINAL SAFEGUARD (Session Budget): $${finalSessionSpend.toFixed(2)} / $${(finalBudgetCents / 100).toFixed(2)} spent this session`);
       
-      if (finalSpendCents >= finalBudgetCents) {
-        console.log(`🛑 Budget already reached - NOT making this call!`);
+      if (finalSessionSpendCents >= finalBudgetCents) {
+        console.log(`🛑 Session budget already reached - NOT making this call!`);
         // Unlock the lead since we're not calling
         await supabase
           .from('leads')
@@ -636,8 +650,9 @@ export async function POST(request: Request) {
         return NextResponse.json({
           done: true,
           reason: 'budget_already_reached',
-          message: `Budget of $${(finalBudgetCents / 100).toFixed(2)} was already reached`,
-          spent: finalSpendCents / 100,
+          message: `Session budget of $${(finalBudgetCents / 100).toFixed(2)} was already reached`,
+          sessionSpent: finalSessionSpend,
+          totalTodaySpend: finalTodaySpend,
         });
       }
     } else {

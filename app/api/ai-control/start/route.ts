@@ -67,6 +67,18 @@ export async function POST(request: Request) {
       updateData.target_time_military = null;
       updateData.budget_limit_cents = Math.round((budget || 1) * 100); // Convert dollars to cents
       console.log(`💰 Budget mode: Will dial until $${budget} spent (${updateData.budget_limit_cents} cents)`);
+      
+      // SESSION-BASED BUDGET: Record current spend so budget only counts NEW spend in this session
+      // First fetch current today_spend
+      const { data: currentSettings } = await supabase
+        .from('ai_control_settings')
+        .select('today_spend')
+        .eq('user_id', user.id)
+        .single();
+      
+      const currentTodaySpend = currentSettings?.today_spend || 0;
+      updateData.session_start_spend = currentTodaySpend;
+      console.log(`💰 Session start spend: $${currentTodaySpend.toFixed(2)} (only NEW spend counts toward $${budget} budget)`);
     } else if (executionMode === 'time') {
       updateData.target_time_military = targetTime;
       updateData.target_lead_count = null;

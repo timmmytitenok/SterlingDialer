@@ -31,6 +31,11 @@ ADD COLUMN IF NOT EXISTS street_address_column TEXT;
 CREATE INDEX IF NOT EXISTS idx_user_retell_config_script_type 
 ON user_retell_config(script_type);
 
+-- 5. Add session_start_spend to ai_control_settings
+-- Used for session-based budgeting (budget only counts spend within current session)
+ALTER TABLE ai_control_settings 
+ADD COLUMN IF NOT EXISTS session_start_spend NUMERIC DEFAULT 0;
+
 -- =====================================================
 -- VERIFICATION QUERIES
 -- =====================================================
