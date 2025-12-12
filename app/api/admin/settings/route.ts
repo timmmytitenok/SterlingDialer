@@ -17,7 +17,7 @@ export async function GET() {
 
     // Convert to key-value object for easy access
     const settingsMap: Record<string, string> = {};
-    settings?.forEach(s => {
+    settings?.forEach((s: { key: string; value: string }) => {
       settingsMap[s.key] = s.value;
     });
 
