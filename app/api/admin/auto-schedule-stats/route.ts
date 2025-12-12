@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isAdminMode } from '@/lib/admin-check';
+import { getAICostPerMinute, getUserRatePerMinute } from '@/lib/ai-cost-calculator';
 
 // Disable caching for this route
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,19 @@ export async function GET() {
     const supabase = createServiceRoleClient();
     console.log('✅ Admin access granted');
     console.log('📊 Fetching Auto Schedule statistics...');
+
+    // Fetch dynamic AI cost settings from app_settings
+    const aiCostPerMinute = await getAICostPerMinute();
+    const userRatePerMinute = await getUserRatePerMinute();
+    
+    // Calculate dynamic profit margin based on actual costs
+    // Profit margin = (userRate - aiCost) / userRate
+    const profitMargin = (userRatePerMinute - aiCostPerMinute) / userRatePerMinute;
+    
+    console.log(`💰 Dynamic profit calculation:`);
+    console.log(`   User pays: $${userRatePerMinute}/min`);
+    console.log(`   AI costs: $${aiCostPerMinute}/min`);
+    console.log(`   Profit margin: ${(profitMargin * 100).toFixed(1)}%`);
 
     // Fetch all users with Auto Schedule enabled and their settings
     const { data: autoScheduleUsers, error: usersError } = await supabase
@@ -46,14 +60,9 @@ export async function GET() {
       6: { userCount: 0, totalDailyBudget: 0, totalProfit: 0 }, // Saturday
     };
 
-    // Calculate profit for each user and each day
-    // Profit calculation: $25 budget = $14.25 profit
-    // So profit = budget * 0.57 (57% profit margin)
-    const profitMargin = 14.25 / 25; // 0.57
-
     autoScheduleUsers?.forEach((user: { user_id: string; schedule_enabled: boolean; schedule_days: number[] | null; daily_spend_limit: number | null }) => {
       const dailyBudget = user.daily_spend_limit || 25;
-      const profitPerDay = dailyBudget * profitMargin;
+      const profitPerDay = dailyBudget * profitMargin; // Now uses dynamic margin!
       const scheduleDays = user.schedule_days || [];
 
       // For each day this user has scheduled, add to that day's stats

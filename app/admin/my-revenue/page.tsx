@@ -198,17 +198,45 @@ export default function AdminRevenuePage() {
       if (!response.ok) throw new Error('Failed to fetch users');
       const data = await response.json();
       
-      // Sort by created_at and assign permanent numbers
-      const sortedUsers = (data.users || [])
-        .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-        .map((user: any, index: number) => ({
-          id: user.id,
-          number: `#${String(index + 1).padStart(3, '0')}`,
-          name: user.full_name || user.email?.split('@')[0] || 'Unknown',
-          phone: user.phone || 'No phone',
-        }));
+      const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
+      const GAGE_ID = '92899ba3-15fa-47bf-84c4-7cc1ea9101dc';
       
-      setSimpleUsers(sortedUsers);
+      // First sort by created_at (oldest first) for numbering
+      const sortedByCreation = (data.users || [])
+        .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      
+      // Assign numbers: Timmy=#001, Gage=#002, others based on creation order starting from #003
+      const getUserNumber = (userId: string, creationIndex: number) => {
+        if (userId === TIMMY_ID) return '#001';
+        if (userId === GAGE_ID) return '#002';
+        // For others, offset by the special users
+        let numberOffset = 1; // Start at 1
+        if (sortedByCreation.some((u: any) => u.id === TIMMY_ID)) numberOffset++;
+        if (sortedByCreation.some((u: any) => u.id === GAGE_ID)) numberOffset++;
+        // Find this user's position among non-special users
+        const nonSpecialUsers = sortedByCreation.filter((u: any) => u.id !== TIMMY_ID && u.id !== GAGE_ID);
+        const positionAmongNonSpecial = nonSpecialUsers.findIndex((u: any) => u.id === userId);
+        return `#${String(positionAmongNonSpecial + numberOffset + 1).padStart(3, '0')}`;
+      };
+      
+      // Map users with numbers
+      const usersWithNumbers = sortedByCreation.map((user: any, index: number) => ({
+        id: user.id,
+        created_at: user.created_at,
+        number: getUserNumber(user.id, index),
+        name: user.full_name || user.email?.split('@')[0] || 'Unknown',
+        phone: user.phone || 'No phone',
+      }));
+      
+      // Sort for display: Timmy first, then newest users first
+      const sortedForDisplay = usersWithNumbers.sort((a: any, b: any) => {
+        if (a.id === TIMMY_ID) return -1;
+        if (b.id === TIMMY_ID) return 1;
+        // Everyone else sorted by newest first
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      setSimpleUsers(sortedForDisplay);
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
@@ -493,7 +521,7 @@ export default function AdminRevenuePage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {[...simpleUsers].reverse().map((user) => (
+                {simpleUsers.map((user) => (
                   <div
                     key={user.id}
                     className="bg-gradient-to-r from-[#1A2647]/80 to-[#0F1629]/80 rounded-xl p-4 border border-gray-700/50"

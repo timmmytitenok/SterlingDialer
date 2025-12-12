@@ -253,7 +253,7 @@ export default function PricingPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span>Calls 8am-9pm daily</span>
+                    <span>Calls 9am-6pm Mon-Sat</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
@@ -375,7 +375,7 @@ export default function PricingPage() {
               <div className="group bg-[#1A2647] rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-gray-800 hover:border-green-500/50 transition-all hover:scale-105 hover:shadow-xl hover:shadow-green-500/20">
                 <Clock className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 text-green-400 mb-3 sm:mb-4 group-hover:scale-110 transition-transform" />
                 <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">Always Working</h3>
-                <p className="text-gray-400 text-xs sm:text-sm">Calls 8am-9pm daily, never takes a break or vacation</p>
+                <p className="text-gray-400 text-xs sm:text-sm">Calls 9am-6pm Mon-Sat, never takes a break or vacation</p>
               </div>
             </div>
           </div>

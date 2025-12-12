@@ -80,7 +80,7 @@ export default function TermsPage() {
                 <ul className="space-y-2 list-disc list-inside">
                   <li>Calls deduct from your <span className="font-bold">prepaid call balance</span>, charged at $0.30/min.</li>
                   <li>You must maintain sufficient balance to allow calls to continue.</li>
-                  <li>Auto-refill can be enabled to automatically add funds when the balance falls below $10.</li>
+                  <li>Auto-refill can be enabled to automatically add funds when the balance falls below $1.</li>
                   <li><span className="font-bold">All call credit purchases are final and non-refundable.</span></li>
                   <li>SterlingAI is not responsible for disruptions caused by insufficient balance.</li>
                 </ul>

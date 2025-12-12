@@ -31,7 +31,7 @@ export async function GET() {
           user_id: user.id,
           balance: 0,
           auto_refill_enabled: true,
-          auto_refill_threshold: 10.00,
+          auto_refill_threshold: 1.00,
           auto_refill_amount: 50.00,
         })
         .select()

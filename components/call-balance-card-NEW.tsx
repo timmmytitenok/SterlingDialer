@@ -104,7 +104,7 @@ export function CallBalanceCard({
     }
   };
 
-  const balanceStatus = balance < 10 ? 'low' : balance < 25 ? 'medium' : 'good';
+  const balanceStatus = balance < 1 ? 'low' : balance < 10 ? 'medium' : 'good';
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -195,14 +195,14 @@ export function CallBalanceCard({
         )}
 
         {/* Low Balance Warning */}
-        {balance < 10 && (
+        {balance < 1 && (
           <div className="mb-6 p-4 bg-red-500/10 border-2 border-red-500/40 rounded-xl">
             <div className="flex items-start gap-3">
               <Zap className="w-6 h-6 text-red-400 flex-shrink-0 animate-pulse" />
               <div>
                 <h4 className="text-red-400 font-bold mb-1 text-base">Low Balance Alert!</h4>
                 <p className="text-sm text-gray-300">
-                  Auto-refill will trigger when balance drops below $10. Your card will be charged ${refillAmount}.
+                  Auto-refill will trigger when balance drops below $1. Your card will be charged ${refillAmount}.
                 </p>
               </div>
             </div>
@@ -216,7 +216,7 @@ export function CallBalanceCard({
               <Zap className="w-5 h-5 text-green-400" />
               Auto-Refill Settings
             </h4>
-            <p className="text-sm text-gray-400">Required for AI operation • Triggers when balance drops below $10</p>
+            <p className="text-sm text-gray-400">Required for AI operation • Triggers when balance drops below $1</p>
           </div>
 
           {/* Refill Amount Selection: $25, $50, $100, $200 */}
@@ -284,7 +284,7 @@ export function CallBalanceCard({
           {/* Info */}
           <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
             <p className="text-xs text-blue-300 text-center">
-              💳 Auto-refill triggers at $10 • Charged to your payment method
+              💳 Auto-refill triggers at $1 • Charged to your payment method
             </p>
           </div>
         </div>
@@ -302,7 +302,7 @@ export function CallBalanceCard({
             </div>
             <div className="flex items-start gap-2">
               <span className="text-green-400 font-bold">2.</span>
-              <span>When balance drops below <strong className="text-white">$10</strong>, auto-refill triggers</span>
+              <span>When balance drops below <strong className="text-white">$1</strong>, auto-refill triggers</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-green-400 font-bold">3.</span>

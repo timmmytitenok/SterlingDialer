@@ -66,8 +66,19 @@ export default function AdminUsersPage() {
       }
 
       const data = await response.json();
-      setAllUsers(data.users || []);
-      setUsers(data.users || []);
+      
+      // Sort users with Timmy (main account) always first, then newest users at top
+      const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
+      const sortedUsers = (data.users || []).sort((a: User, b: User) => {
+        // Timmy always first
+        if (a.id === TIMMY_ID) return -1;
+        if (b.id === TIMMY_ID) return 1;
+        // Everyone else by creation date (newest first)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      setAllUsers(sortedUsers);
+      setUsers(sortedUsers);
     } catch (err: any) {
       console.error('❌ Error loading users:', err);
       setError(err.message || 'Failed to load users');
@@ -84,7 +95,16 @@ export default function AdminUsersPage() {
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
     const position = sortedByCreation.findIndex(u => u.id === userId);
-    return position >= 0 ? String(position + 1).padStart(3, '0') : '???';
+    let number = position >= 0 ? position + 1 : 0;
+    
+    // Swap Timmy (#002) and Gage (#001) display numbers
+    const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
+    const GAGE_ID = '92899ba3-15fa-47bf-84c4-7cc1ea9101dc';
+    
+    if (userId === TIMMY_ID) number = 1; // Timmy shows as #001
+    if (userId === GAGE_ID) number = 2;  // Gage shows as #002
+    
+    return number > 0 ? String(number).padStart(3, '0') : '???';
   };
 
   const applyFilter = (filter: FilterType) => {
@@ -125,7 +145,16 @@ export default function AdminUsersPage() {
       return true;
     });
 
-    setUsers(filtered);
+    // Keep Timmy first, then newest users at top
+    const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
+    const sortedFiltered = filtered.sort((a, b) => {
+      if (a.id === TIMMY_ID) return -1;
+      if (b.id === TIMMY_ID) return 1;
+      // Newest first
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    setUsers(sortedFiltered);
   };
 
   // Calculate stats

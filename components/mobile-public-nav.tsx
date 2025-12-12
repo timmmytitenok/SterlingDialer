@@ -206,11 +206,11 @@ export function MobilePublicNav() {
           <div className="absolute w-64 h-64 bg-pink-500/10 rounded-full blur-3xl -bottom-20 -right-20 animate-pulse" style={{ animationDelay: '1400ms' }} />
         </div>
 
-        {/* Menu Content */}
-        <div className="relative h-full flex flex-col">
-          {/* Header */}
+        {/* Menu Content - Fully Scrollable */}
+        <div className="relative h-full flex flex-col overflow-hidden">
+          {/* Header - Fixed at top */}
           <div 
-            className="flex items-center justify-between p-5 border-b border-gray-800/50"
+            className="flex-shrink-0 flex items-center justify-between p-5 border-b border-gray-800/50"
             style={{
               animation: isOpen ? 'fadeInDown 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' : 'none'
             }}
@@ -229,8 +229,10 @@ export function MobilePublicNav() {
             </button>
           </div>
 
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
           {/* Navigation Links - Sliding Panels */}
-          <nav ref={navRef} className="flex-1 overflow-hidden py-4 px-3 relative">
+          <nav ref={navRef} className="py-4 px-3 relative">
             {/* Main Menu */}
             <div 
               className={`space-y-1 transition-all duration-400 ease-out ${
@@ -387,8 +389,11 @@ export function MobilePublicNav() {
             </div>
           </nav>
 
-          {/* CTA Section - Conditional */}
-          <div className="p-4 border-t border-gray-800/50 space-y-3">
+          {/* CTA Section - Conditional - Now inside scrollable area */}
+          <div 
+            className="p-4 border-t border-gray-800/50 space-y-3"
+            style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+          >
             {!user ? (
               // LOGGED OUT: Show trial banner + Start Free Trial + Sign In
               <>
@@ -447,6 +452,7 @@ export function MobilePublicNav() {
                 </span>
               </Link>
             )}
+          </div>
           </div>
         </div>
       </div>

@@ -20,15 +20,17 @@ export default async function ActivityLogsPage() {
     redirect('/signup');
   }
 
-  // Get ALL answered calls (for table display)
+  // Get answered calls WITH RECORDINGS ONLY (no point showing calls without audio)
   const { data: allAnsweredCalls, error } = await supabase
     .from('calls')
     .select('*')
     .eq('user_id', user.id)
     .eq('disposition', 'answered')
+    .not('recording_url', 'is', null)  // Only calls with recordings
+    .neq('recording_url', '')          // Exclude empty strings too
     .order('created_at', { ascending: false });
   
-  console.log(`📋 Call History: Found ${allAnsweredCalls?.length || 0} total answered calls`);
+  console.log(`📋 Call History: Found ${allAnsweredCalls?.length || 0} calls with recordings`);
   if (error) console.error('❌ Error fetching call history:', error);
 
   return (
@@ -53,7 +55,7 @@ export default async function ActivityLogsPage() {
               <h1 className="text-4xl font-bold text-white bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
                 Call History
               </h1>
-              <p className="text-gray-400 mt-1">All answered calls with recordings and details</p>
+              <p className="text-gray-400 mt-1">Answered calls with recordings</p>
             </div>
           </div>
         </div>

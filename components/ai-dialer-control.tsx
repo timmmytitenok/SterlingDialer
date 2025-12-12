@@ -632,11 +632,11 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                     <span className="text-lg font-medium">Calling hours have ended for today</span>
                   </div>
                   <p className="text-gray-400 text-sm">
-                    AI calling resumes at <span className="text-purple-400 font-semibold">8:00 AM</span> • Current time: <span className="text-white font-medium">{status?.currentTime}</span>
+                    AI calling resumes at <span className="text-purple-400 font-semibold">9:00 AM</span> • Current time: <span className="text-white font-medium">{status?.currentTime}</span>
                   </p>
                   <div className="mt-4 px-6 py-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
                     <p className="text-purple-200 text-sm">
-                     🌙  The AI dialer operates between <span className="font-bold">8:00 AM - 9:00 PM</span> to ensure calls are made during appropriate business hours. 🌙
+                     🌙  The AI dialer operates between <span className="font-bold">9:00 AM - 6:00 PM (Mon-Sat)</span> to ensure calls are made during appropriate business hours. 🌙
                     </p>
                   </div>
                 </div>

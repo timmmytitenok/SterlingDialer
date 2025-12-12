@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import { calculateAIExpense } from '@/lib/ai-cost-calculator';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-10-29.clover' as any,
@@ -854,12 +855,14 @@ export async function POST(req: Request) {
       }
     }
 
-    // Handle payment succeeded - AUTO-CREATE MONTHLY COMMISSIONS
+    // Handle payment succeeded - AUTO-CREATE MONTHLY COMMISSIONS & TRACK REVENUE
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object as Stripe.Invoice;
       const customerId = invoice.customer as string;
+      const amountPaid = (invoice.amount_paid || 0) / 100; // Convert from cents
       
       console.log('💰 Payment succeeded for invoice:', invoice.id);
+      console.log('💰 Amount paid:', amountPaid);
 
       // Find the user
       const { data: profile } = await supabase
@@ -869,6 +872,28 @@ export async function POST(req: Request) {
         .single();
 
       if (profile?.user_id) {
+        // 📊 AUTO-TRACK SUBSCRIPTION REVENUE (only if amount > 0, skip $0 trial invoices)
+        if (amountPaid > 0) {
+          console.log('📊 Auto-tracking subscription revenue...');
+          const { error: subRevenueError } = await supabase
+            .from('custom_revenue_expenses')
+            .insert({
+              type: 'revenue',
+              category: 'Subscription',
+              amount: amountPaid, // Usually $499
+              description: `Auto-tracked: Subscription payment`,
+              date: new Date().toISOString().split('T')[0],
+            });
+
+          if (subRevenueError) {
+            console.error('⚠️ Error tracking subscription revenue:', subRevenueError);
+          } else {
+            console.log(`✅ Revenue auto-tracked: $${amountPaid} Subscription`);
+          }
+        } else {
+          console.log('ℹ️ Skipping revenue tracking for $0 invoice (trial)');
+        }
+
         // Check if this user was referred
         const { data: referral } = await supabase
           .from('referrals')
@@ -1086,6 +1111,45 @@ export async function POST(req: Request) {
           }
 
           console.log('✅ Balance refill completed for user:', userId);
+
+          // 📊 Calculate actual AI expense based on cost per minute
+          const aiCalc = await calculateAIExpense(amount);
+          
+          // 📊 AUTO-TRACK REVENUE: Add to Financial Tracker
+          console.log('📊 Auto-tracking balance refill revenue...');
+          const { error: revenueError } = await supabase
+            .from('custom_revenue_expenses')
+            .insert({
+              type: 'revenue',
+              category: 'Balance Refill',
+              amount: amount, // $25 revenue
+              description: `Auto-tracked: User refill`,
+              date: new Date().toISOString().split('T')[0],
+            });
+
+          if (revenueError) {
+            console.error('⚠️ Error tracking revenue:', revenueError);
+          } else {
+            console.log(`✅ Revenue auto-tracked: $${amount} Balance Refill`);
+          }
+
+          // 📊 AUTO-TRACK EXPENSE: Add AI Calls expense (calculated based on actual cost)
+          console.log('📊 Auto-tracking AI Calls expense (calculated)...');
+          const { error: expenseError } = await supabase
+            .from('custom_revenue_expenses')
+            .insert({
+              type: 'expense',
+              category: 'AI Calls',
+              amount: aiCalc.expense, // Actual cost based on ai_cost_per_minute setting
+              description: `Auto-tracked: ${aiCalc.minutesPurchased.toFixed(1)} min @ $${aiCalc.aiCostPerMinute}/min`,
+              date: new Date().toISOString().split('T')[0],
+            });
+
+          if (expenseError) {
+            console.error('⚠️ Error tracking expense:', expenseError);
+          } else {
+            console.log(`✅ Expense auto-tracked: $${aiCalc.expense} AI Calls (profit: $${aiCalc.profit}, ${aiCalc.profitMargin}% margin)`);
+          }
 
           // Mark onboarding step 2 complete (they added balance!)
           await supabase

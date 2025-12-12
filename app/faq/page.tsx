@@ -43,7 +43,7 @@ export default function FAQPage() {
     },
     {
       question: "What if I run out of calling credits?",
-      answer: "Sterling AI uses a prepaid system with auto-refill to keep your AI running. Calls cost $0.30 per minute. We auto-refill $25 to your balance when it drops below $10, so your AI never stops working. You can manage your balance and payment methods in your dashboard."
+      answer: "Sterling AI uses a prepaid system with auto-refill to keep your AI running. Calls cost $0.30 per minute. We auto-refill $25 to your balance when it drops below $1, so your AI never stops working. You can manage your balance and payment methods in your dashboard."
     },
     {
       question: "What features are included with SterlingAI Pro Access?",

@@ -152,11 +152,13 @@ export async function GET() {
       status = 'idle';
     }
 
-    // Check calling hours (8am - 9pm in user's timezone)
+    // Check calling hours (9am - 6pm in user's timezone, Mon-Sat only)
     const userTimezone = aiSettings?.user_timezone || 'America/New_York';
     const nowInUserTZ = new Date(new Date().toLocaleString('en-US', { timeZone: userTimezone }));
     const currentHour = nowInUserTZ.getHours();
-    const withinCallingHours = currentHour >= 8 && currentHour < 21;
+    const currentDay = nowInUserTZ.getDay(); // 0 = Sunday
+    const isSunday = currentDay === 0;
+    const withinCallingHours = currentHour >= 9 && currentHour < 18;
     const callingHoursDisabled = aiSettings?.disable_calling_hours === true;
     
     // Format current time for display
@@ -166,12 +168,14 @@ export async function GET() {
       hour12: true 
     });
 
-    // If outside calling hours and not disabled, show that status
-    const outsideCallingHours = !withinCallingHours && !callingHoursDisabled;
+    // If Sunday or outside calling hours and not disabled, show that status
+    const outsideCallingHours = (!withinCallingHours || isSunday) && !callingHoursDisabled;
     
     if (outsideCallingHours && status === 'idle') {
       status = 'outside-hours';
-      reason = `Calling hours: 8:00 AM - 9:00 PM ${userTimezone.replace('America/', '').replace('_', ' ')}`;
+      reason = isSunday 
+        ? `No calls on Sundays. Resumes Monday 9:00 AM` 
+        : `Calling hours: 9:00 AM - 6:00 PM ${userTimezone.replace('America/', '').replace('_', ' ')}`;
     }
 
     // Check if budget reached

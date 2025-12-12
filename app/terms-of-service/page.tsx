@@ -47,7 +47,7 @@ export default function TermsOfServicePage() {
                 <strong className="text-white">Subscription Fees:</strong> Pro Access is billed at $499/month plus $0.30 per minute for calls made by the AI agent.
               </p>
               <p className="mb-3">
-                <strong className="text-white">Auto-Refill:</strong> When you enable auto-refill for call balance, your payment method will be automatically charged $25 when your balance drops below $10. You can disable auto-refill at any time.
+                <strong className="text-white">Auto-Refill:</strong> When you enable auto-refill for call balance, your payment method will be automatically charged $25 when your balance drops below $1. You can disable auto-refill at any time.
               </p>
               <p>
                 <strong className="text-white">Cancellation:</strong> You may cancel your subscription at any time. Upon cancellation, you will continue to have access until the end of your current billing period.

@@ -157,7 +157,23 @@ export async function GET(req: Request) {
     }).length * 499;
 
     // ============================================
-    // 4. CHART DATA (Last 30 Days)
+    // 4. FETCH CUSTOM REVENUE ITEMS EARLY (needed for charts)
+    // ============================================
+    
+    console.log('💰 Fetching custom revenue/expenses for charts...');
+    const { data: customItemsForCharts, error: customChartError } = await supabase
+      .from('custom_revenue_expenses')
+      .select('type, category, amount, date');
+
+    if (customChartError) {
+      console.error('⚠️ Error fetching custom items for charts:', customChartError);
+    }
+
+    const customRevenueForCharts = customItemsForCharts?.filter((item: any) => item.type === 'revenue') || [];
+    console.log(`📊 Found ${customRevenueForCharts.length} custom revenue items for charts`);
+
+    // ============================================
+    // 5. CHART DATA (Last 30 Days) - Including Custom Revenue
     // ============================================
     
     const chartData30Days = [];
@@ -165,27 +181,43 @@ export async function GET(req: Request) {
       const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
       const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const dateEnd = new Date(dateStart.getTime() + 24 * 60 * 60 * 1000);
+      const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
 
+      // Stripe refills
       const dayRefills = refillTransactions?.filter((t: any) => {
         const tDate = new Date(t.created_at);
         return tDate >= dateStart && tDate < dateEnd;
       }).reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
 
+      // Stripe subscriptions
       const daySubs = activeSubscriptions.filter((s: any) => {
         const sDate = new Date(s.created_at);
         return sDate >= dateStart && sDate < dateEnd;
       }).length * 499;
 
+      // Custom revenue (Balance Refill category)
+      const dayCustomRefills = customRevenueForCharts.filter((item: any) => {
+        return item.date === dateStr && item.category === 'Balance Refill';
+      }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+
+      // Custom revenue (Subscription category)
+      const dayCustomSubs = customRevenueForCharts.filter((item: any) => {
+        return item.date === dateStr && item.category === 'Subscription';
+      }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+
+      const totalMinutes = dayRefills + dayCustomRefills;
+      const totalSubs = daySubs + dayCustomSubs;
+
       chartData30Days.push({
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        minutesRevenue: dayRefills,
-        subscriptionRevenue: daySubs,
-        totalRevenue: dayRefills + daySubs,
+        minutesRevenue: totalMinutes,
+        subscriptionRevenue: totalSubs,
+        totalRevenue: totalMinutes + totalSubs,
       });
     }
 
     // ============================================
-    // 5. CHART DATA (Last 7 Days)
+    // 6. CHART DATA (Last 7 Days) - Including Custom Revenue
     // ============================================
     
     const chartData7Days = [];
@@ -193,27 +225,43 @@ export async function GET(req: Request) {
       const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
       const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const dateEnd = new Date(dateStart.getTime() + 24 * 60 * 60 * 1000);
+      const dateStr = date.toISOString().split('T')[0];
 
+      // Stripe refills
       const dayRefills = refillTransactions?.filter((t: any) => {
         const tDate = new Date(t.created_at);
         return tDate >= dateStart && tDate < dateEnd;
       }).reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
 
+      // Stripe subscriptions
       const daySubs = activeSubscriptions.filter((s: any) => {
         const sDate = new Date(s.created_at);
         return sDate >= dateStart && sDate < dateEnd;
       }).length * 499;
 
+      // Custom revenue (Balance Refill category)
+      const dayCustomRefills = customRevenueForCharts.filter((item: any) => {
+        return item.date === dateStr && item.category === 'Balance Refill';
+      }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+
+      // Custom revenue (Subscription category)
+      const dayCustomSubs = customRevenueForCharts.filter((item: any) => {
+        return item.date === dateStr && item.category === 'Subscription';
+      }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+
+      const totalMinutes = dayRefills + dayCustomRefills;
+      const totalSubs = daySubs + dayCustomSubs;
+
       chartData7Days.push({
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        minutesRevenue: dayRefills,
-        subscriptionRevenue: daySubs,
-        totalRevenue: dayRefills + daySubs,
+        minutesRevenue: totalMinutes,
+        subscriptionRevenue: totalSubs,
+        totalRevenue: totalMinutes + totalSubs,
       });
     }
 
     // ============================================
-    // 6. CHART DATA (Last 12 Months)
+    // 7. CHART DATA (Last 12 Months) - Including Custom Revenue
     // ============================================
     
     const chartData12Months = [];
@@ -222,21 +270,37 @@ export async function GET(req: Request) {
       const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 1);
 
+      // Stripe refills
       const monthRefills = refillTransactions?.filter((t: any) => {
         const tDate = new Date(t.created_at);
         return tDate >= monthStart && tDate < monthEnd;
       }).reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
 
+      // Stripe subscriptions
       const monthSubs = activeSubscriptions.filter((s: any) => {
         const sDate = new Date(s.created_at);
         return sDate >= monthStart && sDate < monthEnd;
       }).length * 499;
 
+      // Custom revenue for this month
+      const monthCustomRefills = customRevenueForCharts.filter((item: any) => {
+        const itemDate = new Date(item.date);
+        return itemDate >= monthStart && itemDate < monthEnd && item.category === 'Balance Refill';
+      }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+
+      const monthCustomSubs = customRevenueForCharts.filter((item: any) => {
+        const itemDate = new Date(item.date);
+        return itemDate >= monthStart && itemDate < monthEnd && item.category === 'Subscription';
+      }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+
+      const totalMinutes = monthRefills + monthCustomRefills;
+      const totalSubs = monthSubs + monthCustomSubs;
+
       chartData12Months.push({
         date: date.toLocaleDateString('en-US', { month: 'short' }),
-        minutesRevenue: monthRefills,
-        subscriptionRevenue: monthSubs,
-        totalRevenue: monthRefills + monthSubs,
+        minutesRevenue: totalMinutes,
+        subscriptionRevenue: totalSubs,
+        totalRevenue: totalMinutes + totalSubs,
       });
     }
 

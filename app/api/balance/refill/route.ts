@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@/lib/supabase/server';
+import { calculateAIExpense } from '@/lib/ai-cost-calculator';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-10-29.clover' as any,
@@ -81,26 +82,42 @@ export async function POST(req: Request) {
 
         console.log('✅ Payment successful:', paymentIntent.id);
 
-        // Update balance immediately
-        const { data: currentProfile } = await supabase
-          .from('profiles')
-          .select('call_balance')
+        // Update balance immediately in call_balance table (where dashboard reads from!)
+        const { data: currentBalance } = await supabase
+          .from('call_balance')
+          .select('balance')
           .eq('user_id', user.id)
           .single();
 
-        const newBalance = (currentProfile?.call_balance || 0) + refillAmount;
+        const balanceBefore = currentBalance?.balance || 0;
+        const newBalance = balanceBefore + refillAmount;
         
+        // Update call_balance table (this is where the dashboard reads from!)
+        const { error: balanceError } = await supabase
+          .from('call_balance')
+          .upsert({
+            user_id: user.id,
+            balance: newBalance,
+            auto_refill_enabled: true,
+            auto_refill_amount: 25,
+            last_refill_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id'
+          });
+
+        if (balanceError) {
+          console.error('❌ Error updating call_balance:', balanceError);
+        }
+
+        // Also update onboarding step in profiles
         await supabase
           .from('profiles')
           .update({ 
-            call_balance: newBalance,
-            auto_refill_enabled: true, // Enable auto-refill on first payment
-            auto_refill_amount: 25,
             onboarding_step_2_balance: true, // Mark step 2 complete
           })
           .eq('user_id', user.id);
 
-        console.log(`✅ Balance updated: $${newBalance.toFixed(2)}`);
+        console.log(`✅ Balance updated in call_balance table: $${balanceBefore.toFixed(2)} → $${newBalance.toFixed(2)}`);
         console.log('✅ Onboarding Step 2 (Balance) marked complete - user added funds via direct charge');
 
         // Log transaction for revenue tracking
@@ -121,6 +138,45 @@ export async function POST(req: Request) {
           console.error('❌ Transaction insert failed:', insertError);
         } else {
           console.log('✅ Transaction logged:', insertData);
+        }
+
+        // 📊 Calculate actual AI expense based on cost per minute
+        const aiCalc = await calculateAIExpense(refillAmount);
+
+        // 📊 AUTO-TRACK REVENUE: Add to Financial Tracker
+        console.log('📊 Auto-tracking balance refill revenue (direct charge)...');
+        const { error: revenueError } = await supabase
+          .from('custom_revenue_expenses')
+          .insert({
+            type: 'revenue',
+            category: 'Balance Refill',
+            amount: refillAmount, // $25 revenue
+            description: `Auto-tracked: User refill (direct charge)`,
+            date: new Date().toISOString().split('T')[0],
+          });
+
+        if (revenueError) {
+          console.error('⚠️ Error tracking revenue:', revenueError);
+        } else {
+          console.log(`✅ Revenue auto-tracked: $${refillAmount} Balance Refill`);
+        }
+
+        // 📊 AUTO-TRACK EXPENSE: Add AI Calls expense (calculated based on actual cost)
+        console.log('📊 Auto-tracking AI Calls expense (direct charge, calculated)...');
+        const { error: expenseError } = await supabase
+          .from('custom_revenue_expenses')
+          .insert({
+            type: 'expense',
+            category: 'AI Calls',
+            amount: aiCalc.expense, // Actual cost based on ai_cost_per_minute setting
+            description: `Auto-tracked: ${aiCalc.minutesPurchased.toFixed(1)} min @ $${aiCalc.aiCostPerMinute}/min`,
+            date: new Date().toISOString().split('T')[0],
+          });
+
+        if (expenseError) {
+          console.error('⚠️ Error tracking expense:', expenseError);
+        } else {
+          console.log(`✅ Expense auto-tracked: $${aiCalc.expense} AI Calls (profit: $${aiCalc.profit}, ${aiCalc.profitMargin}% margin)`);
         }
 
         // Check if all onboarding steps are now complete

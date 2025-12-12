@@ -56,10 +56,10 @@ export default function LandingPage() {
             </div>
 
             {/* Main Headline with Blur Animation */}
-            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold mb-8 leading-tight text-center">
-              {/* Mobile: Stacked line by line */}
+            <h1 className="font-bold mb-8 leading-tight text-center">
+              {/* Mobile: Stacked line by line with custom sizes */}
               <div className="block lg:hidden">
-                <div className="flex justify-center mb-1">
+                <div className="flex justify-center mb-1 text-4xl">
                   <BlurText
                     text="Revive Old Leads"
                     delay={100}
@@ -68,7 +68,7 @@ export default function LandingPage() {
                     direction="top"
                   />
                 </div>
-                <div className="flex justify-center mb-1">
+                <div className="flex justify-center mb-1 text-5xl">
                   <BlurText
                     text="Book More Appointments"
                     delay={120}
@@ -80,7 +80,7 @@ export default function LandingPage() {
               </div>
               
               {/* Desktop: Two lines */}
-              <div className="hidden lg:block">
+              <div className="hidden lg:block text-8xl">
                 <div className="flex justify-center">
                   <BlurText
                     text="Revive Old Leads."

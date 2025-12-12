@@ -49,7 +49,9 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    // Create fresh client to ensure sign out works without page refresh
+    const freshSupabase = createClient();
+    await freshSupabase.auth.signOut();
     router.push('/signup');
     router.refresh();
   };

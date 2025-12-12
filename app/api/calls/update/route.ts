@@ -156,8 +156,8 @@ export async function POST(request: Request) {
           console.log(`✅ Balance deducted: $${cost.toFixed(3)} | New balance: $${newBalance.toFixed(3)}`);
 
           // Check for auto-refill
-          if (balanceData.auto_refill_enabled && newBalance < 10) {
-            console.log('🔄 Balance below $10 - Auto-refill will be triggered by background job');
+          if (balanceData.auto_refill_enabled && newBalance < 1) {
+            console.log('🔄 Balance below $1 - Auto-refill will be triggered by background job');
             // Note: Auto-refill via Stripe should ideally be handled by a separate background job
             // For now, just log it
           }

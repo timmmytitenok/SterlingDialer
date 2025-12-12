@@ -163,11 +163,11 @@ export function DashboardMobileNav({ user, profile }: DashboardMobileNavProps) {
           <div className="absolute w-64 h-64 bg-pink-500/10 rounded-full blur-3xl -bottom-20 -right-20 animate-pulse" style={{ animationDelay: '1400ms' }} />
         </div>
 
-        {/* Menu Content */}
-        <div className="relative h-full flex flex-col">
-          {/* Header */}
+        {/* Menu Content - Fully Scrollable */}
+        <div className="relative h-full flex flex-col overflow-hidden">
+          {/* Header - Fixed at top */}
           <div 
-            className="flex items-center justify-between p-5 border-b border-gray-800/50"
+            className="flex-shrink-0 flex items-center justify-between p-5 border-b border-gray-800/50"
             style={{
               animation: isOpen ? 'fadeInDown 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both' : 'none'
             }}
@@ -186,6 +186,8 @@ export function DashboardMobileNav({ user, profile }: DashboardMobileNavProps) {
             </button>
           </div>
 
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
           {/* User Profile */}
           <div 
             className="p-5 border-b border-gray-800/50"
@@ -205,7 +207,7 @@ export function DashboardMobileNav({ user, profile }: DashboardMobileNavProps) {
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex-1 overflow-y-auto py-4 px-3">
+            <nav className="py-4 px-3">
             <div className="space-y-1">
               {mainNavigation.map((item, index) => {
                 const Icon = item.icon;
@@ -252,11 +254,12 @@ export function DashboardMobileNav({ user, profile }: DashboardMobileNavProps) {
             </div>
           </nav>
 
-          {/* Sign Out Section */}
+            {/* Sign Out Section - Now inside scrollable area */}
           <div 
-            className="p-4 border-t border-gray-800/50"
+              className="p-4 border-t border-gray-800/50 pb-safe"
             style={{
-              animation: isOpen ? 'fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both' : 'none'
+                animation: isOpen ? 'fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both' : 'none',
+                paddingBottom: 'max(1rem, env(safe-area-inset-bottom))'
             }}
           >
             <button
@@ -274,6 +277,7 @@ export function DashboardMobileNav({ user, profile }: DashboardMobileNavProps) {
               <LogOut className="w-5 h-5 relative z-10" />
               <span className="relative z-10">Sign Out</span>
             </button>
+            </div>
           </div>
         </div>
       </div>

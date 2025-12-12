@@ -143,7 +143,7 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
               <span className="text-2xl font-bold text-blue-400">$0.30/min</span>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              Auto-refill $25 when balance drops below $10
+              Auto-refill $25 when balance drops below $1
             </p>
           </div>
 

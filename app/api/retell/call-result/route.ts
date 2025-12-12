@@ -450,12 +450,12 @@ export async function POST(request: Request) {
           .eq('user_id', userId);
 
         // ========================================================================
-        // CHECK FOR AUTO-REFILL (balance < $10)
+        // CHECK FOR AUTO-REFILL (balance < $1)
         // ========================================================================
-        if (balance.auto_refill_enabled && newBalance < 10) {
+        if (balance.auto_refill_enabled && newBalance < 1) {
           console.log('');
           console.log('🔄🔄🔄 AUTO-REFILL TRIGGERED! 🔄🔄🔄');
-          console.log(`💰 Balance dropped to $${newBalance.toFixed(2)} (below $10)`);
+          console.log(`💰 Balance dropped to $${newBalance.toFixed(2)} (below $1)`);
           console.log('💳 Charging card $25...');
           
           try {

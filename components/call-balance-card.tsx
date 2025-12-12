@@ -171,7 +171,7 @@ export function CallBalanceCard({
     }
   };
 
-  const balanceStatus = balance < 10 ? 'low' : balance < 25 ? 'medium' : 'good';
+  const balanceStatus = balance < 1 ? 'low' : balance < 10 ? 'medium' : 'good';
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -248,7 +248,7 @@ export function CallBalanceCard({
                 </p>
                 <p className="text-xs md:text-sm text-gray-400 mt-0.5">
                   {autoRefillOn 
-                    ? `Recharge with $${refillAmount} when balance is lower than $10`
+                    ? `Recharge with $${refillAmount} when balance is lower than $1`
                     : 'Manually add credits when needed'}
                 </p>
               </div>
@@ -355,7 +355,7 @@ export function CallBalanceCard({
                     <div className="relative space-y-2 md:space-y-3 text-xs md:text-sm text-gray-300">
                       <p className="flex items-start gap-2">
                         <span className="text-green-400 mt-0.5">✓</span>
-                        <span>When your balance drops below <strong className="text-blue-300">$10</strong>, we'll automatically charge your card <strong className="text-blue-300">$25</strong></span>
+                        <span>When your balance drops below <strong className="text-blue-300">$1</strong>, we'll automatically charge your card <strong className="text-blue-300">$25</strong></span>
                       </p>
                       <p className="flex items-start gap-2">
                         <span className="text-green-400 mt-0.5">✓</span>
@@ -383,7 +383,7 @@ export function CallBalanceCard({
                       className="mt-0.5 md:mt-1 w-4 h-4 md:w-5 md:h-5 rounded border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer shrink-0"
                     />
                     <span className="text-xs md:text-sm text-gray-300">
-                      I understand and agree that Sterling AI will automatically charge $25 when my balance drops below $10. I can cancel auto-refill anytime.
+                      I understand and agree that Sterling AI will automatically charge $25 when my balance drops below $1. I can cancel auto-refill anytime.
                     </span>
                     {consentChecked && (
                       <span className="ml-auto text-green-400 text-lg">✓</span>

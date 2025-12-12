@@ -108,8 +108,8 @@ export async function POST(request: Request) {
     }
 
     // Check if auto-refill should be triggered
-    if (balanceData.auto_refill_enabled && newBalance < 10) {
-      console.log('🔄 Balance below $10, triggering auto-refill...');
+    if (balanceData.auto_refill_enabled && newBalance < 1) {
+      console.log('🔄 Balance below $1, triggering auto-refill...');
       
       // Get user profile for Stripe customer ID
       const { data: profile } = await supabase
