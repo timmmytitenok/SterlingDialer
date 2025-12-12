@@ -177,15 +177,26 @@ export async function POST(request: Request) {
     // CALL CLASSIFICATION LOGIC
     // ========================================================================
     
-    // Check if call was actually picked up
-    // If in_voicemail = false, they picked up! (even if they hung up quickly)
-    // Only if in_voicemail = true did it NOT get picked up
-    const callWasAnswered = !inVoicemail;
+    // Parse custom analysis data FIRST (needed to determine if call was actually answered)
+    const customAnalysis = call_analysis?.custom_analysis_data || {};
+    console.log('📊 Custom Analysis Data:', customAnalysis);
+    
+    // Check if ANY outcome flag is true - this proves the call was answered!
+    const hasOutcomeFlag = customAnalysis.BOOKED === true || 
+                           customAnalysis.NOT_INTERESTED === true || 
+                           customAnalysis.CALLBACK === true || 
+                           customAnalysis.LIVE_TRANSFER === true;
+    
+    // CRITICAL FIX: If ANY outcome flag is set, the call WAS answered!
+    // Retell may incorrectly report in_voicemail=true for transferred calls
+    // But if we got BOOKED=true, NOT_INTERESTED=true, etc., the person definitely picked up!
+    const callWasAnswered = !inVoicemail || hasOutcomeFlag;
     
     console.log(`📊 Call classification:`);
     console.log(`   - Duration: ${durationSeconds}s`);
     console.log(`   - In voicemail: ${inVoicemail}`);
-    console.log(`   - Was answered: ${callWasAnswered} (in_voicemail = ${inVoicemail})`);
+    console.log(`   - Has outcome flag: ${hasOutcomeFlag} (BOOKED=${customAnalysis.BOOKED}, NOT_INTERESTED=${customAnalysis.NOT_INTERESTED})`);
+    console.log(`   - Was answered: ${callWasAnswered} (in_voicemail=${inVoicemail} OR hasOutcomeFlag=${hasOutcomeFlag})`);
     console.log(`   - Was double dial: ${wasDoubleDial}`);
     
     if (!callWasAnswered) {
@@ -217,11 +228,7 @@ export async function POST(request: Request) {
       console.log('✅ Call was ANSWERED (pickup confirmed)');
       callCost = durationMinutes * costPerMinute;
 
-      // Parse outcome from Retell's custom_analysis_data
-      const customAnalysis = call_analysis?.custom_analysis_data || {};
-      console.log('📊 Custom Analysis Data:', customAnalysis);
-
-      // Check flags in priority order
+      // Check flags in priority order (customAnalysis already parsed above)
       if (customAnalysis.NOT_INTERESTED === true) {
         outcome = 'not_interested';
         leadStatus = 'not_interested';
