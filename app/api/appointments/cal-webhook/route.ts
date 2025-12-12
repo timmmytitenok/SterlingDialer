@@ -102,7 +102,7 @@ export async function POST(request: Request) {
       // Search for lead across ALL users by phone number
       const { data: matchingLead, error: leadError } = await supabase
         .from('leads')
-        .select('id, user_id, name, phone, status')
+        .select('id, user_id, name, phone, status, total_calls_made, total_pickups, call_attempts_today')
         .or(`phone.ilike.%${last10Digits}%,phone.ilike.%${normalizedPhone}%`)
         .order('created_at', { ascending: false }) // Get most recent lead first
         .limit(1)
@@ -120,19 +120,66 @@ export async function POST(request: Request) {
         console.log(`   - User ID: ${userId}`);
         console.log(`   - Current status: ${matchingLead.status}`);
         
-        // Update lead status to appointment_booked
+        // ========================================================================
+        // UPDATE LEAD STATUS + TRACKING FIELDS
+        // This ensures stats are updated even if Retell webhook failed
+        // ========================================================================
+        const leadUpdate: any = {
+          status: 'appointment_booked',
+          last_call_outcome: 'appointment_booked',
+          last_dial_at: new Date().toISOString(),
+          last_called: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        
+        // Only increment counters if lead wasn't already marked as appointment_booked
+        // (prevents double-counting if Retell webhook already processed)
+        if (matchingLead.status !== 'appointment_booked') {
+          leadUpdate.total_calls_made = (matchingLead.total_calls_made || 0) + 1;
+          leadUpdate.total_pickups = (matchingLead.total_pickups || 0) + 1;
+          leadUpdate.call_attempts_today = (matchingLead.call_attempts_today || 0) + 1;
+          console.log('📊 Incrementing lead counters (Retell webhook may have failed)');
+        } else {
+          console.log('📊 Lead already marked as appointment_booked - not incrementing counters');
+        }
+        
         const { error: updateError } = await supabase
           .from('leads')
-          .update({ 
-            status: 'appointment_booked',
-            last_call_outcome: 'appointment_booked'
-          })
+          .update(leadUpdate)
           .eq('id', leadId);
         
         if (updateError) {
           console.error('❌ Failed to update lead status:', updateError);
         } else {
           console.log('✅ Lead status updated to appointment_booked');
+        }
+        
+        // ========================================================================
+        // UPDATE AI CONTROL SETTINGS (calls_made_today)
+        // Only if Retell webhook didn't already process this call
+        // ========================================================================
+        if (matchingLead.status !== 'appointment_booked' && matchingLead.status !== 'potential_appointment') {
+          console.log('📊 Updating ai_control_settings (backup for Retell webhook)...');
+          
+          const { data: aiSettings } = await supabase
+            .from('ai_control_settings')
+            .select('calls_made_today')
+            .eq('user_id', userId)
+            .single();
+          
+          if (aiSettings) {
+            const newCallCount = (aiSettings.calls_made_today || 0) + 1;
+            
+            await supabase
+              .from('ai_control_settings')
+              .update({
+                calls_made_today: newCallCount,
+                last_call_status: 'appointment_booked',
+              })
+              .eq('user_id', userId);
+            
+            console.log(`✅ calls_made_today updated: ${aiSettings.calls_made_today || 0} → ${newCallCount}`);
+          }
         }
       } else {
         console.log('⚠️ No matching lead found for phone:', attendeePhone);
