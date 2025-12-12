@@ -210,54 +210,105 @@ export async function POST(request: Request) {
     
     console.log('👤 Final User ID:', userId);
 
-    // Create appointment in database
-    console.log('💾 Creating appointment in database...');
+    // ========================================================================
+    // UPDATE OR CREATE APPOINTMENT
+    // Retell webhook creates the appointment, Cal.ai updates with exact time
+    // ========================================================================
     
-    // Store the exact time Cal.ai sends (ISO 8601 format with timezone)
     const scheduledTime = startTime;
     console.log('🕐 Scheduled time:', scheduledTime);
     console.log('🕐 Scheduled time (parsed):', new Date(scheduledTime).toISOString());
     
-    const appointmentData = {
-      user_id: userId,
-      lead_id: leadId, // Link to lead if found
-      prospect_name: attendeeName,
-      prospect_phone: attendeePhone,
-      prospect_age: attendeeAge,
-      prospect_state: attendeeState,
-      scheduled_at: scheduledTime,
-      status: 'scheduled',
-      is_sold: false,
-      is_no_show: false,
-      // Don't save notes - keeps the UI clean
-      created_at: new Date().toISOString(),
-    };
+    let appointmentId = null;
+    
+    // First, try to find existing appointment for this lead (created by Retell webhook)
+    if (leadId) {
+      console.log('🔍 Looking for existing appointment for lead:', leadId);
+      
+      const { data: existingAppointment, error: findError } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('lead_id', leadId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (findError) {
+        console.error('⚠️ Error finding appointment:', findError);
+      }
+      
+      if (existingAppointment) {
+        console.log('✅ Found existing appointment:', existingAppointment.id);
+        console.log('📅 Updating with exact scheduled time...');
+        
+        // UPDATE the existing appointment with the real scheduled time
+        const { error: updateError } = await supabase
+          .from('appointments')
+          .update({
+            scheduled_at: scheduledTime,
+            prospect_name: attendeeName,
+            prospect_phone: attendeePhone,
+            prospect_age: attendeeAge,
+            prospect_state: attendeeState,
+            notes: null, // Clear the placeholder notes
+          })
+          .eq('id', existingAppointment.id);
+        
+        if (updateError) {
+          console.error('❌ Failed to update appointment:', updateError);
+        } else {
+          console.log('✅ Appointment UPDATED with exact time!');
+          appointmentId = existingAppointment.id;
+        }
+      }
+    }
+    
+    // If no existing appointment found, create new one
+    if (!appointmentId) {
+      console.log('💾 No existing appointment found - creating new one...');
+      
+      const appointmentData = {
+        user_id: userId,
+        lead_id: leadId,
+        prospect_name: attendeeName,
+        prospect_phone: attendeePhone,
+        prospect_age: attendeeAge,
+        prospect_state: attendeeState,
+        scheduled_at: scheduledTime,
+        status: 'scheduled',
+        is_sold: false,
+        is_no_show: false,
+        created_at: new Date().toISOString(),
+      };
 
-    console.log('📝 Appointment Data:', appointmentData);
+      console.log('📝 Appointment Data:', appointmentData);
 
-    const { data, error } = await supabase
-      .from('appointments')
-      .insert([appointmentData])
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from('appointments')
+        .insert([appointmentData])
+        .select()
+        .single();
 
-    if (error) {
-      console.error('❌ Database error:', error);
-      throw error;
+      if (error) {
+        console.error('❌ Database error:', error);
+        throw error;
+      }
+      
+      appointmentId = data.id;
+      console.log('✅ NEW Appointment created!');
     }
 
-    console.log('✅ Appointment created successfully!');
-    console.log('✅ Appointment ID:', data.id);
+    console.log('✅ Appointment ID:', appointmentId);
     console.log('✅ Scheduled for:', startTime);
 
     return NextResponse.json({
       success: true,
       appointment: {
-        id: data.id,
+        id: appointmentId,
         name: attendeeName,
         scheduledAt: startTime,
       },
-      message: 'Appointment booked successfully via Cal.ai'
+      message: 'Appointment processed successfully via Cal.ai'
     });
 
   } catch (error: any) {

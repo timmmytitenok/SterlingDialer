@@ -235,16 +235,14 @@ export async function POST(request: Request) {
         console.log('❌ Lead is NOT INTERESTED - marking as dead lead');
         
       } else if (customAnalysis.BOOKED === true) {
-        // Mark as POTENTIAL appointment until Cal.ai webhook confirms the actual booking
-        // This prevents false "Appointment" status when someone confirms a time but hangs up before booking completes
-        outcome = 'potential_appointment';
-        leadStatus = 'potential_appointment';
-        console.log('🎯 POTENTIAL APPOINTMENT - time was discussed');
-        console.log('⏳ Waiting for Cal.ai webhook to confirm actual booking...');
-        console.log('📅 If Cal.ai webhook fires → will change to appointment_booked');
-        console.log('🔄 If not confirmed → lead can be called again later');
-        // NOTE: Actual appointment_booked status is set by Cal.ai webhook (/api/appointments/cal-webhook)
-        // which only fires when the appointment is ACTUALLY created in Cal.com
+        // BOOKED = TRUE means appointment was booked!
+        // Update EVERYTHING right here - don't wait for Cal.ai
+        outcome = 'appointment_booked';
+        leadStatus = 'appointment_booked';
+        console.log('🎯🎯🎯 APPOINTMENT BOOKED! 🎯🎯🎯');
+        console.log('✅ Updating lead status to appointment_booked');
+        console.log('✅ Lead will NOT be called again');
+        // Cal.ai webhook will later update the appointment with the exact time
         
       } else if (customAnalysis.LIVE_TRANSFER === true) {
         outcome = 'live_transfer';
@@ -400,6 +398,46 @@ export async function POST(request: Request) {
       console.error('❌ Failed to insert call record:', callInsertError);
     } else {
         console.log('✅ Call record created');
+      }
+      
+      // ========================================================================
+      // CREATE APPOINTMENT RECORD IF BOOKED
+      // ========================================================================
+      if (outcome === 'appointment_booked') {
+        console.log('');
+        console.log('📅📅📅 ========== CREATING APPOINTMENT ========== 📅📅📅');
+        console.log(`📞 Lead: ${lead.name} (${lead.phone})`);
+        
+        // Create appointment without specific time (Cal.ai will update with exact time later)
+        const appointmentData = {
+          user_id: userId,
+          lead_id: leadId,
+          prospect_name: lead.name || lead.first_name || 'Unknown',
+          prospect_phone: lead.phone || lead.phone_number || '',
+          scheduled_at: new Date().toISOString(), // Placeholder - Cal.ai will update with real time
+          status: 'scheduled',
+          is_sold: false,
+          is_no_show: false,
+          notes: 'Booked via AI call - awaiting Cal.ai confirmation for exact time',
+          created_at: new Date().toISOString(),
+        };
+        
+        const { data: appointmentResult, error: appointmentError } = await supabase
+          .from('appointments')
+          .insert([appointmentData])
+          .select()
+          .single();
+        
+        if (appointmentError) {
+          console.error('❌ Failed to create appointment:', appointmentError);
+        } else {
+          console.log('✅ APPOINTMENT CREATED!');
+          console.log(`   - ID: ${appointmentResult.id}`);
+          console.log(`   - Name: ${appointmentData.prospect_name}`);
+          console.log('📅 Cal.ai will update with exact scheduled time when booking completes');
+        }
+        console.log('📅📅📅 ============================================ 📅📅📅');
+        console.log('');
       }
     } else {
       console.log('⏭️  First attempt - NOT creating call record (waiting for double dial)');
