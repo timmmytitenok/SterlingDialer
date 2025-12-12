@@ -230,7 +230,7 @@ export function MobilePublicNav() {
           </div>
 
           {/* Scrollable Content Area */}
-          <div className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
           {/* Navigation Links - Sliding Panels */}
           <nav ref={navRef} className="py-4 px-3 relative">
             {/* Main Menu */}

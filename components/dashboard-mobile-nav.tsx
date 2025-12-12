@@ -187,7 +187,7 @@ export function DashboardMobileNav({ user, profile }: DashboardMobileNavProps) {
           </div>
 
           {/* Scrollable Content Area */}
-          <div className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
           {/* User Profile */}
           <div 
             className="p-5 border-b border-gray-800/50"
