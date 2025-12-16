@@ -251,32 +251,25 @@ export default function AdminRevenuePage() {
     }
   }, [mobileTab]);
   
-  // Confetti celebration function
+  // Confetti celebration function - quick burst!
   const shootConfetti = () => {
-    const duration = 3000;
-    const end = Date.now() + duration;
     const colors = ['#10B981', '#34D399', '#6EE7B7', '#FFD700', '#FFA500'];
 
-    (function frame() {
-      confetti({
-        particleCount: 4,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: colors,
-      });
-      confetti({
-        particleCount: 4,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: colors,
-      });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
-    })();
+    // Single quick burst from both sides
+    confetti({
+      particleCount: 80,
+      angle: 60,
+      spread: 70,
+      origin: { x: 0, y: 0.6 },
+      colors: colors,
+    });
+    confetti({
+      particleCount: 80,
+      angle: 120,
+      spread: 70,
+      origin: { x: 1, y: 0.6 },
+      colors: colors,
+    });
   };
 
   useEffect(() => {

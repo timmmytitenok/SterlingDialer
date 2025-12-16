@@ -117,44 +117,9 @@ export async function POST(req: Request) {
         console.log('✅ Auto-refill transaction logged:', paymentIntent.id);
       }
 
-      // 📊 Calculate actual AI expense based on cost per minute
-      const aiCalc = await calculateAIExpense(callBalance.auto_refill_amount);
-
-      // 📊 AUTO-TRACK REVENUE: Add to Financial Tracker
-      console.log('📊 Auto-tracking balance refill revenue (auto-refill)...');
-      const { error: revenueError } = await supabase
-        .from('custom_revenue_expenses')
-        .insert({
-          type: 'revenue',
-          category: 'Balance Refill',
-          amount: callBalance.auto_refill_amount, // $25 revenue
-          description: `Auto-tracked: Auto-refill triggered`,
-          date: new Date().toISOString().split('T')[0],
-        });
-
-      if (revenueError) {
-        console.error('⚠️ Error tracking revenue:', revenueError);
-      } else {
-        console.log(`✅ Revenue auto-tracked: $${callBalance.auto_refill_amount} Balance Refill`);
-      }
-
-      // 📊 AUTO-TRACK EXPENSE: Add AI Calls expense (calculated based on actual cost)
-      console.log('📊 Auto-tracking AI Calls expense (auto-refill, calculated)...');
-      const { error: expenseError } = await supabase
-        .from('custom_revenue_expenses')
-        .insert({
-          type: 'expense',
-          category: 'AI Calls',
-          amount: aiCalc.expense, // Actual cost based on ai_cost_per_minute setting
-          description: `Auto-tracked: ${aiCalc.minutesPurchased.toFixed(1)} min @ $${aiCalc.aiCostPerMinute}/min`,
-          date: new Date().toISOString().split('T')[0],
-        });
-
-      if (expenseError) {
-        console.error('⚠️ Error tracking expense:', expenseError);
-      } else {
-        console.log(`✅ Expense auto-tracked: $${aiCalc.expense} AI Calls (profit: $${aiCalc.profit}, ${aiCalc.profitMargin}% margin)`);
-      }
+      // NOTE: Removed duplicate auto-tracking to custom_revenue_expenses
+      // Balance refills are already tracked in balance_transactions table
+      // Adding to custom_revenue_expenses was causing double-counting in admin dashboard
 
       console.log('✅ Auto-refill completed successfully');
 

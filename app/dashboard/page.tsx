@@ -283,13 +283,22 @@ export default async function DashboardPage() {
     .maybeSingle(); // Use maybeSingle to avoid errors when no row exists
 
   // Get today's spend from ai_control_settings (source of truth for live costs)
+  // IMPORTANT: Also fetch spend_last_reset_date to check if today_spend is actually from today!
   const { data: aiControlSettings } = await supabase
     .from('ai_control_settings')
-    .select('today_spend')
+    .select('today_spend, spend_last_reset_date')
     .eq('user_id', user.id)
     .maybeSingle(); // Use maybeSingle to avoid errors
   
-  const todaySpendFromAI = aiControlSettings?.today_spend || 0;
+  // CRITICAL FIX: Only use today_spend if it's actually from today!
+  // If spend_last_reset_date doesn't match today, the spend is stale from a previous day
+  const isSpendFromToday = aiControlSettings?.spend_last_reset_date === today;
+  const todaySpendFromAI = isSpendFromToday ? (aiControlSettings?.today_spend || 0) : 0;
+  
+  if (aiControlSettings?.today_spend && aiControlSettings.today_spend > 0 && !isSpendFromToday) {
+    console.log(`⚠️ STALE SPEND DETECTED: today_spend=$${aiControlSettings.today_spend} but spend_last_reset_date=${aiControlSettings.spend_last_reset_date} (today is ${today})`);
+    console.log(`   Using $0 for today's AI cost instead of stale value`);
+  }
   
   console.log(`💰 CHART SYNC DEBUG:`);
   console.log(`   Today's date: ${today}`);

@@ -157,6 +157,7 @@ type Lead = {
 
 type GoogleSheet = {
   id: string;
+  sheet_id: string; // The Google Sheet document ID (for identifying tabs within the same spreadsheet)
   sheet_name: string;
   tab_name?: string;
   sheet_url: string;
@@ -1545,7 +1546,14 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       {showTabSelector && availableTabs.length > 0 && (
         <SheetTabSelector
           tabs={availableTabs}
-          existingTabs={sheets.map(s => s.tab_name).filter(Boolean) as string[]}
+          existingTabs={
+            // Only filter tabs that are already connected from the SAME Google Sheet document
+            // This allows "Sheet1" from Sheet A and "Sheet1" from Sheet B to both be added
+            sheets
+              .filter(s => s.sheet_id === currentSheet?.googleSheetId)
+              .map(s => s.tab_name)
+              .filter(Boolean) as string[]
+          }
           onSelect={handleSelectTab}
           onCancel={() => {
             setShowTabSelector(false);

@@ -195,7 +195,7 @@ export async function GET(req: Request) {
         return sDate >= dateStart && sDate < dateEnd;
       }).length * 499;
 
-      // Custom revenue (Balance Refill category)
+      // Custom revenue (Balance Refill category) - manual entries
       const dayCustomRefills = customRevenueForCharts.filter((item: any) => {
         return item.date === dateStr && item.category === 'Balance Refill';
       }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
@@ -239,7 +239,7 @@ export async function GET(req: Request) {
         return sDate >= dateStart && sDate < dateEnd;
       }).length * 499;
 
-      // Custom revenue (Balance Refill category)
+      // Custom revenue (Balance Refill category) - manual entries
       const dayCustomRefills = customRevenueForCharts.filter((item: any) => {
         return item.date === dateStr && item.category === 'Balance Refill';
       }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
@@ -282,12 +282,13 @@ export async function GET(req: Request) {
         return sDate >= monthStart && sDate < monthEnd;
       }).length * 499;
 
-      // Custom revenue for this month
+      // Custom revenue for this month (Balance Refill category) - manual entries
       const monthCustomRefills = customRevenueForCharts.filter((item: any) => {
         const itemDate = new Date(item.date);
         return itemDate >= monthStart && itemDate < monthEnd && item.category === 'Balance Refill';
       }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
 
+      // Custom revenue for this month (Subscription category)
       const monthCustomSubs = customRevenueForCharts.filter((item: any) => {
         const itemDate = new Date(item.date);
         return itemDate >= monthStart && itemDate < monthEnd && item.category === 'Subscription';
@@ -363,24 +364,44 @@ export async function GET(req: Request) {
     // 8. CALL ACTIVITY STATS
     // ============================================
     
-    // Today's calls
-    const { data: todayCalls, error: callsError } = await supabase
+    // Today's calls - use COUNT queries to avoid 1000 row limit!
+    // Total calls today
+    const { count: totalCallsToday, error: callsError } = await supabase
       .from('calls')
-      .select('*')
+      .select('*', { count: 'exact', head: true })
       .gte('created_at', today.toISOString());
 
     if (callsError) throw callsError;
 
-    const totalCallsToday = todayCalls?.length || 0;
-    const connectedCallsToday = todayCalls?.filter((c: any) => 
-      c.disposition === 'answered' || c.connected === true
-    ).length || 0;
-    const appointmentsToday = todayCalls?.filter((c: any) => 
-      c.outcome === 'appointment_booked'
-    ).length || 0;
+    // Connected calls today (answered or connected)
+    const { count: connectedCallsToday, error: connectedError } = await supabase
+      .from('calls')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today.toISOString())
+      .or('disposition.eq.answered,connected.eq.true');
+
+    if (connectedError) throw connectedError;
+
+    // Appointments booked today
+    const { count: appointmentsToday, error: apptsError } = await supabase
+      .from('calls')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today.toISOString())
+      .eq('outcome', 'appointment_booked');
+
+    if (apptsError) throw apptsError;
     
     // Active Users Today = distinct users who made at least 1 call today
-    const uniqueUsersToday = new Set(todayCalls?.map((c: any) => c.user_id).filter(Boolean));
+    // Fetch only user_id column to get distinct users (increase limit to handle high volume days)
+    const { data: todayUserIds, error: usersError } = await supabase
+      .from('calls')
+      .select('user_id')
+      .gte('created_at', today.toISOString())
+      .limit(50000); // High limit to handle busy days
+
+    if (usersError) throw usersError;
+
+    const uniqueUsersToday = new Set(todayUserIds?.map((c: any) => c.user_id).filter(Boolean));
     const activeUsersToday = uniqueUsersToday.size;
 
     // All-time calls
@@ -479,6 +500,9 @@ export async function GET(req: Request) {
     
     // Combine Stripe revenue with custom revenue
     const totalSubscriptionRevenue = stripeSubscriptionRevenue + customSubscriptionRevenue;
+    
+    // Add manual Balance Refill entries from custom_revenue_expenses
+    // (Auto-tracking was removed, so new entries are legitimate manual additions)
     const totalMinutesRevenue = minutesRevenue + customBalanceRefillRevenue;
     
     const totalRevenue = totalSubscriptionRevenue + totalMinutesRevenue + otherCustomRevenue; // All revenue sources
@@ -563,10 +587,10 @@ export async function GET(req: Request) {
       // Call activity
       calls: {
         today: {
-          total: totalCallsToday,
-          connected: connectedCallsToday,
-          connectionRate: totalCallsToday > 0 ? ((connectedCallsToday / totalCallsToday) * 100).toFixed(1) : '0.0',
-          appointments: appointmentsToday,
+          total: totalCallsToday || 0,
+          connected: connectedCallsToday || 0,
+          connectionRate: totalCallsToday && totalCallsToday > 0 ? (((connectedCallsToday || 0) / totalCallsToday) * 100).toFixed(1) : '0.0',
+          appointments: appointmentsToday || 0,
         },
         allTime: {
           total: totalCallsAllTime || 0,

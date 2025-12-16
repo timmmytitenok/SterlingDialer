@@ -140,44 +140,9 @@ export async function POST(req: Request) {
           console.log('✅ Transaction logged:', insertData);
         }
 
-        // 📊 Calculate actual AI expense based on cost per minute
-        const aiCalc = await calculateAIExpense(refillAmount);
-
-        // 📊 AUTO-TRACK REVENUE: Add to Financial Tracker
-        console.log('📊 Auto-tracking balance refill revenue (direct charge)...');
-        const { error: revenueError } = await supabase
-          .from('custom_revenue_expenses')
-          .insert({
-            type: 'revenue',
-            category: 'Balance Refill',
-            amount: refillAmount, // $25 revenue
-            description: `Auto-tracked: User refill (direct charge)`,
-            date: new Date().toISOString().split('T')[0],
-          });
-
-        if (revenueError) {
-          console.error('⚠️ Error tracking revenue:', revenueError);
-        } else {
-          console.log(`✅ Revenue auto-tracked: $${refillAmount} Balance Refill`);
-        }
-
-        // 📊 AUTO-TRACK EXPENSE: Add AI Calls expense (calculated based on actual cost)
-        console.log('📊 Auto-tracking AI Calls expense (direct charge, calculated)...');
-        const { error: expenseError } = await supabase
-          .from('custom_revenue_expenses')
-          .insert({
-            type: 'expense',
-            category: 'AI Calls',
-            amount: aiCalc.expense, // Actual cost based on ai_cost_per_minute setting
-            description: `Auto-tracked: ${aiCalc.minutesPurchased.toFixed(1)} min @ $${aiCalc.aiCostPerMinute}/min`,
-            date: new Date().toISOString().split('T')[0],
-          });
-
-        if (expenseError) {
-          console.error('⚠️ Error tracking expense:', expenseError);
-        } else {
-          console.log(`✅ Expense auto-tracked: $${aiCalc.expense} AI Calls (profit: $${aiCalc.profit}, ${aiCalc.profitMargin}% margin)`);
-        }
+        // NOTE: Removed duplicate auto-tracking to custom_revenue_expenses
+        // Balance refills are already tracked in balance_transactions table
+        // Adding to custom_revenue_expenses was causing double-counting in admin dashboard
 
         // Check if all onboarding steps are now complete
         const { data: profile } = await supabase
