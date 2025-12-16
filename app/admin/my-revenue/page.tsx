@@ -808,21 +808,29 @@ export default function AdminRevenuePage() {
                       </span>
                     </div>
                   )}
-                  {allTimeMinutesExpense > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">AI Costs:</span>
-                      <span className="text-white font-bold">${allTimeMinutesExpense.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                    </div>
-                  )}
+                  {/* Combined AI Costs: Stripe refills + manual AI Calls entries */}
+                  {(() => {
+                    const manualAICalls = customExpensesByCategory['AI Calls'] || 0;
+                    const totalAICosts = allTimeMinutesExpense + manualAICalls;
+                    return totalAICosts > 0 ? (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">AI Costs:</span>
+                        <span className="text-white font-bold">${totalAICosts.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                      </div>
+                    ) : null;
+                  })()}
                   {allTimeCommissionsPaid > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-400">Referral Payouts:</span>
                       <span className="text-white font-bold">${allTimeCommissionsPaid.toLocaleString()}</span>
                     </div>
                   )}
+                  {/* Other custom expenses (excluding AI Calls which is combined above) */}
                   {allTimeCustomExpenses > 0 && (
                     <>
-                      {Object.entries(customExpensesByCategory).map(([category, amount]) => (
+                      {Object.entries(customExpensesByCategory)
+                        .filter(([category]) => category !== 'AI Calls')
+                        .map(([category, amount]) => (
                         <div key={category} className="flex justify-between">
                           <span className="text-gray-400">{category}:</span>
                           <span className="text-white font-bold">${(amount as number).toLocaleString()}</span>
