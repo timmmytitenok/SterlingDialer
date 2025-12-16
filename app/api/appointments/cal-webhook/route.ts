@@ -212,60 +212,127 @@ export async function POST(request: Request) {
 
     // ========================================================================
     // UPDATE OR CREATE APPOINTMENT
-    // Retell webhook creates the appointment, Cal.ai updates with exact time
+    // Retell/N8N webhook creates the appointment, Cal.ai updates with exact time
     // ========================================================================
     
     const scheduledTime = startTime;
-    console.log('🕐 Scheduled time:', scheduledTime);
+    console.log('🕐 Scheduled time from Cal.ai:', scheduledTime);
     console.log('🕐 Scheduled time (parsed):', new Date(scheduledTime).toISOString());
+    console.log('🕐 Local time:', new Date(scheduledTime).toLocaleString());
     
     let appointmentId = null;
+    let existingAppointment = null;
     
-    // First, try to find existing appointment for this lead (created by Retell webhook)
+    // Strategy 1: Find existing appointment by lead_id
     if (leadId) {
-      console.log('🔍 Looking for existing appointment for lead:', leadId);
+      console.log('🔍 Strategy 1: Looking for appointment by lead_id:', leadId);
       
-      const { data: existingAppointment, error: findError } = await supabase
+      const { data: apptByLead, error: findError } = await supabase
         .from('appointments')
-        .select('id')
+        .select('id, scheduled_at, prospect_name, notes')
         .eq('lead_id', leadId)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       
       if (findError) {
-        console.error('⚠️ Error finding appointment:', findError);
+        console.error('⚠️ Error finding by lead_id:', findError);
       }
       
-      if (existingAppointment) {
-        console.log('✅ Found existing appointment:', existingAppointment.id);
-        console.log('📅 Updating with exact scheduled time...');
-        
-        // UPDATE the existing appointment with the real scheduled time
-        const { error: updateError } = await supabase
-          .from('appointments')
-          .update({
-            scheduled_at: scheduledTime,
-            prospect_name: attendeeName,
-            prospect_phone: attendeePhone,
-            prospect_age: attendeeAge,
-            prospect_state: attendeeState,
-            notes: null, // Clear the placeholder notes
-          })
-          .eq('id', existingAppointment.id);
-        
-        if (updateError) {
-          console.error('❌ Failed to update appointment:', updateError);
-        } else {
-          console.log('✅ Appointment UPDATED with exact time!');
-          appointmentId = existingAppointment.id;
-        }
+      if (apptByLead) {
+        existingAppointment = apptByLead;
+        console.log('✅ Found by lead_id:', apptByLead.id);
+        console.log('   - Current scheduled_at:', apptByLead.scheduled_at);
+        console.log('   - Notes:', apptByLead.notes);
+      }
+    }
+    
+    // Strategy 2: Find by phone number if lead_id didn't work
+    if (!existingAppointment && attendeePhone) {
+      console.log('🔍 Strategy 2: Looking for appointment by phone:', attendeePhone);
+      
+      const normalizedPhone = attendeePhone.replace(/\D/g, '');
+      const last10Digits = normalizedPhone.slice(-10);
+      
+      const { data: apptByPhone, error: phoneError } = await supabase
+        .from('appointments')
+        .select('id, scheduled_at, prospect_name, notes')
+        .eq('user_id', userId)
+        .or(`prospect_phone.ilike.%${last10Digits}%,prospect_phone.ilike.%${normalizedPhone}%`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (phoneError) {
+        console.error('⚠️ Error finding by phone:', phoneError);
+      }
+      
+      if (apptByPhone) {
+        existingAppointment = apptByPhone;
+        console.log('✅ Found by phone:', apptByPhone.id);
+        console.log('   - Current scheduled_at:', apptByPhone.scheduled_at);
+      }
+    }
+    
+    // Strategy 3: Find most recent appointment created in last 5 minutes for this user
+    if (!existingAppointment) {
+      console.log('🔍 Strategy 3: Looking for recent appointment (last 5 min)...');
+      
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      
+      const { data: recentAppt, error: recentError } = await supabase
+        .from('appointments')
+        .select('id, scheduled_at, prospect_name, notes')
+        .eq('user_id', userId)
+        .gte('created_at', fiveMinutesAgo)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (recentError) {
+        console.error('⚠️ Error finding recent:', recentError);
+      }
+      
+      if (recentAppt) {
+        existingAppointment = recentAppt;
+        console.log('✅ Found recent appointment:', recentAppt.id);
+        console.log('   - Current scheduled_at:', recentAppt.scheduled_at);
+      }
+    }
+    
+    // UPDATE existing appointment or CREATE new one
+    if (existingAppointment) {
+      console.log('📅 UPDATING appointment with CORRECT scheduled time from Cal.ai!');
+      console.log('   - Appointment ID:', existingAppointment.id);
+      console.log('   - OLD time:', existingAppointment.scheduled_at);
+      console.log('   - NEW time:', scheduledTime);
+      
+      // UPDATE the existing appointment with the real scheduled time
+      const { error: updateError } = await supabase
+        .from('appointments')
+        .update({
+          scheduled_at: scheduledTime,
+          prospect_name: attendeeName,
+          prospect_phone: attendeePhone,
+          prospect_age: attendeeAge,
+          prospect_state: attendeeState,
+          lead_id: leadId || undefined, // Link to lead if we found one
+          notes: null, // Clear the placeholder notes
+        })
+        .eq('id', existingAppointment.id);
+      
+      if (updateError) {
+        console.error('❌ Failed to update appointment:', updateError);
+      } else {
+        console.log('✅ Appointment UPDATED with CORRECT time from Cal.ai!');
+        console.log(`✅ Changed: ${existingAppointment.scheduled_at} → ${scheduledTime}`);
+        appointmentId = existingAppointment.id;
       }
     }
     
     // If no existing appointment found, create new one
     if (!appointmentId) {
-      console.log('💾 No existing appointment found - creating new one...');
+      console.log('💾 No existing appointment found - creating new one with Cal.ai time...');
       
       const appointmentData = {
         user_id: userId,
@@ -295,7 +362,7 @@ export async function POST(request: Request) {
       }
       
       appointmentId = data.id;
-      console.log('✅ NEW Appointment created!');
+      console.log('✅ NEW Appointment created with Cal.ai time!');
     }
 
     console.log('✅ Appointment ID:', appointmentId);

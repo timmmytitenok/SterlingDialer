@@ -28,7 +28,20 @@ export async function POST(request: Request) {
     const supabase = createServiceRoleClient();
 
     // Convert pickedUp to boolean (handle both boolean and string values)
-    const wasAnswered = pickedUp === true || pickedUp === 'true' || pickedUp === 1;
+    let wasAnswered = pickedUp === true || pickedUp === 'true' || pickedUp === 1;
+    
+    // 🚫 SHORT CALL FILTER: Calls under 5 seconds are treated as "No Answer"
+    // Even if someone technically picked up, if the call was <5 seconds it doesn't count as connected
+    // BUT we still deduct balance and track AI costs!
+    const MIN_CALL_DURATION_SECONDS = 5;
+    const callDuration = duration ? Number(duration) : 0;
+    const isShortCall = callDuration > 0 && callDuration < MIN_CALL_DURATION_SECONDS;
+    
+    if (isShortCall) {
+      console.log(`⏱️ SHORT CALL DETECTED: ${callDuration}s < ${MIN_CALL_DURATION_SECONDS}s minimum`);
+      console.log(`📵 Treating as "No Answer" - will NOT be added to Call History, but WILL deduct balance`);
+      wasAnswered = false; // Force to not answered
+    }
     
     console.log(`📞 Call answered: ${wasAnswered} (original value: ${pickedUp}, type: ${typeof pickedUp})`);
 
@@ -57,22 +70,14 @@ export async function POST(request: Request) {
     const finalDisposition = wasAnswered ? 'answered' : 'no_answer';
     const isConnected = wasAnswered;
 
-    // Insert call record
-    console.log('🔄 Attempting to insert call into database...');
-    console.log('📝 Insert data:', {
-      user_id: userId,
-      disposition: finalDisposition,
-      outcome: finalOutcome,
-      contact_name: contactName,
-      contact_phone: contactPhone,
-      duration_seconds: duration,
-      connected: isConnected,
-      recording_url: recordingUrl || null,
-    });
-
-    const { data, error } = await supabase
-      .from('calls')
-      .insert([{
+    // Insert call record - SKIP for short calls (they don't go to Call History)
+    let callRecordId: string | null = null;
+    
+    if (isShortCall) {
+      console.log('⏱️ SHORT CALL: Skipping Call History insert (but will still process balance/costs)');
+    } else {
+      console.log('🔄 Attempting to insert call into database...');
+      console.log('📝 Insert data:', {
         user_id: userId,
         disposition: finalDisposition,
         outcome: finalOutcome,
@@ -81,25 +86,40 @@ export async function POST(request: Request) {
         duration_seconds: duration,
         connected: isConnected,
         recording_url: recordingUrl || null,
-        created_at: new Date().toISOString(),
-      }])
-      .select();
+      });
 
-    if (error) {
-      console.error('❌ DATABASE INSERT ERROR:', error);
-      console.error('❌ Error details:', JSON.stringify(error, null, 2));
-      throw error;
+      const { data, error } = await supabase
+        .from('calls')
+        .insert([{
+          user_id: userId,
+          disposition: finalDisposition,
+          outcome: finalOutcome,
+          contact_name: contactName,
+          contact_phone: contactPhone,
+          duration_seconds: duration,
+          connected: isConnected,
+          recording_url: recordingUrl || null,
+          created_at: new Date().toISOString(),
+        }])
+        .select();
+
+      if (error) {
+        console.error('❌ DATABASE INSERT ERROR:', error);
+        console.error('❌ Error details:', JSON.stringify(error, null, 2));
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        console.error('❌ No data returned from insert!');
+        throw new Error('Insert succeeded but no data returned');
+      }
+
+      callRecordId = data[0].id;
+      const outcomeText = finalOutcome ? ` → ${finalOutcome}` : '';
+      console.log(`✅ Call saved to database: ${contactName || 'Unknown'} - ${finalDisposition}${outcomeText} (Answered: ${wasAnswered})`);
+      console.log(`✅ Inserted record ID: ${callRecordId}`);
+      console.log(`✅ Connected: ${isConnected}, Disposition: ${finalDisposition}`);
     }
-
-    if (!data || data.length === 0) {
-      console.error('❌ No data returned from insert!');
-      throw new Error('Insert succeeded but no data returned');
-    }
-
-    const outcomeText = finalOutcome ? ` → ${finalOutcome}` : '';
-    console.log(`✅ Call saved to database: ${contactName || 'Unknown'} - ${finalDisposition}${outcomeText} (Answered: ${wasAnswered})`);
-    console.log(`✅ Inserted record ID: ${data[0].id}`);
-    console.log(`✅ Connected: ${isConnected}, Disposition: ${finalDisposition}`);
 
     // BALANCE DEDUCTION: If call had duration, deduct from user's balance
     if (duration && duration > 0) {
@@ -335,7 +355,8 @@ export async function POST(request: Request) {
     }
 
     // NEW: If appointment was booked, find and update matching Cal.ai appointment OR create new one
-    if (finalOutcome === 'appointment_booked' && contactName) {
+    // Skip for short calls (they can't book appointments anyway)
+    if (finalOutcome === 'appointment_booked' && contactName && !isShortCall && callRecordId) {
       console.log('🔗 Appointment booked! Looking for matching Cal.ai appointment...');
       
       try {
@@ -362,7 +383,7 @@ export async function POST(request: Request) {
 
           // Update appointment with call details
           const updateData: any = {
-            call_id: data[0].id,  // Link to the call
+            call_id: callRecordId,  // Link to the call
           };
 
           // Only update fields that are missing in the appointment
@@ -398,20 +419,47 @@ export async function POST(request: Request) {
           // No matching appointment found - CREATE A NEW ONE!
           console.log('📅 No matching appointment found - creating new appointment from call...');
           
-          // Use provided scheduledAt or default to 24 hours from now (preserving current time)
+          // 🔍 FIND THE LEAD by phone number so Cal.ai webhook can update the time later!
+          let leadId: string | null = null;
+          if (contactPhone) {
+            const normalizedPhone = contactPhone.replace(/\D/g, '');
+            const last10Digits = normalizedPhone.slice(-10);
+            
+            console.log('🔍 Looking for lead by phone:', contactPhone, '→', last10Digits);
+            
+            const { data: matchingLead } = await supabase
+              .from('leads')
+              .select('id')
+              .eq('user_id', userId)
+              .or(`phone.ilike.%${last10Digits}%,phone.ilike.%${normalizedPhone}%`)
+              .limit(1)
+              .maybeSingle();
+            
+            if (matchingLead) {
+              leadId = matchingLead.id;
+              console.log('✅ Found lead ID:', leadId);
+            } else {
+              console.log('⚠️ No matching lead found - Cal.ai may create duplicate appointment');
+            }
+          }
+          
+          // Use provided scheduledAt or default to placeholder time
+          // Cal.ai webhook will UPDATE this with the correct time!
           let appointmentTime;
           if (scheduledAt) {
             appointmentTime = new Date(scheduledAt).toISOString();
             console.log('📆 Using provided scheduled time:', appointmentTime);
           } else {
+            // Set a placeholder time - Cal.ai will update this!
             const nowPlus24Hours = new Date();
             nowPlus24Hours.setHours(nowPlus24Hours.getHours() + 24);
             appointmentTime = nowPlus24Hours.toISOString();
-            console.log('📆 Using default time (24 hours from now):', appointmentTime);
+            console.log('📆 Using PLACEHOLDER time (Cal.ai will update with real time):', appointmentTime);
           }
 
-          const newAppointmentData = {
+          const newAppointmentData: any = {
             user_id: userId,
+            lead_id: leadId, // 🔗 CRITICAL: Set lead_id so Cal.ai can find & update!
             prospect_name: contactName,
             prospect_phone: contactPhone || null,
             prospect_age: contactAge || null,
@@ -420,12 +468,13 @@ export async function POST(request: Request) {
             status: 'scheduled',
             is_sold: false,
             is_no_show: false,
-            call_id: data[0].id,
+            call_id: callRecordId,
             call_recording_url: recordingUrl || null,
+            notes: scheduledAt ? null : '⏳ Awaiting Cal.ai confirmation for exact time',
             created_at: new Date().toISOString(),
           };
 
-          console.log('📝 Creating appointment:', newAppointmentData);
+          console.log('📝 Creating appointment with lead_id:', leadId);
 
           const { data: newAppointment, error: createError } = await supabase
             .from('appointments')
@@ -438,7 +487,8 @@ export async function POST(request: Request) {
           } else {
             console.log('✅ Appointment created successfully!');
             console.log('✅ Appointment ID:', newAppointment.id);
-            console.log('✅ Scheduled for:', appointmentTime);
+            console.log('✅ Lead ID:', leadId);
+            console.log('✅ Placeholder time (Cal.ai will update):', appointmentTime);
           }
         }
       } catch (appointmentError: any) {
@@ -447,9 +497,19 @@ export async function POST(request: Request) {
       }
     }
 
+    // Return response based on whether it was a short call or normal call
+    if (isShortCall) {
+      return NextResponse.json({ 
+        success: true, 
+        message: `Short call (${callDuration}s) - treated as No Answer, balance deducted but not added to Call History`,
+        shortCall: true,
+        duration: callDuration
+      });
+    }
+    
     return NextResponse.json({ 
       success: true, 
-      call: data[0],
+      callId: callRecordId,
       message: 'Call recorded successfully'
     });
   } catch (error: any) {
