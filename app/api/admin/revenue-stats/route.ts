@@ -483,9 +483,12 @@ export async function GET(req: Request) {
     // 10. PROFIT CALCULATIONS
     // ============================================
     
-    // Call minutes profit: $14.25 per $25 refill (already accounts for AI cost + Stripe fee)
-    const minutesProfit = totalRefills * 14.25;
-    const minutesExpense = totalRefills * 10.75; // $10.75 expense per refill (AI + Stripe)
+    // Call minutes: $25 refill breakdown
+    // - AI Cost: $12.50 (50% goes to AI provider)
+    // - Stripe Fee: $0.75 (3%)
+    // - Profit: $11.75
+    const minutesProfit = totalRefills * 11.75;
+    const minutesExpense = totalRefills * 12.50; // $12.50 AI cost per $25 refill
     
     // Subscription profit:
     // - Not referred: $499 revenue - $15 Stripe fee = $484 profit
@@ -494,9 +497,13 @@ export async function GET(req: Request) {
     const referredSubProfit = referredMonths * 384; // $384 profit per referred month
     const subscriptionProfit = directSubProfit + referredSubProfit;
     
-    // Expenses: Stripe fees (3% ≈ $15/month) + commissions paid + custom expenses
-    const stripeFees = totalSubMonths * 15; // $15 Stripe fee per $499 subscription
-    const subscriptionExpense = stripeFees + commissionsPaid;
+    // Stripe fees breakdown
+    const subscriptionStripeFees = totalSubMonths * 15; // $15 Stripe fee per $499 subscription (3%)
+    const refillStripeFees = totalRefills * 0.75; // $0.75 Stripe fee per $25 refill (3%)
+    const totalStripeFees = subscriptionStripeFees + refillStripeFees;
+    
+    // Expenses: Stripe fees + commissions paid + custom expenses
+    const subscriptionExpense = subscriptionStripeFees + commissionsPaid;
     
     // Combine Stripe revenue with custom revenue
     const totalSubscriptionRevenue = stripeSubscriptionRevenue + customSubscriptionRevenue;
@@ -507,7 +514,7 @@ export async function GET(req: Request) {
     
     const totalRevenue = totalSubscriptionRevenue + totalMinutesRevenue + otherCustomRevenue; // All revenue sources
     const totalProfit = minutesProfit + subscriptionProfit + totalCustomRevenue - totalCustomExpenses; // Add custom revenue, subtract custom expenses
-    const totalExpenses = minutesExpense + subscriptionExpense + totalCustomExpenses; // Add custom expenses to total
+    const totalExpenses = minutesExpense + refillStripeFees + subscriptionExpense + totalCustomExpenses; // AI costs + Stripe fees + commissions + custom
     
     console.log(`💰 Profit breakdown:`);
     console.log(`   Minutes profit: $${minutesProfit.toFixed(2)} (${totalRefills} refills)`);
@@ -547,6 +554,11 @@ export async function GET(req: Request) {
         customExpenses: totalCustomExpenses,
         customExpensesByCategory,
         customRevenueByCategory,
+        // Expense breakdown
+        aiCosts: minutesExpense, // $12.50 per refill for AI
+        stripeFees: totalStripeFees, // 3% Stripe fees (subs + refills)
+        subscriptionStripeFees,
+        refillStripeFees,
       },
       
       // Time-based breakdowns

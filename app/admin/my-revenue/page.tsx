@@ -86,6 +86,10 @@ interface RevenueData {
     customExpenses: number;
     customExpensesByCategory: { [key: string]: number };
     customRevenueByCategory: { [key: string]: number };
+    aiCosts: number;
+    stripeFees: number;
+    subscriptionStripeFees: number;
+    refillStripeFees: number;
   };
   today: {
     minutesRevenue: number;
@@ -377,8 +381,9 @@ export default function AdminRevenuePage() {
   
   // CALL MINUTES
   const minuteRefills = revenueData?.allTime.totalRefills || 0;
-  const allTimeMinutesProfit = minuteRefills * 14.25; // $14.25 profit per refill
-  const allTimeMinutesExpense = minuteRefills * 10.75; // $10.75 expense per refill
+  const allTimeMinutesProfit = minuteRefills * 11.75; // $11.75 profit per refill (after AI + Stripe)
+  const allTimeMinutesExpense = revenueData?.allTime.aiCosts || (minuteRefills * 12.50); // $12.50 AI cost per refill
+  const allTimeStripeFees = revenueData?.allTime.stripeFees || 0; // Stripe fees (3%)
   
   // TOTALS
   const allTimeProfit = revenueData?.allTime.totalProfit || 0;
@@ -795,18 +800,18 @@ export default function AdminRevenuePage() {
               <div className="bg-gray-900 border-2 border-red-500/50 rounded-xl p-4 shadow-2xl shadow-red-500/20 min-w-[250px] animate-in slide-in-from-top-2">
                 <div className="text-xs font-bold text-red-400 mb-3 uppercase">Expense Breakdown</div>
                 <div className="space-y-2 text-sm">
-                  {((allTimeSubscriptionRevenue + allTimeMinutesRevenue) * 0.03) > 0 && (
+                  {allTimeStripeFees > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-400">Stripe Fees (3%):</span>
                       <span className="text-white font-bold">
-                        ${((allTimeSubscriptionRevenue + allTimeMinutesRevenue) * 0.03).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        ${allTimeStripeFees.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                       </span>
                     </div>
                   )}
                   {allTimeMinutesExpense > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-400">AI Costs:</span>
-                      <span className="text-white font-bold">${allTimeMinutesExpense.toLocaleString()}</span>
+                      <span className="text-white font-bold">${allTimeMinutesExpense.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   {allTimeCommissionsPaid > 0 && (
