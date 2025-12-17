@@ -354,146 +354,90 @@ export async function POST(request: Request) {
       // Don't fail the call insertion if revenue tracking fails
     }
 
-    // NEW: If appointment was booked, find and update matching Cal.ai appointment OR create new one
-    // Skip for short calls (they can't book appointments anyway)
-    if (finalOutcome === 'appointment_booked' && contactName && !isShortCall && callRecordId) {
-      console.log('🔗 Appointment booked! Looking for matching Cal.ai appointment...');
+    // ========================================================================
+    // APPOINTMENT BOOKING - Let Cal.ai handle appointment creation!
+    // Cal.ai has the CORRECT scheduled time, we just update the lead status
+    // and optionally store call details for Cal.ai to merge later
+    // ========================================================================
+    if (finalOutcome === 'appointment_booked' && contactName && !isShortCall) {
+      console.log('🔗 Appointment booked! Cal.ai webhook will create the appointment with correct time.');
+      console.log('📋 Storing call details for Cal.ai to merge...');
       
       try {
-        // Find appointments from Cal.ai that match this contact (by name and user)
-        // Look for appointments created recently (within last 7 days) that are still scheduled
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-        const { data: matchingAppointments } = await supabase
-          .from('appointments')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('status', 'scheduled')
-          .ilike('prospect_name', `%${contactName}%`)
-          .gte('created_at', sevenDaysAgo.toISOString())
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (matchingAppointments && matchingAppointments.length > 0) {
-          const appointment = matchingAppointments[0];
-          console.log(`✅ Found matching appointment: ${appointment.id}`);
-          console.log(`   Name: ${appointment.prospect_name}`);
-          console.log(`   Scheduled: ${appointment.scheduled_at}`);
-
-          // Update appointment with call details
-          const updateData: any = {
-            call_id: callRecordId,  // Link to the call
-          };
-
-          // Only update fields that are missing in the appointment
-          if (contactPhone && !appointment.prospect_phone) {
-            updateData.prospect_phone = contactPhone;
-            console.log(`   Adding phone: ${contactPhone}`);
-          }
-          if (contactAge && !appointment.prospect_age) {
-            updateData.prospect_age = contactAge;
-            console.log(`   Adding age: ${contactAge}`);
-          }
-          if (contactState && !appointment.prospect_state) {
-            updateData.prospect_state = contactState;
-            console.log(`   Adding state: ${contactState}`);
-          }
-          if (recordingUrl && !appointment.call_recording_url) {
-            updateData.call_recording_url = recordingUrl;
-            console.log(`   Adding recording URL`);
-          }
-
-          // Update the appointment
-          const { error: updateError } = await supabase
-            .from('appointments')
-            .update(updateData)
-            .eq('id', appointment.id);
-
-          if (updateError) {
-            console.error('❌ Error updating appointment:', updateError);
-          } else {
-            console.log('✅ Appointment updated with call details!');
-          }
-        } else {
-          // No matching appointment found - CREATE A NEW ONE!
-          console.log('📅 No matching appointment found - creating new appointment from call...');
+        // Find the lead and update with call details so Cal.ai can find them later
+        if (contactPhone) {
+          const normalizedPhone = contactPhone.replace(/\D/g, '');
+          const last10Digits = normalizedPhone.slice(-10);
           
-          // 🔍 FIND THE LEAD by phone number so Cal.ai webhook can update the time later!
-          let leadId: string | null = null;
-          if (contactPhone) {
-            const normalizedPhone = contactPhone.replace(/\D/g, '');
-            const last10Digits = normalizedPhone.slice(-10);
+          console.log('🔍 Finding lead to store call details:', contactPhone, '→', last10Digits);
+          
+          const { data: matchingLead } = await supabase
+            .from('leads')
+            .select('id')
+            .eq('user_id', userId)
+            .or(`phone.ilike.%${last10Digits}%,phone.ilike.%${normalizedPhone}%`)
+            .limit(1)
+            .maybeSingle();
+          
+          if (matchingLead) {
+            console.log('✅ Found lead:', matchingLead.id);
             
-            console.log('🔍 Looking for lead by phone:', contactPhone, '→', last10Digits);
+            // Store pending appointment info on the lead for Cal.ai to use
+            const leadUpdate: any = {
+              last_call_outcome: 'appointment_booked',
+              updated_at: new Date().toISOString(),
+            };
             
-            const { data: matchingLead } = await supabase
+            if (contactAge) leadUpdate.age = contactAge;
+            if (contactState) leadUpdate.state = contactState;
+            
+            await supabase
               .from('leads')
-              .select('id')
-              .eq('user_id', userId)
-              .or(`phone.ilike.%${last10Digits}%,phone.ilike.%${normalizedPhone}%`)
+              .update(leadUpdate)
+              .eq('id', matchingLead.id);
+            
+            console.log('✅ Lead updated with call details - Cal.ai will use this to create appointment');
+            
+            // Also try to find if Cal.ai already created the appointment (it might fire before us!)
+            // Look for recent appointments for this lead
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+            const { data: existingAppt } = await supabase
+              .from('appointments')
+              .select('id, prospect_name, scheduled_at')
+              .eq('lead_id', matchingLead.id)
+              .gte('created_at', fiveMinutesAgo)
+              .order('created_at', { ascending: false })
               .limit(1)
               .maybeSingle();
             
-            if (matchingLead) {
-              leadId = matchingLead.id;
-              console.log('✅ Found lead ID:', leadId);
+            if (existingAppt) {
+              console.log('✅ Cal.ai already created appointment!');
+              console.log('   - ID:', existingAppt.id);
+              console.log('   - Time:', existingAppt.scheduled_at);
+              
+              // Update with call recording if we have it
+              if (recordingUrl || callRecordId) {
+                await supabase
+                  .from('appointments')
+                  .update({
+                    call_id: callRecordId,
+                    call_recording_url: recordingUrl || null,
+                    prospect_age: contactAge || undefined,
+                    prospect_state: contactState || undefined,
+                  })
+                  .eq('id', existingAppt.id);
+                console.log('✅ Updated Cal.ai appointment with call details!');
+              }
             } else {
-              console.log('⚠️ No matching lead found - Cal.ai may create duplicate appointment');
+              console.log('⏳ Cal.ai appointment not found yet - it will be created by Cal.ai webhook');
+              console.log('   📞 Make sure Cal.ai webhook is firing on booking!');
             }
-          }
-          
-          // Use provided scheduledAt or default to placeholder time
-          // Cal.ai webhook will UPDATE this with the correct time!
-          let appointmentTime;
-          if (scheduledAt) {
-            appointmentTime = new Date(scheduledAt).toISOString();
-            console.log('📆 Using provided scheduled time:', appointmentTime);
           } else {
-            // Set a placeholder time - Cal.ai will update this!
-            const nowPlus24Hours = new Date();
-            nowPlus24Hours.setHours(nowPlus24Hours.getHours() + 24);
-            appointmentTime = nowPlus24Hours.toISOString();
-            console.log('📆 Using PLACEHOLDER time (Cal.ai will update with real time):', appointmentTime);
-          }
-
-          const newAppointmentData: any = {
-            user_id: userId,
-            lead_id: leadId, // 🔗 CRITICAL: Set lead_id so Cal.ai can find & update!
-            prospect_name: contactName,
-            prospect_phone: contactPhone || null,
-            prospect_age: contactAge || null,
-            prospect_state: contactState || null,
-            scheduled_at: appointmentTime,
-            status: 'scheduled',
-            is_sold: false,
-            is_no_show: false,
-            call_id: callRecordId,
-            call_recording_url: recordingUrl || null,
-            notes: scheduledAt ? null : '⏳ Awaiting Cal.ai confirmation for exact time',
-            created_at: new Date().toISOString(),
-          };
-
-          console.log('📝 Creating appointment with lead_id:', leadId);
-
-          const { data: newAppointment, error: createError } = await supabase
-            .from('appointments')
-            .insert([newAppointmentData])
-            .select()
-            .single();
-
-          if (createError) {
-            console.error('❌ Error creating appointment:', createError);
-          } else {
-            console.log('✅ Appointment created successfully!');
-            console.log('✅ Appointment ID:', newAppointment.id);
-            console.log('✅ Lead ID:', leadId);
-            console.log('✅ Placeholder time (Cal.ai will update):', appointmentTime);
+            console.log('⚠️ No matching lead found by phone');
           }
         }
       } catch (appointmentError: any) {
-        console.error('⚠️  Error managing appointment (non-fatal):', appointmentError.message);
-        // Don't fail the whole request if appointment management fails
+        console.error('⚠️  Error in appointment processing (non-fatal):', appointmentError.message);
       }
     }
 

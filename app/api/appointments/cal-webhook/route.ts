@@ -274,9 +274,37 @@ export async function POST(request: Request) {
       }
     }
     
-    // Strategy 3: Find most recent appointment created in last 5 minutes for this user
+    // Strategy 3: Find by name if phone didn't work
+    if (!existingAppointment && attendeeName && attendeeName !== 'Unknown') {
+      console.log('🔍 Strategy 3: Looking for appointment by name:', attendeeName);
+      
+      // Look for recent appointments with similar name
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      
+      const { data: apptByName, error: nameError } = await supabase
+        .from('appointments')
+        .select('id, scheduled_at, prospect_name, notes')
+        .eq('user_id', userId)
+        .ilike('prospect_name', `%${attendeeName}%`)
+        .gte('created_at', tenMinutesAgo)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (nameError) {
+        console.error('⚠️ Error finding by name:', nameError);
+      }
+      
+      if (apptByName) {
+        existingAppointment = apptByName;
+        console.log('✅ Found by name:', apptByName.id);
+        console.log('   - Current scheduled_at:', apptByName.scheduled_at);
+      }
+    }
+    
+    // Strategy 4: Find most recent appointment created in last 5 minutes for this user (last resort)
     if (!existingAppointment) {
-      console.log('🔍 Strategy 3: Looking for recent appointment (last 5 min)...');
+      console.log('🔍 Strategy 4: Looking for recent appointment (last 5 min)...');
       
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       
