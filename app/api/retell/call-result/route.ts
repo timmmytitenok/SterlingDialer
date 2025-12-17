@@ -459,7 +459,7 @@ export async function POST(request: Request) {
             try {
               // Get recent bookings from Cal.ai
               const calResponse = await fetch(
-                `https://api.cal.com/v1/bookings?apiKey=${CAL_API_KEY}&status=accepted`,
+                `https://api.cal.com/v1/bookings?apiKey=${CAL_API_KEY}&status=upcoming`,
                 {
                   method: 'GET',
                   headers: { 'Content-Type': 'application/json' },
