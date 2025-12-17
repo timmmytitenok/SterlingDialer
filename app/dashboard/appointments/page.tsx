@@ -58,18 +58,16 @@ export default async function AppointmentsPage() {
     .eq('user_id', user.id)
     .order('scheduled_at', { ascending: true });
 
-  // Active appointments (scheduled/rescheduled AND within the visible calendar range)
-  const calendarStartDate = new Date();
-  calendarStartDate.setHours(0, 0, 0, 0);
-  const calendarEndDate = new Date();
-  calendarEndDate.setDate(calendarEndDate.getDate() + 5);
-  calendarEndDate.setHours(23, 59, 59, 999);
-
+  // Active appointments - count ALL scheduled/rescheduled appointments (no date range filter)
+  // This ensures the count matches what users expect to see
   const activeAppointments = updatedAppointments?.filter(apt => {
-    const aptDate = new Date(apt.scheduled_at);
     const isActive = (apt.status === 'scheduled' || apt.status === 'rescheduled');
-    const isInRange = aptDate >= calendarStartDate && aptDate <= calendarEndDate;
-    return isActive && isInRange;
+    // Only filter out appointments that are in the past (before today)
+    const aptDate = new Date(apt.scheduled_at);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const isNotPast = aptDate >= todayStart;
+    return isActive && isNotPast;
   }) || [];
 
   // Today's appointments

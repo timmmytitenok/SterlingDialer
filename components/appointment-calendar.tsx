@@ -27,9 +27,26 @@ export function AppointmentCalendar({
     days.push(date);
   }
 
+  // Find the actual min/max hours from appointments to ensure they're visible
+  let actualMinHour = startHour;
+  let actualMaxHour = endHour;
+  
+  appointments.forEach(apt => {
+    if (apt.scheduled_at) {
+      const aptDate = new Date(apt.scheduled_at);
+      const aptHour = aptDate.getHours();
+      if (aptHour < actualMinHour) actualMinHour = aptHour;
+      if (aptHour > actualMaxHour) actualMaxHour = aptHour;
+    }
+  });
+  
+  // Use the expanded range that includes all appointment hours
+  const effectiveStartHour = Math.min(startHour, actualMinHour);
+  const effectiveEndHour = Math.max(endHour, actualMaxHour);
+
   // Hours based on user settings (include the end hour)
-  const hourCount = endHour - startHour + 1;
-  const hours = Array.from({ length: hourCount }, (_, i) => i + startHour);
+  const hourCount = effectiveEndHour - effectiveStartHour + 1;
+  const hours = Array.from({ length: hourCount }, (_, i) => i + effectiveStartHour);
 
   // Helper: Extract customer name only (remove Cal.ai event title prefix)
   const extractCustomerName = (fullName: string | null) => {
@@ -178,6 +195,55 @@ export function AppointmentCalendar({
             <span className="text-xs text-gray-400">No-Show</span>
           </div>
         </div>
+
+        {/* All Upcoming Appointments List (fallback view) */}
+        {appointments.filter(apt => 
+          (apt.status === 'scheduled' || apt.status === 'rescheduled') && 
+          new Date(apt.scheduled_at) >= new Date()
+        ).length > 0 && (
+          <div className="p-4 border-t border-gray-800 bg-[#0B1437]/50">
+            <h4 className="text-sm font-semibold text-gray-400 mb-3">📋 All Upcoming Appointments</h4>
+            <div className="space-y-2">
+              {appointments
+                .filter(apt => 
+                  (apt.status === 'scheduled' || apt.status === 'rescheduled') && 
+                  new Date(apt.scheduled_at) >= new Date(new Date().setHours(0,0,0,0))
+                )
+                .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
+                .map(apt => (
+                  <button
+                    key={`list-${apt.id}`}
+                    onClick={() => handleAppointmentClick(apt)}
+                    className="w-full p-3 bg-blue-900/20 hover:bg-blue-900/40 border border-blue-500/30 rounded-lg text-left transition-all flex justify-between items-center"
+                  >
+                    <div>
+                      <span className="text-white font-medium">{extractCustomerName(apt.prospect_name)}</span>
+                      {apt.prospect_phone && (
+                        <span className="text-gray-400 text-sm ml-2">{apt.prospect_phone}</span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-blue-400 text-sm font-medium">
+                        {new Date(apt.scheduled_at).toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </div>
+                      <div className="text-gray-400 text-xs">
+                        {new Date(apt.scheduled_at).toLocaleTimeString('en-US', { 
+                          hour: 'numeric', 
+                          minute: '2-digit',
+                          hour12: true 
+                        })}
+                      </div>
+                    </div>
+                  </button>
+                ))
+              }
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Appointment Modal */}
