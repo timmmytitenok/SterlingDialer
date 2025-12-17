@@ -481,9 +481,10 @@ export async function POST(request: Request) {
             
             for (const pattern of timezonePatterns) {
               const tzMatch = transcriptLower.match(pattern);
-              if (tzMatch) {
-                leadTimezoneName = tzMatch[1].toLowerCase();
-                leadTimezoneOffset = timezoneOffsets[leadTimezoneName] || null;
+              if (tzMatch && tzMatch[1]) {
+                const tzName = tzMatch[1].toLowerCase();
+                leadTimezoneName = tzName;
+                leadTimezoneOffset = timezoneOffsets[tzName] ?? null;
                 console.log(`   🌍 Found timezone: ${leadTimezoneName} (UTC${leadTimezoneOffset})`);
                 break;
               }
