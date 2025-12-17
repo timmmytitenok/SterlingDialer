@@ -401,7 +401,8 @@ export async function POST(request: Request) {
       }
       
       // ========================================================================
-      // APPOINTMENT BOOKING - Extract time from transcript or use placeholder
+      // APPOINTMENT BOOKING - Extract time AND timezone from transcript
+      // Convert from lead's timezone to user's timezone
       // ========================================================================
       if (outcome === 'appointment_booked') {
         console.log('');
@@ -429,68 +430,109 @@ export async function POST(request: Request) {
         } else {
           console.log('⚠️ Cal.ai did not create appointment - extracting time from transcript...');
           
-          // Try to extract appointment time from the transcript
+          // Get user's timezone from settings
+          const userTimezone = aiSettings.user_timezone || 'America/New_York';
+          console.log(`👤 User timezone: ${userTimezone}`);
+          
+          // Timezone mapping - what offset from UTC (in hours)
+          const timezoneOffsets: Record<string, number> = {
+            // Standard timezone names
+            'pacific': -8, 'pst': -8, 'pdt': -7,
+            'mountain': -7, 'mst': -7, 'mdt': -6,
+            'central': -6, 'cst': -6, 'cdt': -5,
+            'eastern': -5, 'est': -5, 'edt': -4,
+            'alaska': -9, 'akst': -9, 'akdt': -8,
+            'hawaii': -10, 'hst': -10,
+          };
+          
+          // IANA timezone to offset (approximate - doesn't account for DST perfectly)
+          const ianaToOffset: Record<string, number> = {
+            'America/Los_Angeles': -8,
+            'America/Denver': -7,
+            'America/Phoenix': -7,
+            'America/Chicago': -6,
+            'America/New_York': -5,
+            'America/Anchorage': -9,
+            'Pacific/Honolulu': -10,
+          };
+          
+          // Try to extract appointment time AND timezone from the transcript
           let extractedTime: Date | null = null;
+          let leadTimezoneOffset: number | null = null;
+          let leadTimezoneName: string | null = null;
           let timeConfidence = 'low';
           
           if (transcript) {
-            console.log('🔍 Analyzing transcript for appointment time...');
+            console.log('🔍 Analyzing transcript for appointment time and timezone...');
             
-            // Common patterns for appointment times in conversation
             const transcriptLower = transcript.toLowerCase();
             
-            // Pattern matching for times like "9 am", "9:00 am", "2 pm", "2:30 pm"
-            const timePatterns = [
-              /(\d{1,2}):?(\d{2})?\s*(am|pm)/gi,
-              /(\d{1,2})\s*(o'clock|oclock)?\s*(in the morning|in the afternoon|in the evening)?/gi,
+            // ============================================================
+            // STEP 1: Extract TIMEZONE from transcript
+            // ============================================================
+            const timezonePatterns = [
+              /\b(pacific|pst|pdt)\b/i,
+              /\b(mountain|mst|mdt)\b/i,
+              /\b(central|cst|cdt)\b/i,
+              /\b(eastern|est|edt)\b/i,
+              /\b(alaska|akst|akdt)\b/i,
+              /\b(hawaii|hst)\b/i,
             ];
             
-            // Pattern matching for days like "monday", "tuesday", "tomorrow", "next week"
-            const dayPatterns = [
-              /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/gi,
-              /\b(tomorrow|today|next week)\b/gi,
-            ];
+            for (const pattern of timezonePatterns) {
+              const tzMatch = transcriptLower.match(pattern);
+              if (tzMatch) {
+                leadTimezoneName = tzMatch[1].toLowerCase();
+                leadTimezoneOffset = timezoneOffsets[leadTimezoneName] || null;
+                console.log(`   🌍 Found timezone: ${leadTimezoneName} (UTC${leadTimezoneOffset})`);
+                break;
+              }
+            }
             
-            // Find time mentions
-            let foundHour = null;
+            // ============================================================
+            // STEP 2: Extract TIME (hour, minute, am/pm)
+            // ============================================================
+            let foundHour: number | null = null;
             let foundMinute = 0;
-            let foundPeriod = null; // am/pm
+            let foundPeriod: string | null = null;
             
-            const timeMatch = transcriptLower.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)/i);
+            const timeMatch = transcriptLower.match(/(\d{1,2}):?(\d{2})?\s*(am|pm|a\.m\.|p\.m\.)/i);
             if (timeMatch) {
               foundHour = parseInt(timeMatch[1]);
               foundMinute = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
-              foundPeriod = timeMatch[3].toLowerCase();
-              console.log(`   Found time: ${foundHour}:${foundMinute.toString().padStart(2, '0')} ${foundPeriod}`);
+              foundPeriod = timeMatch[3].replace(/\./g, '').toLowerCase();
+              console.log(`   ⏰ Found time: ${foundHour}:${foundMinute.toString().padStart(2, '0')} ${foundPeriod}`);
               timeConfidence = 'medium';
             }
             
-            // Find day mentions
-            let foundDay = null;
+            // ============================================================
+            // STEP 3: Extract DAY (Monday, Tuesday, tomorrow, etc.)
+            // ============================================================
+            let foundDay: string | null = null;
             const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
             
             for (const day of daysOfWeek) {
               if (transcriptLower.includes(day)) {
                 foundDay = day;
-                console.log(`   Found day: ${foundDay}`);
-                timeConfidence = 'high';
+                console.log(`   📆 Found day: ${foundDay}`);
+                if (foundHour !== null) timeConfidence = 'high';
                 break;
               }
             }
             
-            // Check for "tomorrow"
             if (transcriptLower.includes('tomorrow')) {
               const tomorrow = new Date();
               tomorrow.setDate(tomorrow.getDate() + 1);
               foundDay = daysOfWeek[tomorrow.getDay()];
-              console.log(`   Found "tomorrow" = ${foundDay}`);
-              timeConfidence = 'high';
+              console.log(`   📆 Found "tomorrow" = ${foundDay}`);
+              if (foundHour !== null) timeConfidence = 'high';
             }
             
-            // Build the appointment date if we found enough info
+            // ============================================================
+            // STEP 4: BUILD THE APPOINTMENT DATE/TIME
+            // ============================================================
             if (foundHour !== null) {
               const now = new Date();
-              extractedTime = new Date();
               
               // Convert to 24-hour format
               let hour24 = foundHour;
@@ -500,35 +542,80 @@ export async function POST(request: Request) {
                 hour24 = 0;
               }
               
-              extractedTime.setHours(hour24, foundMinute, 0, 0);
+              // Calculate the target date
+              let targetDate = new Date();
               
-              // If we found a specific day, calculate the date
               if (foundDay) {
                 const targetDayIndex = daysOfWeek.indexOf(foundDay.toLowerCase());
                 const currentDayIndex = now.getDay();
-                
-                // Calculate days until target day
                 let daysUntil = targetDayIndex - currentDayIndex;
-                if (daysUntil <= 0) {
-                  daysUntil += 7; // Next week
-                }
-                
-                extractedTime.setDate(now.getDate() + daysUntil);
-              } else {
-                // No day specified - assume tomorrow if time has passed today
-                if (extractedTime <= now) {
-                  extractedTime.setDate(extractedTime.getDate() + 1);
-                }
+                if (daysUntil <= 0) daysUntil += 7;
+                targetDate.setDate(now.getDate() + daysUntil);
               }
               
-              console.log(`   📅 Extracted appointment time: ${extractedTime.toLocaleString()}`);
+              // ============================================================
+              // STEP 5: TIMEZONE CONVERSION
+              // If we found lead's timezone, convert to user's timezone
+              // ============================================================
+              const userOffset = ianaToOffset[userTimezone] || -5; // Default to Eastern
+              
+              if (leadTimezoneOffset !== null) {
+                // We know the lead's timezone - do the conversion!
+                const hourDifference = userOffset - leadTimezoneOffset;
+                
+                console.log(`   🔄 TIMEZONE CONVERSION:`);
+                console.log(`      Lead said: ${foundHour}:${foundMinute.toString().padStart(2, '0')} ${foundPeriod} ${leadTimezoneName}`);
+                console.log(`      Lead timezone offset: UTC${leadTimezoneOffset}`);
+                console.log(`      User timezone offset: UTC${userOffset}`);
+                console.log(`      Hour difference: ${hourDifference} hours`);
+                
+                // Apply the timezone difference
+                const convertedHour24 = hour24 + hourDifference;
+                
+                // Handle day rollover
+                if (convertedHour24 >= 24) {
+                  targetDate.setDate(targetDate.getDate() + 1);
+                  hour24 = convertedHour24 - 24;
+                } else if (convertedHour24 < 0) {
+                  targetDate.setDate(targetDate.getDate() - 1);
+                  hour24 = convertedHour24 + 24;
+                } else {
+                  hour24 = convertedHour24;
+                }
+                
+                const convertedPeriod = hour24 >= 12 ? 'PM' : 'AM';
+                const convertedHour12 = hour24 > 12 ? hour24 - 12 : (hour24 === 0 ? 12 : hour24);
+                
+                console.log(`      CONVERTED TO: ${convertedHour12}:${foundMinute.toString().padStart(2, '0')} ${convertedPeriod} (user's timezone)`);
+                
+                timeConfidence = 'high';
+              } else {
+                console.log(`   ⚠️ No timezone found in transcript - assuming time is already in user's timezone`);
+              }
+              
+              // Set the final time
+              targetDate.setHours(hour24, foundMinute, 0, 0);
+              extractedTime = targetDate;
+              
+              console.log(`   📅 Final appointment time: ${extractedTime.toLocaleString()}`);
               console.log(`   📊 Confidence: ${timeConfidence}`);
             }
           }
           
           // Create the appointment
-          const appointmentTime = extractedTime || new Date(Date.now() + 24 * 60 * 60 * 1000); // Default to tomorrow if no time found
+          const appointmentTime = extractedTime || new Date(Date.now() + 24 * 60 * 60 * 1000);
           const needsConfirmation = !extractedTime || timeConfidence !== 'high';
+          
+          let noteText = '';
+          if (!extractedTime) {
+            noteText = '⚠️ PLEASE CONFIRM TIME - Could not extract time from transcript';
+          } else if (leadTimezoneName) {
+            noteText = `✅ Converted from ${leadTimezoneName.toUpperCase()} to your timezone`;
+          } else if (timeConfidence !== 'high') {
+            noteText = `⚠️ PLEASE CONFIRM TIME - Extracted from transcript (${timeConfidence} confidence)`;
+          } else {
+            noteText = '✅ Time extracted from call transcript';
+          }
           
           const appointmentData = {
             user_id: userId,
@@ -539,9 +626,7 @@ export async function POST(request: Request) {
             status: 'scheduled',
             is_sold: false,
             is_no_show: false,
-            notes: needsConfirmation 
-              ? `⚠️ PLEASE CONFIRM TIME - Extracted from call transcript (${timeConfidence} confidence)`
-              : `✅ Time extracted from call transcript`,
+            notes: noteText,
             created_at: new Date().toISOString(),
           };
           
