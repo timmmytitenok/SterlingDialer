@@ -17,13 +17,16 @@ export async function GET(request: Request) {
     // First check if there's a userId query param (for admin testing)
     const { searchParams } = new URL(request.url);
     const testUserId = searchParams.get('userId');
-    const targetUserId = testUserId || user.id;
+    
+    let targetUserId = testUserId || user.id;
+    let CAL_API_KEY = null;
     
     console.log(`Looking for Cal.ai API key for user: ${targetUserId}`);
     
+    // First try the specified/current user
     const { data: retellConfig, error: configError } = await supabase
       .from('user_retell_config')
-      .select('cal_ai_api_key')
+      .select('cal_ai_api_key, user_id')
       .eq('user_id', targetUserId)
       .maybeSingle();
     
@@ -31,14 +34,46 @@ export async function GET(request: Request) {
       console.error('Error fetching config:', configError);
     }
     
-    console.log('Retell config found:', retellConfig);
-
-    const CAL_API_KEY = retellConfig?.cal_ai_api_key;
+    CAL_API_KEY = retellConfig?.cal_ai_api_key;
+    
+    // If no key found for current user, try to find ANY user with a Cal.ai key (for admin debugging)
+    if (!CAL_API_KEY) {
+      console.log('No key for current user, checking all users...');
+      
+      const { data: allConfigs } = await supabase
+        .from('user_retell_config')
+        .select('cal_ai_api_key, user_id')
+        .not('cal_ai_api_key', 'is', null)
+        .limit(5);
+      
+      if (allConfigs && allConfigs.length > 0) {
+        // Found a user with a Cal.ai key - use the first one
+        const foundConfig = allConfigs[0];
+        CAL_API_KEY = foundConfig.cal_ai_api_key;
+        targetUserId = foundConfig.user_id;
+        console.log(`Found Cal.ai key for user: ${targetUserId}`);
+      }
+    }
+    
+    console.log('Cal.ai API key found:', CAL_API_KEY ? 'YES' : 'NO');
 
     if (!CAL_API_KEY) {
+      // Also check what's in the user_retell_config table for debugging
+      const { data: allRetellConfigs } = await supabase
+        .from('user_retell_config')
+        .select('user_id, cal_ai_api_key, retell_agent_id')
+        .limit(10);
+      
       return NextResponse.json({ 
         error: 'No Cal.ai API key configured',
-        message: 'Go to Admin > User Management > [Your User] and add your Cal.ai API key'
+        message: 'Go to Admin > User Management > [Your User] and add your Cal.ai API key',
+        current_user_id: user.id,
+        searched_user_id: targetUserId,
+        all_retell_configs: allRetellConfigs?.map(c => ({
+          user_id: c.user_id,
+          has_cal_key: !!c.cal_ai_api_key,
+          has_agent_id: !!c.retell_agent_id,
+        }))
       }, { status: 400 });
     }
 

@@ -20,7 +20,9 @@ export async function POST(request: Request) {
 
     // Parse request body
     const body = await request.json();
-    const { userId, agentId, phoneNumber, agentName, calApiKey } = body;
+    const { userId, agentId, phoneNumber, agentName, calApiKey, calAiApiKey } = body;
+    // Support both old and new field names
+    const calAiKey = calAiApiKey || calApiKey;
 
     if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
@@ -30,7 +32,7 @@ export async function POST(request: Request) {
       agentId: agentId || 'not set',
       phoneNumber: phoneNumber || 'not set',
       agentName: agentName || 'not set',
-      calApiKey: calApiKey ? '***SET***' : 'not set',
+      calAiApiKey: calAiKey ? '***SET***' : 'not set',
     });
 
     // Check if config exists
@@ -48,7 +50,7 @@ export async function POST(request: Request) {
     if (agentId !== undefined) updateFields.retell_agent_id = agentId || null;
     if (phoneNumber !== undefined) updateFields.phone_number = phoneNumber || null;
     if (agentName !== undefined) updateFields.agent_name = agentName || null;
-    if (calApiKey !== undefined) updateFields.cal_api_key = calApiKey || null;
+    if (calAiKey !== undefined) updateFields.cal_ai_api_key = calAiKey || null;
 
     if (existing) {
       // Update existing
@@ -72,7 +74,7 @@ export async function POST(request: Request) {
           retell_agent_id: agentId || null,
           phone_number: phoneNumber || null,
           agent_name: agentName || null,
-          cal_api_key: calApiKey || null,
+          cal_ai_api_key: calAiKey || null,
           retell_api_key: 'SET_BY_ADMIN',
           is_active: true,
         });
