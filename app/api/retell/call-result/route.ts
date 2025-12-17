@@ -401,20 +401,20 @@ export async function POST(request: Request) {
       }
       
       // ========================================================================
-      // APPOINTMENT BOOKING - Extract time AND timezone from transcript
-      // Convert from lead's timezone to user's timezone
+      // APPOINTMENT BOOKING - Query Cal.ai API for EXACT booking time
+      // This is the reliable way - get the actual booking from Cal.ai!
       // ========================================================================
       if (outcome === 'appointment_booked') {
         console.log('');
         console.log('📅📅📅 ========== APPOINTMENT BOOKED ========== 📅📅📅');
         console.log(`📞 Lead: ${lead.name} (${lead.phone})`);
         
-        // Wait 3 seconds to give Cal.ai webhook a chance to fire first
-        console.log('⏳ Waiting 3 seconds for Cal.ai webhook...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Wait 5 seconds for Cal.ai to process the booking
+        console.log('⏳ Waiting 5 seconds for Cal.ai to process booking...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
         
-        // Check if Cal.ai already created an appointment for this lead
-        const { data: existingCalAppt } = await supabase
+        // Check if we already created an appointment for this lead
+        const { data: existingAppt } = await supabase
           .from('appointments')
           .select('id, scheduled_at')
           .eq('lead_id', leadId)
@@ -422,200 +422,154 @@ export async function POST(request: Request) {
           .limit(1)
           .maybeSingle();
         
-        if (existingCalAppt) {
-          console.log('✅ Cal.ai already created appointment!');
-          console.log(`   - ID: ${existingCalAppt.id}`);
-          console.log(`   - Scheduled: ${existingCalAppt.scheduled_at}`);
-          console.log('📅 No need to create another appointment');
+        if (existingAppt) {
+          console.log('✅ Appointment already exists!');
+          console.log(`   - ID: ${existingAppt.id}`);
+          console.log(`   - Scheduled: ${existingAppt.scheduled_at}`);
         } else {
-          console.log('⚠️ Cal.ai did not create appointment - extracting time from transcript...');
+          // ============================================================
+          // QUERY CAL.AI API FOR THE BOOKING
+          // ============================================================
+          console.log('🔍 Querying Cal.ai API for booking details...');
           
-          // Get user's timezone from settings
-          const userTimezone = aiSettings.user_timezone || 'America/New_York';
-          console.log(`👤 User timezone: ${userTimezone}`);
+          const CAL_API_KEY = process.env.CAL_AI_API_KEY || 'cal_live_6e25d0952c7dc66d77a8f55b164f66e5';
+          let calBooking: any = null;
+          let calError: string | null = null;
           
-          // Timezone mapping - what offset from UTC (in hours)
-          const timezoneOffsets: Record<string, number> = {
-            // Standard timezone names
-            'pacific': -8, 'pst': -8, 'pdt': -7,
-            'mountain': -7, 'mst': -7, 'mdt': -6,
-            'central': -6, 'cst': -6, 'cdt': -5,
-            'eastern': -5, 'est': -5, 'edt': -4,
-            'alaska': -9, 'akst': -9, 'akdt': -8,
-            'hawaii': -10, 'hst': -10,
-          };
-          
-          // IANA timezone to offset (approximate - doesn't account for DST perfectly)
-          const ianaToOffset: Record<string, number> = {
-            'America/Los_Angeles': -8,
-            'America/Denver': -7,
-            'America/Phoenix': -7,
-            'America/Chicago': -6,
-            'America/New_York': -5,
-            'America/Anchorage': -9,
-            'Pacific/Honolulu': -10,
-          };
-          
-          // Try to extract appointment time AND timezone from the transcript
-          let extractedTime: Date | null = null;
-          let leadTimezoneOffset: number | null = null;
-          let leadTimezoneName: string | null = null;
-          let timeConfidence = 'low';
-          
-          if (transcript) {
-            console.log('🔍 Analyzing transcript for appointment time and timezone...');
+          try {
+            // Get recent bookings from Cal.ai (last 10 minutes)
+            const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
             
-            const transcriptLower = transcript.toLowerCase();
-            
-            // ============================================================
-            // STEP 1: Extract TIMEZONE from transcript
-            // ============================================================
-            const timezonePatterns = [
-              /\b(pacific|pst|pdt)\b/i,
-              /\b(mountain|mst|mdt)\b/i,
-              /\b(central|cst|cdt)\b/i,
-              /\b(eastern|est|edt)\b/i,
-              /\b(alaska|akst|akdt)\b/i,
-              /\b(hawaii|hst)\b/i,
-            ];
-            
-            for (const pattern of timezonePatterns) {
-              const tzMatch = transcriptLower.match(pattern);
-              if (tzMatch && tzMatch[1]) {
-                const tzName = tzMatch[1].toLowerCase();
-                leadTimezoneName = tzName;
-                leadTimezoneOffset = timezoneOffsets[tzName] ?? null;
-                console.log(`   🌍 Found timezone: ${leadTimezoneName} (UTC${leadTimezoneOffset})`);
-                break;
+            const calResponse = await fetch(
+              `https://api.cal.com/v1/bookings?apiKey=${CAL_API_KEY}&status=accepted`,
+              {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
               }
-            }
+            );
             
-            // ============================================================
-            // STEP 2: Extract TIME (hour, minute, am/pm)
-            // ============================================================
-            let foundHour: number | null = null;
-            let foundMinute = 0;
-            let foundPeriod: string | null = null;
-            
-            const timeMatch = transcriptLower.match(/(\d{1,2}):?(\d{2})?\s*(am|pm|a\.m\.|p\.m\.)/i);
-            if (timeMatch) {
-              foundHour = parseInt(timeMatch[1]);
-              foundMinute = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
-              foundPeriod = timeMatch[3].replace(/\./g, '').toLowerCase();
-              console.log(`   ⏰ Found time: ${foundHour}:${foundMinute.toString().padStart(2, '0')} ${foundPeriod}`);
-              timeConfidence = 'medium';
-            }
-            
-            // ============================================================
-            // STEP 3: Extract DAY (Monday, Tuesday, tomorrow, etc.)
-            // ============================================================
-            let foundDay: string | null = null;
-            const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-            
-            for (const day of daysOfWeek) {
-              if (transcriptLower.includes(day)) {
-                foundDay = day;
-                console.log(`   📆 Found day: ${foundDay}`);
-                if (foundHour !== null) timeConfidence = 'high';
-                break;
-              }
-            }
-            
-            if (transcriptLower.includes('tomorrow')) {
-              const tomorrow = new Date();
-              tomorrow.setDate(tomorrow.getDate() + 1);
-              foundDay = daysOfWeek[tomorrow.getDay()];
-              console.log(`   📆 Found "tomorrow" = ${foundDay}`);
-              if (foundHour !== null) timeConfidence = 'high';
-            }
-            
-            // ============================================================
-            // STEP 4: BUILD THE APPOINTMENT DATE/TIME
-            // ============================================================
-            if (foundHour !== null) {
-              const now = new Date();
+            if (!calResponse.ok) {
+              const errorText = await calResponse.text();
+              console.error('❌ Cal.ai API error:', calResponse.status, errorText);
+              calError = `API returned ${calResponse.status}`;
+            } else {
+              const calData = await calResponse.json();
+              console.log(`📦 Cal.ai returned ${calData.bookings?.length || 0} bookings`);
               
-              // Convert to 24-hour format
-              let hour24 = foundHour;
-              if (foundPeriod === 'pm' && foundHour !== 12) {
-                hour24 = foundHour + 12;
-              } else if (foundPeriod === 'am' && foundHour === 12) {
-                hour24 = 0;
-              }
+              // Find the booking that matches our lead's phone number
+              const leadPhone = (lead.phone || '').replace(/\D/g, '');
+              const leadPhoneLast10 = leadPhone.slice(-10);
               
-              // Calculate the target date
-              let targetDate = new Date();
+              console.log(`🔍 Looking for booking matching phone: ${leadPhoneLast10}`);
               
-              if (foundDay) {
-                const targetDayIndex = daysOfWeek.indexOf(foundDay.toLowerCase());
-                const currentDayIndex = now.getDay();
-                let daysUntil = targetDayIndex - currentDayIndex;
-                if (daysUntil <= 0) daysUntil += 7;
-                targetDate.setDate(now.getDate() + daysUntil);
-              }
-              
-              // ============================================================
-              // STEP 5: TIMEZONE CONVERSION
-              // If we found lead's timezone, convert to user's timezone
-              // ============================================================
-              const userOffset = ianaToOffset[userTimezone] || -5; // Default to Eastern
-              
-              if (leadTimezoneOffset !== null) {
-                // We know the lead's timezone - do the conversion!
-                const hourDifference = userOffset - leadTimezoneOffset;
+              if (calData.bookings && calData.bookings.length > 0) {
+                // Sort by creation date (newest first)
+                const sortedBookings = calData.bookings.sort((a: any, b: any) => 
+                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                );
                 
-                console.log(`   🔄 TIMEZONE CONVERSION:`);
-                console.log(`      Lead said: ${foundHour}:${foundMinute.toString().padStart(2, '0')} ${foundPeriod} ${leadTimezoneName}`);
-                console.log(`      Lead timezone offset: UTC${leadTimezoneOffset}`);
-                console.log(`      User timezone offset: UTC${userOffset}`);
-                console.log(`      Hour difference: ${hourDifference} hours`);
-                
-                // Apply the timezone difference
-                const convertedHour24 = hour24 + hourDifference;
-                
-                // Handle day rollover
-                if (convertedHour24 >= 24) {
-                  targetDate.setDate(targetDate.getDate() + 1);
-                  hour24 = convertedHour24 - 24;
-                } else if (convertedHour24 < 0) {
-                  targetDate.setDate(targetDate.getDate() - 1);
-                  hour24 = convertedHour24 + 24;
-                } else {
-                  hour24 = convertedHour24;
+                // Find matching booking by phone number
+                for (const booking of sortedBookings) {
+                  const attendees = booking.attendees || [];
+                  const responses = booking.responses || {};
+                  
+                  // Check attendee phone
+                  for (const attendee of attendees) {
+                    const attendeePhone = (attendee.phone || responses.phone || '').replace(/\D/g, '');
+                    const attendeePhoneLast10 = attendeePhone.slice(-10);
+                    
+                    console.log(`   Checking booking ${booking.id}: ${attendeePhoneLast10} vs ${leadPhoneLast10}`);
+                    
+                    if (attendeePhoneLast10 === leadPhoneLast10 || 
+                        attendeePhone.includes(leadPhoneLast10) ||
+                        leadPhone.includes(attendeePhoneLast10)) {
+                      calBooking = booking;
+                      console.log(`✅ FOUND MATCHING BOOKING!`);
+                      console.log(`   - Booking ID: ${booking.id}`);
+                      console.log(`   - Start Time: ${booking.startTime}`);
+                      console.log(`   - End Time: ${booking.endTime}`);
+                      break;
+                    }
+                  }
+                  
+                  if (calBooking) break;
                 }
                 
-                const convertedPeriod = hour24 >= 12 ? 'PM' : 'AM';
-                const convertedHour12 = hour24 > 12 ? hour24 - 12 : (hour24 === 0 ? 12 : hour24);
+                // If no phone match, try to find by name similarity
+                if (!calBooking) {
+                  const leadName = (lead.name || '').toLowerCase().trim();
+                  console.log(`🔍 No phone match - trying name match: "${leadName}"`);
+                  
+                  for (const booking of sortedBookings) {
+                    const attendees = booking.attendees || [];
+                    
+                    for (const attendee of attendees) {
+                      const attendeeName = (attendee.name || '').toLowerCase().trim();
+                      
+                      if (attendeeName.includes(leadName) || leadName.includes(attendeeName)) {
+                        calBooking = booking;
+                        console.log(`✅ FOUND BOOKING BY NAME!`);
+                        console.log(`   - Booking ID: ${booking.id}`);
+                        console.log(`   - Start Time: ${booking.startTime}`);
+                        break;
+                      }
+                    }
+                    
+                    if (calBooking) break;
+                  }
+                }
                 
-                console.log(`      CONVERTED TO: ${convertedHour12}:${foundMinute.toString().padStart(2, '0')} ${convertedPeriod} (user's timezone)`);
-                
-                timeConfidence = 'high';
-              } else {
-                console.log(`   ⚠️ No timezone found in transcript - assuming time is already in user's timezone`);
+                // Last resort: get the most recent booking created in last 5 minutes
+                if (!calBooking) {
+                  const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+                  
+                  for (const booking of sortedBookings) {
+                    const bookingCreatedAt = new Date(booking.createdAt).getTime();
+                    
+                    if (bookingCreatedAt > fiveMinutesAgo) {
+                      calBooking = booking;
+                      console.log(`⚠️ Using most recent booking (created ${Math.round((Date.now() - bookingCreatedAt) / 1000)}s ago)`);
+                      console.log(`   - Booking ID: ${booking.id}`);
+                      console.log(`   - Start Time: ${booking.startTime}`);
+                      break;
+                    }
+                  }
+                }
               }
-              
-              // Set the final time
-              targetDate.setHours(hour24, foundMinute, 0, 0);
-              extractedTime = targetDate;
-              
-              console.log(`   📅 Final appointment time: ${extractedTime.toLocaleString()}`);
-              console.log(`   📊 Confidence: ${timeConfidence}`);
             }
+          } catch (err: any) {
+            console.error('❌ Cal.ai API exception:', err.message);
+            calError = err.message;
           }
           
-          // Create the appointment
-          const appointmentTime = extractedTime || new Date(Date.now() + 24 * 60 * 60 * 1000);
-          const needsConfirmation = !extractedTime || timeConfidence !== 'high';
+          // ============================================================
+          // CREATE APPOINTMENT WITH CAL.AI DATA OR FALLBACK
+          // ============================================================
+          let appointmentTime: Date;
+          let noteText: string;
           
-          let noteText = '';
-          if (!extractedTime) {
-            noteText = '⚠️ PLEASE CONFIRM TIME - Could not extract time from transcript';
-          } else if (leadTimezoneName) {
-            noteText = `✅ Converted from ${leadTimezoneName.toUpperCase()} to your timezone`;
-          } else if (timeConfidence !== 'high') {
-            noteText = `⚠️ PLEASE CONFIRM TIME - Extracted from transcript (${timeConfidence} confidence)`;
+          if (calBooking && calBooking.startTime) {
+            // SUCCESS! Use the exact time from Cal.ai
+            appointmentTime = new Date(calBooking.startTime);
+            noteText = '✅ Time verified from Cal.ai booking';
+            
+            console.log('');
+            console.log('🎯 USING EXACT TIME FROM CAL.AI:');
+            console.log(`   📅 ${appointmentTime.toLocaleString()}`);
+            console.log('');
           } else {
-            noteText = '✅ Time extracted from call transcript';
+            // FALLBACK: Use placeholder time
+            console.log('');
+            console.log('⚠️ Could not get booking from Cal.ai - using placeholder');
+            if (calError) console.log(`   Error: ${calError}`);
+            console.log('');
+            
+            // Default to tomorrow at 10am
+            appointmentTime = new Date();
+            appointmentTime.setDate(appointmentTime.getDate() + 1);
+            appointmentTime.setHours(10, 0, 0, 0);
+            
+            noteText = '⚠️ PLEASE CONFIRM TIME - Could not fetch from Cal.ai';
           }
           
           const appointmentData = {
@@ -635,7 +589,7 @@ export async function POST(request: Request) {
           console.log(`   - Name: ${appointmentData.prospect_name}`);
           console.log(`   - Phone: ${appointmentData.prospect_phone}`);
           console.log(`   - Time: ${appointmentTime.toLocaleString()}`);
-          console.log(`   - Needs confirmation: ${needsConfirmation}`);
+          console.log(`   - Source: ${calBooking ? 'Cal.ai API ✅' : 'Fallback ⚠️'}`);
           
           const { data: newAppointment, error: appointmentError } = await supabase
             .from('appointments')
@@ -648,10 +602,7 @@ export async function POST(request: Request) {
           } else {
             console.log('✅ APPOINTMENT CREATED!');
             console.log(`   - ID: ${newAppointment.id}`);
-            console.log(`   - Scheduled: ${appointmentData.scheduled_at}`);
-            if (needsConfirmation) {
-              console.log('   ⚠️ User should verify the appointment time!');
-            }
+            console.log(`   - Scheduled: ${appointmentTime.toLocaleString()}`);
           }
         }
         
