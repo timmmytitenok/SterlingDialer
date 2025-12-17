@@ -596,12 +596,39 @@ export async function POST(request: Request) {
             if (calError) console.log(`   Error: ${calError}`);
             console.log('');
             
-            // Default to tomorrow at 10am
-            appointmentTime = new Date();
-            appointmentTime.setDate(appointmentTime.getDate() + 1);
-            appointmentTime.setHours(10, 0, 0, 0);
+            // Get user's timezone for better fallback
+            const { data: userSettings } = await supabase
+              .from('ai_control_settings')
+              .select('user_timezone')
+              .eq('user_id', userId)
+              .single();
             
-            noteText = '⚠️ PLEASE CONFIRM TIME - Could not fetch from Cal.ai';
+            const userTimezone = userSettings?.user_timezone || 'America/New_York';
+            
+            // Create a date for tomorrow at 10am in user's timezone
+            // First get current time in user's timezone
+            const nowInUserTZ = new Date().toLocaleString('en-US', { timeZone: userTimezone });
+            const userNow = new Date(nowInUserTZ);
+            
+            // Add 1 day and set to 10am
+            userNow.setDate(userNow.getDate() + 1);
+            userNow.setHours(10, 0, 0, 0);
+            
+            // Convert back to a proper Date object
+            // We need to account for the timezone offset
+            const tzOffset = new Date().toLocaleString('en-US', { timeZone: userTimezone, timeZoneName: 'shortOffset' });
+            const offsetMatch = tzOffset.match(/GMT([+-]\d+)/);
+            const hoursOffset = offsetMatch ? parseInt(offsetMatch[1]) : -5; // Default to EST
+            
+            appointmentTime = new Date(userNow);
+            // Adjust for timezone (convert from local to UTC for storage)
+            appointmentTime.setHours(appointmentTime.getHours() - hoursOffset);
+            
+            console.log(`   User timezone: ${userTimezone}`);
+            console.log(`   Fallback time (user's local): ${userNow.toLocaleString()}`);
+            console.log(`   Fallback time (stored as UTC): ${appointmentTime.toISOString()}`);
+            
+            noteText = `⚠️ PLEASE CONFIRM TIME - Cal.ai error: ${calError || 'No booking found'}`;
           }
           
         const appointmentData = {
