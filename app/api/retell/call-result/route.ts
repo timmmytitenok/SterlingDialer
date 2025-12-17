@@ -569,12 +569,25 @@ export async function POST(request: Request) {
           
           if (calBooking && calBooking.startTime) {
             // SUCCESS! Use the exact time from Cal.ai
-            appointmentTime = new Date(calBooking.startTime);
-            noteText = '✅ Time verified from Cal.ai booking';
-            
             console.log('');
-            console.log('🎯 USING EXACT TIME FROM CAL.AI:');
-            console.log(`   📅 ${appointmentTime.toLocaleString()}`);
+            console.log('🎯 CAL.AI BOOKING DATA:');
+            console.log(`   - Raw startTime: ${calBooking.startTime}`);
+            console.log(`   - Raw endTime: ${calBooking.endTime}`);
+            console.log(`   - Booking ID: ${calBooking.id}`);
+            console.log(`   - Title: ${calBooking.title}`);
+            console.log(`   - Event Type: ${calBooking.eventType?.title || 'Unknown'}`);
+            
+            // Cal.ai returns ISO 8601 format: "2024-12-18T15:20:00.000Z"
+            // We need to use this DIRECTLY - it's already in UTC
+            appointmentTime = new Date(calBooking.startTime);
+            
+            console.log(`   - Parsed as Date: ${appointmentTime.toISOString()}`);
+            console.log(`   - Local display: ${appointmentTime.toLocaleString('en-US', { timeZone: 'America/New_York' })}`);
+            console.log(`   - UTC display: ${appointmentTime.toUTCString()}`);
+            
+            // Store in the note for debugging
+            noteText = `✅ Cal.ai booking #${calBooking.id} | Raw: ${calBooking.startTime}`;
+            
             console.log('');
           } else {
             // FALLBACK: Use placeholder time
