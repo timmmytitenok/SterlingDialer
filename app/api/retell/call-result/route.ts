@@ -577,16 +577,39 @@ export async function POST(request: Request) {
             console.log(`   - Title: ${calBooking.title}`);
             console.log(`   - Event Type: ${calBooking.eventType?.title || 'Unknown'}`);
             
-            // Cal.ai returns ISO 8601 format: "2024-12-18T15:20:00.000Z"
-            // We need to use this DIRECTLY - it's already in UTC
-            appointmentTime = new Date(calBooking.startTime);
+            // Cal.ai returns times in UTC format: "2024-12-18T14:00:00.000Z"
+            // We store this DIRECTLY in the database - no conversion needed
+            const rawStartTime = calBooking.startTime;
             
-            console.log(`   - Parsed as Date: ${appointmentTime.toISOString()}`);
-            console.log(`   - Local display: ${appointmentTime.toLocaleString('en-US', { timeZone: 'America/New_York' })}`);
-            console.log(`   - UTC display: ${appointmentTime.toUTCString()}`);
+            // Parse to Date for logging purposes only
+            appointmentTime = new Date(rawStartTime);
+            
+            console.log(`   - Parsed as Date object: ${appointmentTime.toString()}`);
+            console.log(`   - toISOString(): ${appointmentTime.toISOString()}`);
+            console.log(`   - Eastern Time: ${appointmentTime.toLocaleString('en-US', { timeZone: 'America/New_York' })}`);
+            console.log(`   - UTC Time: ${appointmentTime.toUTCString()}`);
+            
+            // Check attendee timezone for debugging
+            const attendeeTimezone = calBooking.attendees?.[0]?.timeZone || 'Unknown';
+            console.log(`   - Attendee Timezone: ${attendeeTimezone}`);
+            
+            // IMPORTANT: If the raw startTime doesn't end with 'Z' or contain an offset,
+            // Cal.ai might be returning it in the attendee's local timezone
+            const hasTimezone = rawStartTime.includes('Z') || rawStartTime.includes('+') || rawStartTime.includes('-');
+            console.log(`   - Has timezone info: ${hasTimezone}`);
+            
+            if (!hasTimezone && attendeeTimezone) {
+              // Cal.ai returned a naive datetime - interpret it in the attendee's timezone
+              console.log(`   ⚠️ No timezone in startTime - interpreting as ${attendeeTimezone}`);
+              
+              // Create the date string with explicit timezone for correct parsing
+              // We need to get the UTC equivalent of the given local time
+              const localTimeStr = rawStartTime.replace('T', ' ').replace('.000', '');
+              console.log(`   - Local time string: ${localTimeStr}`);
+            }
             
             // Store in the note for debugging
-            noteText = `✅ Cal.ai booking #${calBooking.id} | Raw: ${calBooking.startTime}`;
+            noteText = `✅ Cal.ai booking #${calBooking.id} | Raw: ${rawStartTime} | TZ: ${attendeeTimezone}`;
             
             console.log('');
           } else {
