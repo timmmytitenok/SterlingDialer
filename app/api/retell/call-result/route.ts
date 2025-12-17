@@ -436,11 +436,11 @@ export async function POST(request: Request) {
           // Fetch user's Cal.ai API key from their config
           const { data: userCalConfig } = await supabase
             .from('user_retell_config')
-            .select('cal_api_key')
+            .select('cal_ai_api_key')
             .eq('user_id', userId)
             .maybeSingle();
           
-          const CAL_API_KEY = userCalConfig?.cal_api_key || process.env.CAL_AI_API_KEY;
+          const CAL_API_KEY = userCalConfig?.cal_ai_api_key || process.env.CAL_AI_API_KEY;
           
           if (!CAL_API_KEY) {
             console.log('⚠️ No Cal.ai API key configured for this user');

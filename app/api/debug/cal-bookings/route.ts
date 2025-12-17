@@ -14,11 +14,24 @@ export async function GET(request: Request) {
     }
 
     // Get user's Cal.ai API key
-    const { data: retellConfig } = await supabase
+    // First check if there's a userId query param (for admin testing)
+    const { searchParams } = new URL(request.url);
+    const testUserId = searchParams.get('userId');
+    const targetUserId = testUserId || user.id;
+    
+    console.log(`Looking for Cal.ai API key for user: ${targetUserId}`);
+    
+    const { data: retellConfig, error: configError } = await supabase
       .from('user_retell_config')
       .select('cal_ai_api_key')
-      .eq('user_id', user.id)
-      .single();
+      .eq('user_id', targetUserId)
+      .maybeSingle();
+    
+    if (configError) {
+      console.error('Error fetching config:', configError);
+    }
+    
+    console.log('Retell config found:', retellConfig);
 
     const CAL_API_KEY = retellConfig?.cal_ai_api_key;
 
