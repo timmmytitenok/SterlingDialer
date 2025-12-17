@@ -401,42 +401,18 @@ export async function POST(request: Request) {
       }
       
       // ========================================================================
-      // CREATE APPOINTMENT RECORD IF BOOKED
+      // APPOINTMENT BOOKING - DON'T CREATE HERE! Let Cal.ai handle it!
+      // Cal.ai webhook has the CORRECT scheduled time from the booking
       // ========================================================================
       if (outcome === 'appointment_booked') {
         console.log('');
-        console.log('📅📅📅 ========== CREATING APPOINTMENT ========== 📅📅📅');
+        console.log('📅📅📅 ========== APPOINTMENT BOOKED ========== 📅📅📅');
         console.log(`📞 Lead: ${lead.name} (${lead.phone})`);
-        
-        // Create appointment without specific time (Cal.ai will update with exact time later)
-        const appointmentData = {
-          user_id: userId,
-          lead_id: leadId,
-          prospect_name: lead.name || lead.first_name || 'Unknown',
-          prospect_phone: lead.phone || lead.phone_number || '',
-          scheduled_at: new Date().toISOString(), // Placeholder - Cal.ai will update with real time
-          status: 'scheduled',
-          is_sold: false,
-          is_no_show: false,
-          notes: 'Booked via AI call - awaiting Cal.ai confirmation for exact time',
-          created_at: new Date().toISOString(),
-        };
-        
-        const { data: appointmentResult, error: appointmentError } = await supabase
-          .from('appointments')
-          .insert([appointmentData])
-          .select()
-          .single();
-        
-        if (appointmentError) {
-          console.error('❌ Failed to create appointment:', appointmentError);
-        } else {
-          console.log('✅ APPOINTMENT CREATED!');
-          console.log(`   - ID: ${appointmentResult.id}`);
-          console.log(`   - Name: ${appointmentData.prospect_name}`);
-          console.log('📅 Cal.ai will update with exact scheduled time when booking completes');
-        }
-        console.log('📅📅📅 ============================================ 📅📅📅');
+        console.log('✅ Lead status updated to appointment_booked');
+        console.log('⏳ Waiting for Cal.ai webhook to create appointment with CORRECT time');
+        console.log('   → Cal.ai will send BOOKING_CREATED event with the exact scheduled time');
+        console.log('   → DO NOT create appointment here (would have wrong time)');
+        console.log('📅📅📅 ========================================= 📅📅📅');
         console.log('');
       }
     } else {
