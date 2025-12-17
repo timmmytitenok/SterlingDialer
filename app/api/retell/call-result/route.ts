@@ -401,17 +401,174 @@ export async function POST(request: Request) {
       }
       
       // ========================================================================
-      // APPOINTMENT BOOKING - DON'T CREATE HERE! Let Cal.ai handle it!
-      // Cal.ai webhook has the CORRECT scheduled time from the booking
+      // APPOINTMENT BOOKING - Extract time from transcript or use placeholder
       // ========================================================================
       if (outcome === 'appointment_booked') {
         console.log('');
         console.log('📅📅📅 ========== APPOINTMENT BOOKED ========== 📅📅📅');
         console.log(`📞 Lead: ${lead.name} (${lead.phone})`);
-        console.log('✅ Lead status updated to appointment_booked');
-        console.log('⏳ Waiting for Cal.ai webhook to create appointment with CORRECT time');
-        console.log('   → Cal.ai will send BOOKING_CREATED event with the exact scheduled time');
-        console.log('   → DO NOT create appointment here (would have wrong time)');
+        
+        // Wait 3 seconds to give Cal.ai webhook a chance to fire first
+        console.log('⏳ Waiting 3 seconds for Cal.ai webhook...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Check if Cal.ai already created an appointment for this lead
+        const { data: existingCalAppt } = await supabase
+          .from('appointments')
+          .select('id, scheduled_at')
+          .eq('lead_id', leadId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (existingCalAppt) {
+          console.log('✅ Cal.ai already created appointment!');
+          console.log(`   - ID: ${existingCalAppt.id}`);
+          console.log(`   - Scheduled: ${existingCalAppt.scheduled_at}`);
+          console.log('📅 No need to create another appointment');
+        } else {
+          console.log('⚠️ Cal.ai did not create appointment - extracting time from transcript...');
+          
+          // Try to extract appointment time from the transcript
+          let extractedTime: Date | null = null;
+          let timeConfidence = 'low';
+          
+          if (transcript) {
+            console.log('🔍 Analyzing transcript for appointment time...');
+            
+            // Common patterns for appointment times in conversation
+            const transcriptLower = transcript.toLowerCase();
+            
+            // Pattern matching for times like "9 am", "9:00 am", "2 pm", "2:30 pm"
+            const timePatterns = [
+              /(\d{1,2}):?(\d{2})?\s*(am|pm)/gi,
+              /(\d{1,2})\s*(o'clock|oclock)?\s*(in the morning|in the afternoon|in the evening)?/gi,
+            ];
+            
+            // Pattern matching for days like "monday", "tuesday", "tomorrow", "next week"
+            const dayPatterns = [
+              /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/gi,
+              /\b(tomorrow|today|next week)\b/gi,
+            ];
+            
+            // Find time mentions
+            let foundHour = null;
+            let foundMinute = 0;
+            let foundPeriod = null; // am/pm
+            
+            const timeMatch = transcriptLower.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)/i);
+            if (timeMatch) {
+              foundHour = parseInt(timeMatch[1]);
+              foundMinute = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+              foundPeriod = timeMatch[3].toLowerCase();
+              console.log(`   Found time: ${foundHour}:${foundMinute.toString().padStart(2, '0')} ${foundPeriod}`);
+              timeConfidence = 'medium';
+            }
+            
+            // Find day mentions
+            let foundDay = null;
+            const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            
+            for (const day of daysOfWeek) {
+              if (transcriptLower.includes(day)) {
+                foundDay = day;
+                console.log(`   Found day: ${foundDay}`);
+                timeConfidence = 'high';
+                break;
+              }
+            }
+            
+            // Check for "tomorrow"
+            if (transcriptLower.includes('tomorrow')) {
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              foundDay = daysOfWeek[tomorrow.getDay()];
+              console.log(`   Found "tomorrow" = ${foundDay}`);
+              timeConfidence = 'high';
+            }
+            
+            // Build the appointment date if we found enough info
+            if (foundHour !== null) {
+              const now = new Date();
+              extractedTime = new Date();
+              
+              // Convert to 24-hour format
+              let hour24 = foundHour;
+              if (foundPeriod === 'pm' && foundHour !== 12) {
+                hour24 = foundHour + 12;
+              } else if (foundPeriod === 'am' && foundHour === 12) {
+                hour24 = 0;
+              }
+              
+              extractedTime.setHours(hour24, foundMinute, 0, 0);
+              
+              // If we found a specific day, calculate the date
+              if (foundDay) {
+                const targetDayIndex = daysOfWeek.indexOf(foundDay.toLowerCase());
+                const currentDayIndex = now.getDay();
+                
+                // Calculate days until target day
+                let daysUntil = targetDayIndex - currentDayIndex;
+                if (daysUntil <= 0) {
+                  daysUntil += 7; // Next week
+                }
+                
+                extractedTime.setDate(now.getDate() + daysUntil);
+              } else {
+                // No day specified - assume tomorrow if time has passed today
+                if (extractedTime <= now) {
+                  extractedTime.setDate(extractedTime.getDate() + 1);
+                }
+              }
+              
+              console.log(`   📅 Extracted appointment time: ${extractedTime.toLocaleString()}`);
+              console.log(`   📊 Confidence: ${timeConfidence}`);
+            }
+          }
+          
+          // Create the appointment
+          const appointmentTime = extractedTime || new Date(Date.now() + 24 * 60 * 60 * 1000); // Default to tomorrow if no time found
+          const needsConfirmation = !extractedTime || timeConfidence !== 'high';
+          
+          const appointmentData = {
+            user_id: userId,
+            lead_id: leadId,
+            prospect_name: lead.name || lead.first_name || 'Unknown',
+            prospect_phone: lead.phone || lead.phone_number || '',
+            scheduled_at: appointmentTime.toISOString(),
+            status: 'scheduled',
+            is_sold: false,
+            is_no_show: false,
+            notes: needsConfirmation 
+              ? `⚠️ PLEASE CONFIRM TIME - Extracted from call transcript (${timeConfidence} confidence)`
+              : `✅ Time extracted from call transcript`,
+            created_at: new Date().toISOString(),
+          };
+          
+          console.log('📝 Creating appointment...');
+          console.log(`   - Name: ${appointmentData.prospect_name}`);
+          console.log(`   - Phone: ${appointmentData.prospect_phone}`);
+          console.log(`   - Time: ${appointmentTime.toLocaleString()}`);
+          console.log(`   - Needs confirmation: ${needsConfirmation}`);
+          
+          const { data: newAppointment, error: appointmentError } = await supabase
+            .from('appointments')
+            .insert([appointmentData])
+            .select()
+            .single();
+          
+          if (appointmentError) {
+            console.error('❌ Failed to create appointment:', appointmentError);
+          } else {
+            console.log('✅ APPOINTMENT CREATED!');
+            console.log(`   - ID: ${newAppointment.id}`);
+            console.log(`   - Scheduled: ${appointmentData.scheduled_at}`);
+            if (needsConfirmation) {
+              console.log('   ⚠️ User should verify the appointment time!');
+            }
+          }
+        }
+        
         console.log('📅📅📅 ========================================= 📅📅📅');
         console.log('');
       }
