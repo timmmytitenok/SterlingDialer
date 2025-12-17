@@ -429,24 +429,42 @@ export async function POST(request: Request) {
         } else {
           // ============================================================
           // QUERY CAL.AI API FOR THE BOOKING
+          // Get user's Cal.ai API key from their config
           // ============================================================
           console.log('🔍 Querying Cal.ai API for booking details...');
           
-          const CAL_API_KEY = process.env.CAL_AI_API_KEY || 'cal_live_6e25d0952c7dc66d77a8f55b164f66e5';
+          // Fetch user's Cal.ai API key from their config
+          const { data: userCalConfig } = await supabase
+            .from('user_retell_config')
+            .select('cal_api_key')
+            .eq('user_id', userId)
+            .maybeSingle();
+          
+          const CAL_API_KEY = userCalConfig?.cal_api_key || process.env.CAL_AI_API_KEY;
+          
+          if (!CAL_API_KEY) {
+            console.log('⚠️ No Cal.ai API key configured for this user');
+          } else {
+            console.log('✅ Found Cal.ai API key for user');
+          }
+          
           let calBooking: any = null;
           let calError: string | null = null;
           
-          try {
-            // Get recent bookings from Cal.ai (last 10 minutes)
-            const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-            
-            const calResponse = await fetch(
-              `https://api.cal.com/v1/bookings?apiKey=${CAL_API_KEY}&status=accepted`,
-              {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-              }
-            );
+          // Only query Cal.ai if we have an API key
+          if (!CAL_API_KEY) {
+            calError = 'No Cal.ai API key configured for this user';
+            console.log('⚠️ Skipping Cal.ai API call - no API key');
+          } else {
+            try {
+              // Get recent bookings from Cal.ai
+              const calResponse = await fetch(
+                `https://api.cal.com/v1/bookings?apiKey=${CAL_API_KEY}&status=accepted`,
+                {
+                  method: 'GET',
+                  headers: { 'Content-Type': 'application/json' },
+                }
+              );
             
             if (!calResponse.ok) {
               const errorText = await calResponse.text();
@@ -541,6 +559,7 @@ export async function POST(request: Request) {
             console.error('❌ Cal.ai API exception:', err.message);
             calError = err.message;
           }
+          } // End of Cal.ai API key check
           
           // ============================================================
           // CREATE APPOINTMENT WITH CAL.AI DATA OR FALLBACK
@@ -572,19 +591,19 @@ export async function POST(request: Request) {
             noteText = '⚠️ PLEASE CONFIRM TIME - Could not fetch from Cal.ai';
           }
           
-          const appointmentData = {
-            user_id: userId,
-            lead_id: leadId,
-            prospect_name: lead.name || lead.first_name || 'Unknown',
-            prospect_phone: lead.phone || lead.phone_number || '',
+        const appointmentData = {
+          user_id: userId,
+          lead_id: leadId,
+          prospect_name: lead.name || lead.first_name || 'Unknown',
+          prospect_phone: lead.phone || lead.phone_number || '',
             scheduled_at: appointmentTime.toISOString(),
-            status: 'scheduled',
-            is_sold: false,
-            is_no_show: false,
+          status: 'scheduled',
+          is_sold: false,
+          is_no_show: false,
             notes: noteText,
-            created_at: new Date().toISOString(),
-          };
-          
+          created_at: new Date().toISOString(),
+        };
+        
           console.log('📝 Creating appointment...');
           console.log(`   - Name: ${appointmentData.prospect_name}`);
           console.log(`   - Phone: ${appointmentData.prospect_phone}`);
@@ -592,18 +611,18 @@ export async function POST(request: Request) {
           console.log(`   - Source: ${calBooking ? 'Cal.ai API ✅' : 'Fallback ⚠️'}`);
           
           const { data: newAppointment, error: appointmentError } = await supabase
-            .from('appointments')
-            .insert([appointmentData])
-            .select()
-            .single();
-          
-          if (appointmentError) {
-            console.error('❌ Failed to create appointment:', appointmentError);
-          } else {
-            console.log('✅ APPOINTMENT CREATED!');
+          .from('appointments')
+          .insert([appointmentData])
+          .select()
+          .single();
+        
+        if (appointmentError) {
+          console.error('❌ Failed to create appointment:', appointmentError);
+        } else {
+          console.log('✅ APPOINTMENT CREATED!');
             console.log(`   - ID: ${newAppointment.id}`);
             console.log(`   - Scheduled: ${appointmentTime.toLocaleString()}`);
-          }
+        }
         }
         
         console.log('📅📅📅 ========================================= 📅📅📅');

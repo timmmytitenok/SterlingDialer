@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
     // Parse request body
     const body = await request.json();
-    const { userId, agentId, phoneNumber, agentName } = body;
+    const { userId, agentId, phoneNumber, agentName, calApiKey } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       agentId: agentId || 'not set',
       phoneNumber: phoneNumber || 'not set',
       agentName: agentName || 'not set',
+      calApiKey: calApiKey ? '***SET***' : 'not set',
     });
 
     // Check if config exists
@@ -39,16 +40,21 @@ export async function POST(request: Request) {
       .eq('user_id', userId)
       .maybeSingle();
 
+    // Build update object - only include fields that were provided
+    const updateFields: any = {
+      updated_at: new Date().toISOString(),
+    };
+    
+    if (agentId !== undefined) updateFields.retell_agent_id = agentId || null;
+    if (phoneNumber !== undefined) updateFields.phone_number = phoneNumber || null;
+    if (agentName !== undefined) updateFields.agent_name = agentName || null;
+    if (calApiKey !== undefined) updateFields.cal_api_key = calApiKey || null;
+
     if (existing) {
       // Update existing
       const { error: updateError } = await supabase
         .from('user_retell_config')
-        .update({
-          retell_agent_id: agentId || null,
-          phone_number: phoneNumber || null,
-          agent_name: agentName || null,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateFields)
         .eq('user_id', userId);
 
       if (updateError) {
@@ -66,6 +72,7 @@ export async function POST(request: Request) {
           retell_agent_id: agentId || null,
           phone_number: phoneNumber || null,
           agent_name: agentName || null,
+          cal_api_key: calApiKey || null,
           retell_api_key: 'SET_BY_ADMIN',
           is_active: true,
         });

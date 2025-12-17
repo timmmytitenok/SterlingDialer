@@ -48,6 +48,7 @@ interface UserDetail {
   ai_maintenance_mode: boolean;
   retell_agent_id: string | null;
   retell_phone_number: string | null;
+  cal_api_key: string | null;
   has_active_subscription: boolean;
   subscription_tier: string | null;
 }
@@ -78,6 +79,7 @@ export default function AdminUserDetailPage() {
   // AI Agent configuration
   const [agentId, setAgentId] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [calApiKey, setCalApiKey] = useState('');
   const [scriptType, setScriptType] = useState<'final_expense' | 'mortgage_protection'>('final_expense');
   
 
@@ -146,6 +148,7 @@ export default function AdminUserDetailPage() {
       // Set AI config values if they exist
       if (data.user.retell_agent_id) setAgentId(data.user.retell_agent_id);
       if (data.user.retell_phone_number) setPhoneNumber(data.user.retell_phone_number);
+      if (data.user.cal_api_key) setCalApiKey(data.user.cal_api_key);
       if (data.user.script_type) setScriptType(data.user.script_type);
       
     } catch (err: any) {
@@ -636,21 +639,35 @@ export default function AdminUserDetailPage() {
                 />
               </div>
 
+              {/* Cal.ai API Key */}
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-3">
+                  Cal.ai API Key
+                </label>
+                <input
+                  type="text"
+                  value={calApiKey}
+                  onChange={(e) => setCalApiKey(e.target.value)}
+                  placeholder="cal_live_xxxxxxxxxxxxxxxx"
+                  className="w-full px-5 py-4 bg-[#0B1437] text-white rounded-xl border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none font-mono text-sm transition-all"
+                />
+                <p className="text-xs text-gray-500 mt-2">Required for accurate appointment time from Cal.ai</p>
+              </div>
+
               {/* Save AI Config Button */}
               <button
                 onClick={async () => {
                   setSaving(true);
                   try {
-                    const response = await fetch('/api/admin/users/update-ai-config', {
+                    // Save Retell config (includes Cal.ai API key)
+                    const response = await fetch('/api/admin/users/update-retell', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         userId: user.id,
                         agentId: agentId.trim() || null,
                         phoneNumber: phoneNumber.trim() || null,
-                        agentName: null,
-                        maintenanceMode: user.ai_maintenance_mode,
-                        scriptType: scriptType,
+                        calApiKey: calApiKey.trim() || null,
                       }),
                     });
 
