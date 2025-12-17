@@ -19,16 +19,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Delete appointment
+    // SOFT DELETE: Mark as cancelled instead of actually deleting
+    // This keeps the record for stats but removes it from calendar view
     const { error } = await supabase
       .from('appointments')
-      .delete()
+      .update({
+        status: 'cancelled',
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', appointmentId)
       .eq('user_id', user.id);
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, message: 'Appointment deleted' });
+    console.log(`✅ Appointment ${appointmentId} marked as cancelled (soft delete)`);
+
+    return NextResponse.json({ success: true, message: 'Appointment removed' });
   } catch (error: any) {
     console.error('Error deleting appointment:', error);
     return NextResponse.json(
