@@ -76,7 +76,7 @@ function getCurrentSpeaker(transcript: TranscriptMessage[], currentTime: number)
   return null;
 }
 
-// Waveform Visualizer Component - REAL Audio Reactive!
+// Waveform Visualizer Component - Smooth reactive animation
 function WaveformVisualizer({ 
   isPlaying, 
   speaker,
@@ -86,165 +86,199 @@ function WaveformVisualizer({
   speaker: 'agent' | 'user' | null;
   audioRef: React.RefObject<HTMLAudioElement | null>;
 }) {
-  const [bars, setBars] = useState<number[]>(Array(64).fill(5));
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const animationRef = useRef<number | null>(null);
-  const isConnectedRef = useRef(false);
+  const NUM_BARS = 48;
+  const [bars, setBars] = useState<number[]>(Array(NUM_BARS).fill(5));
+  const [intensity, setIntensity] = useState(0);
+  const frameRef = useRef(0);
+  const prevTimeRef = useRef(0);
   
-  // Setup Web Audio API analyzer
+  // Animate bars based on audio playback
   useEffect(() => {
-    if (!audioRef.current || isConnectedRef.current) return;
-    
-    try {
-      // Create audio context
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      audioContextRef.current = audioContext;
-      
-      // Create analyzer
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 128; // 64 frequency bins
-      analyser.smoothingTimeConstant = 0.8;
-      analyserRef.current = analyser;
-      
-      // Connect audio element to analyzer
-      const source = audioContext.createMediaElementSource(audioRef.current);
-      source.connect(analyser);
-      analyser.connect(audioContext.destination);
-      sourceRef.current = source;
-      isConnectedRef.current = true;
-      
-      console.log('🎵 Audio analyzer connected!');
-    } catch (err) {
-      console.log('Audio context error (may already be connected):', err);
+    if (!isPlaying) {
+      // Smoothly animate down when paused
+      const fadeOut = setInterval(() => {
+        setBars(prev => prev.map(h => Math.max(5, h * 0.9)));
+        setIntensity(prev => Math.max(0, prev * 0.9));
+      }, 50);
+      return () => clearInterval(fadeOut);
     }
     
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [audioRef]);
-  
-  // Animation loop to read frequency data
-  useEffect(() => {
-    if (!isPlaying || !analyserRef.current) {
-      setBars(Array(64).fill(5));
-      return;
-    }
+    let animationId: number;
     
-    const analyser = analyserRef.current;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    
-    const updateBars = () => {
-      analyser.getByteFrequencyData(dataArray);
+    const animate = () => {
+      frameRef.current++;
+      const time = Date.now();
       
-      // Convert frequency data to bar heights (0-100)
-      const newBars = Array.from(dataArray).map(value => {
-        // value is 0-255, convert to percentage with minimum height
-        const height = Math.max(5, (value / 255) * 100);
+      // Check if audio is actually progressing (not stalled)
+      const currentAudioTime = audioRef.current?.currentTime || 0;
+      const isActuallyPlaying = currentAudioTime !== prevTimeRef.current;
+      prevTimeRef.current = currentAudioTime;
+      
+      // Calculate dynamic intensity - varies over time to simulate speech patterns
+      const baseIntensity = isActuallyPlaying ? 60 : 20;
+      const speechVariation = Math.sin(time / 300) * 20 + Math.sin(time / 150) * 15;
+      const burstChance = Math.random();
+      const burst = burstChance > 0.92 ? 30 : burstChance > 0.85 ? 15 : 0; // Random bursts
+      const newIntensity = Math.max(20, Math.min(100, baseIntensity + speechVariation + burst));
+      setIntensity(newIntensity);
+      
+      // Generate bars with natural wave patterns
+      const newBars = Array(NUM_BARS).fill(0).map((_, i) => {
+        // Multiple wave frequencies for organic feel
+        const wave1 = Math.sin((time / 100) + (i * 0.2)) * 20;
+        const wave2 = Math.sin((time / 200) + (i * 0.4)) * 15;
+        const wave3 = Math.cos((time / 80) + (i * 0.15)) * 10;
+        
+        // Center bars are taller (bell curve distribution)
+        const centerFactor = 1 - Math.abs(i - NUM_BARS / 2) / (NUM_BARS / 2);
+        const centerBoost = centerFactor * 30;
+        
+        // Random variation per bar
+        const randomFactor = (Math.sin(time / 50 + i * 100) + 1) * 10;
+        
+        // Combine all factors
+        const height = isActuallyPlaying 
+          ? Math.max(8, Math.min(95, 
+              30 + wave1 + wave2 + wave3 + centerBoost + randomFactor * (newIntensity / 50)
+            ))
+          : Math.max(5, 15 + wave1 * 0.3);
+        
         return height;
       });
       
       setBars(newBars);
-      animationRef.current = requestAnimationFrame(updateBars);
+      animationId = requestAnimationFrame(animate);
     };
     
-    // Resume audio context if suspended (browsers require user interaction)
-    if (audioContextRef.current?.state === 'suspended') {
-      audioContextRef.current.resume();
-    }
-    
-    updateBars();
+    animate();
     
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      if (animationId) cancelAnimationFrame(animationId);
     };
-  }, [isPlaying]);
+  }, [isPlaying, audioRef]);
   
-  // Color based on speaker
-  const getBarColor = (index: number, height: number) => {
-    if (!isPlaying || height < 10) return 'bg-gray-700';
+  // Color based on speaker and bar height
+  const getBarStyle = (index: number, height: number) => {
+    const isActive = isPlaying && height > 15;
+    
     if (speaker === 'agent') {
-      // Purple/Blue gradient based on intensity
-      if (height > 70) return 'bg-purple-400';
-      if (height > 40) return 'bg-blue-500';
-      return 'bg-indigo-600';
+      // Purple/Blue gradient
+      const hue = 250 + (index / NUM_BARS) * 30; // 250-280 (purple to blue)
+      const saturation = 70 + (height / 100) * 30;
+      const lightness = 40 + (height / 100) * 25;
+      return {
+        backgroundColor: isActive ? `hsl(${hue}, ${saturation}%, ${lightness}%)` : '#374151',
+        boxShadow: isActive && height > 30 
+          ? `0 0 ${height / 4}px hsl(${hue}, 80%, 60%), 0 0 ${height / 2}px hsl(${hue}, 60%, 40%)`
+          : 'none',
+      };
     } else if (speaker === 'user') {
-      // Green gradient based on intensity
-      if (height > 70) return 'bg-emerald-400';
-      if (height > 40) return 'bg-green-500';
-      return 'bg-teal-600';
+      // Green/Teal gradient
+      const hue = 150 + (index / NUM_BARS) * 30; // 150-180 (green to teal)
+      const saturation = 60 + (height / 100) * 40;
+      const lightness = 35 + (height / 100) * 30;
+      return {
+        backgroundColor: isActive ? `hsl(${hue}, ${saturation}%, ${lightness}%)` : '#374151',
+        boxShadow: isActive && height > 30 
+          ? `0 0 ${height / 4}px hsl(${hue}, 80%, 55%), 0 0 ${height / 2}px hsl(${hue}, 60%, 35%)`
+          : 'none',
+      };
     }
-    return 'bg-gray-500';
+    
+    return {
+      backgroundColor: '#4B5563',
+      boxShadow: 'none',
+    };
   };
   
-  // Calculate overall volume for glow intensity
-  const avgVolume = bars.reduce((a, b) => a + b, 0) / bars.length;
-  
+  // Glow color based on speaker
   const getGlowColor = () => {
     if (!isPlaying) return 'transparent';
-    if (speaker === 'agent') return `rgba(139, 92, 246, ${0.3 + avgVolume / 200})`; // Purple glow
-    if (speaker === 'user') return `rgba(52, 211, 153, ${0.3 + avgVolume / 200})`; // Green glow
+    const alpha = 0.3 + (intensity / 200);
+    if (speaker === 'agent') return `rgba(139, 92, 246, ${alpha})`;
+    if (speaker === 'user') return `rgba(52, 211, 153, ${alpha})`;
     return 'transparent';
   };
 
   return (
-    <div className="relative flex items-center justify-center h-72 w-full">
-      {/* Glow backdrop - intensity based on volume */}
+    <div className="relative flex items-center justify-center h-72 w-full overflow-hidden">
+      {/* Animated glow backdrop */}
       <div 
-        className="absolute inset-0 rounded-3xl blur-3xl transition-all duration-150"
+        className="absolute inset-0 rounded-3xl blur-3xl"
         style={{ 
           backgroundColor: getGlowColor(),
-          opacity: isPlaying ? Math.min(0.8, 0.3 + avgVolume / 150) : 0,
-          transform: `scale(${1 + avgVolume / 500})`,
+          opacity: isPlaying ? 0.7 : 0,
+          transform: `scale(${1 + intensity / 300})`,
+          transition: 'opacity 300ms, transform 100ms',
         }}
       />
       
-      {/* Waveform bars */}
-      <div className="relative flex items-end justify-center gap-[3px] h-full w-full px-4 pb-16">
-        {bars.map((height, i) => (
-          <div
-            key={i}
-            className={`rounded-full transition-all duration-[50ms] ${getBarColor(i, height)}`}
-            style={{
-              height: `${height}%`,
-              width: '6px',
-              opacity: isPlaying ? 0.95 : 0.3,
-              boxShadow: isPlaying && height > 20 
-                ? `0 0 ${height / 5}px ${speaker === 'agent' ? 'rgba(139, 92, 246, 0.8)' : speaker === 'user' ? 'rgba(52, 211, 153, 0.8)' : 'transparent'}` 
-                : 'none',
-              transform: `scaleY(${isPlaying ? 1 : 0.3})`,
-            }}
-          />
-        ))}
-      </div>
-      
-      {/* Speaker label */}
+      {/* Secondary pulsing glow */}
       {isPlaying && speaker && (
         <div 
-          className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full font-bold text-lg transition-all duration-150 ${
+          className="absolute inset-0 rounded-3xl blur-2xl animate-pulse"
+          style={{ 
+            backgroundColor: speaker === 'agent' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(52, 211, 153, 0.2)',
+          }}
+        />
+      )}
+      
+      {/* Waveform bars */}
+      <div className="relative flex items-end justify-center gap-[2px] h-full w-full px-8 pb-20">
+        {bars.map((height, i) => {
+          const style = getBarStyle(i, height);
+          return (
+            <div
+              key={i}
+              className="rounded-full"
+              style={{
+                height: `${height}%`,
+                width: '7px',
+                minHeight: '4px',
+                opacity: isPlaying ? 0.95 : 0.4,
+                backgroundColor: style.backgroundColor,
+                boxShadow: style.boxShadow,
+                transition: 'height 80ms ease-out, background-color 150ms, box-shadow 150ms',
+              }}
+            />
+          );
+        })}
+      </div>
+      
+      {/* Speaker label with reactive scale */}
+      {isPlaying && speaker && (
+        <div 
+          className={`absolute bottom-6 left-1/2 px-8 py-3 rounded-full font-bold text-xl ${
             speaker === 'agent' 
-              ? 'bg-purple-500/30 text-purple-300 border border-purple-500/50' 
-              : 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50'
+              ? 'bg-purple-500/40 text-purple-200 border-2 border-purple-400/60' 
+              : 'bg-emerald-500/40 text-emerald-200 border-2 border-emerald-400/60'
           }`}
           style={{
-            transform: `translateX(-50%) scale(${1 + avgVolume / 400})`,
-            boxShadow: `0 0 ${avgVolume / 3}px ${speaker === 'agent' ? 'rgba(139, 92, 246, 0.5)' : 'rgba(52, 211, 153, 0.5)'}`,
+            transform: `translateX(-50%) scale(${1 + intensity / 500})`,
+            boxShadow: `0 0 ${intensity / 2}px ${speaker === 'agent' ? 'rgba(139, 92, 246, 0.6)' : 'rgba(52, 211, 153, 0.6)'}`,
+            transition: 'transform 100ms, box-shadow 100ms',
           }}
         >
           {speaker === 'agent' ? '🤖 AI Speaking' : '👤 Customer Speaking'}
         </div>
       )}
       
-      {/* Volume meter */}
+      {/* Intensity indicator */}
       {isPlaying && (
-        <div className="absolute top-4 right-4 text-xs text-gray-400 font-mono">
-          VOL: {Math.round(avgVolume)}%
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          <div className="flex gap-1">
+            {[...Array(5)].map((_, i) => (
+              <div 
+                key={i}
+                className={`w-1.5 rounded-full transition-all duration-150 ${
+                  intensity > i * 20 
+                    ? speaker === 'agent' ? 'bg-purple-400' : speaker === 'user' ? 'bg-emerald-400' : 'bg-gray-400'
+                    : 'bg-gray-700'
+                }`}
+                style={{ height: `${8 + i * 4}px` }}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
