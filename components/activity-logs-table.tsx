@@ -28,18 +28,36 @@ interface TranscriptMessage {
 function parseTranscript(transcript: string | undefined): TranscriptMessage[] {
   if (!transcript) return [];
   
+  // Debug log to see what we're getting
+  console.log('📝 Transcript raw:', typeof transcript, transcript?.substring?.(0, 200));
+  
   try {
     // Retell transcript format is an array of objects with role and content
-    const parsed = JSON.parse(transcript);
+    const parsed = typeof transcript === 'string' ? JSON.parse(transcript) : transcript;
+    console.log('📝 Transcript parsed:', Array.isArray(parsed), parsed?.length);
+    
     if (Array.isArray(parsed)) {
       return parsed.map((msg: any) => ({
         role: msg.role === 'agent' ? 'agent' : 'user',
-        content: msg.content || '',
+        content: msg.content || msg.text || msg.message || '',
         words: msg.words || [],
       }));
     }
-  } catch {
-    // If not JSON, return empty
+    
+    // Handle object with transcript array inside
+    if (parsed?.transcript && Array.isArray(parsed.transcript)) {
+      return parsed.transcript.map((msg: any) => ({
+        role: msg.role === 'agent' ? 'agent' : 'user',
+        content: msg.content || msg.text || msg.message || '',
+        words: msg.words || [],
+      }));
+    }
+  } catch (e) {
+    console.log('📝 Transcript parse error:', e);
+    // If not JSON, try to display as plain text
+    if (typeof transcript === 'string' && transcript.length > 0) {
+      return [{ role: 'agent', content: transcript, words: [] }];
+    }
   }
   return [];
 }
@@ -467,19 +485,21 @@ function FloatingAudioPlayer({
 
       {/* Floating Pill Player */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 duration-300">
-        {/* Pill Player - with hover/press animations */}
+        {/* Pill Player - with smooth hover/press animations using CSS */}
         <div 
-          className={`bg-gradient-to-r from-[#1A2647] to-[#0B1437] border border-blue-500/30 rounded-full px-4 py-3 shadow-2xl shadow-blue-500/20 flex items-center gap-4 min-w-[400px] max-w-[500px] cursor-pointer transition-all duration-150 ${
-            isPressed 
-              ? 'scale-95 shadow-lg' 
-              : isHovered 
-                ? 'scale-105 shadow-2xl shadow-blue-500/40 border-blue-400/50' 
-                : 'scale-100'
-          }`}
+          className="pill-player bg-gradient-to-r from-[#1A2647] to-[#0B1437] border border-blue-500/30 rounded-full px-4 py-3 shadow-2xl shadow-blue-500/20 flex items-center gap-4 min-w-[400px] max-w-[500px] cursor-pointer"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => { setIsHovered(false); setIsPressed(false); }}
           onMouseDown={() => setIsPressed(true)}
           onMouseUp={() => { setIsPressed(false); handlePillClick(); }}
+          style={{
+            transform: isPressed ? 'scale(0.97)' : isHovered ? 'scale(1.03)' : 'scale(1)',
+            boxShadow: isHovered 
+              ? '0 25px 50px -12px rgba(59, 130, 246, 0.4)' 
+              : '0 25px 50px -12px rgba(59, 130, 246, 0.2)',
+            borderColor: isHovered ? 'rgba(96, 165, 250, 0.5)' : 'rgba(59, 130, 246, 0.3)',
+            transition: 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 300ms ease, border-color 300ms ease',
+          }}
         >
           {/* Play/Pause Button */}
           <button
@@ -571,12 +591,17 @@ function FloatingAudioPlayer({
           </button>
         </div>
         
-        {/* Hint text when hovered */}
-        {isHovered && !isPressed && (
-          <p className="text-center text-xs text-gray-400 mt-2 animate-in fade-in duration-200">
-            Click to expand • TikTok Mode 🎬
-          </p>
-        )}
+        {/* Hint text - always visible but fades on hover */}
+        <p 
+          className="text-center text-xs text-gray-500 mt-2 transition-all duration-300"
+          style={{
+            opacity: isHovered ? 1 : 0.6,
+            transform: isHovered ? 'translateY(0)' : 'translateY(-2px)',
+            color: isHovered ? 'rgb(156, 163, 175)' : 'rgb(107, 114, 128)',
+          }}
+        >
+          {isHovered ? 'Click to expand • TikTok Mode 🎬' : 'Hover to expand'}
+        </p>
       </div>
     </>
   );
