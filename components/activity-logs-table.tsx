@@ -76,51 +76,98 @@ function getCurrentSpeaker(transcript: TranscriptMessage[], currentTime: number)
   return null;
 }
 
-// Word-by-word animated text component
-function AnimatedWords({ 
-  words, 
-  currentWordIndex, 
-  isActive,
-  color 
+// Waveform Visualizer Component
+function WaveformVisualizer({ 
+  isPlaying, 
+  speaker,
+  intensity = 1,
 }: { 
-  words: string[]; 
-  currentWordIndex: number;
-  isActive: boolean;
-  color: 'blue' | 'emerald';
+  isPlaying: boolean; 
+  speaker: 'agent' | 'user' | null;
+  intensity?: number;
 }) {
+  const [bars, setBars] = useState<number[]>(Array(40).fill(20));
+  
+  useEffect(() => {
+    if (!isPlaying) {
+      setBars(Array(40).fill(20));
+      return;
+    }
+    
+    const interval = setInterval(() => {
+      setBars(prev => prev.map((_, i) => {
+        // Create wave pattern with some randomness
+        const baseHeight = 20 + Math.sin(Date.now() / 200 + i * 0.3) * 30;
+        const randomness = Math.random() * 40 * intensity;
+        return Math.min(100, Math.max(10, baseHeight + randomness));
+      }));
+    }, 50);
+    
+    return () => clearInterval(interval);
+  }, [isPlaying, intensity]);
+  
+  // Color based on speaker
+  const getBarColor = (index: number) => {
+    if (!isPlaying) return 'bg-gray-600';
+    if (speaker === 'agent') {
+      // Purple/Blue gradient
+      return index % 3 === 0 ? 'bg-purple-500' : index % 3 === 1 ? 'bg-blue-500' : 'bg-indigo-500';
+    } else if (speaker === 'user') {
+      // Green gradient
+      return index % 3 === 0 ? 'bg-emerald-500' : index % 3 === 1 ? 'bg-green-500' : 'bg-teal-500';
+    }
+    return 'bg-gray-500';
+  };
+  
+  const getGlowColor = () => {
+    if (!isPlaying) return 'transparent';
+    if (speaker === 'agent') return 'rgba(139, 92, 246, 0.5)'; // Purple glow
+    if (speaker === 'user') return 'rgba(52, 211, 153, 0.5)'; // Green glow
+    return 'transparent';
+  };
+
   return (
-    <span className="inline">
-      {words.map((word, idx) => {
-        const isCurrentWord = isActive && idx === currentWordIndex;
-        const isPastWord = idx < currentWordIndex;
-        const isFutureWord = idx > currentWordIndex;
-        
-        return (
-          <span
-            key={idx}
-            className={`inline-block mx-0.5 transition-all duration-200 ${
-              isCurrentWord 
-                ? `scale-125 font-bold ${color === 'blue' ? 'text-blue-300' : 'text-emerald-300'}` 
-                : isPastWord 
-                  ? 'opacity-70 text-white'
-                  : isFutureWord
-                    ? 'opacity-30 text-gray-400'
-                    : 'text-white'
-            }`}
+    <div className="relative flex items-center justify-center h-64 w-full">
+      {/* Glow backdrop */}
+      <div 
+        className="absolute inset-0 rounded-3xl blur-3xl transition-all duration-500"
+        style={{ 
+          backgroundColor: getGlowColor(),
+          opacity: isPlaying ? 0.6 : 0,
+        }}
+      />
+      
+      {/* Waveform bars */}
+      <div className="relative flex items-center justify-center gap-1 h-full w-full px-4">
+        {bars.map((height, i) => (
+          <div
+            key={i}
+            className={`rounded-full transition-all duration-75 ${getBarColor(i)}`}
             style={{
-              transform: isCurrentWord ? 'scale(1.15) translateY(-2px)' : 'scale(1)',
-              textShadow: isCurrentWord ? `0 0 20px ${color === 'blue' ? 'rgba(96, 165, 250, 0.8)' : 'rgba(52, 211, 153, 0.8)'}` : 'none',
+              height: `${height}%`,
+              width: '8px',
+              opacity: isPlaying ? 0.9 : 0.3,
+              boxShadow: isPlaying ? `0 0 10px ${speaker === 'agent' ? 'rgba(139, 92, 246, 0.8)' : speaker === 'user' ? 'rgba(52, 211, 153, 0.8)' : 'transparent'}` : 'none',
             }}
-          >
-            {word}
-          </span>
-        );
-      })}
-    </span>
+          />
+        ))}
+      </div>
+      
+      {/* Speaker label */}
+      {isPlaying && speaker && (
+        <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full font-bold text-lg animate-pulse ${
+          speaker === 'agent' 
+            ? 'bg-purple-500/30 text-purple-300 border border-purple-500/50' 
+            : 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50'
+        }`}>
+          {speaker === 'agent' ? '🤖 AI Speaking' : '👤 Customer Speaking'}
+        </div>
+      )}
+    </div>
   );
 }
 
-// Expanded TikTok-style Player Modal
+// Expanded TikTok-style Player Modal with Waveform
 function ExpandedPlayerModal({
   playingCall,
   audioRef,
@@ -132,6 +179,8 @@ function ExpandedPlayerModal({
   onSeek,
   onClose,
   formatTime,
+  onSpeedChange,
+  playbackSpeed,
 }: {
   playingCall: PlayingCall;
   audioRef: React.RefObject<HTMLAudioElement | null>;
@@ -143,74 +192,28 @@ function ExpandedPlayerModal({
   onSeek: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onClose: () => void;
   formatTime: (seconds: number) => string;
+  onSpeedChange: () => void;
+  playbackSpeed: number;
 }) {
   const [phoneHidden, setPhoneHidden] = useState(false);
-  const [avatarBob, setAvatarBob] = useState(0);
   const transcript = parseTranscript(playingCall.transcript);
-  const transcriptRef = useRef<HTMLDivElement>(null);
   
   // Determine who's currently speaking based on time
   const currentSpeaker = getCurrentSpeaker(transcript, currentTime);
   
-  // Calculate timing for each message and word
-  const getMessageTiming = () => {
-    if (transcript.length === 0 || duration === 0) return { msgIndex: 0, wordIndex: 0 };
-    
+  // Calculate intensity based on message length (longer = more intense)
+  const getIntensity = () => {
+    if (transcript.length === 0 || !currentSpeaker) return 1;
     const avgDurationPerMessage = duration / transcript.length;
-    let accumulatedTime = 0;
-    
-    for (let i = 0; i < transcript.length; i++) {
-      const msgEndTime = accumulatedTime + avgDurationPerMessage;
-      if (currentTime < msgEndTime) {
-        // We're in this message
-        const timeInMessage = currentTime - accumulatedTime;
-        const words = transcript[i].content.split(' ');
-        const avgTimePerWord = avgDurationPerMessage / words.length;
-        const wordIndex = Math.min(Math.floor(timeInMessage / avgTimePerWord), words.length - 1);
-        return { msgIndex: i, wordIndex: Math.max(0, wordIndex) };
-      }
-      accumulatedTime = msgEndTime;
-    }
-    return { msgIndex: transcript.length - 1, wordIndex: 0 };
+    const currentMsgIndex = Math.floor(currentTime / avgDurationPerMessage);
+    const currentMsg = transcript[currentMsgIndex];
+    if (!currentMsg) return 1;
+    // More words = higher intensity
+    const wordCount = currentMsg.content.split(' ').length;
+    return Math.min(2, 0.5 + wordCount / 20);
   };
-  
-  const { msgIndex: currentMsgIndex, wordIndex: currentWordIndex } = getMessageTiming();
-  
-  // Avatar bobbing animation when speaking
-  useEffect(() => {
-    if (!isPlaying) return;
-    
-    const bobInterval = setInterval(() => {
-      setAvatarBob(prev => (prev + 1) % 4);
-    }, 150);
-    
-    return () => clearInterval(bobInterval);
-  }, [isPlaying]);
-  
-  // Auto-scroll to current message
-  useEffect(() => {
-    if (transcriptRef.current && transcript.length > 0) {
-      const messages = transcriptRef.current.querySelectorAll('[data-msg-index]');
-      const currentMsg = messages[currentMsgIndex];
-      if (currentMsg) {
-        currentMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [currentMsgIndex, transcript.length]);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-  
-  // Get bob transform based on current frame
-  const getBobTransform = (isSpeaking: boolean) => {
-    if (!isSpeaking || !isPlaying) return 'translateY(0px) rotate(0deg)';
-    const bobValues = [
-      'translateY(-3px) rotate(-2deg)',
-      'translateY(0px) rotate(0deg)',
-      'translateY(-2px) rotate(2deg)',
-      'translateY(0px) rotate(0deg)',
-    ];
-    return bobValues[avatarBob];
-  };
   
   // Hide last 7 digits of phone number with blur
   const getDisplayPhone = () => {
@@ -221,6 +224,12 @@ function ExpandedPlayerModal({
     }
     return '•••••••••••';
   };
+  
+  // Speed display text
+  const getSpeedText = () => {
+    if (playbackSpeed === 1) return '1x';
+    return `${playbackSpeed}x`;
+  };
 
   return (
     <div 
@@ -228,21 +237,27 @@ function ExpandedPlayerModal({
       onClick={onClose}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" />
+      <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" />
       
       {/* Modal Content */}
       <div 
-        className="relative w-full max-w-5xl h-full max-h-[700px] bg-gradient-to-br from-[#0B1437] via-[#1A2647] to-[#0B1437] rounded-3xl border border-blue-500/30 shadow-2xl shadow-blue-500/20 overflow-hidden flex flex-col"
+        className="relative w-full max-w-4xl h-full max-h-[600px] bg-gradient-to-br from-[#0B1437] via-[#1A2647] to-[#0B1437] rounded-3xl border border-blue-500/30 shadow-2xl shadow-blue-500/20 overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-800/50">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <Volume2 className="w-6 h-6 text-white" />
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
+              currentSpeaker === 'agent' 
+                ? 'bg-gradient-to-br from-purple-500 to-blue-600 shadow-lg shadow-purple-500/50' 
+                : currentSpeaker === 'user'
+                  ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/50'
+                  : 'bg-gradient-to-br from-gray-600 to-gray-700'
+            }`}>
+              <Volume2 className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">{playingCall.name}</h2>
+              <h2 className="text-2xl font-bold text-white">{playingCall.name}</h2>
               <div className="flex items-center gap-2">
                 <span className={`text-gray-400 font-mono text-sm transition-all ${phoneHidden ? 'blur-sm select-none' : ''}`}>
                   {getDisplayPhone()}
@@ -271,172 +286,13 @@ function ExpandedPlayerModal({
           </button>
         </div>
 
-        {/* Main Content - Avatars + Transcript */}
-        <div className="flex-1 flex items-stretch overflow-hidden p-6 gap-6">
-          {/* Human Avatar (Left) */}
-          <div className="flex flex-col items-center justify-center w-36 flex-shrink-0">
-            <div 
-              className={`relative transition-all duration-150 ${
-                currentSpeaker === 'user' ? 'scale-110' : 'scale-100 opacity-50'
-              }`}
-              style={{
-                transform: `${currentSpeaker === 'user' ? 'scale(1.1)' : 'scale(1)'} ${getBobTransform(currentSpeaker === 'user')}`,
-                transition: 'transform 150ms ease-out',
-              }}
-            >
-              {/* Glow ring when speaking */}
-              {currentSpeaker === 'user' && isPlaying && (
-                <div className="absolute inset-0 rounded-full bg-emerald-500/30 animate-ping" />
-              )}
-              <div className={`relative w-28 h-28 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xl ${
-                currentSpeaker === 'user' && isPlaying ? 'shadow-emerald-500/50' : ''
-              }`}>
-                {/* Face/mouth animation */}
-                <div className="relative">
-                  <User className="w-14 h-14 text-white" />
-                  {/* Animated mouth */}
-                  {currentSpeaker === 'user' && isPlaying && (
-                    <div 
-                      className="absolute bottom-1.5 left-1/2 -translate-x-1/2 bg-white rounded-full transition-all duration-100"
-                      style={{
-                        width: avatarBob % 2 === 0 ? '12px' : '8px',
-                        height: avatarBob % 2 === 0 ? '6px' : '10px',
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
-              {/* Sound waves */}
-              {currentSpeaker === 'user' && isPlaying && (
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                  <div className="w-1.5 bg-emerald-400 rounded-full animate-pulse" style={{ height: `${12 + avatarBob * 3}px`, animationDelay: '0ms' }} />
-                  <div className="w-1.5 bg-emerald-400 rounded-full animate-pulse" style={{ height: `${16 + (avatarBob + 1) % 4 * 3}px`, animationDelay: '75ms' }} />
-                  <div className="w-1.5 bg-emerald-400 rounded-full animate-pulse" style={{ height: `${10 + (avatarBob + 2) % 4 * 3}px`, animationDelay: '150ms' }} />
-                </div>
-              )}
-            </div>
-            <p className={`mt-4 text-sm font-bold transition-all duration-300 ${
-              currentSpeaker === 'user' ? 'text-emerald-400 scale-110' : 'text-gray-500'
-            }`}>
-              👤 Customer
-            </p>
-          </div>
-
-          {/* Transcript (Center) - Word by Word */}
-          <div 
-            ref={transcriptRef}
-            className="flex-1 overflow-y-auto rounded-2xl bg-[#0B1437]/60 border border-gray-800/50 p-6 scroll-smooth"
-          >
-            {transcript.length > 0 ? (
-              <div className="space-y-6">
-                {transcript.map((msg, idx) => {
-                  const isCurrentMessage = idx === currentMsgIndex;
-                  const isPastMessage = idx < currentMsgIndex;
-                  const words = msg.content.split(' ');
-                  
-                  return (
-                    <div
-                      key={idx}
-                      data-msg-index={idx}
-                      className={`transition-all duration-500 ${
-                        isCurrentMessage 
-                          ? 'opacity-100 scale-100' 
-                          : isPastMessage 
-                            ? 'opacity-50 scale-95' 
-                            : 'opacity-20 scale-95'
-                      }`}
-                    >
-                      {/* Speaker label */}
-                      <div className={`flex items-center gap-2 mb-2 ${
-                        msg.role === 'agent' ? 'justify-end' : 'justify-start'
-                      }`}>
-                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                          msg.role === 'agent' 
-                            ? 'bg-blue-500/20 text-blue-400' 
-                            : 'bg-emerald-500/20 text-emerald-400'
-                        }`}>
-                          {msg.role === 'agent' ? '🤖 AI Agent' : '👤 Customer'}
-                        </span>
-                      </div>
-                      
-                      {/* Word-by-word text */}
-                      <div className={`p-4 rounded-2xl ${
-                        msg.role === 'agent'
-                          ? 'bg-gradient-to-br from-blue-600/20 to-purple-600/20 border border-blue-500/20 ml-8'
-                          : 'bg-gradient-to-br from-emerald-600/20 to-teal-600/20 border border-emerald-500/20 mr-8'
-                      } ${isCurrentMessage ? 'ring-2 ring-opacity-50 ' + (msg.role === 'agent' ? 'ring-blue-400' : 'ring-emerald-400') : ''}`}>
-                        <p className="text-lg leading-relaxed">
-                          <AnimatedWords 
-                            words={words}
-                            currentWordIndex={isCurrentMessage ? currentWordIndex : isPastMessage ? words.length : -1}
-                            isActive={isCurrentMessage}
-                            color={msg.role === 'agent' ? 'blue' : 'emerald'}
-                          />
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-12">
-                <div className="w-20 h-20 rounded-full bg-gray-800/50 flex items-center justify-center mb-4 animate-pulse">
-                  <Volume2 className="w-10 h-10 text-gray-600" />
-                </div>
-                <p className="text-gray-400 text-xl font-bold">No Transcript Available</p>
-                <p className="text-gray-500 text-sm mt-2">Transcript will appear for new calls</p>
-              </div>
-            )}
-          </div>
-
-          {/* AI Avatar (Right) */}
-          <div className="flex flex-col items-center justify-center w-36 flex-shrink-0">
-            <div 
-              className={`relative transition-all duration-150 ${
-                currentSpeaker === 'agent' ? 'scale-110' : 'scale-100 opacity-50'
-              }`}
-              style={{
-                transform: `${currentSpeaker === 'agent' ? 'scale(1.1)' : 'scale(1)'} ${getBobTransform(currentSpeaker === 'agent')}`,
-                transition: 'transform 150ms ease-out',
-              }}
-            >
-              {/* Glow ring when speaking */}
-              {currentSpeaker === 'agent' && isPlaying && (
-                <div className="absolute inset-0 rounded-full bg-blue-500/30 animate-ping" />
-              )}
-              <div className={`relative w-28 h-28 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-xl ${
-                currentSpeaker === 'agent' && isPlaying ? 'shadow-blue-500/50' : ''
-              }`}>
-                {/* Face/mouth animation */}
-                <div className="relative">
-                  <Bot className="w-14 h-14 text-white" />
-                  {/* Animated mouth */}
-                  {currentSpeaker === 'agent' && isPlaying && (
-                    <div 
-                      className="absolute bottom-1.5 left-1/2 -translate-x-1/2 bg-white rounded-full transition-all duration-100"
-                      style={{
-                        width: avatarBob % 2 === 0 ? '12px' : '8px',
-                        height: avatarBob % 2 === 0 ? '6px' : '10px',
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
-              {/* Sound waves */}
-              {currentSpeaker === 'agent' && isPlaying && (
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                  <div className="w-1.5 bg-blue-400 rounded-full animate-pulse" style={{ height: `${12 + avatarBob * 3}px`, animationDelay: '0ms' }} />
-                  <div className="w-1.5 bg-blue-400 rounded-full animate-pulse" style={{ height: `${16 + (avatarBob + 1) % 4 * 3}px`, animationDelay: '75ms' }} />
-                  <div className="w-1.5 bg-blue-400 rounded-full animate-pulse" style={{ height: `${10 + (avatarBob + 2) % 4 * 3}px`, animationDelay: '150ms' }} />
-                </div>
-              )}
-            </div>
-            <p className={`mt-4 text-sm font-bold transition-all duration-300 ${
-              currentSpeaker === 'agent' ? 'text-blue-400 scale-110' : 'text-gray-500'
-            }`}>
-              🤖 AI Agent
-            </p>
-          </div>
+        {/* Main Content - Big Waveform */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          <WaveformVisualizer 
+            isPlaying={isPlaying} 
+            speaker={currentSpeaker}
+            intensity={getIntensity()}
+          />
         </div>
 
         {/* Player Controls (Bottom) */}
@@ -494,6 +350,15 @@ function ExpandedPlayerModal({
               </div>
             </div>
 
+            {/* Speed Control */}
+            <button
+              onClick={onSpeedChange}
+              className="flex-shrink-0 flex items-center justify-center min-w-[56px] h-12 px-3 rounded-full bg-gray-700/50 hover:bg-purple-500/30 text-gray-300 hover:text-purple-300 transition-all font-bold text-sm border border-transparent hover:border-purple-500/50"
+              title="Change playback speed"
+            >
+              {getSpeedText()}
+            </button>
+
             {/* Download */}
             <a
               href={`/api/recordings/stream?url=${encodeURIComponent(playingCall.recordingUrl)}`}
@@ -526,6 +391,20 @@ function FloatingAudioPlayer({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+
+  // Speed options: 1x -> 1.25x -> 1.5x -> 2x -> 1x
+  const SPEED_OPTIONS = [1, 1.25, 1.5, 2];
+  
+  const handleSpeedChange = () => {
+    const currentIndex = SPEED_OPTIONS.indexOf(playbackSpeed);
+    const nextIndex = (currentIndex + 1) % SPEED_OPTIONS.length;
+    const newSpeed = SPEED_OPTIONS[nextIndex];
+    setPlaybackSpeed(newSpeed);
+    if (audioRef.current) {
+      audioRef.current.playbackRate = newSpeed;
+    }
+  };
 
   // Create proxied URL
   const proxyUrl = `/api/recordings/stream?url=${encodeURIComponent(playingCall.recordingUrl)}`;
@@ -628,6 +507,8 @@ function FloatingAudioPlayer({
           onSeek={handleSeek}
           onClose={() => setIsExpanded(false)}
           formatTime={formatTime}
+          onSpeedChange={handleSpeedChange}
+          playbackSpeed={playbackSpeed}
         />
       )}
 
