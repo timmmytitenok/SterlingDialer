@@ -174,14 +174,19 @@ export async function GET(request: Request) {
         }
 
         const sheetIds = userSheets.map(s => s.id);
+        
+        // Use the SAME query logic as next-call route for consistency!
         const { count: callableLeads } = await supabase
           .from('leads')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user_id)
           .eq('is_qualified', true)
           .in('google_sheet_id', sheetIds)
-          .in('status', ['new', 'callback_later', 'unclassified', 'no_answer'])
-          .lt('times_dialed', 20);
+          .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment'])
+          .neq('status', 'dead_lead')
+          .or('total_calls_made.is.null,total_calls_made.lt.20');
+
+        console.log(`   📊 Callable leads query result: ${callableLeads}`);
 
         if (!callableLeads || callableLeads === 0) {
           console.log(`   ⚠️  No callable leads found, skipping`);
@@ -190,6 +195,9 @@ export async function GET(request: Request) {
         }
 
         console.log(`   ✅ Found ${callableLeads} callable leads`);
+        
+        // Store the callable lead count for later verification
+        const expectedLeadCount = callableLeads;
 
         // ========================================================================
         // START THE AI - Update settings and trigger first call
@@ -199,7 +207,17 @@ export async function GET(request: Request) {
         // Calculate budget in dollars
         const budgetDollars = (daily_budget_cents || 1500) / 100; // Default $15
 
+        // Get current today_spend for session-based budgeting
+        const { data: currentAISettings } = await supabase
+          .from('ai_control_settings')
+          .select('today_spend')
+          .eq('user_id', user_id)
+          .maybeSingle();
+        
+        const currentTodaySpend = currentAISettings?.today_spend || 0;
+
         // Update AI control settings to running with budget mode
+        // IMPORTANT: Set session_start_spend for session-based budget tracking!
         const { error: updateError } = await supabase
           .from('ai_control_settings')
           .upsert({
@@ -210,6 +228,7 @@ export async function GET(request: Request) {
             execution_mode: 'leads', // Always 'leads' to pass DB constraint
             target_lead_count: 9999, // High number for budget mode
             budget_limit_cents: daily_budget_cents || 1500, // Use their budget
+            session_start_spend: currentTodaySpend, // Track session start for budget mode
             auto_transfer_calls: true,
             last_call_status: 'scheduled_start',
           }, {
@@ -235,27 +254,70 @@ export async function GET(request: Request) {
           });
 
         // Trigger the first call via next-call endpoint
+        // Use RETRY LOGIC in case of transient failures!
         console.log(`📞 Triggering first call for user ${user_id}...`);
         
-        const callResponse = await fetch(`${baseUrl}/api/ai-control/next-call`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user_id }),
-        });
-
-        const callResult = await callResponse.json();
+        let callSuccess = false;
+        let callResult: any = null;
+        let lastError = '';
+        const maxRetries = 3;
         
-        if (callResponse.ok) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          console.log(`   📞 Attempt ${attempt}/${maxRetries}...`);
+          
+          try {
+            const callResponse = await fetch(`${baseUrl}/api/ai-control/next-call`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: user_id }),
+            });
+
+            callResult = await callResponse.json();
+            
+            // Check if it was successful OR if it stopped due to no leads (which means leads query worked)
+            if (callResponse.ok && callResult.success) {
+              callSuccess = true;
+              console.log(`   ✅ Call triggered successfully on attempt ${attempt}`);
+              break;
+            } else if (callResult.done && callResult.reason === 'no_callable_leads') {
+              // This means the query ran fine but no leads - this is a valid state, not a failure
+              console.log(`   ⚠️  No callable leads returned (but query worked)`);
+              lastError = 'No callable leads at time of call';
+              break;
+            } else {
+              lastError = callResult.error || callResult.reason || 'Unknown error';
+              console.log(`   ⚠️  Attempt ${attempt} failed: ${lastError}`);
+              
+              // Wait before retry (exponential backoff)
+              if (attempt < maxRetries) {
+                const waitMs = attempt * 2000; // 2s, 4s, 6s
+                console.log(`   ⏳ Waiting ${waitMs}ms before retry...`);
+                await new Promise(resolve => setTimeout(resolve, waitMs));
+              }
+            }
+          } catch (fetchError: any) {
+            lastError = fetchError.message || 'Network error';
+            console.log(`   ❌ Attempt ${attempt} threw error: ${lastError}`);
+            
+            if (attempt < maxRetries) {
+              const waitMs = attempt * 2000;
+              console.log(`   ⏳ Waiting ${waitMs}ms before retry...`);
+              await new Promise(resolve => setTimeout(resolve, waitMs));
+            }
+          }
+        }
+        
+        if (callSuccess) {
           console.log(`✅ Successfully started AI for user ${user_id}:`, callResult);
           results.push({ 
             user_id, 
             success: true, 
             message: 'AI started successfully',
             budget: `$${budgetDollars}`,
-            callableLeads
+            callableLeads: expectedLeadCount
           });
         } else {
-          console.error(`❌ Failed to trigger call for user ${user_id}:`, callResult);
+          console.error(`❌ Failed to trigger call for user ${user_id} after ${maxRetries} attempts: ${lastError}`);
           
           // Revert status if call failed
           await supabase
@@ -263,7 +325,7 @@ export async function GET(request: Request) {
             .update({ status: 'stopped', last_call_status: 'scheduled_start_failed' })
             .eq('user_id', user_id);
           
-          results.push({ user_id, success: false, error: callResult.error || 'Failed to start call' });
+          results.push({ user_id, success: false, error: lastError || 'Failed to start call after retries' });
         }
 
       } catch (userError: any) {

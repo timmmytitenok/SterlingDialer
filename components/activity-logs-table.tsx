@@ -13,24 +13,15 @@ interface PlayingCall {
   name: string;
   phone: string;
   recordingUrl: string;
-  index: number; // Index in the calls array for prev/next navigation
 }
 
 // Floating Audio Player Component - ENHANCED VERSION
 function FloatingAudioPlayer({ 
   playingCall,
   onClose,
-  onNext,
-  onPrev,
-  hasNext,
-  hasPrev,
 }: { 
   playingCall: PlayingCall;
   onClose: () => void;
-  onNext: () => void;
-  onPrev: () => void;
-  hasNext: boolean;
-  hasPrev: boolean;
 }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -143,105 +134,72 @@ function FloatingAudioPlayer({
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div 
-      className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out ${
-        isVisible 
-          ? 'opacity-100 translate-y-0 scale-100' 
-          : 'opacity-0 translate-y-8 scale-95'
-      }`}
-    >
-      {/* Hidden audio element */}
-      <audio
-        ref={audioRef}
-        src={proxyUrl}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={handleEnded}
-        preload="auto"
-      />
+      <div 
+        className={`fixed bottom-12 left-0 right-0 flex justify-center z-50 pointer-events-none transition-all duration-300 ease-out ${
+          isVisible 
+            ? 'opacity-100 translate-y-0' 
+            : 'opacity-0 translate-y-4'
+        }`}
+      >
+        {/* Hidden audio element */}
+        <audio
+          ref={audioRef}
+          src={proxyUrl}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onEnded={handleEnded}
+          preload="auto"
+        />
 
-      {/* BIGGER Pill Player - 2.5x larger */}
-      <div className="bg-gradient-to-br from-[#1A2647] via-[#162040] to-[#0B1437] border border-blue-500/40 rounded-3xl px-8 py-5 shadow-2xl shadow-blue-500/30 flex items-center gap-6 min-w-[700px] max-w-[850px] backdrop-blur-xl">
-        
-        {/* Animated glow effect */}
-        <div className={`absolute inset-0 rounded-3xl bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 ${isPlaying ? 'animate-pulse' : ''}`} />
-        
-        {/* Previous Button */}
-        <button
-          onClick={onPrev}
-          disabled={!hasPrev}
-          className={`relative z-10 flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full transition-all duration-200 ${
-            hasPrev 
-              ? 'bg-gray-700/60 hover:bg-gray-600 text-white hover:scale-110' 
-              : 'bg-gray-800/30 text-gray-600 cursor-not-allowed'
-          }`}
-          title="Previous recording"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
+        {/* Sleek Pill Player - Centered within page content area */}
+        <div className="pointer-events-auto bg-gradient-to-r from-[#1A2647] to-[#0B1437] border border-blue-500/30 rounded-full px-5 py-2.5 shadow-2xl shadow-blue-500/20 flex items-center gap-4 w-[580px] max-w-[calc(100%-2rem)] backdrop-blur-xl relative mx-4 lg:mx-8">
+          
+          {/* Subtle glow effect */}
+          <div className={`absolute inset-0 rounded-full bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-blue-500/5 ${isPlaying ? 'animate-pulse' : ''}`} />
 
-        {/* Play/Pause Button - BIGGER */}
+        {/* Play/Pause Button */}
         <button
           onClick={handlePlayPause}
           disabled={isLoading}
-          className={`relative z-10 flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-full transition-all duration-300 hover:scale-110 ${
+          className={`relative z-10 flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-full transition-all duration-300 hover:scale-105 ${
             isLoading 
               ? 'bg-gray-600 cursor-wait' 
               : isPlaying 
-                ? 'bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 shadow-lg shadow-orange-500/40' 
-                : 'bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 shadow-lg shadow-blue-500/40'
+                ? 'bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 shadow-lg shadow-orange-500/30' 
+                : 'bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 shadow-lg shadow-blue-500/30'
           } text-white`}
         >
           {isLoading ? (
-            <div className="w-7 h-7 border-3 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : isPlaying ? (
-            <Pause className="w-7 h-7" />
+            <Pause className="w-5 h-5" />
           ) : (
-            <Play className="w-7 h-7 ml-1" />
+            <Play className="w-5 h-5 ml-0.5" />
           )}
         </button>
 
-        {/* Next Button */}
-        <button
-          onClick={onNext}
-          disabled={!hasNext}
-          className={`relative z-10 flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full transition-all duration-200 ${
-            hasNext 
-              ? 'bg-gray-700/60 hover:bg-gray-600 text-white hover:scale-110' 
-              : 'bg-gray-800/30 text-gray-600 cursor-not-allowed'
-          }`}
-          title="Next recording"
-        >
-          <ChevronRight className="w-6 h-6" />
-        </button>
-
-        {/* Info & Progress - BIGGER */}
+        {/* Info & Progress */}
         <div className="relative z-10 flex-1 min-w-0">
-          {/* Contact Name - Larger */}
-          <div className="flex items-center gap-3 mb-2">
-            <Volume2 className={`w-5 h-5 text-blue-400 flex-shrink-0 ${isPlaying ? 'animate-pulse' : ''}`} />
-            <span className="text-lg font-semibold text-white truncate">
+          {/* Contact Name */}
+          <div className="flex items-center gap-2 mb-1">
+            <Volume2 className={`w-3.5 h-3.5 text-blue-400 flex-shrink-0 ${isPlaying ? 'animate-pulse' : ''}`} />
+            <span className="text-sm font-medium text-white truncate">
               {playingCall.name}
             </span>
-            <span className="text-sm text-gray-400 truncate">
+            <span className="text-xs text-gray-400 truncate">
               {playingCall.phone}
             </span>
           </div>
 
-          {/* Progress Bar - Taller */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-300 w-12 text-right font-mono">
+          {/* Progress Bar */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-300 w-10 text-right font-mono">
               {formatTime(currentTime)}
             </span>
-            <div className="flex-1 relative h-2.5 bg-gray-700/80 rounded-full overflow-hidden cursor-pointer group">
-              {/* Progress fill with gradient */}
+            <div className="flex-1 relative h-1.5 bg-gray-700/80 rounded-full overflow-hidden cursor-pointer">
+              {/* Progress fill */}
               <div 
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 via-blue-400 to-cyan-400 rounded-full transition-all duration-150"
-                style={{ width: `${progress}%` }}
-              />
-              {/* Hover glow */}
-              <div 
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-400/50 to-cyan-400/50 rounded-full blur-sm transition-all duration-150"
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-150"
                 style={{ width: `${progress}%` }}
               />
               <input
@@ -253,16 +211,16 @@ function FloatingAudioPlayer({
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
             </div>
-            <span className="text-sm text-gray-300 w-12 font-mono">
+            <span className="text-xs text-gray-300 w-10 font-mono">
               {formatTime(duration)}
             </span>
           </div>
         </div>
 
-        {/* Speed Button - Cycles through 1x, 1.25x, 1.5x, 2x */}
+        {/* Speed Button */}
         <button
           onClick={cycleSpeed}
-          className="relative z-10 flex-shrink-0 flex items-center justify-center min-w-[60px] h-10 px-3 rounded-full bg-gray-700/60 hover:bg-gray-600 text-white transition-all duration-200 hover:scale-105 font-semibold text-sm"
+          className="relative z-10 flex-shrink-0 flex items-center justify-center w-14 h-8 rounded-full bg-gray-700/50 hover:bg-gray-600 text-white transition-all duration-200 hover:scale-105 font-semibold text-xs"
           title="Change playback speed"
         >
           {playbackSpeed}x
@@ -272,19 +230,19 @@ function FloatingAudioPlayer({
         <a
           href={proxyUrl}
           download={`recording-${playingCall.id}.mp3`}
-          className="relative z-10 flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-full bg-gray-700/60 hover:bg-gray-600 text-gray-300 hover:text-white transition-all duration-200 hover:scale-110"
+          className="relative z-10 flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-gray-700/50 hover:bg-gray-600 text-gray-300 hover:text-white transition-all duration-200 hover:scale-105"
           title="Download"
         >
-          <Download className="w-5 h-5" />
+          <Download className="w-4 h-4" />
         </a>
 
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="relative z-10 flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-400 hover:text-red-300 transition-all duration-200 hover:scale-110"
+          className="relative z-10 flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-400 hover:text-red-300 transition-all duration-200 hover:scale-105"
           title="Close"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -396,38 +354,17 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
     return null;
   };
 
-  // Get all calls with recordings for navigation
-  const callsWithRecordings = useMemo(() => {
-    return visibleCalls.filter(call => call.recording_url);
-  }, [visibleCalls]);
-
   // Handle play button click
   const handlePlayClick = (call: any) => {
     const name = call.lead_name || call.contact_name || 'Unknown';
     const phone = call.phone_number || call.contact_phone || '';
-    const index = callsWithRecordings.findIndex(c => c.id === call.id);
     
     setPlayingCall({
       id: call.id,
       name,
       phone: formatPhoneNumber(phone),
       recordingUrl: call.recording_url,
-      index,
     });
-  };
-
-  // Navigate to next recording
-  const handleNextRecording = () => {
-    if (!playingCall || playingCall.index >= callsWithRecordings.length - 1) return;
-    const nextCall = callsWithRecordings[playingCall.index + 1];
-    handlePlayClick(nextCall);
-  };
-
-  // Navigate to previous recording
-  const handlePrevRecording = () => {
-    if (!playingCall || playingCall.index <= 0) return;
-    const prevCall = callsWithRecordings[playingCall.index - 1];
-    handlePlayClick(prevCall);
   };
 
   // PDF Export Handler
@@ -843,10 +780,6 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
         <FloatingAudioPlayer
           playingCall={playingCall}
           onClose={() => setPlayingCall(null)}
-          onNext={handleNextRecording}
-          onPrev={handlePrevRecording}
-          hasNext={playingCall.index < callsWithRecordings.length - 1}
-          hasPrev={playingCall.index > 0}
         />
       )}
     </>

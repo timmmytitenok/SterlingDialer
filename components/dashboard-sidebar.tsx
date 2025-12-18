@@ -19,7 +19,7 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
     { name: 'AI Dialer', href: '/dashboard/ai-dialer', icon: Sparkles },
     { name: 'AI Messenger', href: '/dashboard/ai-messenger', icon: MessageSquare },
     { name: 'Appointments', href: '/dashboard/appointments', icon: CalendarDays },
-    { name: 'Call History', href: '/dashboard/activity-logs', icon: Phone },
+    { name: 'Call History', href: '/dashboard/call-history', icon: Phone },
   ];
 
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';

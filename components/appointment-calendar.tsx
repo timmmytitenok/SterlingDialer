@@ -66,6 +66,24 @@ export function AppointmentCalendar({
     return fullName.trim();
   };
 
+  // Helper: Format phone number nicely
+  const formatPhoneNumber = (phone: string | null) => {
+    if (!phone) return '';
+    
+    // Remove all non-digit characters
+    const digits = phone.replace(/\D/g, '');
+    
+    // Format based on length
+    if (digits.length === 10) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    } else if (digits.length === 11 && digits[0] === '1') {
+      return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+    }
+    
+    // Return original if format unclear
+    return phone;
+  };
+
   const getAppointmentsForSlot = (day: Date, hour: number) => {
     return appointments.filter(apt => {
       // Parse the appointment time and convert to local timezone
@@ -219,7 +237,7 @@ export function AppointmentCalendar({
                     <div>
                       <span className="text-white font-medium">{extractCustomerName(apt.prospect_name)}</span>
                       {apt.prospect_phone && (
-                        <span className="text-gray-400 text-sm ml-2">{apt.prospect_phone}</span>
+                        <span className="text-gray-400 text-sm ml-2">{formatPhoneNumber(apt.prospect_phone)}</span>
                       )}
                     </div>
                     <div className="text-right">

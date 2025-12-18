@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { SimpleStatCard } from '@/components/simple-stat-card';
+import { CustomizableStatCard } from '@/components/customizable-stat-card';
 import { RevenueProfitChart } from '@/components/revenue-profit-chart';
 import { CallActivityChart } from '@/components/call-activity-chart';
 import { DashboardStatsGrid } from '@/components/dashboard-stats-grid';
@@ -558,12 +559,18 @@ export default async function DashboardPage() {
             subtitle="All time calls"
             color="blue"
           />
-          <SimpleStatCard
-            title="BOOKED APPOINTMENTS"
-            icon="✅"
-            value={totalAppointments}
-            subtitle="All time bookings"
-            color="green"
+          <CustomizableStatCard
+            userId={user.id}
+            defaultKey="appointments"
+            options={[
+              { key: 'appointments', title: 'BOOKED APPOINTMENTS', icon: '✅', color: 'green', value: totalAppointments, subtitle: 'All time bookings' },
+              { key: 'revenue', title: 'REVENUE GENERATED', icon: '💵', color: 'green', value: totalRevenue, subtitle: 'All time revenue', prefix: '$' },
+              { key: 'policies', title: 'POLICIES SOLD', icon: '💰', color: 'yellow', value: policiesSold, subtitle: 'All time sales' },
+              { key: 'callbacks', title: 'CALLBACKS', icon: '📞', color: 'orange', value: callbacks, subtitle: 'All time callbacks' },
+              { key: 'transfers', title: 'LIVE TRANSFERS', icon: '🔄', color: 'purple', value: transfers, subtitle: 'All time transfers' },
+              { key: 'connected', title: 'CONNECTED CALLS', icon: '📱', color: 'blue', value: connectedCalls, subtitle: 'All time connections' },
+              { key: 'notInterested', title: 'NOT INTERESTED', icon: '❌', color: 'red', value: notInterested, subtitle: 'All time declines' },
+            ]}
           />
         </div>
 
