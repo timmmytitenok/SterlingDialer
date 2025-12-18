@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { Play, Pause, Square, ChevronLeft, ChevronRight, Search, FileText, X, Download, Volume2, Eye, EyeOff, User, Bot, Maximize2 } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { Play, Pause, Square, ChevronLeft, ChevronRight, Search, FileText, X, Download, Volume2 } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface ActivityLogsTableProps {
@@ -13,512 +13,50 @@ interface PlayingCall {
   name: string;
   phone: string;
   recordingUrl: string;
-  transcript?: string;
-  outcome?: string;
-  duration?: number;
+  index: number; // Index in the calls array for prev/next navigation
 }
 
-// Parse transcript into conversation format
-interface TranscriptMessage {
-  role: 'agent' | 'user';
-  content: string;
-  words?: { word: string; start: number; end: number }[];
-}
-
-function parseTranscript(transcript: string | undefined): TranscriptMessage[] {
-  if (!transcript) return [];
-  
-  // Debug log to see what we're getting
-  console.log('📝 Transcript raw:', typeof transcript, transcript?.substring?.(0, 200));
-  
-  try {
-    // Retell transcript format is an array of objects with role and content
-    const parsed = typeof transcript === 'string' ? JSON.parse(transcript) : transcript;
-    console.log('📝 Transcript parsed:', Array.isArray(parsed), parsed?.length);
-    
-    if (Array.isArray(parsed)) {
-      return parsed.map((msg: any) => ({
-        role: msg.role === 'agent' ? 'agent' : 'user',
-        content: msg.content || msg.text || msg.message || '',
-        words: msg.words || [],
-      }));
-    }
-    
-    // Handle object with transcript array inside
-    if (parsed?.transcript && Array.isArray(parsed.transcript)) {
-      return parsed.transcript.map((msg: any) => ({
-        role: msg.role === 'agent' ? 'agent' : 'user',
-        content: msg.content || msg.text || msg.message || '',
-        words: msg.words || [],
-      }));
-    }
-  } catch (e) {
-    console.log('📝 Transcript parse error:', e);
-    // If not JSON, try to display as plain text
-    if (typeof transcript === 'string' && transcript.length > 0) {
-      return [{ role: 'agent', content: transcript, words: [] }];
-    }
-  }
-  return [];
-}
-
-// Get current speaker based on audio time
-function getCurrentSpeaker(transcript: TranscriptMessage[], currentTime: number): 'agent' | 'user' | null {
-  for (const msg of transcript) {
-    if (msg.words && msg.words.length > 0) {
-      const firstWord = msg.words[0];
-      const lastWord = msg.words[msg.words.length - 1];
-      if (currentTime >= firstWord.start && currentTime <= lastWord.end) {
-        return msg.role;
-      }
-    }
-  }
-  return null;
-}
-
-// Waveform Visualizer Component - Smooth reactive animation
-function WaveformVisualizer({ 
-  isPlaying, 
-  speaker,
-  audioRef,
-}: { 
-  isPlaying: boolean; 
-  speaker: 'agent' | 'user' | null;
-  audioRef: React.RefObject<HTMLAudioElement | null>;
-}) {
-  const NUM_BARS = 48;
-  const [bars, setBars] = useState<number[]>(Array(NUM_BARS).fill(5));
-  const [intensity, setIntensity] = useState(0);
-  const frameRef = useRef(0);
-  const prevTimeRef = useRef(0);
-  
-  // Animate bars based on audio playback
-  useEffect(() => {
-    if (!isPlaying) {
-      // Smoothly animate down when paused
-      const fadeOut = setInterval(() => {
-        setBars(prev => prev.map(h => Math.max(5, h * 0.9)));
-        setIntensity(prev => Math.max(0, prev * 0.9));
-      }, 50);
-      return () => clearInterval(fadeOut);
-    }
-    
-    let animationId: number;
-    
-    const animate = () => {
-      frameRef.current++;
-      const time = Date.now();
-      
-      // Check if audio is actually progressing (not stalled)
-      const currentAudioTime = audioRef.current?.currentTime || 0;
-      const isActuallyPlaying = currentAudioTime !== prevTimeRef.current;
-      prevTimeRef.current = currentAudioTime;
-      
-      // Calculate dynamic intensity - varies over time to simulate speech patterns
-      const baseIntensity = isActuallyPlaying ? 60 : 20;
-      const speechVariation = Math.sin(time / 300) * 20 + Math.sin(time / 150) * 15;
-      const burstChance = Math.random();
-      const burst = burstChance > 0.92 ? 30 : burstChance > 0.85 ? 15 : 0; // Random bursts
-      const newIntensity = Math.max(20, Math.min(100, baseIntensity + speechVariation + burst));
-      setIntensity(newIntensity);
-      
-      // Generate bars with natural wave patterns
-      const newBars = Array(NUM_BARS).fill(0).map((_, i) => {
-        // Multiple wave frequencies for organic feel
-        const wave1 = Math.sin((time / 100) + (i * 0.2)) * 20;
-        const wave2 = Math.sin((time / 200) + (i * 0.4)) * 15;
-        const wave3 = Math.cos((time / 80) + (i * 0.15)) * 10;
-        
-        // Center bars are taller (bell curve distribution)
-        const centerFactor = 1 - Math.abs(i - NUM_BARS / 2) / (NUM_BARS / 2);
-        const centerBoost = centerFactor * 30;
-        
-        // Random variation per bar
-        const randomFactor = (Math.sin(time / 50 + i * 100) + 1) * 10;
-        
-        // Combine all factors
-        const height = isActuallyPlaying 
-          ? Math.max(8, Math.min(95, 
-              30 + wave1 + wave2 + wave3 + centerBoost + randomFactor * (newIntensity / 50)
-            ))
-          : Math.max(5, 15 + wave1 * 0.3);
-        
-        return height;
-      });
-      
-      setBars(newBars);
-      animationId = requestAnimationFrame(animate);
-    };
-    
-    animate();
-    
-    return () => {
-      if (animationId) cancelAnimationFrame(animationId);
-    };
-  }, [isPlaying, audioRef]);
-  
-  // Color based on speaker and bar height
-  const getBarStyle = (index: number, height: number) => {
-    const isActive = isPlaying && height > 15;
-    
-    if (speaker === 'agent') {
-      // Purple/Blue gradient
-      const hue = 250 + (index / NUM_BARS) * 30; // 250-280 (purple to blue)
-      const saturation = 70 + (height / 100) * 30;
-      const lightness = 40 + (height / 100) * 25;
-      return {
-        backgroundColor: isActive ? `hsl(${hue}, ${saturation}%, ${lightness}%)` : '#374151',
-        boxShadow: isActive && height > 30 
-          ? `0 0 ${height / 4}px hsl(${hue}, 80%, 60%), 0 0 ${height / 2}px hsl(${hue}, 60%, 40%)`
-          : 'none',
-      };
-    } else if (speaker === 'user') {
-      // Green/Teal gradient
-      const hue = 150 + (index / NUM_BARS) * 30; // 150-180 (green to teal)
-      const saturation = 60 + (height / 100) * 40;
-      const lightness = 35 + (height / 100) * 30;
-      return {
-        backgroundColor: isActive ? `hsl(${hue}, ${saturation}%, ${lightness}%)` : '#374151',
-        boxShadow: isActive && height > 30 
-          ? `0 0 ${height / 4}px hsl(${hue}, 80%, 55%), 0 0 ${height / 2}px hsl(${hue}, 60%, 35%)`
-          : 'none',
-      };
-    }
-    
-    return {
-      backgroundColor: '#4B5563',
-      boxShadow: 'none',
-    };
-  };
-  
-  // Glow color based on speaker
-  const getGlowColor = () => {
-    if (!isPlaying) return 'transparent';
-    const alpha = 0.3 + (intensity / 200);
-    if (speaker === 'agent') return `rgba(139, 92, 246, ${alpha})`;
-    if (speaker === 'user') return `rgba(52, 211, 153, ${alpha})`;
-    return 'transparent';
-  };
-
-  return (
-    <div className="relative flex items-center justify-center h-72 w-full overflow-hidden">
-      {/* Animated glow backdrop */}
-      <div 
-        className="absolute inset-0 rounded-3xl blur-3xl"
-        style={{ 
-          backgroundColor: getGlowColor(),
-          opacity: isPlaying ? 0.7 : 0,
-          transform: `scale(${1 + intensity / 300})`,
-          transition: 'opacity 300ms, transform 100ms',
-        }}
-      />
-      
-      {/* Secondary pulsing glow */}
-      {isPlaying && speaker && (
-        <div 
-          className="absolute inset-0 rounded-3xl blur-2xl animate-pulse"
-          style={{ 
-            backgroundColor: speaker === 'agent' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(52, 211, 153, 0.2)',
-          }}
-        />
-      )}
-      
-      {/* Waveform bars */}
-      <div className="relative flex items-end justify-center gap-[2px] h-full w-full px-8 pb-20">
-        {bars.map((height, i) => {
-          const style = getBarStyle(i, height);
-          return (
-            <div
-              key={i}
-              className="rounded-full"
-              style={{
-                height: `${height}%`,
-                width: '7px',
-                minHeight: '4px',
-                opacity: isPlaying ? 0.95 : 0.4,
-                backgroundColor: style.backgroundColor,
-                boxShadow: style.boxShadow,
-                transition: 'height 80ms ease-out, background-color 150ms, box-shadow 150ms',
-              }}
-            />
-          );
-        })}
-      </div>
-      
-      {/* Speaker label with reactive scale */}
-      {isPlaying && speaker && (
-        <div 
-          className={`absolute bottom-6 left-1/2 px-8 py-3 rounded-full font-bold text-xl ${
-            speaker === 'agent' 
-              ? 'bg-purple-500/40 text-purple-200 border-2 border-purple-400/60' 
-              : 'bg-emerald-500/40 text-emerald-200 border-2 border-emerald-400/60'
-          }`}
-          style={{
-            transform: `translateX(-50%) scale(${1 + intensity / 500})`,
-            boxShadow: `0 0 ${intensity / 2}px ${speaker === 'agent' ? 'rgba(139, 92, 246, 0.6)' : 'rgba(52, 211, 153, 0.6)'}`,
-            transition: 'transform 100ms, box-shadow 100ms',
-          }}
-        >
-          {speaker === 'agent' ? '🤖 AI Speaking' : '👤 Customer Speaking'}
-        </div>
-      )}
-      
-      {/* Intensity indicator */}
-      {isPlaying && (
-        <div className="absolute top-4 right-4 flex items-center gap-2">
-          <div className="flex gap-1">
-            {[...Array(5)].map((_, i) => (
-              <div 
-                key={i}
-                className={`w-1.5 rounded-full transition-all duration-150 ${
-                  intensity > i * 20 
-                    ? speaker === 'agent' ? 'bg-purple-400' : speaker === 'user' ? 'bg-emerald-400' : 'bg-gray-400'
-                    : 'bg-gray-700'
-                }`}
-                style={{ height: `${8 + i * 4}px` }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Expanded TikTok-style Player Modal with Waveform
-function ExpandedPlayerModal({
-  playingCall,
-  audioRef,
-  currentTime,
-  duration,
-  isPlaying,
-  isLoading,
-  onPlayPause,
-  onSeek,
-  onClose,
-  formatTime,
-  onSpeedChange,
-  playbackSpeed,
-}: {
-  playingCall: PlayingCall;
-  audioRef: React.RefObject<HTMLAudioElement | null>;
-  currentTime: number;
-  duration: number;
-  isPlaying: boolean;
-  isLoading: boolean;
-  onPlayPause: () => void;
-  onSeek: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onClose: () => void;
-  formatTime: (seconds: number) => string;
-  onSpeedChange: () => void;
-  playbackSpeed: number;
-}) {
-  const [phoneHidden, setPhoneHidden] = useState(false);
-  const transcript = parseTranscript(playingCall.transcript);
-  
-  // Determine who's currently speaking based on time
-  const currentSpeaker = getCurrentSpeaker(transcript, currentTime);
-
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-  
-  // Hide last 7 digits of phone number with blur
-  const getDisplayPhone = () => {
-    if (!phoneHidden) return playingCall.phone;
-    const digits = playingCall.phone.replace(/\D/g, '');
-    if (digits.length >= 7) {
-      return playingCall.phone.slice(0, -7) + '•••••••';
-    }
-    return '•••••••••••';
-  };
-  
-  // Speed display text
-  const getSpeedText = () => {
-    if (playbackSpeed === 1) return '1x';
-    return `${playbackSpeed}x`;
-  };
-
-  return (
-    <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center p-8 md:p-16 lg:p-24 animate-in fade-in duration-200"
-      onClick={onClose}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" />
-      
-      {/* Modal Content */}
-      <div 
-        className="relative w-full max-w-4xl h-full max-h-[600px] bg-gradient-to-br from-[#0B1437] via-[#1A2647] to-[#0B1437] rounded-3xl border border-blue-500/30 shadow-2xl shadow-blue-500/20 overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-800/50">
-          <div className="flex items-center gap-4">
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
-              currentSpeaker === 'agent' 
-                ? 'bg-gradient-to-br from-purple-500 to-blue-600 shadow-lg shadow-purple-500/50' 
-                : currentSpeaker === 'user'
-                  ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/50'
-                  : 'bg-gradient-to-br from-gray-600 to-gray-700'
-            }`}>
-              <Volume2 className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">{playingCall.name}</h2>
-              <div className="flex items-center gap-2">
-                <span className={`text-gray-400 font-mono text-sm transition-all ${phoneHidden ? 'blur-sm select-none' : ''}`}>
-                  {getDisplayPhone()}
-                </span>
-                <button
-                  onClick={() => setPhoneHidden(!phoneHidden)}
-                  className="p-1.5 rounded-lg hover:bg-gray-700/50 transition-colors"
-                  title={phoneHidden ? 'Show number' : 'Hide number'}
-                >
-                  {phoneHidden ? (
-                    <EyeOff className="w-4 h-4 text-gray-400" />
-                  ) : (
-                    <Eye className="w-4 h-4 text-gray-400" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="p-3 rounded-full bg-gray-800/50 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-all"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Main Content - Big Waveform */}
-        <div className="flex-1 flex items-center justify-center p-8">
-          <WaveformVisualizer 
-            isPlaying={isPlaying} 
-            speaker={currentSpeaker}
-            audioRef={audioRef}
-          />
-        </div>
-
-        {/* Player Controls (Bottom) */}
-        <div className="p-6 border-t border-gray-800/50 bg-[#0B1437]/50">
-          <div className="flex items-center gap-6">
-            {/* Play/Pause Button */}
-            <button
-              onClick={onPlayPause}
-              disabled={isLoading}
-              className={`flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-full transition-all ${
-                isLoading 
-                  ? 'bg-gray-600 cursor-wait' 
-                  : isPlaying 
-                    ? 'bg-gradient-to-br from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 shadow-lg shadow-orange-500/30' 
-                    : 'bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-lg shadow-blue-500/30'
-              } text-white`}
-            >
-              {isLoading ? (
-                <div className="w-7 h-7 border-3 border-white border-t-transparent rounded-full animate-spin" />
-              ) : isPlaying ? (
-                <Pause className="w-7 h-7" />
-              ) : (
-                <Play className="w-7 h-7 ml-1" />
-              )}
-            </button>
-
-            {/* Progress */}
-            <div className="flex-1">
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-400 font-mono w-12 text-right">
-                  {formatTime(currentTime)}
-                </span>
-                <div className="flex-1 relative h-2 bg-gray-700 rounded-full overflow-hidden group">
-                  <div 
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full transition-all duration-100"
-                    style={{ width: `${progress}%` }}
-                  />
-                  <input
-                    type="range"
-                    min="0"
-                    max={duration || 100}
-                    value={currentTime}
-                    onChange={onSeek}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  {/* Hover indicator */}
-                  <div 
-                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                    style={{ left: `calc(${progress}% - 8px)` }}
-                  />
-                </div>
-                <span className="text-sm text-gray-400 font-mono w-12">
-                  {formatTime(duration)}
-                </span>
-              </div>
-            </div>
-
-            {/* Speed Control */}
-            <button
-              onClick={onSpeedChange}
-              className="flex-shrink-0 flex items-center justify-center min-w-[56px] h-12 px-3 rounded-full bg-gray-700/50 hover:bg-purple-500/30 text-gray-300 hover:text-purple-300 transition-all font-bold text-sm border border-transparent hover:border-purple-500/50"
-              title="Change playback speed"
-            >
-              {getSpeedText()}
-            </button>
-
-            {/* Download */}
-            <a
-              href={`/api/recordings/stream?url=${encodeURIComponent(playingCall.recordingUrl)}`}
-              download={`recording-${playingCall.id}.mp3`}
-              className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-gray-700/50 hover:bg-gray-600 text-gray-400 hover:text-white transition-all"
-              title="Download"
-            >
-              <Download className="w-5 h-5" />
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Floating Audio Player Component
+// Floating Audio Player Component - ENHANCED VERSION
 function FloatingAudioPlayer({ 
   playingCall,
-  onClose 
+  onClose,
+  onNext,
+  onPrev,
+  hasNext,
+  hasPrev,
 }: { 
   playingCall: PlayingCall;
   onClose: () => void;
+  onNext: () => void;
+  onPrev: () => void;
+  hasNext: boolean;
+  hasPrev: boolean;
 }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [isVisible, setIsVisible] = useState(false);
 
-  // Speed options: 1x -> 1.25x -> 1.5x -> 2x -> 1x
-  const SPEED_OPTIONS = [1, 1.25, 1.5, 2];
-  
-  const handleSpeedChange = () => {
-    const currentIndex = SPEED_OPTIONS.indexOf(playbackSpeed);
-    const nextIndex = (currentIndex + 1) % SPEED_OPTIONS.length;
-    const newSpeed = SPEED_OPTIONS[nextIndex];
-    setPlaybackSpeed(newSpeed);
-    if (audioRef.current) {
-      audioRef.current.playbackRate = newSpeed;
-    }
-  };
+  const speeds = [1, 1.25, 1.5, 2];
 
   // Create proxied URL
   const proxyUrl = `/api/recordings/stream?url=${encodeURIComponent(playingCall.recordingUrl)}`;
 
-  // Auto-play when mounted
+  // Smooth entrance animation
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 10);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Auto-play when mounted or when playingCall changes
   useEffect(() => {
     if (audioRef.current) {
       setIsLoading(true);
+      setCurrentTime(0);
+      audioRef.current.playbackRate = playbackSpeed;
       audioRef.current.play().then(() => {
         setIsPlaying(true);
         setIsLoading(false);
@@ -528,6 +66,13 @@ function FloatingAudioPlayer({
       });
     }
   }, [playingCall.id]);
+
+  // Update playback speed when changed
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackSpeed;
+    }
+  }, [playbackSpeed]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -547,12 +92,15 @@ function FloatingAudioPlayer({
     }
   };
 
-  const handleStop = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    onClose();
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(() => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      onClose();
+    }, 300); // Wait for exit animation
   };
 
   const handleTimeUpdate = () => {
@@ -564,6 +112,7 @@ function FloatingAudioPlayer({
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       setDuration(audioRef.current.duration);
+      audioRef.current.playbackRate = playbackSpeed;
     }
     setIsLoading(false);
   };
@@ -576,20 +125,31 @@ function FloatingAudioPlayer({
     }
   };
 
+  // Auto-close when audio ends
   const handleEnded = () => {
     setCurrentTime(0);
     setIsPlaying(false);
+    // Auto-close the player when audio finishes
+    handleClose();
   };
 
-  // Handle pill click to expand
-  const handlePillClick = () => {
-    setIsExpanded(true);
+  // Cycle through playback speeds
+  const cycleSpeed = () => {
+    const currentIndex = speeds.indexOf(playbackSpeed);
+    const nextIndex = (currentIndex + 1) % speeds.length;
+    setPlaybackSpeed(speeds[nextIndex]);
   };
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <>
+    <div 
+      className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out ${
+        isVisible 
+          ? 'opacity-100 translate-y-0 scale-100' 
+          : 'opacity-0 translate-y-8 scale-95'
+      }`}
+    >
       {/* Hidden audio element */}
       <audio
         ref={audioRef}
@@ -600,145 +160,134 @@ function FloatingAudioPlayer({
         preload="auto"
       />
 
-      {/* Expanded Modal */}
-      {isExpanded && (
-        <ExpandedPlayerModal
-          playingCall={playingCall}
-          audioRef={audioRef}
-          currentTime={currentTime}
-          duration={duration}
-          isPlaying={isPlaying}
-          isLoading={isLoading}
-          onPlayPause={handlePlayPause}
-          onSeek={handleSeek}
-          onClose={() => setIsExpanded(false)}
-          formatTime={formatTime}
-          onSpeedChange={handleSpeedChange}
-          playbackSpeed={playbackSpeed}
-        />
-      )}
-
-      {/* Floating Pill Player */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 duration-300">
-        {/* Pill Player - with smooth hover/press animations using CSS */}
-        <div 
-          className="pill-player bg-gradient-to-r from-[#1A2647] to-[#0B1437] border border-blue-500/30 rounded-full px-4 py-3 shadow-2xl shadow-blue-500/20 flex items-center gap-4 min-w-[400px] max-w-[500px] cursor-pointer"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => { setIsHovered(false); setIsPressed(false); }}
-          onMouseDown={() => setIsPressed(true)}
-          onMouseUp={() => { setIsPressed(false); handlePillClick(); }}
-          style={{
-            transform: isPressed ? 'scale(0.97)' : isHovered ? 'scale(1.03)' : 'scale(1)',
-            boxShadow: isHovered 
-              ? '0 25px 50px -12px rgba(59, 130, 246, 0.4)' 
-              : '0 25px 50px -12px rgba(59, 130, 246, 0.2)',
-            borderColor: isHovered ? 'rgba(96, 165, 250, 0.5)' : 'rgba(59, 130, 246, 0.3)',
-            transition: 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 300ms ease, border-color 300ms ease',
-          }}
+      {/* BIGGER Pill Player - 2.5x larger */}
+      <div className="bg-gradient-to-br from-[#1A2647] via-[#162040] to-[#0B1437] border border-blue-500/40 rounded-3xl px-8 py-5 shadow-2xl shadow-blue-500/30 flex items-center gap-6 min-w-[700px] max-w-[850px] backdrop-blur-xl">
+        
+        {/* Animated glow effect */}
+        <div className={`absolute inset-0 rounded-3xl bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 ${isPlaying ? 'animate-pulse' : ''}`} />
+        
+        {/* Previous Button */}
+        <button
+          onClick={onPrev}
+          disabled={!hasPrev}
+          className={`relative z-10 flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full transition-all duration-200 ${
+            hasPrev 
+              ? 'bg-gray-700/60 hover:bg-gray-600 text-white hover:scale-110' 
+              : 'bg-gray-800/30 text-gray-600 cursor-not-allowed'
+          }`}
+          title="Previous recording"
         >
-          {/* Play/Pause Button */}
-          <button
-            onClick={(e) => { e.stopPropagation(); handlePlayPause(); }}
-            disabled={isLoading}
-            className={`flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full transition-all ${
-              isLoading 
-                ? 'bg-gray-600 cursor-wait' 
-                : isPlaying 
-                  ? 'bg-orange-500 hover:bg-orange-600' 
-                  : 'bg-blue-500 hover:bg-blue-600'
-            } text-white shadow-lg`}
-          >
-            {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : isPlaying ? (
-              <Pause className="w-5 h-5" />
-            ) : (
-              <Play className="w-5 h-5 ml-0.5" />
-            )}
-          </button>
+          <ChevronLeft className="w-6 h-6" />
+        </button>
 
-          {/* Info & Progress */}
-          <div className="flex-1 min-w-0">
-            {/* Contact Name */}
-            <div className="flex items-center gap-2 mb-1">
-              <Volume2 className="w-3 h-3 text-blue-400 flex-shrink-0" />
-              <span className="text-sm font-medium text-white truncate">
-                {playingCall.name}
-              </span>
-              <span className="text-xs text-gray-500 truncate">
-                {playingCall.phone}
-              </span>
-            </div>
+        {/* Play/Pause Button - BIGGER */}
+        <button
+          onClick={handlePlayPause}
+          disabled={isLoading}
+          className={`relative z-10 flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-full transition-all duration-300 hover:scale-110 ${
+            isLoading 
+              ? 'bg-gray-600 cursor-wait' 
+              : isPlaying 
+                ? 'bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 shadow-lg shadow-orange-500/40' 
+                : 'bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 shadow-lg shadow-blue-500/40'
+          } text-white`}
+        >
+          {isLoading ? (
+            <div className="w-7 h-7 border-3 border-white border-t-transparent rounded-full animate-spin" />
+          ) : isPlaying ? (
+            <Pause className="w-7 h-7" />
+          ) : (
+            <Play className="w-7 h-7 ml-1" />
+          )}
+        </button>
 
-            {/* Progress Bar */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 w-9 text-right font-mono">
-                {formatTime(currentTime)}
-              </span>
-              <div className="flex-1 relative h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                <div 
-                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-100"
-                  style={{ width: `${progress}%` }}
-                />
-                <input
-                  type="range"
-                  min="0"
-                  max={duration || 100}
-                  value={currentTime}
-                  onChange={(e) => { e.stopPropagation(); handleSeek(e); }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-              </div>
-              <span className="text-xs text-gray-400 w-9 font-mono">
-                {formatTime(duration)}
-              </span>
-            </div>
+        {/* Next Button */}
+        <button
+          onClick={onNext}
+          disabled={!hasNext}
+          className={`relative z-10 flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full transition-all duration-200 ${
+            hasNext 
+              ? 'bg-gray-700/60 hover:bg-gray-600 text-white hover:scale-110' 
+              : 'bg-gray-800/30 text-gray-600 cursor-not-allowed'
+          }`}
+          title="Next recording"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </button>
+
+        {/* Info & Progress - BIGGER */}
+        <div className="relative z-10 flex-1 min-w-0">
+          {/* Contact Name - Larger */}
+          <div className="flex items-center gap-3 mb-2">
+            <Volume2 className={`w-5 h-5 text-blue-400 flex-shrink-0 ${isPlaying ? 'animate-pulse' : ''}`} />
+            <span className="text-lg font-semibold text-white truncate">
+              {playingCall.name}
+            </span>
+            <span className="text-sm text-gray-400 truncate">
+              {playingCall.phone}
+            </span>
           </div>
 
-          {/* Expand Button */}
-          <button
-            onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
-            className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/40 text-purple-400 hover:text-purple-300 transition-all"
-            title="Expand (TikTok Mode)"
-          >
-            <Maximize2 className="w-4 h-4" />
-          </button>
-
-          {/* Download Button */}
-          <a
-            href={proxyUrl}
-            download={`recording-${playingCall.id}.mp3`}
-            onClick={(e) => e.stopPropagation()}
-            className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-gray-700/50 hover:bg-gray-600 text-gray-400 hover:text-white transition-all"
-            title="Download"
-          >
-            <Download className="w-4 h-4" />
-          </a>
-
-          {/* Close Button */}
-          <button
-            onClick={(e) => { e.stopPropagation(); handleStop(); }}
-            className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-400 hover:text-red-300 transition-all"
-            title="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {/* Progress Bar - Taller */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-300 w-12 text-right font-mono">
+              {formatTime(currentTime)}
+            </span>
+            <div className="flex-1 relative h-2.5 bg-gray-700/80 rounded-full overflow-hidden cursor-pointer group">
+              {/* Progress fill with gradient */}
+              <div 
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 via-blue-400 to-cyan-400 rounded-full transition-all duration-150"
+                style={{ width: `${progress}%` }}
+              />
+              {/* Hover glow */}
+              <div 
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-400/50 to-cyan-400/50 rounded-full blur-sm transition-all duration-150"
+                style={{ width: `${progress}%` }}
+              />
+              <input
+                type="range"
+                min="0"
+                max={duration || 100}
+                value={currentTime}
+                onChange={handleSeek}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+            </div>
+            <span className="text-sm text-gray-300 w-12 font-mono">
+              {formatTime(duration)}
+            </span>
+          </div>
         </div>
-        
-        {/* Hint text - always visible but fades on hover */}
-        <p 
-          className="text-center text-xs text-gray-500 mt-2 transition-all duration-300"
-          style={{
-            opacity: isHovered ? 1 : 0.6,
-            transform: isHovered ? 'translateY(0)' : 'translateY(-2px)',
-            color: isHovered ? 'rgb(156, 163, 175)' : 'rgb(107, 114, 128)',
-          }}
+
+        {/* Speed Button - Cycles through 1x, 1.25x, 1.5x, 2x */}
+        <button
+          onClick={cycleSpeed}
+          className="relative z-10 flex-shrink-0 flex items-center justify-center min-w-[60px] h-10 px-3 rounded-full bg-gray-700/60 hover:bg-gray-600 text-white transition-all duration-200 hover:scale-105 font-semibold text-sm"
+          title="Change playback speed"
         >
-          {isHovered ? 'Click to expand • TikTok Mode 🎬' : 'Hover to expand'}
-        </p>
+          {playbackSpeed}x
+        </button>
+
+        {/* Download Button */}
+        <a
+          href={proxyUrl}
+          download={`recording-${playingCall.id}.mp3`}
+          className="relative z-10 flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-full bg-gray-700/60 hover:bg-gray-600 text-gray-300 hover:text-white transition-all duration-200 hover:scale-110"
+          title="Download"
+        >
+          <Download className="w-5 h-5" />
+        </a>
+
+        {/* Close Button */}
+        <button
+          onClick={handleClose}
+          className="relative z-10 flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-400 hover:text-red-300 transition-all duration-200 hover:scale-110"
+          title="Close"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -847,20 +396,38 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
     return null;
   };
 
+  // Get all calls with recordings for navigation
+  const callsWithRecordings = useMemo(() => {
+    return visibleCalls.filter(call => call.recording_url);
+  }, [visibleCalls]);
+
   // Handle play button click
   const handlePlayClick = (call: any) => {
     const name = call.lead_name || call.contact_name || 'Unknown';
     const phone = call.phone_number || call.contact_phone || '';
+    const index = callsWithRecordings.findIndex(c => c.id === call.id);
     
     setPlayingCall({
       id: call.id,
       name,
       phone: formatPhoneNumber(phone),
       recordingUrl: call.recording_url,
-      transcript: call.transcript,
-      outcome: call.outcome,
-      duration: call.duration_seconds || (call.duration ? call.duration * 60 : undefined),
+      index,
     });
+  };
+
+  // Navigate to next recording
+  const handleNextRecording = () => {
+    if (!playingCall || playingCall.index >= callsWithRecordings.length - 1) return;
+    const nextCall = callsWithRecordings[playingCall.index + 1];
+    handlePlayClick(nextCall);
+  };
+
+  // Navigate to previous recording
+  const handlePrevRecording = () => {
+    if (!playingCall || playingCall.index <= 0) return;
+    const prevCall = callsWithRecordings[playingCall.index - 1];
+    handlePlayClick(prevCall);
   };
 
   // PDF Export Handler
@@ -1276,6 +843,10 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
         <FloatingAudioPlayer
           playingCall={playingCall}
           onClose={() => setPlayingCall(null)}
+          onNext={handleNextRecording}
+          onPrev={handlePrevRecording}
+          hasNext={playingCall.index < callsWithRecordings.length - 1}
+          hasPrev={playingCall.index > 0}
         />
       )}
     </>

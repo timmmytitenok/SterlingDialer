@@ -386,7 +386,7 @@ export async function POST(request: Request) {
         connected: callWasAnswered,
         cost: callCost,
         recording_url: recording_url,
-        transcript: typeof transcript === 'string' ? transcript : JSON.stringify(transcript),
+        transcript: transcript,
         call_analysis: call_analysis,
         disconnection_reason: disconnection_reason,
         in_voicemail: inVoicemail,
