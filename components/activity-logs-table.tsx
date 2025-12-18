@@ -76,78 +76,149 @@ function getCurrentSpeaker(transcript: TranscriptMessage[], currentTime: number)
   return null;
 }
 
-// Waveform Visualizer Component
+// Waveform Visualizer Component - REAL Audio Reactive!
 function WaveformVisualizer({ 
   isPlaying, 
   speaker,
-  intensity = 1,
+  audioRef,
 }: { 
   isPlaying: boolean; 
   speaker: 'agent' | 'user' | null;
-  intensity?: number;
+  audioRef: React.RefObject<HTMLAudioElement | null>;
 }) {
-  const [bars, setBars] = useState<number[]>(Array(40).fill(20));
+  const [bars, setBars] = useState<number[]>(Array(64).fill(5));
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const isConnectedRef = useRef(false);
   
+  // Setup Web Audio API analyzer
   useEffect(() => {
-    if (!isPlaying) {
-      setBars(Array(40).fill(20));
+    if (!audioRef.current || isConnectedRef.current) return;
+    
+    try {
+      // Create audio context
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioContextRef.current = audioContext;
+      
+      // Create analyzer
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 128; // 64 frequency bins
+      analyser.smoothingTimeConstant = 0.8;
+      analyserRef.current = analyser;
+      
+      // Connect audio element to analyzer
+      const source = audioContext.createMediaElementSource(audioRef.current);
+      source.connect(analyser);
+      analyser.connect(audioContext.destination);
+      sourceRef.current = source;
+      isConnectedRef.current = true;
+      
+      console.log('🎵 Audio analyzer connected!');
+    } catch (err) {
+      console.log('Audio context error (may already be connected):', err);
+    }
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [audioRef]);
+  
+  // Animation loop to read frequency data
+  useEffect(() => {
+    if (!isPlaying || !analyserRef.current) {
+      setBars(Array(64).fill(5));
       return;
     }
     
-    const interval = setInterval(() => {
-      setBars(prev => prev.map((_, i) => {
-        // Create wave pattern with some randomness
-        const baseHeight = 20 + Math.sin(Date.now() / 200 + i * 0.3) * 30;
-        const randomness = Math.random() * 40 * intensity;
-        return Math.min(100, Math.max(10, baseHeight + randomness));
-      }));
-    }, 50);
+    const analyser = analyserRef.current;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
     
-    return () => clearInterval(interval);
-  }, [isPlaying, intensity]);
+    const updateBars = () => {
+      analyser.getByteFrequencyData(dataArray);
+      
+      // Convert frequency data to bar heights (0-100)
+      const newBars = Array.from(dataArray).map(value => {
+        // value is 0-255, convert to percentage with minimum height
+        const height = Math.max(5, (value / 255) * 100);
+        return height;
+      });
+      
+      setBars(newBars);
+      animationRef.current = requestAnimationFrame(updateBars);
+    };
+    
+    // Resume audio context if suspended (browsers require user interaction)
+    if (audioContextRef.current?.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
+    
+    updateBars();
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isPlaying]);
   
   // Color based on speaker
-  const getBarColor = (index: number) => {
-    if (!isPlaying) return 'bg-gray-600';
+  const getBarColor = (index: number, height: number) => {
+    if (!isPlaying || height < 10) return 'bg-gray-700';
     if (speaker === 'agent') {
-      // Purple/Blue gradient
-      return index % 3 === 0 ? 'bg-purple-500' : index % 3 === 1 ? 'bg-blue-500' : 'bg-indigo-500';
+      // Purple/Blue gradient based on intensity
+      if (height > 70) return 'bg-purple-400';
+      if (height > 40) return 'bg-blue-500';
+      return 'bg-indigo-600';
     } else if (speaker === 'user') {
-      // Green gradient
-      return index % 3 === 0 ? 'bg-emerald-500' : index % 3 === 1 ? 'bg-green-500' : 'bg-teal-500';
+      // Green gradient based on intensity
+      if (height > 70) return 'bg-emerald-400';
+      if (height > 40) return 'bg-green-500';
+      return 'bg-teal-600';
     }
     return 'bg-gray-500';
   };
   
+  // Calculate overall volume for glow intensity
+  const avgVolume = bars.reduce((a, b) => a + b, 0) / bars.length;
+  
   const getGlowColor = () => {
     if (!isPlaying) return 'transparent';
-    if (speaker === 'agent') return 'rgba(139, 92, 246, 0.5)'; // Purple glow
-    if (speaker === 'user') return 'rgba(52, 211, 153, 0.5)'; // Green glow
+    if (speaker === 'agent') return `rgba(139, 92, 246, ${0.3 + avgVolume / 200})`; // Purple glow
+    if (speaker === 'user') return `rgba(52, 211, 153, ${0.3 + avgVolume / 200})`; // Green glow
     return 'transparent';
   };
 
   return (
-    <div className="relative flex items-center justify-center h-64 w-full">
-      {/* Glow backdrop */}
+    <div className="relative flex items-center justify-center h-72 w-full">
+      {/* Glow backdrop - intensity based on volume */}
       <div 
-        className="absolute inset-0 rounded-3xl blur-3xl transition-all duration-500"
+        className="absolute inset-0 rounded-3xl blur-3xl transition-all duration-150"
         style={{ 
           backgroundColor: getGlowColor(),
-          opacity: isPlaying ? 0.6 : 0,
+          opacity: isPlaying ? Math.min(0.8, 0.3 + avgVolume / 150) : 0,
+          transform: `scale(${1 + avgVolume / 500})`,
         }}
       />
       
       {/* Waveform bars */}
-      <div className="relative flex items-center justify-center gap-1 h-full w-full px-4">
+      <div className="relative flex items-end justify-center gap-[3px] h-full w-full px-4 pb-16">
         {bars.map((height, i) => (
           <div
             key={i}
-            className={`rounded-full transition-all duration-75 ${getBarColor(i)}`}
+            className={`rounded-full transition-all duration-[50ms] ${getBarColor(i, height)}`}
             style={{
               height: `${height}%`,
-              width: '8px',
-              opacity: isPlaying ? 0.9 : 0.3,
-              boxShadow: isPlaying ? `0 0 10px ${speaker === 'agent' ? 'rgba(139, 92, 246, 0.8)' : speaker === 'user' ? 'rgba(52, 211, 153, 0.8)' : 'transparent'}` : 'none',
+              width: '6px',
+              opacity: isPlaying ? 0.95 : 0.3,
+              boxShadow: isPlaying && height > 20 
+                ? `0 0 ${height / 5}px ${speaker === 'agent' ? 'rgba(139, 92, 246, 0.8)' : speaker === 'user' ? 'rgba(52, 211, 153, 0.8)' : 'transparent'}` 
+                : 'none',
+              transform: `scaleY(${isPlaying ? 1 : 0.3})`,
             }}
           />
         ))}
@@ -155,12 +226,25 @@ function WaveformVisualizer({
       
       {/* Speaker label */}
       {isPlaying && speaker && (
-        <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full font-bold text-lg animate-pulse ${
-          speaker === 'agent' 
-            ? 'bg-purple-500/30 text-purple-300 border border-purple-500/50' 
-            : 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50'
-        }`}>
+        <div 
+          className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full font-bold text-lg transition-all duration-150 ${
+            speaker === 'agent' 
+              ? 'bg-purple-500/30 text-purple-300 border border-purple-500/50' 
+              : 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50'
+          }`}
+          style={{
+            transform: `translateX(-50%) scale(${1 + avgVolume / 400})`,
+            boxShadow: `0 0 ${avgVolume / 3}px ${speaker === 'agent' ? 'rgba(139, 92, 246, 0.5)' : 'rgba(52, 211, 153, 0.5)'}`,
+          }}
+        >
           {speaker === 'agent' ? '🤖 AI Speaking' : '👤 Customer Speaking'}
+        </div>
+      )}
+      
+      {/* Volume meter */}
+      {isPlaying && (
+        <div className="absolute top-4 right-4 text-xs text-gray-400 font-mono">
+          VOL: {Math.round(avgVolume)}%
         </div>
       )}
     </div>
@@ -200,18 +284,6 @@ function ExpandedPlayerModal({
   
   // Determine who's currently speaking based on time
   const currentSpeaker = getCurrentSpeaker(transcript, currentTime);
-  
-  // Calculate intensity based on message length (longer = more intense)
-  const getIntensity = () => {
-    if (transcript.length === 0 || !currentSpeaker) return 1;
-    const avgDurationPerMessage = duration / transcript.length;
-    const currentMsgIndex = Math.floor(currentTime / avgDurationPerMessage);
-    const currentMsg = transcript[currentMsgIndex];
-    if (!currentMsg) return 1;
-    // More words = higher intensity
-    const wordCount = currentMsg.content.split(' ').length;
-    return Math.min(2, 0.5 + wordCount / 20);
-  };
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   
@@ -291,7 +363,7 @@ function ExpandedPlayerModal({
           <WaveformVisualizer 
             isPlaying={isPlaying} 
             speaker={currentSpeaker}
-            intensity={getIntensity()}
+            audioRef={audioRef}
           />
         </div>
 
