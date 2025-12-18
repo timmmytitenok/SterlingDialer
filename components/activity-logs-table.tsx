@@ -76,6 +76,50 @@ function getCurrentSpeaker(transcript: TranscriptMessage[], currentTime: number)
   return null;
 }
 
+// Word-by-word animated text component
+function AnimatedWords({ 
+  words, 
+  currentWordIndex, 
+  isActive,
+  color 
+}: { 
+  words: string[]; 
+  currentWordIndex: number;
+  isActive: boolean;
+  color: 'blue' | 'emerald';
+}) {
+  return (
+    <span className="inline">
+      {words.map((word, idx) => {
+        const isCurrentWord = isActive && idx === currentWordIndex;
+        const isPastWord = idx < currentWordIndex;
+        const isFutureWord = idx > currentWordIndex;
+        
+        return (
+          <span
+            key={idx}
+            className={`inline-block mx-0.5 transition-all duration-200 ${
+              isCurrentWord 
+                ? `scale-125 font-bold ${color === 'blue' ? 'text-blue-300' : 'text-emerald-300'}` 
+                : isPastWord 
+                  ? 'opacity-70 text-white'
+                  : isFutureWord
+                    ? 'opacity-30 text-gray-400'
+                    : 'text-white'
+            }`}
+            style={{
+              transform: isCurrentWord ? 'scale(1.15) translateY(-2px)' : 'scale(1)',
+              textShadow: isCurrentWord ? `0 0 20px ${color === 'blue' ? 'rgba(96, 165, 250, 0.8)' : 'rgba(52, 211, 153, 0.8)'}` : 'none',
+            }}
+          >
+            {word}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 // Expanded TikTok-style Player Modal
 function ExpandedPlayerModal({
   playingCall,
@@ -90,7 +134,7 @@ function ExpandedPlayerModal({
   formatTime,
 }: {
   playingCall: PlayingCall;
-  audioRef: React.RefObject<HTMLAudioElement>;
+  audioRef: React.RefObject<HTMLAudioElement | null>;
   currentTime: number;
   duration: number;
   isPlaying: boolean;
@@ -101,24 +145,47 @@ function ExpandedPlayerModal({
   formatTime: (seconds: number) => string;
 }) {
   const [phoneHidden, setPhoneHidden] = useState(false);
+  const [avatarBob, setAvatarBob] = useState(0);
   const transcript = parseTranscript(playingCall.transcript);
   const transcriptRef = useRef<HTMLDivElement>(null);
   
   // Determine who's currently speaking based on time
   const currentSpeaker = getCurrentSpeaker(transcript, currentTime);
   
-  // Find current message being spoken
-  const getCurrentMessageIndex = () => {
-    let totalDuration = 0;
-    const avgDurationPerMessage = duration / (transcript.length || 1);
+  // Calculate timing for each message and word
+  const getMessageTiming = () => {
+    if (transcript.length === 0 || duration === 0) return { msgIndex: 0, wordIndex: 0 };
+    
+    const avgDurationPerMessage = duration / transcript.length;
+    let accumulatedTime = 0;
+    
     for (let i = 0; i < transcript.length; i++) {
-      totalDuration += avgDurationPerMessage;
-      if (currentTime < totalDuration) return i;
+      const msgEndTime = accumulatedTime + avgDurationPerMessage;
+      if (currentTime < msgEndTime) {
+        // We're in this message
+        const timeInMessage = currentTime - accumulatedTime;
+        const words = transcript[i].content.split(' ');
+        const avgTimePerWord = avgDurationPerMessage / words.length;
+        const wordIndex = Math.min(Math.floor(timeInMessage / avgTimePerWord), words.length - 1);
+        return { msgIndex: i, wordIndex: Math.max(0, wordIndex) };
+      }
+      accumulatedTime = msgEndTime;
     }
-    return transcript.length - 1;
+    return { msgIndex: transcript.length - 1, wordIndex: 0 };
   };
   
-  const currentMsgIndex = getCurrentMessageIndex();
+  const { msgIndex: currentMsgIndex, wordIndex: currentWordIndex } = getMessageTiming();
+  
+  // Avatar bobbing animation when speaking
+  useEffect(() => {
+    if (!isPlaying) return;
+    
+    const bobInterval = setInterval(() => {
+      setAvatarBob(prev => (prev + 1) % 4);
+    }, 150);
+    
+    return () => clearInterval(bobInterval);
+  }, [isPlaying]);
   
   // Auto-scroll to current message
   useEffect(() => {
@@ -133,12 +200,23 @@ function ExpandedPlayerModal({
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   
+  // Get bob transform based on current frame
+  const getBobTransform = (isSpeaking: boolean) => {
+    if (!isSpeaking || !isPlaying) return 'translateY(0px) rotate(0deg)';
+    const bobValues = [
+      'translateY(-3px) rotate(-2deg)',
+      'translateY(0px) rotate(0deg)',
+      'translateY(-2px) rotate(2deg)',
+      'translateY(0px) rotate(0deg)',
+    ];
+    return bobValues[avatarBob];
+  };
+  
   // Hide last 7 digits of phone number with blur
   const getDisplayPhone = () => {
     if (!phoneHidden) return playingCall.phone;
     const digits = playingCall.phone.replace(/\D/g, '');
     if (digits.length >= 7) {
-      // Keep area code visible, blur the rest
       return playingCall.phone.slice(0, -7) + '•••••••';
     }
     return '•••••••••••';
@@ -196,97 +274,167 @@ function ExpandedPlayerModal({
         {/* Main Content - Avatars + Transcript */}
         <div className="flex-1 flex items-stretch overflow-hidden p-6 gap-6">
           {/* Human Avatar (Left) */}
-          <div className="flex flex-col items-center justify-center w-32 flex-shrink-0">
+          <div className="flex flex-col items-center justify-center w-36 flex-shrink-0">
             <div 
-              className={`relative w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center transition-all duration-150 ${
-                currentSpeaker === 'user' ? 'scale-110 shadow-lg shadow-emerald-500/50' : 'scale-100 opacity-60'
+              className={`relative transition-all duration-150 ${
+                currentSpeaker === 'user' ? 'scale-110' : 'scale-100 opacity-50'
               }`}
+              style={{
+                transform: `${currentSpeaker === 'user' ? 'scale(1.1)' : 'scale(1)'} ${getBobTransform(currentSpeaker === 'user')}`,
+                transition: 'transform 150ms ease-out',
+              }}
             >
-              <User className={`w-12 h-12 text-white transition-transform duration-100 ${
-                currentSpeaker === 'user' && isPlaying ? 'animate-bounce' : ''
-              }`} />
-              {/* Speaking indicator */}
+              {/* Glow ring when speaking */}
               {currentSpeaker === 'user' && isPlaying && (
-                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-                  <div className="w-1 h-3 bg-emerald-400 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
-                  <div className="w-1 h-4 bg-emerald-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
-                  <div className="w-1 h-2 bg-emerald-400 rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+                <div className="absolute inset-0 rounded-full bg-emerald-500/30 animate-ping" />
+              )}
+              <div className={`relative w-28 h-28 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xl ${
+                currentSpeaker === 'user' && isPlaying ? 'shadow-emerald-500/50' : ''
+              }`}>
+                {/* Face/mouth animation */}
+                <div className="relative">
+                  <User className="w-14 h-14 text-white" />
+                  {/* Animated mouth */}
+                  {currentSpeaker === 'user' && isPlaying && (
+                    <div 
+                      className="absolute bottom-1.5 left-1/2 -translate-x-1/2 bg-white rounded-full transition-all duration-100"
+                      style={{
+                        width: avatarBob % 2 === 0 ? '12px' : '8px',
+                        height: avatarBob % 2 === 0 ? '6px' : '10px',
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+              {/* Sound waves */}
+              {currentSpeaker === 'user' && isPlaying && (
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                  <div className="w-1.5 bg-emerald-400 rounded-full animate-pulse" style={{ height: `${12 + avatarBob * 3}px`, animationDelay: '0ms' }} />
+                  <div className="w-1.5 bg-emerald-400 rounded-full animate-pulse" style={{ height: `${16 + (avatarBob + 1) % 4 * 3}px`, animationDelay: '75ms' }} />
+                  <div className="w-1.5 bg-emerald-400 rounded-full animate-pulse" style={{ height: `${10 + (avatarBob + 2) % 4 * 3}px`, animationDelay: '150ms' }} />
                 </div>
               )}
             </div>
-            <p className={`mt-3 text-sm font-medium transition-colors ${
-              currentSpeaker === 'user' ? 'text-emerald-400' : 'text-gray-500'
+            <p className={`mt-4 text-sm font-bold transition-all duration-300 ${
+              currentSpeaker === 'user' ? 'text-emerald-400 scale-110' : 'text-gray-500'
             }`}>
-              Customer
+              👤 Customer
             </p>
           </div>
 
-          {/* Transcript (Center) */}
+          {/* Transcript (Center) - Word by Word */}
           <div 
             ref={transcriptRef}
-            className="flex-1 overflow-y-auto rounded-2xl bg-[#0B1437]/60 border border-gray-800/50 p-4 space-y-4 scroll-smooth"
+            className="flex-1 overflow-y-auto rounded-2xl bg-[#0B1437]/60 border border-gray-800/50 p-6 scroll-smooth"
           >
             {transcript.length > 0 ? (
-              transcript.map((msg, idx) => (
-                <div
-                  key={idx}
-                  data-msg-index={idx}
-                  className={`flex ${msg.role === 'agent' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div 
-                    className={`max-w-[80%] p-4 rounded-2xl transition-all duration-300 ${
-                      msg.role === 'agent'
-                        ? `bg-gradient-to-br from-blue-600/30 to-purple-600/30 border border-blue-500/30 ${
-                            idx === currentMsgIndex && currentSpeaker === 'agent' ? 'ring-2 ring-blue-400 scale-[1.02]' : ''
-                          }`
-                        : `bg-gradient-to-br from-emerald-600/30 to-teal-600/30 border border-emerald-500/30 ${
-                            idx === currentMsgIndex && currentSpeaker === 'user' ? 'ring-2 ring-emerald-400 scale-[1.02]' : ''
-                          }`
-                    }`}
-                  >
-                    <p className={`text-xs font-semibold mb-1 ${
-                      msg.role === 'agent' ? 'text-blue-400' : 'text-emerald-400'
-                    }`}>
-                      {msg.role === 'agent' ? '🤖 AI Agent' : '👤 Customer'}
-                    </p>
-                    <p className="text-white text-sm leading-relaxed">{msg.content}</p>
-                  </div>
-                </div>
-              ))
+              <div className="space-y-6">
+                {transcript.map((msg, idx) => {
+                  const isCurrentMessage = idx === currentMsgIndex;
+                  const isPastMessage = idx < currentMsgIndex;
+                  const words = msg.content.split(' ');
+                  
+                  return (
+                    <div
+                      key={idx}
+                      data-msg-index={idx}
+                      className={`transition-all duration-500 ${
+                        isCurrentMessage 
+                          ? 'opacity-100 scale-100' 
+                          : isPastMessage 
+                            ? 'opacity-50 scale-95' 
+                            : 'opacity-20 scale-95'
+                      }`}
+                    >
+                      {/* Speaker label */}
+                      <div className={`flex items-center gap-2 mb-2 ${
+                        msg.role === 'agent' ? 'justify-end' : 'justify-start'
+                      }`}>
+                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                          msg.role === 'agent' 
+                            ? 'bg-blue-500/20 text-blue-400' 
+                            : 'bg-emerald-500/20 text-emerald-400'
+                        }`}>
+                          {msg.role === 'agent' ? '🤖 AI Agent' : '👤 Customer'}
+                        </span>
+                      </div>
+                      
+                      {/* Word-by-word text */}
+                      <div className={`p-4 rounded-2xl ${
+                        msg.role === 'agent'
+                          ? 'bg-gradient-to-br from-blue-600/20 to-purple-600/20 border border-blue-500/20 ml-8'
+                          : 'bg-gradient-to-br from-emerald-600/20 to-teal-600/20 border border-emerald-500/20 mr-8'
+                      } ${isCurrentMessage ? 'ring-2 ring-opacity-50 ' + (msg.role === 'agent' ? 'ring-blue-400' : 'ring-emerald-400') : ''}`}>
+                        <p className="text-lg leading-relaxed">
+                          <AnimatedWords 
+                            words={words}
+                            currentWordIndex={isCurrentMessage ? currentWordIndex : isPastMessage ? words.length : -1}
+                            isActive={isCurrentMessage}
+                            color={msg.role === 'agent' ? 'blue' : 'emerald'}
+                          />
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-12">
-                <div className="w-16 h-16 rounded-full bg-gray-800/50 flex items-center justify-center mb-4">
-                  <Volume2 className="w-8 h-8 text-gray-600" />
+                <div className="w-20 h-20 rounded-full bg-gray-800/50 flex items-center justify-center mb-4 animate-pulse">
+                  <Volume2 className="w-10 h-10 text-gray-600" />
                 </div>
-                <p className="text-gray-400 text-lg font-medium">No Transcript Available</p>
-                <p className="text-gray-500 text-sm mt-1">Transcript data not recorded for this call</p>
+                <p className="text-gray-400 text-xl font-bold">No Transcript Available</p>
+                <p className="text-gray-500 text-sm mt-2">Transcript will appear for new calls</p>
               </div>
             )}
           </div>
 
           {/* AI Avatar (Right) */}
-          <div className="flex flex-col items-center justify-center w-32 flex-shrink-0">
+          <div className="flex flex-col items-center justify-center w-36 flex-shrink-0">
             <div 
-              className={`relative w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center transition-all duration-150 ${
-                currentSpeaker === 'agent' ? 'scale-110 shadow-lg shadow-blue-500/50' : 'scale-100 opacity-60'
+              className={`relative transition-all duration-150 ${
+                currentSpeaker === 'agent' ? 'scale-110' : 'scale-100 opacity-50'
               }`}
+              style={{
+                transform: `${currentSpeaker === 'agent' ? 'scale(1.1)' : 'scale(1)'} ${getBobTransform(currentSpeaker === 'agent')}`,
+                transition: 'transform 150ms ease-out',
+              }}
             >
-              <Bot className={`w-12 h-12 text-white transition-transform duration-100 ${
-                currentSpeaker === 'agent' && isPlaying ? 'animate-bounce' : ''
-              }`} />
-              {/* Speaking indicator */}
+              {/* Glow ring when speaking */}
               {currentSpeaker === 'agent' && isPlaying && (
-                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-                  <div className="w-1 h-3 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
-                  <div className="w-1 h-4 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
-                  <div className="w-1 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+                <div className="absolute inset-0 rounded-full bg-blue-500/30 animate-ping" />
+              )}
+              <div className={`relative w-28 h-28 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-xl ${
+                currentSpeaker === 'agent' && isPlaying ? 'shadow-blue-500/50' : ''
+              }`}>
+                {/* Face/mouth animation */}
+                <div className="relative">
+                  <Bot className="w-14 h-14 text-white" />
+                  {/* Animated mouth */}
+                  {currentSpeaker === 'agent' && isPlaying && (
+                    <div 
+                      className="absolute bottom-1.5 left-1/2 -translate-x-1/2 bg-white rounded-full transition-all duration-100"
+                      style={{
+                        width: avatarBob % 2 === 0 ? '12px' : '8px',
+                        height: avatarBob % 2 === 0 ? '6px' : '10px',
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+              {/* Sound waves */}
+              {currentSpeaker === 'agent' && isPlaying && (
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                  <div className="w-1.5 bg-blue-400 rounded-full animate-pulse" style={{ height: `${12 + avatarBob * 3}px`, animationDelay: '0ms' }} />
+                  <div className="w-1.5 bg-blue-400 rounded-full animate-pulse" style={{ height: `${16 + (avatarBob + 1) % 4 * 3}px`, animationDelay: '75ms' }} />
+                  <div className="w-1.5 bg-blue-400 rounded-full animate-pulse" style={{ height: `${10 + (avatarBob + 2) % 4 * 3}px`, animationDelay: '150ms' }} />
                 </div>
               )}
             </div>
-            <p className={`mt-3 text-sm font-medium transition-colors ${
-              currentSpeaker === 'agent' ? 'text-blue-400' : 'text-gray-500'
+            <p className={`mt-4 text-sm font-bold transition-all duration-300 ${
+              currentSpeaker === 'agent' ? 'text-blue-400 scale-110' : 'text-gray-500'
             }`}>
-              AI Agent
+              🤖 AI Agent
             </p>
           </div>
         </div>
