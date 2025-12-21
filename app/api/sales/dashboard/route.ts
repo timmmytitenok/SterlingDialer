@@ -50,10 +50,10 @@ export async function GET(req: Request) {
 
     // Get actual user signup dates from auth
     const { data: authData } = await supabase.auth.admin.listUsers();
-    const userSignupDates = new Map((authData?.users || []).map(u => [u.id, u.created_at]));
+    const userSignupDates = new Map((authData?.users || []).map((u: any) => [u.id, u.created_at]));
 
     // Add real signup date to referrals
-    const referrals = (referralsRaw || []).map(r => ({
+    const referrals = (referralsRaw || []).map((r: any) => ({
       ...r,
       user_signup_date: userSignupDates.get(r.user_id) || r.created_at,
     }));
