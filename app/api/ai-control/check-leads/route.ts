@@ -36,14 +36,14 @@ export async function GET(request: Request) {
     }
 
     // Count callable leads
-    // Callable = qualified, from active sheets, status is new/callback_later/unclassified/no_answer, not maxed out
+    // Callable = qualified, from active sheets, status is new/callback_later/unclassified/no_answer/potential_appointment, not maxed out
     const { count: callableLeadsCount, error } = await supabase
       .from('leads')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('is_qualified', true)
       .in('google_sheet_id', activeSheetIds)
-      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer'])
+      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment'])
       .or('total_calls_made.is.null,total_calls_made.lt.20'); // Not dead leads (20+ attempts)
 
     if (error) {

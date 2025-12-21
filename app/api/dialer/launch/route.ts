@@ -107,9 +107,22 @@ export async function POST(request: Request) {
 
     console.log('🚀 AI Dialer launched for user:', user.id);
 
-    // TODO: Trigger n8n webhook or Retell/Twilio integration here
-    // const webhookUrl = process.env.N8N_DIALER_START_WEBHOOK;
-    // await fetch(webhookUrl, { method: 'POST', body: JSON.stringify({ userId: user.id, sessionId: session.id }) });
+    // CRITICAL: Also update ai_control_settings to 'running' - this is what next-call checks!
+    const { error: aiSettingsError } = await supabase
+      .from('ai_control_settings')
+      .upsert({
+        user_id: user.id,
+        status: 'running',
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id'
+      });
+    
+    if (aiSettingsError) {
+      console.error('⚠️ Failed to update ai_control_settings:', aiSettingsError);
+    } else {
+      console.log('✅ ai_control_settings.status set to running');
+    }
 
     return NextResponse.json({
       success: true,
