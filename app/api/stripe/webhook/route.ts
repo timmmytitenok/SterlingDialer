@@ -1046,9 +1046,9 @@ export async function POST(req: Request) {
               .select('amount, status')
               .eq('sales_person_id', salesPerson.id);
 
-            const totalEarnings = (allCommissions || []).reduce((sum, c) => sum + (c.amount || 0), 0);
-            const totalPaid = (allCommissions || []).filter(c => c.status === 'paid').reduce((sum, c) => sum + (c.amount || 0), 0);
-            const pendingPayout = (allCommissions || []).filter(c => c.status === 'pending').reduce((sum, c) => sum + (c.amount || 0), 0);
+            const totalEarnings = (allCommissions || []).reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
+            const totalPaid = (allCommissions || []).filter((c: any) => c.status === 'paid').reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
+            const pendingPayout = (allCommissions || []).filter((c: any) => c.status === 'pending').reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
 
             const { data: allReferrals } = await supabase
               .from('sales_referrals')
@@ -1056,7 +1056,7 @@ export async function POST(req: Request) {
               .eq('sales_person_id', salesPerson.id);
 
             const totalReferred = (allReferrals || []).length;
-            const totalConversions = (allReferrals || []).filter(r => r.status === 'converted').length;
+            const totalConversions = (allReferrals || []).filter((r: any) => r.status === 'converted').length;
 
             await supabase
               .from('sales_team')
