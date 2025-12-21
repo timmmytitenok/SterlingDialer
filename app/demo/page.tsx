@@ -1,34 +1,42 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { PublicNav } from '@/components/public-nav';
 import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { Upload, Rocket, Calendar, Play, Pause, DollarSign, Phone, CheckCircle, ArrowRight, Headphones, Clock, Target, TrendingUp } from 'lucide-react';
+import { Upload, Rocket, Calendar, Play, Pause, DollarSign, Phone, CheckCircle, ArrowRight, Headphones, Clock, Target, TrendingUp, CalendarCheck } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DemoPage() {
-  // Audio player state
+  // Audio player state - now just 2 players
   const [activePlayer, setActivePlayer] = useState<number | null>(null);
-  const [progress, setProgress] = useState<{[key: number]: number}>({1: 0, 2: 0, 3: 0, 4: 0});
+  const [progress, setProgress] = useState<{[key: number]: number}>({1: 0, 2: 0});
+  const [currentTime, setCurrentTime] = useState<{[key: number]: number}>({1: 0, 2: 0});
+  const [duration, setDuration] = useState<{[key: number]: number}>({1: 0, 2: 0});
+  const [playbackSpeed, setPlaybackSpeed] = useState<{[key: number]: number}>({1: 1, 2: 1});
   
   const audioRefs = {
     1: useRef<HTMLAudioElement>(null),
     2: useRef<HTMLAudioElement>(null),
-    3: useRef<HTMLAudioElement>(null),
-    4: useRef<HTMLAudioElement>(null),
   };
 
+  const speedOptions = [1, 1.25, 1.5, 2];
+
   const togglePlay = (playerNum: number) => {
-    // Stop all other players
-    Object.entries(audioRefs).forEach(([num, ref]) => {
-      if (parseInt(num) !== playerNum && ref.current) {
-        ref.current.pause();
-        ref.current.currentTime = 0;
-      }
-    });
+    // Stop the OTHER player (only 2 now)
+    const otherPlayer = playerNum === 1 ? 2 : 1;
+    const otherRef = audioRefs[otherPlayer as keyof typeof audioRefs];
+    if (otherRef.current) {
+      otherRef.current.pause();
+      otherRef.current.currentTime = 0;
+      setProgress(prev => ({...prev, [otherPlayer]: 0}));
+      setCurrentTime(prev => ({...prev, [otherPlayer]: 0}));
+    }
+    if (activePlayer === otherPlayer) {
+      setActivePlayer(null);
+    }
     
     const audioRef = audioRefs[playerNum as keyof typeof audioRefs];
     if (audioRef.current) {
@@ -37,9 +45,24 @@ export default function DemoPage() {
         setActivePlayer(null);
       } else {
         audioRef.current.volume = 1.0;
+        audioRef.current.playbackRate = playbackSpeed[playerNum];
         audioRef.current.play();
         setActivePlayer(playerNum);
       }
+    }
+  };
+
+  const changeSpeed = (playerNum: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Don't trigger play/pause
+    const currentSpeedIndex = speedOptions.indexOf(playbackSpeed[playerNum]);
+    const nextSpeedIndex = (currentSpeedIndex + 1) % speedOptions.length;
+    const newSpeed = speedOptions[nextSpeedIndex];
+    
+    setPlaybackSpeed(prev => ({...prev, [playerNum]: newSpeed}));
+    
+    const audioRef = audioRefs[playerNum as keyof typeof audioRefs];
+    if (audioRef.current) {
+      audioRef.current.playbackRate = newSpeed;
     }
   };
 
@@ -48,34 +71,60 @@ export default function DemoPage() {
     if (audioRef.current) {
       const prog = (audioRef.current.currentTime / audioRef.current.duration) * 100;
       setProgress(prev => ({...prev, [playerNum]: prog}));
+      setCurrentTime(prev => ({...prev, [playerNum]: audioRef.current!.currentTime}));
+    }
+  };
+
+  const handleLoadedMetadata = (playerNum: number) => {
+    const audioRef = audioRefs[playerNum as keyof typeof audioRefs];
+    if (audioRef.current) {
+      setDuration(prev => ({...prev, [playerNum]: audioRef.current!.duration}));
     }
   };
 
   const handleEnded = (playerNum: number) => {
     setActivePlayer(null);
     setProgress(prev => ({...prev, [playerNum]: 0}));
+    setCurrentTime(prev => ({...prev, [playerNum]: 0}));
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Two appointment booking recordings
   const recordings = [
-    { id: 1, title: 'Busy at Work → Closed', tag: 'Callback', tagColor: 'emerald', desc: 'AI scheduled callback, Agent closed for $112/mo', src: '/recordings/busy-at-work.mp3' },
-    { id: 2, title: '"Not Interested" Handled', tag: 'Objection', tagColor: 'violet', desc: 'AI turns a hard "no" into engagement', src: '/recordings/not-interested-objection.mp3' },
-    { id: 3, title: '"Never Filled Form" → Sold', tag: 'Confused', tagColor: 'cyan', desc: 'Confused lead → Agent sold him a $172/month policy', src: '/recordings/never-filled-form.mp3' },
-    { id: 4, title: 'Appointment Booked Live', tag: 'Booked', tagColor: 'amber', desc: 'AI books appointment straight to your calendar', src: '/recordings/appointment-booked.mp3' },
+    { 
+      id: 1, 
+      title: 'Live Appointment Booking #1', 
+      subtitle: 'Final Expense Lead', 
+      desc: 'AI qualifies lead and books appointment directly to agent\'s calendar', 
+      src: '/recordings/appointment-booked.mp3',
+      gradient: 'from-blue-600 to-cyan-500',
+      bgGlow: 'bg-blue-500/20',
+      borderColor: 'border-blue-500/30',
+      hoverBorder: 'hover:border-blue-400',
+      hoverGlow: 'hover:shadow-blue-500/30',
+      iconBg: 'bg-blue-500',
+      progressBar: 'from-blue-500 to-cyan-400'
+    },
+    { 
+      id: 2, 
+      title: 'Live Appointment Booking #2', 
+      subtitle: 'Mortgage Protection Lead', 
+      desc: 'AI handles objections and schedules callback appointment', 
+      src: '/recordings/busy-at-work.mp3',
+      gradient: 'from-purple-600 to-pink-500',
+      bgGlow: 'bg-purple-500/20',
+      borderColor: 'border-purple-500/30',
+      hoverBorder: 'hover:border-purple-400',
+      hoverGlow: 'hover:shadow-purple-500/30',
+      iconBg: 'bg-purple-500',
+      progressBar: 'from-purple-500 to-pink-400'
+    },
   ];
-
-  const tagColors: {[key: string]: string} = {
-    emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    violet: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
-    cyan: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-    amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  };
-
-  const playerColors: {[key: string]: {bg: string, glow: string, bar: string}} = {
-    emerald: { bg: 'bg-emerald-500', glow: 'shadow-emerald-500/50', bar: 'from-emerald-500 to-emerald-400' },
-    violet: { bg: 'bg-violet-500', glow: 'shadow-violet-500/50', bar: 'from-violet-500 to-violet-400' },
-    cyan: { bg: 'bg-cyan-500', glow: 'shadow-cyan-500/50', bar: 'from-cyan-500 to-cyan-400' },
-    amber: { bg: 'bg-amber-500', glow: 'shadow-amber-500/50', bar: 'from-amber-500 to-amber-400' },
-  };
 
   return (
     <div className="min-h-screen bg-[#0B1437] relative overflow-hidden">
@@ -125,84 +174,128 @@ export default function DemoPage() {
           </div>
         </section>
 
-        {/* LISTEN TO STERLING AI SECTION - Mobile Optimized */}
+        {/* LISTEN TO STERLING AI SECTION - Two Big Cards */}
         <section className="py-8 sm:py-20 px-3 sm:px-4">
-          <div className="max-w-3xl mx-auto">
-            {/* Section Header - Compact on mobile */}
-            <div className="text-center mb-6 sm:mb-10 animate-in fade-in slide-in-from-bottom duration-700">
+          <div className="max-w-6xl mx-auto">
+            {/* Section Header */}
+            <div className="text-center mb-8 sm:mb-12 animate-in fade-in slide-in-from-bottom duration-700">
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-3 sm:mb-6">
-                <Headphones className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
-                <span className="text-xs sm:text-sm font-medium text-blue-400">Real AI Conversations</span>
-                  </div>
+                <CalendarCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
+                <span className="text-xs sm:text-sm font-medium text-blue-400">Live Appointment Bookings</span>
+              </div>
               <h2 className="text-2xl sm:text-4xl font-bold text-white mb-2 sm:mb-3">
                 Hear Sterling AI In Action
               </h2>
-              <p className="text-sm sm:text-base text-gray-400">Tap any recording to listen</p>
-                  </div>
+              <p className="text-sm sm:text-base text-gray-400">Listen to real AI-booked appointments</p>
+            </div>
 
-            {/* Audio Players - Mobile Optimized */}
-            <div className="space-y-2.5 sm:space-y-3">
+            {/* Two Big Cards - Side by Side */}
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
               {recordings.map((rec, index) => {
                 const isPlaying = activePlayer === rec.id;
-                const colors = playerColors[rec.tagColor];
                 
                 return (
                   <div
                     key={rec.id}
-                    onClick={() => togglePlay(rec.id)}
-                    className={`group relative rounded-xl sm:rounded-2xl p-3 sm:p-5 cursor-pointer transition-all duration-300 active:scale-[0.98] animate-in fade-in slide-in-from-bottom ${
-                      isPlaying 
-                        ? `bg-[#1A2647] border-2 border-blue-500/50 shadow-xl ${colors.glow}` 
-                        : 'bg-[#1A2647] border border-gray-800 hover:border-blue-500/30'
-                    }`}
-                    style={{ animationDelay: `${index * 100}ms`, animationDuration: '500ms' }}
+                    className={`group relative rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-500 cursor-pointer animate-in fade-in slide-in-from-bottom
+                      ${isPlaying 
+                        ? 'scale-[1.02] shadow-2xl ring-2 ring-white/20' 
+                        : 'hover:scale-[1.03] hover:shadow-2xl'
+                      } ${rec.hoverGlow}`}
+                    style={{ animationDelay: `${index * 150}ms`, animationDuration: '600ms' }}
                   >
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      {/* Play Button - Smaller on mobile */}
-                      <div className={`w-11 h-11 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl flex items-center justify-center transition-all flex-shrink-0 ${
-                        isPlaying 
-                          ? `${colors.bg} shadow-lg ${colors.glow}` 
-                          : 'bg-blue-500/20 group-hover:bg-blue-500/30'
-                      }`}>
-                        {isPlaying ? (
-                          <Pause className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                        ) : (
-                          <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white ml-0.5" />
-                      )}
-                    </div>
+                    {/* Background Gradient */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${rec.gradient} opacity-10 group-hover:opacity-20 transition-opacity duration-500`} />
+                    
+                    {/* Card Content */}
+                    <div className={`relative bg-[#1A2647]/95 backdrop-blur-xl border-2 ${isPlaying ? 'border-white/30' : rec.borderColor} ${rec.hoverBorder} rounded-2xl sm:rounded-3xl p-6 sm:p-8 transition-all duration-300`}>
                       
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
-                          <h3 className="text-sm sm:text-lg font-semibold text-white truncate">{rec.title}</h3>
-                          <span className={`px-1.5 py-0.5 text-[9px] sm:text-xs font-bold rounded-full border ${tagColors[rec.tagColor]} flex-shrink-0`}>
-                            {rec.tag}
-                          </span>
+                      {/* Header with Icon */}
+                      <div className="flex items-start gap-4 mb-6">
+                        <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl ${rec.iconBg} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                          <CalendarCheck className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                         </div>
-                        <p className="text-xs sm:text-sm text-gray-500 line-clamp-1">{rec.desc}</p>
-                        
+                        <div className="flex-1">
+                          <p className={`text-xs sm:text-sm font-bold uppercase tracking-wider mb-1 bg-gradient-to-r ${rec.gradient} bg-clip-text text-transparent`}>
+                            {rec.subtitle}
+                          </p>
+                          <h3 className="text-xl sm:text-2xl font-bold text-white">{rec.title}</h3>
+                        </div>
+                      </div>
+                      
+                      {/* Description */}
+                      <p className="text-sm sm:text-base text-gray-400 mb-6 leading-relaxed">
+                        {rec.desc}
+                      </p>
+                      
+                      {/* Play Button - Big & Centered */}
+                      <div 
+                        onClick={() => togglePlay(rec.id)}
+                        className={`w-full py-4 sm:py-5 rounded-xl sm:rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 
+                          ${isPlaying 
+                            ? `bg-gradient-to-r ${rec.gradient} shadow-lg` 
+                            : `bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20`
+                          }`}
+                      >
+                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${
+                          isPlaying ? 'bg-white/20' : `bg-gradient-to-r ${rec.gradient}`
+                        }`}>
+                          {isPlaying ? (
+                            <Pause className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                          ) : (
+                            <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white ml-0.5" />
+                          )}
+                        </div>
+                        <span className="text-white font-semibold text-base sm:text-lg">
+                          {isPlaying ? 'Now Playing...' : 'Play Recording'}
+                        </span>
+                      </div>
+                      
+                      {/* Progress Section */}
+                      <div className="mt-5 space-y-3">
                         {/* Progress Bar */}
-                        <div className="mt-2 sm:mt-3 h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-2 bg-gray-800/80 rounded-full overflow-hidden">
                           <div 
-                            className={`h-full bg-gradient-to-r ${colors.bar} rounded-full transition-all duration-150`}
+                            className={`h-full bg-gradient-to-r ${rec.progressBar} rounded-full transition-all duration-150`}
                             style={{ width: `${progress[rec.id]}%` }}
                           />
+                        </div>
+                        
+                        {/* Time & Speed Controls */}
+                        <div className="flex items-center justify-between">
+                          {/* Time Display */}
+                          <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{formatTime(currentTime[rec.id] || 0)}</span>
+                            <span>/</span>
+                            <span>{formatTime(duration[rec.id] || 0)}</span>
+                          </div>
+                          
+                          {/* Speed Control Button */}
+                          <button
+                            onClick={(e) => changeSpeed(rec.id, e)}
+                            className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 
+                              bg-gradient-to-r ${rec.gradient} text-white hover:opacity-90 active:scale-95`}
+                          >
+                            {playbackSpeed[rec.id]}x
+                          </button>
                         </div>
                       </div>
                     </div>
                     
-                  <audio 
+                    <audio 
                       ref={audioRefs[rec.id as keyof typeof audioRefs]}
                       src={rec.src}
                       onTimeUpdate={() => handleTimeUpdate(rec.id)}
+                      onLoadedMetadata={() => handleLoadedMetadata(rec.id)}
                       onEnded={() => handleEnded(rec.id)}
-                    className="hidden"
-                  />
-                </div>
+                      className="hidden"
+                    />
+                  </div>
                 );
               })}
-                </div>
-              </div>
+            </div>
+          </div>
         </section>
 
         {/* HOW IT WORKS SECTION - Mobile Optimized */}

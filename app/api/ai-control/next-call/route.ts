@@ -822,17 +822,11 @@ export async function POST(request: Request) {
 
     // Include lead_type in response so you can see it in browser console!
     const leadTypeSent = nextLead.lead_type || 1;
-    const leadTypeMeanings: Record<number, string> = { 
-      1: 'NULL/Default', 
-      2: 'Final Expense', 
-      3: 'Final Expense (Veteran)', 
-      4: 'Mortgage Protection' 
-    };
     console.log(`✅ ====== CALL SUCCESS ======`);
     console.log(`   Lead ID: ${nextLead.id}`);
     console.log(`   Lead Name: ${nextLead.name}`);
     console.log(`   lead_type SENT TO RETELL: ${leadTypeSent}`);
-    console.log(`   Meaning: ${leadTypeMeanings[leadTypeSent] || 'UNKNOWN'}`);
+    console.log(`   (1=Default, 2=FE, 3=FE Vet, 4=MP)`);
     console.log(`================================`);
     
     return NextResponse.json({
@@ -847,7 +841,7 @@ export async function POST(request: Request) {
       spendLimit: dailySpendLimit,
       // ADDED: Show lead_type in response so you can verify it's being sent!
       lead_type: leadTypeSent,
-      lead_type_meaning: leadTypeMeanings[leadTypeSent] || 'UNKNOWN',
+      lead_type_meaning: leadTypeLabels[leadTypeSent] || 'UNKNOWN',
     });
   } catch (error: any) {
     console.error('❌ Error in next-call:', error);
