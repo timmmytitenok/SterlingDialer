@@ -35,7 +35,7 @@ export const PRICING_CONFIG = {
     description: 'Maximum volume & automation',
   },
 
-  // Free Trial (30 days)
+  // Free Trial (7 days)
   free_trial: {
     name: 'Free Trial',
     monthlyPrice: 0,
@@ -44,7 +44,7 @@ export const PRICING_CONFIG = {
     maxDailyCalls: 600,
     aiCallerCount: 1,
     trialDuration: 30, // days
-    description: '30-day free trial',
+    description: '7-day free trial',
   },
 
   // Free Access (for friends - customizable via SQL)

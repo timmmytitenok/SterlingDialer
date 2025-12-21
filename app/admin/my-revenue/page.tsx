@@ -147,7 +147,7 @@ export default function AdminRevenuePage() {
   const router = useRouter();
   const supabase = createClient();
   const [chartView, setChartView] = useState<ChartView>('total');
-  const [heroView, setHeroView] = useState<HeroView>('revenue');
+  const [heroView, setHeroView] = useState<HeroView>('profit');
   const [timeRange, setTimeRange] = useState<TimeRange>('30days');
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -166,7 +166,7 @@ export default function AdminRevenuePage() {
   // Swipe gesture state for mobile hero card
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const heroViews: HeroView[] = ['revenue', 'profit', 'expense'];
+  const heroViews: HeroView[] = ['profit', 'revenue', 'expense'];
   
   const handleTouchStart = (e: TouchEvent) => {
     setTouchEnd(null);
@@ -423,6 +423,15 @@ export default function AdminRevenuePage() {
   };
 
   const getHeroColor = () => {
+    if (heroView === 'profit') return {
+      gradient: 'from-yellow-900/40 via-amber-900/40 to-yellow-900/40',
+      border: 'border-yellow-400/50',
+      glow: 'from-yellow-500/20 to-amber-500/20',
+      text: 'text-yellow-400',
+      shadow: 'drop-shadow-[0_0_30px_rgba(250,204,21,0.9)]',
+      label: 'Profit',
+      subtitle: 'What you keep',
+    };
     if (heroView === 'revenue') return {
       gradient: 'from-emerald-900/40 via-green-900/40 to-teal-900/40',
       border: 'border-emerald-400/50',
@@ -431,15 +440,6 @@ export default function AdminRevenuePage() {
       shadow: 'drop-shadow-[0_0_30px_rgba(16,185,129,0.9)]',
       label: 'Revenue',
       subtitle: 'What users pay',
-    };
-    if (heroView === 'profit') return {
-      gradient: 'from-blue-900/40 via-cyan-900/40 to-blue-900/40',
-      border: 'border-blue-400/50',
-      glow: 'from-blue-500/20 to-cyan-500/20',
-      text: 'text-blue-400',
-      shadow: 'drop-shadow-[0_0_30px_rgba(59,130,246,0.9)]',
-      label: 'Profit',
-      subtitle: 'What you keep',
     };
     return {
       gradient: 'from-red-900/40 via-orange-900/40 to-red-900/40',
@@ -571,15 +571,15 @@ export default function AdminRevenuePage() {
         <div 
           className="relative backdrop-blur-xl rounded-xl md:rounded-3xl p-5 md:p-12 border-2 shadow-2xl overflow-hidden mb-6 md:mb-8 transition-all duration-700 ease-in-out touch-pan-y"
           style={{
-            backgroundImage: heroView === 'revenue' 
+            backgroundImage: heroView === 'profit' 
+              ? 'linear-gradient(to bottom right, rgba(113, 63, 18, 0.4), rgba(120, 53, 15, 0.4), rgba(113, 63, 18, 0.4))'
+              : heroView === 'revenue'
               ? 'linear-gradient(to bottom right, rgba(6, 78, 59, 0.4), rgba(5, 46, 22, 0.4), rgba(19, 78, 74, 0.4))'
-              : heroView === 'profit'
-              ? 'linear-gradient(to bottom right, rgba(30, 58, 138, 0.4), rgba(22, 78, 99, 0.4), rgba(30, 58, 138, 0.4))'
               : 'linear-gradient(to bottom right, rgba(127, 29, 29, 0.4), rgba(124, 45, 18, 0.4), rgba(127, 29, 29, 0.4))',
-            borderColor: heroView === 'revenue'
+            borderColor: heroView === 'profit'
+              ? 'rgba(250, 204, 21, 0.5)'
+              : heroView === 'revenue'
               ? 'rgba(52, 211, 153, 0.5)'
-              : heroView === 'profit'
-              ? 'rgba(96, 165, 250, 0.5)'
               : 'rgba(248, 113, 113, 0.5)',
           }}
           onTouchStart={handleTouchStart}
@@ -590,10 +590,10 @@ export default function AdminRevenuePage() {
           <div 
             className="absolute inset-0 blur-3xl animate-pulse transition-all duration-700"
             style={{
-              backgroundImage: heroView === 'revenue'
+              backgroundImage: heroView === 'profit'
+                ? 'linear-gradient(to right, rgba(250, 204, 21, 0.2), rgba(245, 158, 11, 0.2))'
+                : heroView === 'revenue'
                 ? 'linear-gradient(to right, rgba(16, 185, 129, 0.2), rgba(20, 184, 166, 0.2))'
-                : heroView === 'profit'
-                ? 'linear-gradient(to right, rgba(59, 130, 246, 0.2), rgba(34, 211, 238, 0.2))'
                 : 'linear-gradient(to right, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.2))',
             }}
           />
@@ -601,6 +601,16 @@ export default function AdminRevenuePage() {
             <div className="relative z-10">
             {/* Desktop Toggle Buttons - Hidden on Mobile */}
             <div className="hidden md:flex justify-center gap-2 mb-8">
+              <button
+                onClick={() => setHeroView('profit')}
+                className={`px-6 py-3 rounded-xl text-base font-bold transform transition-all duration-300 hover:scale-105 ${
+                  heroView === 'profit'
+                    ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/50'
+                    : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                Profit
+              </button>
               <button
                 onClick={() => setHeroView('revenue')}
                 className={`px-6 py-3 rounded-xl text-base font-bold transform transition-all duration-300 hover:scale-105 ${
@@ -610,16 +620,6 @@ export default function AdminRevenuePage() {
                 }`}
               >
                 Revenue
-              </button>
-              <button
-                onClick={() => setHeroView('profit')}
-                className={`px-6 py-3 rounded-xl text-base font-bold transform transition-all duration-300 hover:scale-105 ${
-                  heroView === 'profit'
-                    ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50'
-                    : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white'
-                }`}
-              >
-                Profit
               </button>
               <button
                 onClick={() => setHeroView('expense')}
@@ -641,8 +641,8 @@ export default function AdminRevenuePage() {
                   onClick={() => setHeroView(view)}
                   className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
                     heroView === view 
-                      ? view === 'revenue' ? 'bg-emerald-400 w-6' 
-                        : view === 'profit' ? 'bg-blue-400 w-6' 
+                      ? view === 'profit' ? 'bg-yellow-400 w-6' 
+                        : view === 'revenue' ? 'bg-emerald-400 w-6' 
                         : 'bg-red-400 w-6'
                       : 'bg-gray-600'
                   }`}
@@ -655,7 +655,7 @@ export default function AdminRevenuePage() {
               <div 
                 className="text-[10px] md:text-sm font-bold uppercase tracking-wider mb-2 md:mb-3 transition-colors duration-700"
                 style={{
-                  color: heroView === 'revenue' ? '#34d399' : heroView === 'profit' ? '#60a5fa' : '#f87171'
+                  color: heroView === 'profit' ? '#facc15' : heroView === 'revenue' ? '#34d399' : '#f87171'
                 }}
               >
                 {heroColor.label}
@@ -663,11 +663,11 @@ export default function AdminRevenuePage() {
               <div 
                 className="text-5xl md:text-8xl font-black mb-2 md:mb-4 transition-all duration-700"
                 style={{
-                  color: heroView === 'revenue' ? '#34d399' : heroView === 'profit' ? '#60a5fa' : '#f87171',
-                  filter: heroView === 'revenue' 
+                  color: heroView === 'profit' ? '#facc15' : heroView === 'revenue' ? '#34d399' : '#f87171',
+                  filter: heroView === 'profit' 
+                    ? 'drop-shadow(0 0 30px rgba(250, 204, 21, 0.9))'
+                    : heroView === 'revenue'
                     ? 'drop-shadow(0 0 30px rgba(16, 185, 129, 0.9))'
-                    : heroView === 'profit'
-                    ? 'drop-shadow(0 0 30px rgba(59, 130, 246, 0.9))'
                     : 'drop-shadow(0 0 30px rgba(239, 68, 68, 0.9))',
                 }}
               >
@@ -684,7 +684,7 @@ export default function AdminRevenuePage() {
                 {heroView === 'profit' && (
                   <span 
                     className="md:ml-3 font-semibold transition-colors duration-700 text-xs md:text-base"
-                    style={{ color: '#60a5fa' }}
+                    style={{ color: '#facc15' }}
                   >
                     {((allTimeProfit / allTimeTotal) * 100).toFixed(1)}% margin
                   </span>
@@ -711,184 +711,34 @@ export default function AdminRevenuePage() {
 
         {/* REVENUE BREAKDOWN CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-          {/* Subscription Revenue Card */}
-          <div className="relative group">
-            <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-6 border border-blue-500/30 shadow-xl hover:shadow-2xl hover:border-blue-400/50 transition-all duration-300">
-              <div className="text-center md:text-left">
-                <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
-                  <CreditCard className="w-5 h-5 text-blue-400" />
-                  <div className="text-xs font-bold text-gray-400 uppercase">Subscription Revenue</div>
-                </div>
-                <div className="text-4xl md:text-3xl font-black text-blue-400 mb-2">
-                  {loading ? (
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto" />
-                  ) : (
-                    `$${allTimeSubscriptionRevenue.toLocaleString()}`
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            {/* Tooltip */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 ease-out pointer-events-none z-50">
-              <div className="bg-gray-900 border-2 border-blue-500/50 rounded-xl p-4 shadow-2xl shadow-blue-500/20 min-w-[200px] animate-in slide-in-from-top-2">
-                <div className="text-center">
-                  <div className="text-5xl font-black text-blue-400 mb-2">
-                    {totalMonthlySubscriptions + customSubscriptionCount}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    Total Subscriptions Billed
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Call Minutes Revenue Card */}
-          <div className="relative group">
-            <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-6 border border-emerald-500/30 shadow-xl hover:shadow-2xl hover:border-emerald-400/50 transition-all duration-300">
-              <div className="text-center md:text-left">
-                <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
-                  <DollarSign className="w-5 h-5 text-emerald-400" />
-                  <div className="text-xs font-bold text-gray-400 uppercase">Call Minutes Revenue</div>
-                </div>
-                <div className="text-4xl md:text-3xl font-black text-emerald-400 mb-2">
-                  {loading ? (
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto" />
-                  ) : (
-                    `$${allTimeMinutesRevenue.toLocaleString()}`
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            {/* Tooltip */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 ease-out pointer-events-none z-50">
-              <div className="bg-gray-900 border-2 border-emerald-500/50 rounded-xl p-4 shadow-2xl shadow-emerald-500/20 min-w-[200px] animate-in slide-in-from-top-2">
-                <div className="text-center">
-                  <div className="text-5xl font-black text-emerald-400 mb-2">
-                    {minuteRefills + customBalanceRefillCount}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    Total Refills Billed
-                  </div>
-                </div>
-              </div>
-            </div>
-        </div>
-
-          {/* Expenses Card */}
-          <div className="relative group">
-            <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-6 border border-red-500/30 shadow-xl hover:shadow-2xl hover:border-red-400/50 transition-all duration-300">
-              <div className="text-center md:text-left">
-                <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
-                  <TrendingUp className="w-5 h-5 text-red-400 transform rotate-180" />
-                  <div className="text-xs font-bold text-gray-400 uppercase">Total Expenses</div>
-                </div>
-                <div className="text-4xl md:text-3xl font-black text-red-400 mb-2">
-                  {loading ? (
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto" />
-                  ) : (
-                    `$${allTimeExpenses.toLocaleString()}`
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Tooltip */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 ease-out pointer-events-none z-50">
-              <div className="bg-gray-900 border-2 border-red-500/50 rounded-xl p-4 shadow-2xl shadow-red-500/20 min-w-[250px] animate-in slide-in-from-top-2">
-                <div className="text-xs font-bold text-red-400 mb-3 uppercase">Expense Breakdown</div>
-                <div className="space-y-2 text-sm">
-                  {allTimeStripeFees > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Stripe Fees (3%):</span>
-                      <span className="text-white font-bold">
-                        ${allTimeStripeFees.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  )}
-                  {/* Combined AI Costs: Stripe refills + manual AI Calls entries */}
-                  {(() => {
-                    const manualAICalls = customExpensesByCategory['AI Calls'] || 0;
-                    const totalAICosts = allTimeMinutesExpense + manualAICalls;
-                    return totalAICosts > 0 ? (
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">AI Costs:</span>
-                        <span className="text-white font-bold">${totalAICosts.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                      </div>
-                    ) : null;
-                  })()}
-                  {allTimeCommissionsPaid > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Referral Payouts:</span>
-                      <span className="text-white font-bold">${allTimeCommissionsPaid.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {/* Other custom expenses (excluding AI Calls which is combined above) */}
-                  {allTimeCustomExpenses > 0 && (
-                    <>
-                      {Object.entries(customExpensesByCategory)
-                        .filter(([category]) => category !== 'AI Calls')
-                        .map(([category, amount]) => (
-                        <div key={category} className="flex justify-between">
-                          <span className="text-gray-400">{category}:</span>
-                          <span className="text-white font-bold">${(amount as number).toLocaleString()}</span>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                  <div className="border-t border-gray-700 pt-2 mt-2 flex justify-between">
-                    <span className="text-gray-400">Total:</span>
-                    <span className="text-red-400 font-bold">${allTimeExpenses.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-                </div>
-
-          {/* Net Profit Card */}
-          <div className="relative group">
-            <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-6 border-2 border-purple-500/50 shadow-xl hover:shadow-2xl hover:border-purple-400/70 transition-all duration-300">
-              <div className="text-center md:text-left">
-                <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
-                  <TrendingUp className="w-5 h-5 text-purple-400" />
-                  <div className="text-xs font-bold text-gray-400 uppercase">Net Profit</div>
-                </div>
-                <div className="text-4xl md:text-3xl font-black text-purple-400 mb-2">
-                  {loading ? (
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto" />
-                  ) : (
-                    `$${allTimeProfit.toLocaleString()}`
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Tooltip */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 ease-out pointer-events-none z-50">
-              <div className="bg-gray-900 border-2 border-purple-500/50 rounded-xl p-4 shadow-2xl shadow-purple-500/20 min-w-[250px] animate-in slide-in-from-top-2">
-                <div className="text-xs font-bold text-purple-400 mb-3 uppercase">Profit Calculation</div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Total Revenue:</span>
-                    <span className="text-white font-bold">${allTimeTotal.toLocaleString()}</span>
-                </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Total Expenses:</span>
-                    <span className="text-red-400">-${allTimeExpenses.toLocaleString()}</span>
-                </div>
-                  <div className="border-t border-gray-700 pt-2 mt-2 flex justify-between">
-                    <span className="text-gray-400">Net Profit:</span>
-                    <span className="text-purple-400 font-bold">${allTimeProfit.toLocaleString()}</span>
-              </div>
-                  <div className="text-xs text-gray-500 mt-2">
-                    Profit Margin: {((allTimeProfit / allTimeTotal) * 100).toFixed(1)}%
-                </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <AdminStatCard
+            title="Subscription Revenue"
+            value={loading ? '...' : `$${allTimeSubscriptionRevenue.toLocaleString()}`}
+            subtitle={`${totalMonthlySubscriptions + customSubscriptionCount} subscriptions billed`}
+            icon={CreditCard}
+            className="border-blue-500/30"
+          />
+          <AdminStatCard
+            title="Call Minutes Revenue"
+            value={loading ? '...' : `$${allTimeMinutesRevenue.toLocaleString()}`}
+            subtitle={`${minuteRefills + customBalanceRefillCount} refills billed`}
+            icon={DollarSign}
+            className="border-emerald-500/30"
+          />
+          <AdminStatCard
+            title="Total Expenses"
+            value={loading ? '...' : `$${allTimeExpenses.toLocaleString()}`}
+            subtitle="AI costs, fees & payouts"
+            icon={TrendingUp}
+            className="border-red-500/30"
+          />
+          <AdminStatCard
+            title="Net Profit"
+            value={loading ? '...' : `$${allTimeProfit.toLocaleString()}`}
+            subtitle={`${((allTimeProfit / allTimeTotal) * 100 || 0).toFixed(1)}% margin`}
+            icon={TrendingUp}
+            className="border-purple-500/30 bg-gradient-to-br from-purple-900/20 to-purple-600/10"
+          />
         </div>
 
         {/* REVENUE CHART - Hidden on Mobile */}
@@ -1071,8 +921,8 @@ export default function AdminRevenuePage() {
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-purple-500/50 to-transparent"></div>
         </div>
 
-        {/* USER & CONVERSION METRICS - ROW 1 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        {/* ROW 1: Active Users, Pro Access, Conversion Rate */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <AdminStatCard
             title="Active Users"
             value={loading ? '...' : String(revenueData?.users.activeUsers || 0)}
@@ -1088,23 +938,16 @@ export default function AdminRevenuePage() {
             className="border-green-500/30"
           />
           <AdminStatCard
-            title="VIP Users"
-            value={loading ? '...' : String(revenueData?.users.vipAccess || 0)}
-            subtitle="Lifetime access"
-            icon={Users}
-            className="border-yellow-500/30 bg-gradient-to-br from-yellow-900/20 to-yellow-600/10"
-          />
-        </div>
-
-        {/* CONVERSION & REVENUE METRICS - ROW 2 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <AdminStatCard
             title="Conversion Rate"
             value={loading ? '...' : `${revenueData?.users.conversionRate || '0.0'}%`}
             subtitle="Trial → Pro Access"
             icon={TrendingUp}
             className="border-purple-500/30 bg-gradient-to-br from-purple-900/20 to-purple-600/10"
           />
+        </div>
+
+        {/* ROW 2: Avg Revenue Per User + Revenue Projections */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <AdminStatCard
             title="Avg Revenue Per User"
             value={loading ? '...' : `$${revenueData?.users.avgRevenuePerUser || '0'}`}
@@ -1112,16 +955,11 @@ export default function AdminRevenuePage() {
             icon={DollarSign}
             className="border-emerald-500/30"
           />
-        </div>
-
-        {/* REVENUE PROJECTIONS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <AdminStatCard
             title="Average Daily Revenue"
             value={`$${(last30DaysTotal / 30).toFixed(0)}`}
             subtitle="Based on last 30 days"
             icon={Calendar}
-            trend={{ value: '+8.5%', isPositive: true }}
           />
           <AdminStatCard
             title="Average Monthly Revenue"
@@ -1136,23 +974,24 @@ export default function AdminRevenuePage() {
             subtitle="At current rate"
             icon={TrendingUp}
             className="border-yellow-500/40 bg-gradient-to-br from-yellow-900/20 to-amber-600/10"
-            trend={{ value: `$${((last30DaysTotal * 12) / 12).toFixed(0)}/mo`, isPositive: true }}
           />
         </div>
 
+        {/* ACTIVITY SECTION - MOBILE ONLY (Desktop moved to Sterling Stats page) */}
+        <div className="md:hidden">
         {/* DIVIDER */}
-        <div className="my-8 md:my-12 flex items-center gap-3">
+          <div className="my-8 flex items-center gap-3">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent"></div>
-          <div className="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider">Activity</div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Activity</div>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent"></div>
         </div>
 
         {/* TODAY'S ACTIVITY */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 gap-4 mb-6">
           <AdminStatCard
             title="Active Users Today"
-            value={loading ? '...' : String(revenueData?.users.activeUsersToday || 0)}
-            subtitle="Users who made calls today"
+              value={loading ? '...' : String(revenueData?.users.activeUsersToday || 0)}
+              subtitle="Users who made calls today"
             icon={Users}
             className="border-blue-500/30"
           />
@@ -1180,7 +1019,7 @@ export default function AdminRevenuePage() {
         </div>
 
         {/* ALL-TIME PERFORMANCE */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 gap-4 mb-8">
           <AdminStatCard
             title="Total Calls Ever"
             value={loading ? '...' : (revenueData?.calls.allTime.total || 0).toLocaleString()}
@@ -1202,6 +1041,7 @@ export default function AdminRevenuePage() {
             icon={TrendingUp}
             className="border-purple-500/30"
           />
+          </div>
         </div>
 
         {/* DIVIDER - Other */}
@@ -1278,136 +1118,136 @@ export default function AdminRevenuePage() {
             {/* Subtle glow effect */}
             <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-cyan-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
             
-            {/* Header with Summary Stats */}
+          {/* Header with Summary Stats */}
             <div className="flex items-center justify-between mb-8">
-              <div>
+            <div>
                 <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
                   <div className="p-2 bg-cyan-500/20 rounded-xl">
                     <Calendar className="w-6 h-6 text-cyan-400" />
                   </div>
-                  Auto Schedule Profits
-                </h3>
+                Auto Schedule Profits
+              </h3>
                 <p className="text-sm text-gray-400 ml-12">Projected weekly revenue from automated sessions</p>
-              </div>
-              <div className="flex gap-6">
+            </div>
+            <div className="flex gap-6">
                 <div className="text-center px-8 py-4 bg-cyan-500/10 rounded-xl border border-cyan-500/30 hover:border-cyan-400/60 hover:bg-cyan-500/20 hover:scale-110 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-300 cursor-default">
                   <div className="text-xs text-cyan-400 uppercase font-bold tracking-wider mb-2">Active Users</div>
                   <div className="text-3xl font-black text-cyan-400" style={{ filter: 'drop-shadow(0 0 10px rgba(34, 211, 238, 0.5))' }}>
                     {loading ? <Loader2 className="w-7 h-7 animate-spin mx-auto" /> : (autoScheduleStats?.totalActiveUsers || 0)}
-                  </div>
                 </div>
+              </div>
                 <div className="text-center px-8 py-4 bg-emerald-500/10 rounded-xl border border-emerald-500/30 hover:border-emerald-400/60 hover:bg-emerald-500/20 hover:scale-110 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 cursor-default">
                   <div className="text-xs text-emerald-400 uppercase font-bold tracking-wider mb-2">Weekly Profit</div>
                   <div className="text-3xl font-black text-emerald-400" style={{ filter: 'drop-shadow(0 0 10px rgba(52, 211, 153, 0.5))' }}>
                     {loading ? <Loader2 className="w-7 h-7 animate-spin mx-auto" /> : `$${(autoScheduleStats?.totalWeeklyProfit || 0).toFixed(0)}`}
-                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Daily Breakdown - All 7 Days in One Row */}
+            <div className="grid grid-cols-7 gap-4">
+            {/* Sunday */}
+              <div className="bg-gradient-to-br from-[#0F1629]/80 to-[#0B1437]/80 rounded-xl p-5 border border-orange-500/30 hover:border-orange-400/60 hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 group/day hover:scale-105">
+              <div className="text-center">
+                  <div className="text-xs font-bold text-orange-400 uppercase mb-3 tracking-wider">Sun</div>
+                  <div className="text-2xl font-black text-orange-400 mb-1" style={{ filter: 'drop-shadow(0 0 8px rgba(251, 146, 60, 0.4))' }}>
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[0]?.userCount || 0)}
+                </div>
+                  <div className="text-xs text-gray-500 mb-3">users</div>
+                  <div className="h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent my-3" />
+                  <div className="text-base font-bold text-emerald-400">
+                  ${(autoScheduleStats?.dayStats[0]?.totalProfit || 0).toFixed(0)}
                 </div>
               </div>
             </div>
 
-            {/* Daily Breakdown - All 7 Days in One Row */}
-            <div className="grid grid-cols-7 gap-4">
-              {/* Sunday */}
-              <div className="bg-gradient-to-br from-[#0F1629]/80 to-[#0B1437]/80 rounded-xl p-5 border border-orange-500/30 hover:border-orange-400/60 hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 group/day hover:scale-105">
-                <div className="text-center">
-                  <div className="text-xs font-bold text-orange-400 uppercase mb-3 tracking-wider">Sun</div>
-                  <div className="text-2xl font-black text-orange-400 mb-1" style={{ filter: 'drop-shadow(0 0 8px rgba(251, 146, 60, 0.4))' }}>
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[0]?.userCount || 0)}
-                  </div>
-                  <div className="text-xs text-gray-500 mb-3">users</div>
-                  <div className="h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent my-3" />
-                  <div className="text-base font-bold text-emerald-400">
-                    ${(autoScheduleStats?.dayStats[0]?.totalProfit || 0).toFixed(0)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Monday */}
+            {/* Monday */}
               <div className="bg-gradient-to-br from-[#0F1629]/80 to-[#0B1437]/80 rounded-xl p-5 border border-blue-500/30 hover:border-blue-400/60 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 group/day hover:scale-105">
-                <div className="text-center">
+              <div className="text-center">
                   <div className="text-xs font-bold text-blue-400 uppercase mb-3 tracking-wider">Mon</div>
                   <div className="text-2xl font-black text-blue-400 mb-1" style={{ filter: 'drop-shadow(0 0 8px rgba(96, 165, 250, 0.4))' }}>
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[1]?.userCount || 0)}
-                  </div>
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[1]?.userCount || 0)}
+                </div>
                   <div className="text-xs text-gray-500 mb-3">users</div>
                   <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent my-3" />
                   <div className="text-base font-bold text-emerald-400">
-                    ${(autoScheduleStats?.dayStats[1]?.totalProfit || 0).toFixed(0)}
-                  </div>
+                  ${(autoScheduleStats?.dayStats[1]?.totalProfit || 0).toFixed(0)}
                 </div>
               </div>
+            </div>
 
-              {/* Tuesday */}
+            {/* Tuesday */}
               <div className="bg-gradient-to-br from-[#0F1629]/80 to-[#0B1437]/80 rounded-xl p-5 border border-purple-500/30 hover:border-purple-400/60 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 group/day hover:scale-105">
-                <div className="text-center">
+              <div className="text-center">
                   <div className="text-xs font-bold text-purple-400 uppercase mb-3 tracking-wider">Tue</div>
                   <div className="text-2xl font-black text-purple-400 mb-1" style={{ filter: 'drop-shadow(0 0 8px rgba(192, 132, 252, 0.4))' }}>
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[2]?.userCount || 0)}
-                  </div>
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[2]?.userCount || 0)}
+                </div>
                   <div className="text-xs text-gray-500 mb-3">users</div>
                   <div className="h-px bg-gradient-to-r from-transparent via-purple-500/30 to-transparent my-3" />
                   <div className="text-base font-bold text-emerald-400">
-                    ${(autoScheduleStats?.dayStats[2]?.totalProfit || 0).toFixed(0)}
-                  </div>
+                  ${(autoScheduleStats?.dayStats[2]?.totalProfit || 0).toFixed(0)}
                 </div>
               </div>
+            </div>
 
-              {/* Wednesday */}
+            {/* Wednesday */}
               <div className="bg-gradient-to-br from-[#0F1629]/80 to-[#0B1437]/80 rounded-xl p-5 border border-cyan-500/30 hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/20 transition-all duration-300 group/day hover:scale-105">
-                <div className="text-center">
+              <div className="text-center">
                   <div className="text-xs font-bold text-cyan-400 uppercase mb-3 tracking-wider">Wed</div>
                   <div className="text-2xl font-black text-cyan-400 mb-1" style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))' }}>
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[3]?.userCount || 0)}
-                  </div>
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[3]?.userCount || 0)}
+                </div>
                   <div className="text-xs text-gray-500 mb-3">users</div>
                   <div className="h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent my-3" />
                   <div className="text-base font-bold text-emerald-400">
-                    ${(autoScheduleStats?.dayStats[3]?.totalProfit || 0).toFixed(0)}
-                  </div>
+                  ${(autoScheduleStats?.dayStats[3]?.totalProfit || 0).toFixed(0)}
                 </div>
               </div>
+            </div>
 
-              {/* Thursday */}
+            {/* Thursday */}
               <div className="bg-gradient-to-br from-[#0F1629]/80 to-[#0B1437]/80 rounded-xl p-5 border border-indigo-500/30 hover:border-indigo-400/60 hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-300 group/day hover:scale-105">
-                <div className="text-center">
+              <div className="text-center">
                   <div className="text-xs font-bold text-indigo-400 uppercase mb-3 tracking-wider">Thu</div>
                   <div className="text-2xl font-black text-indigo-400 mb-1" style={{ filter: 'drop-shadow(0 0 8px rgba(129, 140, 248, 0.4))' }}>
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[4]?.userCount || 0)}
-                  </div>
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[4]?.userCount || 0)}
+                </div>
                   <div className="text-xs text-gray-500 mb-3">users</div>
                   <div className="h-px bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent my-3" />
                   <div className="text-base font-bold text-emerald-400">
-                    ${(autoScheduleStats?.dayStats[4]?.totalProfit || 0).toFixed(0)}
-                  </div>
+                  ${(autoScheduleStats?.dayStats[4]?.totalProfit || 0).toFixed(0)}
                 </div>
               </div>
+            </div>
 
-              {/* Friday */}
+            {/* Friday */}
               <div className="bg-gradient-to-br from-[#0F1629]/80 to-[#0B1437]/80 rounded-xl p-5 border border-pink-500/30 hover:border-pink-400/60 hover:shadow-lg hover:shadow-pink-500/20 transition-all duration-300 group/day hover:scale-105">
-                <div className="text-center">
+              <div className="text-center">
                   <div className="text-xs font-bold text-pink-400 uppercase mb-3 tracking-wider">Fri</div>
                   <div className="text-2xl font-black text-pink-400 mb-1" style={{ filter: 'drop-shadow(0 0 8px rgba(244, 114, 182, 0.4))' }}>
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[5]?.userCount || 0)}
-                  </div>
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[5]?.userCount || 0)}
+                </div>
                   <div className="text-xs text-gray-500 mb-3">users</div>
                   <div className="h-px bg-gradient-to-r from-transparent via-pink-500/30 to-transparent my-3" />
                   <div className="text-base font-bold text-emerald-400">
-                    ${(autoScheduleStats?.dayStats[5]?.totalProfit || 0).toFixed(0)}
-                  </div>
+                  ${(autoScheduleStats?.dayStats[5]?.totalProfit || 0).toFixed(0)}
                 </div>
               </div>
+            </div>
 
-              {/* Saturday */}
+            {/* Saturday */}
               <div className="bg-gradient-to-br from-[#0F1629]/80 to-[#0B1437]/80 rounded-xl p-5 border border-yellow-500/30 hover:border-yellow-400/60 hover:shadow-lg hover:shadow-yellow-500/20 transition-all duration-300 group/day hover:scale-105">
-                <div className="text-center">
+              <div className="text-center">
                   <div className="text-xs font-bold text-yellow-400 uppercase mb-3 tracking-wider">Sat</div>
                   <div className="text-2xl font-black text-yellow-400 mb-1" style={{ filter: 'drop-shadow(0 0 8px rgba(250, 204, 21, 0.4))' }}>
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[6]?.userCount || 0)}
-                  </div>
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (autoScheduleStats?.dayStats[6]?.userCount || 0)}
+                </div>
                   <div className="text-xs text-gray-500 mb-3">users</div>
                   <div className="h-px bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent my-3" />
                   <div className="text-base font-bold text-emerald-400">
-                    ${(autoScheduleStats?.dayStats[6]?.totalProfit || 0).toFixed(0)}
+                  ${(autoScheduleStats?.dayStats[6]?.totalProfit || 0).toFixed(0)}
                   </div>
                 </div>
               </div>

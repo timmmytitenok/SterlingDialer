@@ -11,45 +11,39 @@ function LoginPageContent() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isMasterLogin, setIsMasterLogin] = useState(false);
   const [isAdminDashboardMode, setIsAdminDashboardMode] = useState(false);
   const [logoClickCount, setLogoClickCount] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
 
-  // Check for pre-filled email from admin panel
+  // Check for pre-filled email from admin panel (for master login via admin user management)
+  const [isMasterLogin, setIsMasterLogin] = useState(false);
+  
   useEffect(() => {
     const emailParam = searchParams.get('email');
     if (emailParam) {
       console.log('📧 Pre-filling email from admin panel:', emailParam);
       setEmail(emailParam);
-      // Auto-enable master login mode when email is pre-filled
+      // Auto-enable master login mode when email is pre-filled from admin panel
       setIsMasterLogin(true);
     }
   }, [searchParams]);
 
-  // Secret master login trigger - click logo 5/10 times
+  // Secret admin access - click logo 10 times
   const handleLogoClick = () => {
     const newCount = logoClickCount + 1;
     setLogoClickCount(newCount);
     
-    if (newCount === 5 && !isMasterLogin && !isAdminDashboardMode) {
-      // First 5 clicks = Master Login Mode (user impersonation)
-      setIsMasterLogin(true);
-      setIsAdminDashboardMode(false);
-    } else if (newCount === 10) {
-      // 10 clicks total = Admin Dashboard Mode (no email, direct to admin dashboard)
-      setIsMasterLogin(false);
+    if (newCount === 10) {
+      // 10 clicks = Admin Dashboard Mode (password only, direct to admin dashboard)
       setIsAdminDashboardMode(true);
       setLogoClickCount(0); // Reset counter
     }
     
     // Reset counter after 2 seconds of no clicks
     setTimeout(() => {
-      if (logoClickCount < 5) {
-        setLogoClickCount(0);
-      }
+      setLogoClickCount(0);
     }, 2000);
   };
 
@@ -166,10 +160,10 @@ function LoginPageContent() {
             <span className="text-xl font-bold text-white">SA</span>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            {isAdminDashboardMode ? '🔐 Admin Dashboard Access' : isMasterLogin ? '🔑 Master Login Mode' : 'Welcome Back'}
+            {isAdminDashboardMode ? '🔐 Admin Dashboard Access' : 'Welcome Back'}
           </h1>
           <p className="text-gray-300">
-            {isAdminDashboardMode ? 'Enter master password only' : isMasterLogin ? 'Enter email + master password' : 'Sign in to your account'}
+            {isAdminDashboardMode ? 'Enter master password only' : 'Sign in to your account'}
           </p>
         </div>
 

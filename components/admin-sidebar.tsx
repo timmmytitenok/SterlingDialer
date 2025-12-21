@@ -7,6 +7,8 @@ import {
   LogOut,
   DollarSign,
   Gift,
+  Shield,
+  TrendingUp,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -16,8 +18,10 @@ export function AdminSidebar() {
 
   const mainNavigation = [
     { name: 'My Revenue', href: '/admin/my-revenue', icon: DollarSign },
+    { name: 'Sterling Stats', href: '/admin/sterling-stats', icon: TrendingUp },
     { name: 'User Management', href: '/admin/user-management', icon: Users },
-    { name: 'Affiliate Program', href: '/admin/affiliate-program', icon: Gift },
+    { name: 'Sales Team', href: '/admin/sales-team', icon: Gift },
+    // { name: 'Affiliate Program', href: '/admin/affiliate-program', icon: Gift }, // Hidden for now
   ];
 
   const handleSignOut = async () => {
@@ -27,46 +31,47 @@ export function AdminSidebar() {
   };
 
   return (
-    <aside className="hidden md:block w-full bg-[#0A1129] border-b border-gray-800">
-      {/* Top Navigation Bar */}
-      <div className="flex items-center justify-between px-6 py-4">
-        {/* Logo */}
+    <aside className="hidden md:flex w-64 bg-[#0A1129] border-r border-gray-800 flex-col">
+      {/* Logo */}
+      <div className="p-6 border-b border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-xl font-bold">
-            SA
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-xl font-bold">
+            <Shield className="w-5 h-5" />
           </div>
           <div>
             <h1 className="text-lg font-bold">Sterling AI</h1>
-            <p className="text-xs text-gray-400">Admin Panel</p>
+            <p className="text-xs text-purple-400">Admin Panel</p>
           </div>
         </div>
+      </div>
 
-        {/* Main Navigation - Horizontal */}
-        <nav className="flex items-center gap-2">
-          {mainNavigation.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 ${
-                  isActive
-                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                    : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium">{item.name}</span>
-              </Link>
-            );
-          })}
-        </nav>
+      {/* Main Navigation */}
+      <nav className="flex-1 p-4 space-y-1">
+        {mainNavigation.map((item) => {
+          const isActive = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                isActive
+                  ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
+                  : 'text-gray-400 hover:bg-gray-800/50 hover:text-white hover:scale-[1.02] hover:translate-x-1'
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="font-medium">{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
-        {/* Sign Out Button - Top Right (Desktop Only) */}
+      {/* Sign Out at Bottom */}
+      <div className="border-t border-gray-800 p-4">
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-2 px-5 py-3 rounded-lg transition-all duration-200 text-red-400 hover:bg-red-900/20 hover:text-red-300 border border-transparent hover:border-red-500/30 hover:scale-105"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-red-400 hover:bg-red-900/20 hover:text-red-300 border border-transparent hover:border-red-500/30"
         >
           <LogOut className="w-5 h-5" />
           <span className="font-medium">Sign Out</span>
@@ -75,4 +80,3 @@ export function AdminSidebar() {
     </aside>
   );
 }
-

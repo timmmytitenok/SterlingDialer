@@ -244,7 +244,7 @@ export async function POST(req: Request) {
             console.log('🔒 Card required: YES ✅');
             
             // Grant free trial access NOW (card is on file)
-            const trialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            const trialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
             
             const { error: trialError } = await supabase
               .from('profiles')
@@ -262,8 +262,8 @@ export async function POST(req: Request) {
             if (trialError) {
               console.error('❌ Error granting trial access:', trialError);
             } else {
-              console.log('✅ FREE TRIAL ACTIVATED - 30 days of access granted');
-              console.log('✅ Payment method on file - will charge $499 after 30 days');
+              console.log('✅ FREE TRIAL ACTIVATED - 7 days of access granted');
+              console.log('✅ Payment method on file - will charge $499 after 7 days');
             }
             
             // Continue to regular subscription processing below
@@ -932,6 +932,148 @@ export async function POST(req: Request) {
           }
         } else {
           console.log('ℹ️ User was not referred or not converted');
+        }
+
+        // 🎯 SALES TEAM COMMISSION - Check if user was referred by sales person
+        const { data: salesReferral } = await supabase
+          .from('sales_referrals')
+          .select('*, sales_team(*)')
+          .eq('user_id', profile.user_id)
+          .maybeSingle();
+
+        if (salesReferral && salesReferral.sales_team) {
+          const salesPerson = salesReferral.sales_team;
+          const currentMonth = new Date().toISOString().substring(0, 7); // '2025-01'
+          const commissionRate = salesPerson.commission_rate || 0.35;
+          const commissionAmount = amountPaid * commissionRate;
+
+          console.log('🎯 SALES TEAM REFERRAL FOUND!');
+          console.log(`   Sales Person: ${salesPerson.full_name}`);
+          console.log(`   Referral Commission Type: ${salesReferral.commission_type || 'recurring'} (per-user setting)`);
+          console.log(`   Amount Paid: $${amountPaid}`);
+          console.log(`   Commission Rate: ${commissionRate * 100}%`);
+          console.log(`   Commission Amount: $${commissionAmount.toFixed(2)}`);
+
+          // Update referral status to converted if first payment
+          if (salesReferral.status === 'trial' && amountPaid > 0) {
+            console.log('🎉 Marking referral as CONVERTED!');
+            await supabase
+              .from('sales_referrals')
+              .update({
+                status: 'converted',
+                subscription_amount: amountPaid,
+                converted_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', salesReferral.id);
+          }
+
+          // Only create commission if amount > 0
+          if (amountPaid > 0) {
+            // Check if this is one-time or recurring based on the REFERRAL's commission_type (set per user in admin)
+            const isOneTime = salesReferral.commission_type === 'one_time';
+
+            // For one-time: only pay once (check if already paid)
+            if (isOneTime) {
+              const { data: existingCommission } = await supabase
+                .from('sales_commissions')
+                .select('id')
+                .eq('referral_id', salesReferral.id)
+                .eq('commission_type', 'one_time')
+                .maybeSingle();
+
+              if (existingCommission) {
+                console.log('ℹ️ One-time commission already paid for this referral - sales person will NOT receive commission for this payment (2nd+ payment)');
+              } else {
+                // Create one-time commission
+                const { error: commError } = await supabase
+                  .from('sales_commissions')
+                  .insert({
+                    sales_person_id: salesPerson.id,
+                    referral_id: salesReferral.id,
+                    user_id: profile.user_id,
+                    user_email: salesReferral.user_email,
+                    amount: commissionAmount,
+                    commission_type: 'one_time',
+                    status: 'pending',
+                    month_year: currentMonth,
+                    description: `One-time commission for ${salesReferral.user_name || salesReferral.user_email}`,
+                  });
+
+                if (commError) {
+                  console.error('⚠️ Error creating sales commission:', commError);
+                } else {
+                  console.log(`✅ Sales commission created: $${commissionAmount.toFixed(2)} (one-time)`);
+                }
+              }
+            } else {
+              // Recurring commission - create for each month
+              const { data: existingMonthly } = await supabase
+                .from('sales_commissions')
+                .select('id')
+                .eq('referral_id', salesReferral.id)
+                .eq('month_year', currentMonth)
+                .maybeSingle();
+
+              if (existingMonthly) {
+                console.log(`ℹ️ Commission already exists for ${currentMonth}`);
+              } else {
+                const { error: commError } = await supabase
+                  .from('sales_commissions')
+                  .insert({
+                    sales_person_id: salesPerson.id,
+                    referral_id: salesReferral.id,
+                    user_id: profile.user_id,
+                    user_email: salesReferral.user_email,
+                    amount: commissionAmount,
+                    commission_type: 'recurring',
+                    status: 'pending',
+                    month_year: currentMonth,
+                    description: `Monthly commission for ${salesReferral.user_name || salesReferral.user_email} (${currentMonth})`,
+                  });
+
+                if (commError) {
+                  console.error('⚠️ Error creating sales commission:', commError);
+                } else {
+                  console.log(`✅ Sales commission created: $${commissionAmount.toFixed(2)} (recurring for ${currentMonth})`);
+                }
+              }
+            }
+
+            // Update sales person stats
+            const { data: allCommissions } = await supabase
+              .from('sales_commissions')
+              .select('amount, status')
+              .eq('sales_person_id', salesPerson.id);
+
+            const totalEarnings = (allCommissions || []).reduce((sum, c) => sum + (c.amount || 0), 0);
+            const totalPaid = (allCommissions || []).filter(c => c.status === 'paid').reduce((sum, c) => sum + (c.amount || 0), 0);
+            const pendingPayout = (allCommissions || []).filter(c => c.status === 'pending').reduce((sum, c) => sum + (c.amount || 0), 0);
+
+            const { data: allReferrals } = await supabase
+              .from('sales_referrals')
+              .select('id, status')
+              .eq('sales_person_id', salesPerson.id);
+
+            const totalReferred = (allReferrals || []).length;
+            const totalConversions = (allReferrals || []).filter(r => r.status === 'converted').length;
+
+            await supabase
+              .from('sales_team')
+              .update({
+                total_earnings: totalEarnings,
+                total_paid: totalPaid,
+                pending_payout: pendingPayout,
+                total_users_referred: totalReferred,
+                total_conversions: totalConversions,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', salesPerson.id);
+
+            console.log(`✅ Updated sales person stats: ${salesPerson.full_name}`);
+          }
+        } else {
+          console.log('ℹ️ User was not referred by sales team');
         }
       }
     }

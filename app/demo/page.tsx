@@ -245,7 +245,7 @@ export default function DemoPage() {
                     <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">Launch AI Agent</h3>
                     <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
                       Set your daily budget and Hit "Launch." AI starts calling immediately.
-                    </p>
+                  </p>
                 </div>
               </div>
             </div>

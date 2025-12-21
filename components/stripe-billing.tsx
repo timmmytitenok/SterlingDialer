@@ -148,11 +148,11 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
       return trialEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
     
-    // If on trial but no specific date, calculate 30 days from account creation
+    // If on trial but no specific date, calculate 7 days from account creation
     if (isOnTrial && subscriptionData?.created_at) {
       const created = new Date(subscriptionData.created_at);
       const trialEnd = new Date(created);
-      trialEnd.setDate(trialEnd.getDate() + 30); // 30 day trial
+      trialEnd.setDate(trialEnd.getDate() + 7); // 7 day trial
       return trialEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
     

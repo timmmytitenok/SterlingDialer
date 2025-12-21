@@ -112,11 +112,11 @@ export default function LandingPage() {
               <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 animate-pulse flex-shrink-0" />
               {/* Mobile: Shorter text */}
               <span className="text-xs sm:hidden text-white font-bold text-center whitespace-nowrap">
-                30-Day Free Trial — Pay Per Minute
+                7-Day Free Trial — Pay Per Minute
               </span>
               {/* Desktop: Full text */}
               <span className="hidden sm:block text-base text-white font-bold text-center">
-                30-Day Free Trial — Pay Only for Minutes <span className="font-extrabold">You</span> Use
+                7-Day Free Trial — Pay Only for Minutes <span className="font-extrabold">You</span> Use
               </span>
             </div>
 
@@ -524,12 +524,12 @@ export default function LandingPage() {
                 {/* Mobile: Shorter version */}
                 <p className="sm:hidden text-xs text-gray-400 mt-4">
                   <Zap className="w-3 h-3 inline mr-1 text-green-400 animate-pulse" />
-                  30-Day Trial — Pay Per Minute
+                  7-Day Trial — Pay Per Minute
                 </p>
                 {/* Desktop: Full version */}
                 <p className="hidden sm:block text-xs sm:text-sm text-gray-400 mt-4 md:mt-6">
                   <Zap className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-green-400 animate-pulse" />
-                  30-Day Free Trial — Pay Only for Minutes <span className="font-bold">You</span> Use
+                  7-Day Free Trial — Pay Only for Minutes <span className="font-bold">You</span> Use
                 </p>
               </div>
             </div>
@@ -695,7 +695,7 @@ export default function LandingPage() {
               © 2025 Sterling AI. All rights reserved.
             </p>
             <p className="text-gray-500 text-sm">
-              Start your <span className="text-gray-300 font-bold">30 day</span> free trial today
+              Start your <span className="text-gray-300 font-bold">7 day</span> free trial today
             </p>
           </div>
         </div>

@@ -60,7 +60,7 @@ export default function RefundPolicyPage() {
 
               <section>
                 <h2 className="text-2xl font-bold text-white mb-4">2. Free Trial Policy</h2>
-                <p className="mb-3">SterlingAI offers a <span className="font-bold">30-Day Free Trial</span> which includes full platform access.</p>
+                <p className="mb-3">SterlingAI offers a <span className="font-bold">7-Day Free Trial</span> which includes full platform access.</p>
                 <p className="mb-3 font-bold text-white">During the free trial:</p>
                 <ul className="space-y-2 list-disc list-inside">
                   <li>You will only pay for <span className="font-bold">call minutes used</span></li>

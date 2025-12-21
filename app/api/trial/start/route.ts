@@ -2,7 +2,7 @@ import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 /**
- * Start a 30-day free trial for a user
+ * Start a 7-day free trial for a user
  * POST /api/trial/start
  */
 export async function POST(req: Request) {
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     
     const { error: trialError } = await serviceSupabase.rpc('start_free_trial', {
       user_id_param: user.id,
-      trial_duration_days: 30,
+      trial_duration_days: 7,
     });
 
     if (trialError) {
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       message: 'Free trial started! Welcome to Sterling AI.',
-      trial_days: 30,
+      trial_days: 7,
     });
   } catch (error: any) {
     console.error('❌ Error in /api/trial/start:', error);

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { AppointmentModal } from './appointment-modal';
+import { usePrivacy } from '@/contexts/privacy-context';
 
 interface AppointmentCalendarProps {
   appointments: any[];
@@ -18,6 +19,7 @@ export function AppointmentCalendar({
 }: AppointmentCalendarProps) {
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { blurSensitive } = usePrivacy();
 
   // Generate 5 days starting from today
   const days: Date[] = [];
@@ -235,9 +237,16 @@ export function AppointmentCalendar({
                     className="w-full p-3 bg-blue-900/20 hover:bg-blue-900/40 border border-blue-500/30 rounded-lg text-left transition-all flex justify-between items-center"
                   >
                     <div>
-                      <span className="text-white font-medium">{extractCustomerName(apt.prospect_name)}</span>
+                      <span className="text-white font-medium">
+                        {extractCustomerName(apt.prospect_name)}
+                      </span>
                       {apt.prospect_phone && (
-                        <span className="text-gray-400 text-sm ml-2">{formatPhoneNumber(apt.prospect_phone)}</span>
+                        <span 
+                          className={`text-gray-400 text-sm ml-2 ${blurSensitive ? 'blur-sm select-none' : ''}`}
+                          style={blurSensitive ? { filter: 'blur(4px)', userSelect: 'none' } : {}}
+                        >
+                          {formatPhoneNumber(apt.prospect_phone)}
+                        </span>
                       )}
                     </div>
                     <div className="text-right">

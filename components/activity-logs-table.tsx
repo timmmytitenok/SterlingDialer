@@ -1,12 +1,22 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Play, Pause, Square, ChevronLeft, ChevronRight, Search, FileText, X, Download, Volume2 } from 'lucide-react';
+import { Play, Pause, Square, ChevronLeft, ChevronRight, Search, FileText, X, Download, Volume2, ChevronDown, Check, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
+import { usePrivacy } from '@/contexts/privacy-context';
 
 interface ActivityLogsTableProps {
   calls: any[];
 }
+
+// Status options for the dropdown (in order)
+const STATUS_OPTIONS = [
+  { value: 'unclassified', label: 'Unclassified', className: 'bg-gray-600/30 text-gray-300 border-gray-600/40' },
+  { value: 'not_interested', label: 'Not Interested', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  { value: 'callback_later', label: 'Callback', className: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+  { value: 'live_transfer', label: 'Live Transfer', className: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+  { value: 'appointment_booked', label: 'Appointment', className: 'bg-green-500/20 text-green-400 border-green-500/30' },
+];
 
 interface PlayingCall {
   id: string;
@@ -256,6 +266,67 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [playingCall, setPlayingCall] = useState<PlayingCall | null>(null);
   const pageSize = 50; // Show 50 calls per page
+  
+  // State for tracking status updates
+  const [statusUpdates, setStatusUpdates] = useState<Record<string, string>>({});
+  const [updatingCallId, setUpdatingCallId] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  
+  // Privacy blur hook
+  const { blurSensitive } = usePrivacy();
+
+  // Get the current status for a call (from updates or original)
+  const getCallStatus = (call: any): string => {
+    return statusUpdates[call.id] || call.outcome || 'unclassified';
+  };
+
+  // Handle status change
+  const handleStatusChange = async (call: any, newStatus: string) => {
+    setUpdatingCallId(call.id);
+    setOpenDropdownId(null);
+    
+    try {
+      const response = await fetch('/api/calls/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          callId: call.id,
+          newStatus,
+          leadId: call.lead_id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update status');
+      }
+
+      // Update local state
+      setStatusUpdates(prev => ({
+        ...prev,
+        [call.id]: newStatus,
+      }));
+
+      console.log(`✅ Updated call ${call.id} status to ${newStatus}`);
+    } catch (error: any) {
+      console.error('❌ Failed to update status:', error);
+      // Don't show alert - just log it
+    } finally {
+      setUpdatingCallId(null);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (openDropdownId && !(e.target as Element).closest('.status-dropdown')) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openDropdownId]);
 
   // Helper: Normalize status for comparison
   const normalizeStatus = (status: string | null): string => {
@@ -467,29 +538,29 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
     if (!outcome) return <span className="text-gray-400">No outcome</span>;
 
     const configs: Record<string, { label: string; className: string }> = {
-      appointment_booked: {
-        label: 'Booked',
-        className: 'bg-green-500/20 text-green-400 border border-green-500/30'
+      unclassified: {
+        label: 'Unclassified',
+        className: 'bg-gray-600/30 text-gray-300 border border-gray-600/40'
       },
       not_interested: {
         label: 'Not Interested',
         className: 'bg-red-500/20 text-red-400 border border-red-500/30'
       },
       callback_later: {
-        label: 'Call Back',
+        label: 'Callback',
         className: 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
       },
       live_transfer: {
-        label: 'Transferred',
-        className: 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+        label: 'Live Transfer',
+        className: 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
       },
-      unclassified: {
-        label: 'Unclassified',
-        className: 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+      appointment_booked: {
+        label: 'Appointment',
+        className: 'bg-green-500/20 text-green-400 border border-green-500/30'
       },
       other: {
         label: 'Other',
-        className: 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+        className: 'bg-gray-600/30 text-gray-300 border border-gray-600/40'
       },
     };
 
@@ -662,7 +733,10 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
 
                   {/* Phone */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-300 font-mono">
+                    <div 
+                      className={`text-sm text-gray-300 font-mono ${blurSensitive ? 'blur-sm select-none' : ''}`}
+                      style={blurSensitive ? { filter: 'blur(4px)', userSelect: 'none' } : {}}
+                    >
                       {formatPhoneNumber(call.phone_number || call.contact_phone)}
                     </div>
                   </td>
@@ -674,9 +748,58 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
                     </div>
                   </td>
 
-                  {/* Status/Outcome */}
+                  {/* Status/Outcome - Editable Dropdown */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {getOutcomeBadge(call.outcome)}
+                    <div className="relative status-dropdown">
+                      {updatingCallId === call.id ? (
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-500/20 text-gray-400 border border-gray-500/30">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span className="text-xs font-medium">Updating...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenDropdownId(openDropdownId === call.id ? null : call.id);
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all hover:scale-105 cursor-pointer ${
+                              STATUS_OPTIONS.find(s => s.value === getCallStatus(call))?.className || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                            } border`}
+                          >
+                            <span>
+                              {STATUS_OPTIONS.find(s => s.value === getCallStatus(call))?.label || 'Unclassified'}
+                            </span>
+                            <ChevronDown className="w-3 h-3 opacity-60" />
+                          </button>
+                          
+                          {/* Dropdown Menu */}
+                          {openDropdownId === call.id && (
+                            <div className="absolute z-50 mt-1 left-0 w-44 bg-[#1A2647] border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+                              {STATUS_OPTIONS.map((option) => (
+                                <button
+                                  key={option.value}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStatusChange(call, option.value);
+                                  }}
+                                  className={`w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-gray-700/50 transition-colors ${
+                                    getCallStatus(call) === option.value ? 'bg-gray-700/30' : ''
+                                  }`}
+                                >
+                                  <span className={`inline-flex items-center gap-2 px-2 py-0.5 rounded-full ${option.className} border`}>
+                                    {option.label}
+                                  </span>
+                                  {getCallStatus(call) === option.value && (
+                                    <Check className="w-3.5 h-3.5 text-green-400" />
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </td>
 
                   {/* Recording - Simple Play Button */}

@@ -15,6 +15,8 @@ function SignupPageContent() {
   const [error, setError] = useState('');
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referrerName, setReferrerName] = useState<string | null>(null);
+  const [salesReferralCode, setSalesReferralCode] = useState<string | null>(null);
+  const [salesPersonName, setSalesPersonName] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -63,13 +65,33 @@ function SignupPageContent() {
       }
       
       if (finalRefCode) {
-        setReferralCode(finalRefCode);
         console.log('🎯 Referral code active for session:', finalRefCode);
         
-        // Fetch referrer's name by referral code
-        console.log('👤 Fetching referrer name for code:', finalRefCode);
+        // Check if this is a SALES TEAM referral code first
         (async () => {
           try {
+            // Check sales_team table first
+            const { data: salesData } = await supabase
+              .from('sales_team')
+              .select('id, full_name, referral_code')
+              .eq('referral_code', finalRefCode.toUpperCase())
+              .eq('status', 'active')
+              .single();
+            
+            if (salesData) {
+              console.log('🎯 SALES TEAM referral detected:', salesData.full_name);
+              setSalesReferralCode(finalRefCode.toUpperCase());
+              setSalesPersonName(salesData.full_name);
+              // Store sales referral separately
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('pending_sales_referral', finalRefCode.toUpperCase());
+              }
+              return; // Don't check affiliate codes
+            }
+            
+            // If not a sales code, check affiliate referral codes
+            setReferralCode(finalRefCode);
+            
             const { data: codeData } = await supabase
               .from('referral_codes')
               .select('user_id')
@@ -84,12 +106,14 @@ function SignupPageContent() {
                 .single();
               
               if (profileData?.full_name) {
-                console.log('✅ Referrer name found:', profileData.full_name);
+                console.log('✅ Affiliate referrer name found:', profileData.full_name);
                 setReferrerName(profileData.full_name);
               }
             }
           } catch (err) {
-            console.error('❌ Error fetching referrer name:', err);
+            console.error('❌ Error fetching referrer info:', err);
+            // Still set as potential affiliate code
+            setReferralCode(finalRefCode);
           }
         })();
       }
@@ -182,9 +206,40 @@ function SignupPageContent() {
             updated_at: new Date().toISOString(),
           });
 
-        // Process referral code if present
-        if (referralCode) {
-          console.log('🎁 Processing referral code:', referralCode);
+        // Process SALES TEAM referral if present
+        if (salesReferralCode) {
+          console.log('🎁 Processing SALES TEAM referral:', salesReferralCode);
+          
+          // Clear localStorage after using it
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('pending_sales_referral');
+          }
+
+          fetch('/api/sales-referral/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              referralCode: salesReferralCode, 
+              userId: data.user.id,
+              userEmail: email,
+              userName: name,
+            })
+          })
+          .then(async (res) => {
+            const result = await res.json();
+            if (res.ok) {
+              console.log('✅ Sales referral created!', result);
+            } else {
+              console.error('❌ Sales referral failed:', result.error);
+            }
+          })
+          .catch((err) => {
+            console.error('❌ Sales referral error:', err);
+          });
+        }
+        // Process affiliate referral code if present (and not a sales referral)
+        else if (referralCode) {
+          console.log('🎁 Processing affiliate referral code:', referralCode);
           
           // Clear localStorage and cookie after using it
           if (typeof window !== 'undefined') {
@@ -192,9 +247,6 @@ function SignupPageContent() {
             document.cookie = 'pending_referral=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
           }
 
-          // Process affiliate referral code
-          console.log('🎯 Processing referral code:', referralCode);
-          
           fetch('/api/referral/validate-simple', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -206,13 +258,13 @@ function SignupPageContent() {
           .then(async (res) => {
             const result = await res.json();
             if (res.ok) {
-              console.log('✅ Referral applied successfully!', result);
+              console.log('✅ Affiliate referral applied successfully!', result);
             } else {
-              console.error('❌ Referral failed:', result.error);
+              console.error('❌ Affiliate referral failed:', result.error);
             }
           })
           .catch((err) => {
-            console.error('❌ Referral error:', err);
+            console.error('❌ Affiliate referral error:', err);
           });
         }
 
@@ -261,12 +313,31 @@ function SignupPageContent() {
             Start Your Free Trial
           </h1>
           <p className="text-gray-300 text-sm sm:text-base">
-            Create an account to activate your 30-day trial
+            Create an account to activate your 7-day trial
           </p>
         </div>
 
-        {/* Referral Badge - Show for all referrals */}
-        {referralCode && (
+        {/* Sales Referral Badge */}
+        {salesReferralCode && (
+          <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
+            <div className="flex items-center gap-2">
+              <Gift className="w-4 h-4 text-green-400" />
+              <span className="text-green-400 font-bold text-sm">🤝 Referred by Sales Team</span>
+            </div>
+            {salesPersonName ? (
+              <p className="text-gray-300 text-xs mt-1">
+                Your representative: <span className="font-bold text-green-300">{salesPersonName}</span>
+              </p>
+            ) : (
+              <p className="text-gray-300 text-xs mt-1">
+                Referral code: <span className="font-mono font-bold text-green-300">{salesReferralCode}</span>
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Affiliate Referral Badge - Show for affiliate referrals */}
+        {referralCode && !salesReferralCode && (
           <div className="mb-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl animate-pulse">
             <div className="flex items-center gap-2">
               <Gift className="w-4 h-4 text-purple-400" />
@@ -288,7 +359,7 @@ function SignupPageContent() {
         <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
           <div className="flex items-center gap-1.5 mb-1">
             <Zap className="w-3.5 h-3.5 text-green-400" />
-            <span className="text-green-400 font-bold text-xs">30 Days Free — No Charge Today</span>
+            <span className="text-green-400 font-bold text-xs">7 Days Free — No Charge Today</span>
           </div>
           <p className="text-gray-300 text-xs">
             We'll ask for a card, but you won't be charged until after your trial ends.
@@ -408,7 +479,7 @@ function SignupPageContent() {
               </div>
               <div className="flex items-center gap-1.5 text-xs text-gray-300">
                 <CheckCircle className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
-                <span>30 days of full access</span>
+                <span>7 days of full access</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-gray-300">
                 <CheckCircle className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
@@ -435,7 +506,7 @@ function SignupPageContent() {
             <span className="whitespace-nowrap">Secure</span>
           </div>
           <span>•</span>
-          <span className="whitespace-nowrap">No charge 30 days</span>
+          <span className="whitespace-nowrap">No charge for 7 days</span>
           <span>•</span>
           <span className="whitespace-nowrap">Cancel anytime</span>
         </div>

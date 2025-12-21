@@ -21,6 +21,7 @@ export default async function ActivityLogsPage() {
   }
 
   // Get answered calls WITH RECORDINGS ONLY (no point showing calls without audio)
+  // ALSO FILTER OUT SHORT CALLS (<10 seconds / 0.167 minutes) - these are not real conversations
   const { data: allAnsweredCalls, error } = await supabase
     .from('calls')
     .select('*')
@@ -28,9 +29,10 @@ export default async function ActivityLogsPage() {
     .eq('disposition', 'answered')
     .not('recording_url', 'is', null)  // Only calls with recordings
     .neq('recording_url', '')          // Exclude empty strings too
+    .gte('duration', 0.167)            // Only calls >= 10 seconds (duration is in minutes)
     .order('created_at', { ascending: false });
   
-  console.log(`📋 Call History: Found ${allAnsweredCalls?.length || 0} calls with recordings`);
+  console.log(`📋 Call History: Found ${allAnsweredCalls?.length || 0} calls with recordings (>10s)`);
   if (error) console.error('❌ Error fetching call history:', error);
 
   return (

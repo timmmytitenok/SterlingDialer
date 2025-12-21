@@ -48,6 +48,9 @@ export async function POST(req: Request) {
       case 'total_dials':
         updateData.total_calls = (existing?.total_calls || 0) + value;
         break;
+      case 'connected_calls':
+        updateData.connected_calls = (existing?.connected_calls || 0) + value;
+        break;
       case 'callback':
         updateData.callbacks = (existing?.callbacks || 0) + value;
         break;
@@ -65,6 +68,9 @@ export async function POST(req: Request) {
         break;
       case 'revenue':
         updateData.revenue = (existing?.revenue || 0) + value;
+        break;
+      case 'ai_cost':
+        updateData.ai_daily_cost = (existing?.ai_daily_cost || 0) + value;
         break;
       default:
         return NextResponse.json({ error: 'Invalid category' }, { status: 400 });

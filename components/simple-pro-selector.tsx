@@ -73,7 +73,7 @@ export function SimpleProSelector({ currentTier, hideFreeTrial = false }: Simple
               <Sparkles className="w-8 h-8 text-green-400" />
             </div>
             <h3 className="text-3xl font-bold text-white mb-2">🎁 Start Your Free Trial</h3>
-            <p className="text-green-300 text-lg">Try all features FREE for 30 days - Card required (no charge for 30 days)</p>
+            <p className="text-green-300 text-lg">Try all features FREE for 7 days - Card required (no charge for 7 days)</p>
           </div>
 
           <button
@@ -89,7 +89,7 @@ export function SimpleProSelector({ currentTier, hideFreeTrial = false }: Simple
             ) : (
               <span className="flex items-center justify-center gap-2">
                 <Clock className="w-6 h-6" />
-                Start 30-Day Free Trial
+                Start 7-Day Free Trial
                 <ArrowRight className="w-6 h-6" />
               </span>
             )}

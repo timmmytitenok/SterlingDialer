@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Phone, Settings, X, Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Phone, Settings, X, Loader2, Calendar, Clock, User, ChevronDown, Eye, EyeOff } from 'lucide-react';
+import { usePrivacy } from '@/contexts/privacy-context';
 
 interface AdminTestPanelProps {
   userId: string;
@@ -26,6 +27,161 @@ export function AdminTestPanel({
     message: string;
     details?: any;
   } | null>(null);
+  
+  // Appointment modal state
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [appointmentLoading, setAppointmentLoading] = useState(false);
+  const [appointmentMessage, setAppointmentMessage] = useState('');
+  
+  // Appointment form state
+  const [aptName, setAptName] = useState('');
+  const [aptPhone, setAptPhone] = useState('');
+  const [aptAge, setAptAge] = useState('');
+  const [aptState, setAptState] = useState('');
+  const [aptDuration, setAptDuration] = useState('20');
+  const [aptDate, setAptDate] = useState('');
+  const [aptTime, setAptTime] = useState('');
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedHour, setSelectedHour] = useState('09');
+  const [selectedMinute, setSelectedMinute] = useState('00');
+  const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('AM');
+
+  // Privacy blur toggle
+  const { blurSensitive, setBlurSensitive } = usePrivacy();
+
+  // Time picker options
+  const hours = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+  const minutes = ['00', '10', '20', '30', '40', '50'];
+
+  // Update time value when hour/minute/period changes
+  const updateTime = (hour: string, minute: string, period: 'AM' | 'PM') => {
+    let hour24 = parseInt(hour);
+    if (period === 'PM' && hour24 !== 12) {
+      hour24 += 12;
+    } else if (period === 'AM' && hour24 === 12) {
+      hour24 = 0;
+    }
+    const timeStr = `${String(hour24).padStart(2, '0')}:${minute}`;
+    setAptTime(timeStr);
+  };
+
+  // Format time for display
+  const formatTimeDisplay = () => {
+    if (!aptTime) return 'Select time';
+    const [hour, minute] = aptTime.split(':');
+    const hourNum = parseInt(hour);
+    const period = hourNum >= 12 ? 'PM' : 'AM';
+    const displayHour = hourNum === 0 ? 12 : hourNum > 12 ? hourNum - 12 : hourNum;
+    return `${displayHour}:${minute} ${period}`;
+  };
+
+  // Format phone number as user types
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value.replace(/\D/g, '');
+    let formatted = '';
+    if (input.length > 0) formatted = '(' + input.substring(0, 3);
+    if (input.length >= 4) formatted += ') ' + input.substring(3, 6);
+    if (input.length >= 7) formatted += '-' + input.substring(6, 10);
+    setAptPhone(formatted);
+  };
+
+  // Generate date options (7 days ahead)
+  const dateOptions = useMemo(() => {
+    const options = [];
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(today.getDate() + i);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      const dayNum = date.getDate();
+      const ordinal = dayNum + (dayNum > 3 && dayNum < 21 ? 'th' : ['th', 'st', 'nd', 'rd'][dayNum % 10] || 'th');
+      let label = '';
+      if (i === 0) label = 'Today';
+      else if (i === 1) label = 'Tomorrow';
+      else label = ordinal;
+      options.push({ value: dateStr, label, date });
+    }
+    return options;
+  }, []);
+
+  // Reset appointment form
+  const resetAppointmentForm = () => {
+    setAptName('');
+    setAptPhone('');
+    setAptAge('');
+    setAptState('');
+    setAptDuration('20');
+    setAptDate('');
+    setAptTime('');
+    setAppointmentMessage('');
+  };
+
+  // Handle appointment creation
+  const handleCreateAppointment = async () => {
+    if (!aptName.trim()) {
+      setAppointmentMessage('❌ Please enter a name');
+      return;
+    }
+    if (!aptPhone.trim()) {
+      setAppointmentMessage('❌ Please enter a phone number');
+      return;
+    }
+    if (!aptDate) {
+      setAppointmentMessage('❌ Please select a date');
+      return;
+    }
+    if (!aptTime) {
+      setAppointmentMessage('❌ Please select a time');
+      return;
+    }
+
+    setAppointmentLoading(true);
+    setAppointmentMessage('');
+
+    try {
+      const scheduledAt = new Date(`${aptDate}T${aptTime}`).toISOString();
+
+      const payload: any = {
+        userId,
+        contactName: aptName.trim(),
+        contactPhone: aptPhone.trim(),
+        duration: parseInt(aptDuration),
+        scheduledAt,
+      };
+
+      if (aptAge && parseInt(aptAge) > 0) {
+        payload.contactAge = parseInt(aptAge);
+      }
+      if (aptState.trim()) {
+        payload.contactState = aptState.trim();
+      }
+
+      const response = await fetch('/api/admin/appointments/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setAppointmentMessage('✅ Appointment created successfully!');
+        setTimeout(() => {
+          setShowAppointmentModal(false);
+          resetAppointmentForm();
+        }, 1500);
+      } else {
+        setAppointmentMessage(`❌ Error: ${data.error}`);
+      }
+    } catch (error: any) {
+      setAppointmentMessage(`❌ Failed: ${error.message}`);
+    } finally {
+      setAppointmentLoading(false);
+    }
+  };
 
   const handleLaunchAI = async () => {
     setLoading(true);
@@ -116,7 +272,34 @@ export function AdminTestPanel({
                 <div className="text-lg font-bold text-white">{userName}</div>
               </div>
 
-              {/* Launch AI Button - ONLY THING WE NEED */}
+              {/* Privacy Blur Toggle */}
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-800/50 to-gray-700/30 rounded-xl border border-gray-600/30">
+                <div className="flex items-center gap-3">
+                  {blurSensitive ? (
+                    <EyeOff className="w-5 h-5 text-amber-400" />
+                  ) : (
+                    <Eye className="w-5 h-5 text-gray-400" />
+                  )}
+                  <div>
+                    <div className="text-sm font-medium text-white">Privacy Mode</div>
+                    <div className="text-xs text-gray-400">Blur phone numbers</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setBlurSensitive(!blurSensitive)}
+                  className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                    blurSensitive 
+                      ? 'bg-amber-500 shadow-lg shadow-amber-500/30' 
+                      : 'bg-gray-600'
+                  }`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-md ${
+                    blurSensitive ? 'left-7' : 'left-1'
+                  }`} />
+                </button>
+              </div>
+
+              {/* Launch AI Button */}
               <button
                 onClick={handleLaunchAI}
                 disabled={loading}
@@ -143,6 +326,19 @@ export function AdminTestPanel({
                 📞 Will call: <span className="font-mono text-blue-400">+1 (614) 940-3824</span>
               </div>
 
+              {/* Add Appointment Button */}
+              <button
+                onClick={() => setShowAppointmentModal(true)}
+                className="w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-emerald-500/50 hover:scale-105"
+              >
+                <Calendar className="w-6 h-6" />
+                <span>Add Appointment</span>
+              </button>
+              
+              <div className="text-xs text-center text-gray-400">
+                📅 Creates appointment for this user's dashboard
+              </div>
+
               {/* Result Message */}
               {result && (
                 <div className={`p-4 rounded-lg border ${
@@ -157,6 +353,313 @@ export function AdminTestPanel({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Appointment Modal */}
+      {showAppointmentModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] overflow-y-auto">
+          <div className="min-h-screen flex items-start justify-center p-4 py-8">
+            <div className="bg-[#1A2647] rounded-2xl border border-emerald-500/50 max-w-lg w-full shadow-2xl">
+              {/* Header */}
+              <div className="flex items-center justify-between p-5 border-b border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white">Add Appointment</h2>
+                    <p className="text-xs text-gray-400">For: {userName}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowAppointmentModal(false);
+                    resetAppointmentForm();
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700/50 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Form */}
+              <div className="p-5 space-y-4">
+                {/* Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={aptName}
+                    onChange={(e) => setAptName(e.target.value)}
+                    placeholder="John Doe"
+                    className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    disabled={appointmentLoading}
+                  />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Phone *
+                  </label>
+                  <input
+                    type="tel"
+                    value={aptPhone}
+                    onChange={handlePhoneChange}
+                    placeholder="(555) 123-4567"
+                    maxLength={14}
+                    className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    disabled={appointmentLoading}
+                  />
+                </div>
+
+                {/* Age & State Row */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Age
+                    </label>
+                    <input
+                      type="number"
+                      value={aptAge}
+                      onChange={(e) => setAptAge(e.target.value)}
+                      placeholder="45"
+                      min="0"
+                      max="120"
+                      className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      disabled={appointmentLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      State
+                    </label>
+                    <input
+                      type="text"
+                      value={aptState}
+                      onChange={(e) => setAptState(e.target.value)}
+                      placeholder="CA"
+                      maxLength={2}
+                      className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent uppercase"
+                      disabled={appointmentLoading}
+                    />
+                  </div>
+                </div>
+
+                {/* Duration Pills */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Duration
+                  </label>
+                  <div className="flex gap-2">
+                    {['10', '20', '30'].map((dur) => (
+                      <button
+                        key={dur}
+                        type="button"
+                        onClick={() => setAptDuration(dur)}
+                        disabled={appointmentLoading}
+                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                          aptDuration === dur
+                            ? 'bg-emerald-600 text-white shadow-lg'
+                            : 'bg-[#0B1437] border border-gray-700 text-gray-400 hover:border-gray-600'
+                        }`}
+                      >
+                        {dur}m
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Date Pills */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Date *
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {dateOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setAptDate(option.value)}
+                        disabled={appointmentLoading}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                          aptDate === option.value
+                            ? 'bg-emerald-600 text-white shadow-lg'
+                            : 'bg-[#0B1437] border border-gray-700 text-gray-400 hover:border-gray-600'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Time Picker */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Time *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTimePicker(!showTimePicker);
+                      if (!showTimePicker && !aptTime) {
+                        setAptTime('09:00');
+                      }
+                    }}
+                    className="w-full px-4 py-3 bg-[#0B1437] border border-gray-700 rounded-lg text-white text-left focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all hover:border-gray-600"
+                    disabled={appointmentLoading}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={aptTime ? 'text-white' : 'text-gray-500'}>
+                        {formatTimeDisplay()}
+                      </span>
+                      <Clock className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </button>
+
+                  {showTimePicker && (
+                    <div className="mt-3 w-full bg-[#0B1437] border border-gray-700 rounded-lg p-4">
+                      <div className="flex gap-2 mb-3">
+                        {/* Hours */}
+                        <div className="flex-1">
+                          <label className="block text-xs text-gray-400 mb-2 text-center">Hour</label>
+                          <div className="h-32 overflow-y-auto bg-[#0B1437] rounded-lg border border-gray-700">
+                            {hours.map((hour) => (
+                              <button
+                                key={hour}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedHour(hour);
+                                  updateTime(hour, selectedMinute, selectedPeriod);
+                                }}
+                                className={`w-full px-3 py-2 text-center transition-colors ${
+                                  selectedHour === hour
+                                    ? 'bg-emerald-600 text-white font-semibold'
+                                    : 'text-gray-400 hover:bg-gray-800/50'
+                                }`}
+                              >
+                                {hour}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Minutes */}
+                        <div className="flex-1">
+                          <label className="block text-xs text-gray-400 mb-2 text-center">Minute</label>
+                          <div className="h-32 overflow-y-auto bg-[#0B1437] rounded-lg border border-gray-700">
+                            {minutes.map((minute) => (
+                              <button
+                                key={minute}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedMinute(minute);
+                                  updateTime(selectedHour, minute, selectedPeriod);
+                                }}
+                                className={`w-full px-3 py-2 text-center transition-colors ${
+                                  selectedMinute === minute
+                                    ? 'bg-emerald-600 text-white font-semibold'
+                                    : 'text-gray-400 hover:bg-gray-800/50'
+                                }`}
+                              >
+                                {minute}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* AM/PM */}
+                        <div className="w-16">
+                          <label className="block text-xs text-gray-400 mb-2 text-center">Period</label>
+                          <div className="h-32 flex flex-col gap-2 bg-[#0B1437] rounded-lg border border-gray-700 p-2">
+                            {['AM', 'PM'].map((period) => (
+                              <button
+                                key={period}
+                                type="button"
+                                onClick={() => {
+                                  const p = period as 'AM' | 'PM';
+                                  setSelectedPeriod(p);
+                                  updateTime(selectedHour, selectedMinute, p);
+                                }}
+                                className={`flex-1 rounded-lg text-sm font-semibold transition-colors ${
+                                  selectedPeriod === period
+                                    ? 'bg-emerald-600 text-white'
+                                    : 'text-gray-400 hover:bg-gray-800/50'
+                                }`}
+                              >
+                                {period}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowTimePicker(false)}
+                        className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Preview */}
+                {aptName && aptDate && aptTime && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+                    <p className="text-xs text-emerald-400 font-medium mb-2">Preview</p>
+                    <p className="text-white text-sm">
+                      <span className="font-semibold">{aptName}</span>
+                      {' — '}
+                      <span>{dateOptions.find(d => d.value === aptDate)?.label}</span>
+                      {' — '}
+                      <span>{formatTimeDisplay()}</span>
+                      {' — '}
+                      <span>{aptDuration} min</span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Message */}
+                {appointmentMessage && (
+                  <div className={`p-4 rounded-lg text-sm font-medium ${
+                    appointmentMessage.includes('❌')
+                      ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                      : 'bg-green-500/20 text-green-300 border border-green-500/30'
+                  }`}>
+                    {appointmentMessage}
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="border-t border-gray-700 p-5 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAppointmentModal(false);
+                    resetAppointmentForm();
+                  }}
+                  className="flex-1 px-4 py-3 border border-gray-700 bg-transparent text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg transition-all font-medium"
+                  disabled={appointmentLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateAppointment}
+                  disabled={appointmentLoading}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-lg transition-all hover:scale-[1.02] hover:shadow-lg"
+                >
+                  {appointmentLoading ? '⏳ Creating...' : '✅ Create Appointment'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

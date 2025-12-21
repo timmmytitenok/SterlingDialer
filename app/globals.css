@@ -147,6 +147,7 @@ html,
 body {
   scrollbar-width: none;
   -ms-overflow-style: none;
+  background-color: #0B1437;
 }
 
 html::-webkit-scrollbar,

@@ -39,7 +39,7 @@ export default function FAQPage() {
     },
     {
       question: "How does the free trial work?",
-      answer: "Start with a 30-day free trial! You get full access to all features - unlimited AI agents, unlimited leads, and all premium features. You only pay $0.30 per minute for the calls you make. After 30 days, it's $499/month. Cancel anytime with no questions asked."
+      answer: "Start with a 7-day free trial! You get full access to all features - unlimited AI agents, unlimited leads, and all premium features. You only pay $0.30 per minute for the calls you make. After 7 days, it's $499/month. Cancel anytime with no questions asked."
     },
     {
       question: "What if I run out of calling credits?",
@@ -222,7 +222,7 @@ export default function FAQPage() {
             </div>
             <p className="text-xs sm:text-sm text-gray-400 mt-4">
               <Zap className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-green-400" />
-              30-Day Free Trial — Pay Only for Minutes <span className="font-bold">You</span> Use
+              7-Day Free Trial — Pay Only for Minutes <span className="font-bold">You</span> Use
             </p>
           </div>
         </div>

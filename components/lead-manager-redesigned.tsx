@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { usePrivacy } from '@/contexts/privacy-context';
 
 // Debounce hook for search
 function useDebounce<T>(value: T, delay: number): T {
@@ -63,8 +64,20 @@ import {
   Plus, FileSpreadsheet, Upload, UserPlus, Search, Settings, 
   ExternalLink, Trash2, X, Check, AlertCircle,
   Phone, Mail, MapPin, TrendingUp, Calendar, Sparkles, ArrowRight,
-  ChevronLeft, ChevronRight, Users, Target, Skull, Zap
+  ChevronLeft, ChevronRight, Users, Target, Skull, Zap, ChevronDown, Loader2
 } from 'lucide-react';
+
+// Status options for the editable dropdown (in order)
+const LEAD_STATUS_OPTIONS = [
+  { value: 'new', label: 'New', className: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+  { value: 'unclassified', label: 'Unclassified', className: 'bg-gray-600/30 text-gray-300 border-gray-600/40' },
+  { value: 'no_answer', label: 'No Answer', className: 'bg-slate-800/50 text-slate-400 border-slate-700/60' },
+  { value: 'not_interested', label: 'Not Interested', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  { value: 'callback_later', label: 'Callback', className: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+  { value: 'live_transfer', label: 'Live Transfer', className: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+  { value: 'appointment_booked', label: 'Appointment', className: 'bg-green-500/20 text-green-400 border-green-500/30' },
+  { value: 'dead_lead', label: 'Dead', className: 'bg-black/40 text-gray-300 border-gray-700' },
+];
 import { ColumnMapperRedesigned } from './column-mapper-redesigned';
 import { SheetTabSelector } from './sheet-tab-selector';
 
@@ -186,6 +199,7 @@ interface LeadManagerRedesignedProps {
 export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   const router = useRouter();
   const supabase = createClient();
+  const { blurSensitive } = usePrivacy();
   
   // Tab state - Default to 'all_leads' so users see their leads first
   const [activeTab, setActiveTab] = useState<'google_sheets' | 'all_leads'>('all_leads');
@@ -237,6 +251,11 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   // Script type for Mortgage Protection support
   const [scriptType, setScriptType] = useState<'final_expense' | 'mortgage_protection'>('final_expense');
   
+  // Status editing state
+  const [statusUpdates, setStatusUpdates] = useState<Record<string, string>>({});
+  const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
+  const [openStatusDropdownId, setOpenStatusDropdownId] = useState<string | null>(null);
+  
   // Summary stats
   const [leadStats, setLeadStats] = useState({
     total: 0,
@@ -259,6 +278,9 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [sheetToDelete, setSheetToDelete] = useState<{ id: string; name: string; leadCount: number } | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Track if we've already done an auto-retry
+  const [hasAutoRetried, setHasAutoRetried] = useState(false);
 
   useEffect(() => {
     const initializeAndLoadLeads = async () => {
@@ -333,6 +355,64 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
     initializeAndLoadLeads();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-refresh after 3 seconds if data hasn't loaded yet
+  useEffect(() => {
+    if (!dataReady && !hasAutoRetried) {
+      const autoRefreshTimer = setTimeout(() => {
+        console.log('🔄 Auto-refreshing leads after 3 seconds...');
+        setHasAutoRetried(true);
+        
+        // Retry loading leads
+        const retryLoad = async () => {
+          setLoading(true);
+          try {
+            const { data: activeSheets } = await supabase
+              .from('user_google_sheets')
+              .select('id')
+              .eq('user_id', userId)
+              .eq('is_active', true);
+          
+            const activeSheetIds = activeSheets?.map(s => s.id) || [];
+            
+            if (activeSheetIds.length > 0) {
+              const { count } = await supabase
+                .from('leads')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId)
+                .eq('is_qualified', true)
+                .in('google_sheet_id', activeSheetIds);
+              
+              setTotalLeadCount(count || 0);
+              
+              const { data } = await supabase
+                .from('leads')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('is_qualified', true)
+                .in('google_sheet_id', activeSheetIds)
+                .order('sheet_row_number', { ascending: true, nullsFirst: false })
+                .order('created_at', { ascending: true })
+                .range(0, leadsPerPage - 1);
+
+              setAllLeads(data || []);
+            }
+            setDataReady(true);
+          } catch (error) {
+            console.error('Auto-refresh error:', error);
+            setDataReady(true);
+          } finally {
+            setLoading(false);
+            setIsInitialLoad(false);
+          }
+        };
+        
+        retryLoad();
+      }, 3000);
+      
+      return () => clearTimeout(autoRefreshTimer);
+    }
+  }, [dataReady, hasAutoRetried, userId, supabase, leadsPerPage]);
 
   const fetchSheets = async () => {
     const { data } = await supabase
@@ -823,17 +903,17 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { label: string; colors: string }> = {
       new: { label: 'New', colors: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-      no_answer: { label: 'No Answer', colors: 'bg-gray-500/20 text-gray-400 border-gray-500/30' },
+      unclassified: { label: 'Unclassified', colors: 'bg-gray-600/30 text-gray-300 border-gray-600/40' },
+      no_answer: { label: 'No Answer', colors: 'bg-slate-800/50 text-slate-400 border-slate-700/60' },
       not_interested: { label: 'Not Interested', colors: 'bg-red-500/20 text-red-400 border-red-500/30' },
-      callback_later: { label: 'Call Back', colors: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+      callback_later: { label: 'Callback', colors: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+      live_transfer: { label: 'Live Transfer', colors: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
       potential_appointment: { label: 'Potential Appt', colors: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 animate-pulse' },
       appointment_booked: { label: 'Appointment', colors: 'bg-green-500/20 text-green-400 border-green-500/30' },
-      live_transfer: { label: 'Live Transfer', colors: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
-      unclassified: { label: 'Unclassified', colors: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
-      dead_lead: { label: 'Dead Lead', colors: 'bg-black/40 text-gray-300 border-gray-700' },
+      dead_lead: { label: 'Dead', colors: 'bg-black/40 text-gray-300 border-gray-700' },
     };
 
-    const badge = badges[status] || { label: status, colors: 'bg-gray-500/20 text-gray-400 border-gray-500/30' };
+    const badge = badges[status] || { label: status, colors: 'bg-gray-600/30 text-gray-300 border-gray-600/40' };
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${badge.colors}`}>
@@ -841,6 +921,63 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       </span>
     );
   };
+
+  // Get the current status for a lead (from updates or original)
+  const getLeadStatus = (lead: Lead): string => {
+    return statusUpdates[lead.id] || lead.status || 'new';
+  };
+
+  // Handle lead status change
+  const handleLeadStatusChange = async (lead: Lead, newStatus: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click
+    setUpdatingLeadId(lead.id);
+    setOpenStatusDropdownId(null);
+    
+    try {
+      const response = await fetch('/api/leads/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: lead.id,
+          newStatus,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update status');
+      }
+
+      // Update local state
+      setStatusUpdates(prev => ({
+        ...prev,
+        [lead.id]: newStatus,
+      }));
+
+      // Also update the lead in allLeads array
+      setAllLeads(prev => prev.map(l => 
+        l.id === lead.id ? { ...l, status: newStatus } : l
+      ));
+
+      console.log(`✅ Updated lead ${lead.id} status to ${newStatus}`);
+    } catch (error: any) {
+      console.error('❌ Failed to update lead status:', error);
+    } finally {
+      setUpdatingLeadId(null);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (openStatusDropdownId && !(e.target as Element).closest('.lead-status-dropdown')) {
+        setOpenStatusDropdownId(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openStatusDropdownId]);
 
   // Server-side pagination - leads are already filtered and paginated from the server!
   // allLeads now contains only the current page's leads
@@ -1429,10 +1566,17 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                               className="hover:bg-[#0B1437]/50 transition-colors cursor-pointer"
                             >
                               <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-white font-medium">{lead.name}</div>
+                                <div className="text-sm text-white font-medium">
+                                  {lead.name}
+                                </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-300 font-mono">{formatPhone(lead.phone)}</div>
+                                <div 
+                                  className={`text-sm text-gray-300 font-mono ${blurSensitive ? 'blur-sm select-none' : ''}`}
+                                  style={blurSensitive ? { filter: 'blur(4px)', userSelect: 'none' } : {}}
+                                >
+                                  {formatPhone(lead.phone)}
+                                </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm text-white">{lead.state || 'N/A'}</div>
@@ -1453,8 +1597,55 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                                   }
                                 </div>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                {getStatusBadge(lead.status)}
+                              {/* Status - Editable Dropdown */}
+                              <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                                <div className="relative lead-status-dropdown">
+                                  {updatingLeadId === lead.id ? (
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/20 text-gray-400 border border-gray-500/30">
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      <span className="text-xs font-medium">Updating...</span>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenStatusDropdownId(openStatusDropdownId === lead.id ? null : lead.id);
+                                        }}
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all hover:scale-105 cursor-pointer ${
+                                          LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(lead))?.className || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                                        } border`}
+                                      >
+                                        <span>
+                                          {LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(lead))?.label || lead.status}
+                                        </span>
+                                        <ChevronDown className="w-3 h-3 opacity-60" />
+                                      </button>
+                                      
+                                      {/* Dropdown Menu */}
+                                      {openStatusDropdownId === lead.id && (
+                                        <div className="absolute z-50 mt-1 left-0 w-44 bg-[#1A2647] border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+                                          {LEAD_STATUS_OPTIONS.map((option) => (
+                                            <button
+                                              key={option.value}
+                                              onClick={(e) => handleLeadStatusChange(lead, option.value, e)}
+                                              className={`w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-gray-700/50 transition-colors ${
+                                                getLeadStatus(lead) === option.value ? 'bg-gray-700/30' : ''
+                                              }`}
+                                            >
+                                              <span className={`inline-flex items-center gap-2 px-2 py-0.5 rounded-full ${option.className} border`}>
+                                                {option.label}
+                                              </span>
+                                              {getLeadStatus(lead) === option.value && (
+                                                <Check className="w-3.5 h-3.5 text-green-400" />
+                                              )}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -1619,8 +1810,61 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
             <div className="p-6 space-y-4">
               {/* Name and Status */}
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-2xl font-bold text-white">{selectedLead.name}</h3>
-                {getStatusBadge(selectedLead.status)}
+                <h3 className="text-2xl font-bold text-white">
+                  {selectedLead.name}
+                </h3>
+                {/* Editable Status in Detail Modal */}
+                <div className="relative lead-status-dropdown">
+                  {updatingLeadId === selectedLead.id ? (
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/20 text-gray-400 border border-gray-500/30">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span className="text-xs font-medium">Updating...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenStatusDropdownId(openStatusDropdownId === `modal-${selectedLead.id}` ? null : `modal-${selectedLead.id}`);
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all hover:scale-105 cursor-pointer ${
+                          LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(selectedLead))?.className || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                        } border`}
+                      >
+                        <span>
+                          {LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(selectedLead))?.label || selectedLead.status}
+                        </span>
+                        <ChevronDown className="w-3 h-3 opacity-60" />
+                      </button>
+                      
+                      {/* Dropdown Menu */}
+                      {openStatusDropdownId === `modal-${selectedLead.id}` && (
+                        <div className="absolute z-50 mt-1 right-0 w-44 bg-[#1A2647] border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+                          {LEAD_STATUS_OPTIONS.map((option) => (
+                            <button
+                              key={option.value}
+                              onClick={(e) => {
+                                handleLeadStatusChange(selectedLead, option.value, e);
+                                // Update selectedLead too
+                                setSelectedLead({ ...selectedLead, status: option.value });
+                              }}
+                              className={`w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-gray-700/50 transition-colors ${
+                                getLeadStatus(selectedLead) === option.value ? 'bg-gray-700/30' : ''
+                              }`}
+                            >
+                              <span className={`inline-flex items-center gap-2 px-2 py-0.5 rounded-full ${option.className} border`}>
+                                {option.label}
+                              </span>
+                              {getLeadStatus(selectedLead) === option.value && (
+                                <Check className="w-3.5 h-3.5 text-green-400" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Contact Information Card */}
@@ -1636,7 +1880,12 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                     </div>
                     <div>
                       <p className="text-xs text-gray-400">Phone Number</p>
-                      <p className="text-white font-semibold">{formatPhone(selectedLead.phone)}</p>
+                      <p 
+                        className={`text-white font-semibold ${blurSensitive ? 'blur-sm select-none' : ''}`}
+                        style={blurSensitive ? { filter: 'blur(4px)', userSelect: 'none' } : {}}
+                      >
+                        {formatPhone(selectedLead.phone)}
+                      </p>
                     </div>
                   </div>
                   {/* Email */}

@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       console.error('❌ Unauthorized cron request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     if (testMode) {
       console.log('🧪 TEST MODE ENABLED - Manual trigger');
       if (testUserId) {
@@ -89,12 +89,12 @@ export async function GET(request: Request) {
           .eq('user_id', user_id)
           .maybeSingle();
 
-        // Skip if already running
+      // Skip if already running
         if (aiSettings?.status === 'running') {
-          console.log(`⏭️  User ${user_id} AI already running, skipping`);
+        console.log(`⏭️  User ${user_id} AI already running, skipping`);
           results.push({ user_id, success: false, reason: 'Already running' });
-          continue;
-        }
+        continue;
+      }
 
         const userTimezone = aiSettings?.user_timezone || 'America/New_York';
         
@@ -104,7 +104,7 @@ export async function GET(request: Request) {
           weekday: 'long'
         });
         const hourFormatter = new Intl.DateTimeFormat('en-US', {
-          timeZone: userTimezone,
+        timeZone: userTimezone,
           hour: 'numeric',
           hour12: false
         });
@@ -267,8 +267,8 @@ export async function GET(request: Request) {
           
           try {
             const callResponse = await fetch(`${baseUrl}/api/ai-control/next-call`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ userId: user_id }),
             });
 

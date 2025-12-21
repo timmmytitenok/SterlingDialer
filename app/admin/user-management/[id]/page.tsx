@@ -23,7 +23,6 @@ import {
   Database,
   Wallet,
   Save,
-  Trash2,
   Plus,
   Minus,
 } from 'lucide-react';
@@ -403,12 +402,14 @@ export default function AdminUserDetailPage() {
                   style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%239CA3AF\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5rem' }}
                 >
                   <option value="total_dials">Add/Remove Total Dials</option>
+                  <option value="connected_calls">Add/Remove Connected Calls</option>
                   <option value="callback">Add/Remove Callback</option>
                   <option value="not_interested">Add/Remove Not Interested</option>
                   <option value="live_transfer">Add/Remove Live Transfer</option>
                   <option value="appointments">Add/Remove Appointment Booked</option>
                   <option value="policies_sold">Add/Remove Policy Sold</option>
                   <option value="revenue">Add/Remove Revenue</option>
+                  <option value="ai_cost">Add/Remove AI Cost</option>
               </select>
                 </div>
 
@@ -483,18 +484,6 @@ export default function AdminUserDetailPage() {
                   </>
                 )}
                     </button>
-                
-                <button
-                  onClick={() => {
-                    if (confirm('Reset all dashboard stats for this user? This cannot be undone!')) {
-                      alert('Stats reset functionality will be implemented');
-                    }
-                  }}
-                  className="px-8 py-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-2 border-red-500/30 hover:border-red-500/50 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-lg"
-                >
-                  <Trash2 className="w-6 h-6" />
-                  Reset Stats
-                </button>
                   </div>
           </div>
         </div>
@@ -602,191 +591,178 @@ export default function AdminUserDetailPage() {
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent"></div>
           <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">AI Agent Configuration</div>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent"></div>
-                  </div>
+        </div>
 
-        {/* AI Agent Configuration Functions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Side: AI Agent Configuration */}
-          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-8 border border-gray-700/50 shadow-xl flex flex-col">
-            <h3 className="text-xl font-bold text-white mb-8">AI Agent Configuration</h3>
-
-            <div className="flex-1 flex flex-col justify-between space-y-6">
-              {/* Retell Agent ID */}
-              <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-3">
-                  Agent ID
-                </label>
-                <input
-                  type="text"
-                  value={agentId}
-                  onChange={(e) => setAgentId(e.target.value)}
-                  placeholder="agent_xxxxxxxxxxxxx"
-                  className="w-full px-5 py-4 bg-[#0B1437] text-white rounded-xl border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none font-mono text-sm transition-all"
-                />
-              </div>
-
-              {/* Phone Number */}
-              <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-3">
-                  Phone Number
-                </label>
-                <input
-                  type="text"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="+15551234567"
-                  className="w-full px-5 py-4 bg-[#0B1437] text-white rounded-xl border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none font-mono text-sm transition-all"
-                />
-              </div>
-
-              {/* Cal.ai API Key */}
-              <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-3">
-                  Cal.ai API Key
-                </label>
-                <input
-                  type="text"
-                  value={calApiKey}
-                  onChange={(e) => setCalApiKey(e.target.value)}
-                  placeholder="cal_live_xxxxxxxxxxxxxxxx"
-                  className="w-full px-5 py-4 bg-[#0B1437] text-white rounded-xl border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none font-mono text-sm transition-all"
-                />
-                <p className="text-xs text-gray-500 mt-2">Required for accurate appointment time from Cal.ai</p>
-              </div>
-
-              {/* Save AI Config Button */}
-              <button
-                onClick={async () => {
-                  setSaving(true);
-                  try {
-                    // Save Retell config (includes Cal.ai API key)
-                    const response = await fetch('/api/admin/users/update-retell', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        userId: user.id,
-                        agentId: agentId.trim() || null,
-                        phoneNumber: phoneNumber.trim() || null,
-                        calApiKey: calApiKey.trim() || null,
-                      }),
-                    });
-
-                    if (!response.ok) throw new Error('Failed to save');
-
-                    const notification = document.createElement('div');
-                    notification.className = 'fixed top-8 right-8 bg-green-500 text-white px-6 py-4 rounded-lg shadow-2xl z-50 flex items-center gap-3';
-                    notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI configuration saved!</span>';
-                    document.body.appendChild(notification);
-                    setTimeout(() => notification.remove(), 3000);
-
-                    loadUser();
-                  } catch (err: any) {
-                    alert(`Error: ${err.message}`);
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-                disabled={saving}
-                className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 text-lg"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5" />
-                    Save AI Config
-                  </>
-                )}
-              </button>
-
-              <div className="p-5 bg-[#0B1437]/70 rounded-xl border border-gray-700/50">
-                <p className="text-sm text-gray-400 leading-relaxed">
-                  Configure the Retell AI agent settings for this user. Agent ID and phone number are required for AI calling functionality.
-                </p>
-              </div>
+        {/* AI Agent Configuration - Unified Section */}
+        <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-8 border border-gray-700/50 shadow-xl">
+          {/* Header with Status Badge */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+            <div>
+              <h3 className="text-2xl font-bold text-white">AI Agent Configuration</h3>
+              <p className="text-sm text-gray-400 mt-1">Configure Retell AI settings and manage dialer access</p>
+            </div>
+            
+            {/* Dialer Status Badge */}
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-semibold ${
+              user.ai_maintenance_mode
+                ? 'bg-red-500/10 border-red-500/30 text-red-400'
+                : 'bg-green-500/10 border-green-500/30 text-green-400'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${user.ai_maintenance_mode ? 'bg-red-400 animate-pulse' : 'bg-green-400'}`}></span>
+              {user.ai_maintenance_mode ? 'Dialer Blocked' : 'Dialer Active'}
             </div>
           </div>
 
-          {/* Right Side: AI Dialer Access Control */}
-          <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-8 border border-gray-700/50 shadow-xl flex flex-col">
-            <h3 className="text-xl font-bold text-white mb-6 text-center">AI Dialer Access Control</h3>
-
-            <div className="flex-1 flex items-center justify-center">
-              {/* Big Dialer Access Toggle Button */}
-              <button
-                onClick={async () => {
-                  const newMode = !user.ai_maintenance_mode;
-                  
-                  if (!confirm(`${newMode ? 'BLOCK' : 'UNBLOCK'} AI Dialer access for this user?\n\n${newMode ? 'User will see "AI Agent Setup in Progress" page and cannot use dialer.' : 'User can access and use the AI Dialer!'}`)) return;
-                  
-                  setSaving(true);
-                  try {
-                    const response = await fetch('/api/admin/users/toggle-maintenance', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        userId: user.id,
-                        maintenanceMode: newMode,
-                      }),
-                    });
-
-                    if (!response.ok) throw new Error('Failed to toggle');
-
-                    const notification = document.createElement('div');
-                    notification.className = 'fixed top-8 right-8 bg-green-500 text-white px-6 py-4 rounded-lg shadow-2xl z-50 flex items-center gap-3';
-                    notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI Dialer ' + (newMode ? 'BLOCKED' : 'UNBLOCKED') + '!</span>';
-                    document.body.appendChild(notification);
-                    setTimeout(() => notification.remove(), 3000);
-
-                    loadUser();
-                  } catch (err: any) {
-                    alert(`Error: ${err.message}`);
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-                disabled={saving}
-                className={`group relative overflow-hidden w-full max-w-sm py-8 px-8 rounded-2xl border-2 font-bold text-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center ${
-                  user.ai_maintenance_mode
-                    ? 'bg-gradient-to-br from-red-600/20 to-rose-600/20 border-red-500/50 hover:border-red-400/70 text-red-400 hover:shadow-2xl hover:shadow-red-500/30'
-                    : 'bg-gradient-to-br from-green-600/20 to-emerald-600/20 border-green-500/50 hover:border-green-400/70 text-green-400 hover:shadow-2xl hover:shadow-green-500/30'
-                }`}
-              >
-                {saving ? (
-                  <span className="flex items-center justify-center gap-3">
-                    <Loader2 className="w-7 h-7 animate-spin" />
-                    Updating...
-                  </span>
-                ) : (
-                  <div className="relative z-10 text-center">
-                    <div className="flex items-center justify-center gap-3 mb-2">
-                      {user.ai_maintenance_mode ? (
-                        <Activity className="w-8 h-8" />
-                      ) : (
-                        <AlertCircle className="w-8 h-8" />
-                      )}
-                      <span>
-                        {user.ai_maintenance_mode ? 'Unblock AI Dialer' : 'Block AI Dialer'}
-                      </span>
-                    </div>
-                    <div className="text-sm font-normal opacity-80">
-                      Status: {user.ai_maintenance_mode ? '🔴 DIALER BLOCKED' : '✅ DIALER ACTIVE'}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Animated shine effect */}
-                {!saving && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                )}
-              </button>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Retell Agent ID */}
+            <div>
+              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-3">
+                Agent ID
+              </label>
+              <input
+                type="text"
+                value={agentId}
+                onChange={(e) => setAgentId(e.target.value)}
+                placeholder="agent_xxxxxxxxxxxxx"
+                className="w-full px-4 py-3 bg-[#0B1437] text-white rounded-xl border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none font-mono text-sm transition-all"
+              />
             </div>
+
+            {/* Phone Number */}
+            <div>
+              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-3">
+                Phone Number
+              </label>
+              <input
+                type="text"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+15551234567"
+                className="w-full px-4 py-3 bg-[#0B1437] text-white rounded-xl border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none font-mono text-sm transition-all"
+              />
+            </div>
+
+            {/* Cal.ai API Key */}
+            <div>
+              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-3">
+                Cal.ai API Key
+              </label>
+              <input
+                type="text"
+                value={calApiKey}
+                onChange={(e) => setCalApiKey(e.target.value)}
+                placeholder="cal_live_xxxxxxxxxxxxxxxx"
+                className="w-full px-4 py-3 bg-[#0B1437] text-white rounded-xl border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none font-mono text-sm transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons Row */}
+          <div className="flex flex-col sm:flex-row gap-4 mt-8">
+            {/* Save AI Config Button */}
+            <button
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  const response = await fetch('/api/admin/users/update-retell', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: user.id,
+                      agentId: agentId.trim() || null,
+                      phoneNumber: phoneNumber.trim() || null,
+                      calApiKey: calApiKey.trim() || null,
+                    }),
+                  });
+
+                  if (!response.ok) throw new Error('Failed to save');
+
+                  const notification = document.createElement('div');
+                  notification.className = 'fixed top-8 right-8 bg-green-500 text-white px-6 py-4 rounded-lg shadow-2xl z-50 flex items-center gap-3';
+                  notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI configuration saved!</span>';
+                  document.body.appendChild(notification);
+                  setTimeout(() => notification.remove(), 3000);
+
+                  loadUser();
+                } catch (err: any) {
+                  alert(`Error: ${err.message}`);
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving}
+              className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  Save AI Config
+                </>
+              )}
+            </button>
+
+            {/* Dialer Access Toggle Button */}
+            <button
+              onClick={async () => {
+                const newMode = !user.ai_maintenance_mode;
+                
+                if (!confirm(`${newMode ? 'BLOCK' : 'UNBLOCK'} AI Dialer access for this user?\n\n${newMode ? 'User will see "AI Agent Setup in Progress" page and cannot use dialer.' : 'User can access and use the AI Dialer!'}`)) return;
+                
+                setSaving(true);
+                try {
+                  const response = await fetch('/api/admin/users/toggle-maintenance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: user.id,
+                      maintenanceMode: newMode,
+                    }),
+                  });
+
+                  if (!response.ok) throw new Error('Failed to toggle');
+
+                  const notification = document.createElement('div');
+                  notification.className = 'fixed top-8 right-8 bg-green-500 text-white px-6 py-4 rounded-lg shadow-2xl z-50 flex items-center gap-3';
+                  notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI Dialer ' + (newMode ? 'BLOCKED' : 'UNBLOCKED') + '!</span>';
+                  document.body.appendChild(notification);
+                  setTimeout(() => notification.remove(), 3000);
+
+                  loadUser();
+                } catch (err: any) {
+                  alert(`Error: ${err.message}`);
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving}
+              className={`px-6 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border-2 ${
+                user.ai_maintenance_mode
+                  ? 'bg-green-500/10 border-green-500/50 text-green-400 hover:bg-green-500/20 hover:border-green-400'
+                  : 'bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-400'
+              } disabled:opacity-50`}
+            >
+              {saving ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : user.ai_maintenance_mode ? (
+                <>
+                  <Activity className="w-5 h-5" />
+                  Unblock Dialer
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-5 h-5" />
+                  Block Dialer
+                </>
+              )}
+            </button>
           </div>
         </div>
-        {/* End AI Agent Configuration Functions Grid */}
+        {/* End AI Agent Configuration */}
 
         {/* Quick Setup Guide - Hidden when all steps complete */}
         {!onboardingSteps.all_complete && (
@@ -1103,93 +1079,15 @@ export default function AdminUserDetailPage() {
           </>
         )}
 
-        {/* Divider */}
+        {/* Grant VIP Section - HIDDEN (use SQL to grant VIP now) */}
+        {/* 
         <div className="my-10 flex items-center gap-3">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent"></div>
           <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">Grant VIP</div>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent"></div>
-                  </div>
-
-        {/* Grant VIP Section */}
-        <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-8 border border-gray-700/50 shadow-xl">
-          {/* VIP Status Display */}
-          <div className="mb-8 p-8 bg-[#0B1437]/70 rounded-xl border-2 border-gray-700/50 text-center">
-            {user.account_type === 'VIP Access (Lifetime)' ? (
-            <div>
-                <div className="text-6xl mb-4 animate-pulse">✨👑✨</div>
-                <div className="text-4xl font-bold bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                  VIP GRANTED
-            </div>
-                <p className="text-gray-400 mt-2">Lifetime access • $0.30/minute</p>
-              </div>
-            ) : (
-            <div>
-                <div className="text-5xl mb-4">❌</div>
-                <div className="text-3xl font-bold text-red-500">
-                  VIP NOT GRANTED!!
-            </div>
-                <p className="text-gray-400 mt-2">Call Rate: $0.30/minute</p>
-              </div>
-            )}
-          </div>
-
-          {/* VIP Grant Button - ONLY SHOW IF NOT VIP */}
-          {user.account_type !== 'VIP Access (Lifetime)' && (
-            <div className="space-y-4">
-                    <button
-              onClick={async () => {
-                  if (!confirm(`Grant ${user.full_name} VIP ACCESS? This gives them LIFETIME access with NO charges EVER!`)) return;
-                setSaving(true);
-                try {
-                    const response = await fetch('/api/admin/users/update-subscription-tier', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      userId: user.id,
-                        tier: 'vip',
-                    }),
-                  });
-
-                    const result = await response.json();
-                    console.log('👑 VIP Grant Response:', result);
-                    
-                    if (!response.ok) throw new Error(result.error || 'Failed to grant VIP');
-
-                  const notification = document.createElement('div');
-                    notification.className = 'fixed top-8 right-8 bg-gradient-to-r from-yellow-500 to-orange-600 text-black px-8 py-5 rounded-xl shadow-2xl z-50 animate-in slide-in-from-top-4 flex items-center gap-4 font-bold text-lg';
-                    notification.innerHTML = '<span class="text-3xl animate-bounce">👑</span><span>VIP ACCESS GRANTED!</span>';
-                  document.body.appendChild(notification);
-                    setTimeout(() => notification.remove(), 4000);
-                  loadUser();
-                } catch (err: any) {
-                    console.error('❌ VIP Grant Error:', err);
-                    const notification = document.createElement('div');
-                    notification.className = 'fixed top-8 right-8 bg-red-500 text-white px-6 py-4 rounded-lg shadow-2xl z-50 animate-in slide-in-from-top-4 flex items-center gap-3';
-                    notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg><span class="font-semibold">Error: ' + err.message + '</span>';
-                    document.body.appendChild(notification);
-                    setTimeout(() => notification.remove(), 3000);
-                } finally {
-                  setSaving(false);
-                }
-              }}
-              disabled={saving}
-                className="relative group w-full py-12 px-8 rounded-2xl border-4 transition-all duration-300 overflow-hidden cursor-pointer border-yellow-500/50 bg-gradient-to-br from-yellow-500/20 to-orange-600/20 hover:border-yellow-400 hover:shadow-2xl hover:shadow-yellow-500/50 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {/* Magical shimmer effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                
-                <div className="text-center relative z-10">
-                  <div className="text-7xl mb-4 animate-bounce inline-block">👑</div>
-                  <h4 className="text-4xl font-bold bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-500 bg-clip-text text-transparent mb-3">
-                    GRANT VIP ACCESS
-                  </h4>
-                  <p className="text-lg text-gray-200 font-medium mb-2">Lifetime Access • No Charges Ever</p>
-                  <p className="text-sm text-gray-400">User will have unlimited access forever at $0.30/min call rate</p>
-                </div>
-                    </button>
-          </div>
-          )}
         </div>
+        ... VIP section hidden ...
+        */}
       </div>
     </div>
   );

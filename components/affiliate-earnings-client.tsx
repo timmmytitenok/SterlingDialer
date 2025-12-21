@@ -120,7 +120,7 @@ export function AffiliateEarningsClient({
               </span>
             </h1>
             <p className="text-lg md:text-xl text-gray-300">
-              Earn <span className="text-purple-400 font-bold">20% commission</span> on every customer you refer — <span className="text-green-400 font-bold">every month</span>!
+              Earn <span className="text-purple-400 font-bold">10% commission</span> on every customer you refer — <span className="text-green-400 font-bold">every month</span>!
             </p>
           </div>
 
@@ -172,7 +172,7 @@ export function AffiliateEarningsClient({
                     </div>
                   </div>
                   <h3 className="text-white font-semibold mb-2">Get Paid</h3>
-                  <p className="text-gray-400 text-sm">Earn $99.80 every month they stay subscribed</p>
+                  <p className="text-gray-400 text-sm">Earn $49.90 every month they stay subscribed</p>
                 </div>
               </div>
             </div>
@@ -212,7 +212,7 @@ export function AffiliateEarningsClient({
                   <span className="text-2xl">💵</span> How much can I earn?
                 </h3>
                 <p className="text-gray-400 text-sm">
-                  You earn $99.80 per customer per month. Refer 10 customers = <span className="text-green-400 font-bold">$998/month</span> recurring income!
+                  You earn $49.90 per customer per month. Refer 10 customers = <span className="text-green-400 font-bold">$499/month</span> recurring income!
                 </p>
               </div>
             </div>
@@ -326,7 +326,7 @@ export function AffiliateEarningsClient({
               </button>
             </div>
             <p className="text-sm text-blue-300 mt-4">
-              ✨ Share this link to earn $99.80/month for every user who subscribes!
+              ✨ Share this link to earn $49.90/month for every user who subscribes!
             </p>
           </div>
         </div>
@@ -512,9 +512,9 @@ export function AffiliateEarningsClient({
           <h4 className="text-white font-bold mb-3">How It Works</h4>
           <div className="space-y-2 text-sm text-gray-300">
             <p>• Share your referral link with potential customers</p>
-            <p>• They sign up and get a 30-day free trial</p>
+            <p>• They sign up and get a 7-day free trial</p>
             <p>• <strong className="text-yellow-400">When they make their first payment</strong> to become Pro Access, you start earning!</p>
-            <p>• You earn <strong className="text-green-400">$99.80/month (20% of $499)</strong> for <strong>EVERY month</strong> they stay subscribed</p>
+            <p>• You earn <strong className="text-green-400">$49.90/month (10% of $499)</strong> for <strong>EVERY month</strong> they stay subscribed</p>
             <p>• Commissions automatically recur monthly while they remain active</p>
             <p>• Payments are processed manually at the end of each month</p>
           </div>

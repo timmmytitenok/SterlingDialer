@@ -81,7 +81,7 @@ export async function POST() {
               const currentTrialEnd = new Date(referrerProfile.free_trial_ends_at);
               const newTrialEnd = new Date(currentTrialEnd);
               newTrialEnd.setDate(newTrialEnd.getDate() + 7);
-              const newTotalDays = (referrerProfile.free_trial_total_days || 30) + 7;
+              const newTotalDays = (referrerProfile.free_trial_total_days || 7) + 7;
 
               // Update database
               await supabase

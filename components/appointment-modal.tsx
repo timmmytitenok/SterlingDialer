@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { X, Trash2, AlertCircle, CheckCircle, DollarSign } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { usePrivacy } from '@/contexts/privacy-context';
 
 interface AppointmentModalProps {
   appointment: any;
@@ -18,6 +19,7 @@ export function AppointmentModal({ appointment, userId, onClose }: AppointmentMo
   const [message, setMessage] = useState('');
   const [isSelling, setIsSelling] = useState(false);
   const [monthlyPayment, setMonthlyPayment] = useState('');
+  const { blurSensitive } = usePrivacy();
 
   const appointmentDate = new Date(appointment.scheduled_at);
 
@@ -263,7 +265,10 @@ export function AppointmentModal({ appointment, userId, onClose }: AppointmentMo
             </div>
             <div className="bg-[#0B1437] rounded-lg p-4 border border-gray-700">
               <p className="text-sm text-gray-400 mb-1">Phone</p>
-              <p className="text-lg font-medium text-white">
+              <p 
+                className={`text-lg font-medium text-white ${blurSensitive ? 'blur-sm select-none' : ''}`}
+                style={blurSensitive ? { filter: 'blur(4px)', userSelect: 'none' } : {}}
+              >
                 {formatPhoneNumber(appointment.prospect_phone)}
               </p>
             </div>

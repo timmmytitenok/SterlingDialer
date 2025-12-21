@@ -67,7 +67,7 @@ export default function TermsPage() {
                 <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                   <p className="font-bold text-white mb-2">Free Trial Terms:</p>
                   <ul className="space-y-1 list-disc list-inside text-sm">
-                    <li>Free trial lasts <span className="font-bold">30 days</span>.</li>
+                    <li>Free trial lasts <span className="font-bold">7 days</span>.</li>
                     <li>Calls during the trial are still billed at $0.30/min.</li>
                     <li>Your subscription begins automatically unless canceled before the trial ends.</li>
                     <li>By starting the trial, you authorize SterlingAI to charge your payment method at renewal unless you cancel.</li>

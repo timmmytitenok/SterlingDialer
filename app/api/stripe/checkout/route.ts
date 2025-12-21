@@ -219,9 +219,9 @@ export async function POST(req: Request) {
       },
     };
 
-    // NO DISCOUNTS - Users already got 30 days FREE trial!
+    // NO DISCOUNTS - Users already got 7 days FREE trial!
     // Referral benefit: Referrer gets $200 credits (handled in webhook)
-    console.log('💰 Full price checkout - user already had 30-day trial');
+    console.log('💰 Full price checkout - user already had 7-day trial');
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 

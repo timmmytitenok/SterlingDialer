@@ -9,7 +9,7 @@ export function TrialCountdownBanner() {
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   const [trialStartDate, setTrialStartDate] = useState<Date | null>(null);
   const [trialEndDate, setTrialEndDate] = useState<Date | null>(null);
-  const [totalTrialDays, setTotalTrialDays] = useState(30);
+  const [totalTrialDays, setTotalTrialDays] = useState(7);
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tier, setTier] = useState<string>('trial');
@@ -54,10 +54,10 @@ export function TrialCountdownBanner() {
         if (subscription.created_at) {
           const trialStartDate = new Date(subscription.created_at);
           const totalDays = Math.ceil((trialEndDate.getTime() - trialStartDate.getTime()) / (1000 * 60 * 60 * 24));
-          setTotalTrialDays(totalDays || 30);
+          setTotalTrialDays(totalDays || 7);
           setTrialStartDate(trialStartDate);
         } else {
-          setTotalTrialDays(30);
+          setTotalTrialDays(7);
         }
         
         setTrialEndDate(trialEndDate);

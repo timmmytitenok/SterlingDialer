@@ -38,7 +38,7 @@ export function AdminMobileNav() {
               href={item.href}
               className={`flex flex-col items-center gap-1 py-3 px-4 flex-1 ${
                 isActive
-                  ? 'text-blue-400'
+                  ? 'text-purple-400'
                   : 'text-gray-400 hover:text-white'
               }`}
             >

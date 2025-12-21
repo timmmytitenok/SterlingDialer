@@ -57,12 +57,16 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname === '/api/ai-control/update-queue' ||
     request.nextUrl.pathname === '/api/calls/update';
   const isAdminApiRoute = request.nextUrl.pathname.startsWith('/api/admin');
+  const isSalesApiRoute = request.nextUrl.pathname.startsWith('/api/sales'); // All sales team API routes
+  const isSalesReferralRoute = request.nextUrl.pathname.startsWith('/api/sales-referral'); // Sales referral creation
   const isProtectedRoute =
     request.nextUrl.pathname.startsWith('/dashboard') ||
     (request.nextUrl.pathname.startsWith('/api') &&
       !request.nextUrl.pathname.startsWith('/api/auth') &&
       !isWebhookRoute &&
-      !isAdminApiRoute); // Don't require user auth for admin API routes
+      !isAdminApiRoute &&
+      !isSalesApiRoute &&
+      !isSalesReferralRoute); // Don't require user auth for admin/sales API routes
 
   if (isProtectedRoute && !user) {
     // For API routes, return JSON error instead of redirecting (prevents HTML parse errors)

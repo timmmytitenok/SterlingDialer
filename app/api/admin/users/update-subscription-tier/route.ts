@@ -11,13 +11,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
  * ADMIN GRANT BILLING BEHAVIOR:
  * 
  * When admin grants FREE tier (free_trial):
- * - User gets 30 days of free access
+ * - User gets 7 days of free access
  * - NO Stripe subscription created
  * - NO automatic charge on day 30
  * - Access expires unless manually renewed
  * 
  * When admin grants PRO tier:
- * - User gets 30 days of free trial
+ * - User gets 7 days of free trial
  * - Creates Stripe subscription with trial_end
  * - WILL auto-charge $4.99 on day 30
  * - Then renews monthly at $4.99
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
     }
 
     if (tier === 'free_trial') {
-      const days = trialDays || 30; // Default to 30 days for admin grants
+      const days = trialDays || 7; // Default to 7 days for admin grants
       const trialEnd = new Date();
       trialEnd.setDate(trialEnd.getDate() + days);
       
@@ -127,7 +127,7 @@ export async function POST(req: Request) {
       console.log(`🆓 FREE tier granted with ${days}-day trial ending ${trialEnd.toISOString()}`);
       console.log('⚠️  NO AUTO-CHARGE: FREE tier is manual access only');
     } else if (tier === 'pro') {
-      const days = trialDays || 30; // Default to 30 days for admin grants
+      const days = trialDays || 7; // Default to 7 days for admin grants
       const trialEndTimestamp = Math.floor(Date.now() / 1000) + (days * 24 * 60 * 60); // Unix timestamp
       const trialEndDate = new Date(trialEndTimestamp * 1000);
       
@@ -261,7 +261,7 @@ export async function POST(req: Request) {
         console.error('❌ Update error:', error);
         throw error;
       }
-      console.log('✅ Subscription updated successfully - Trial reset to 30 days from NOW');
+      console.log('✅ Subscription updated successfully - Trial reset to 7 days from NOW');
     } else {
       // Create new subscription
       console.log('➕ Creating new subscription...');

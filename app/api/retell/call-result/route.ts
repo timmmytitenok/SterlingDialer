@@ -181,47 +181,84 @@ export async function POST(request: Request) {
     const customAnalysis = call_analysis?.custom_analysis_data || {};
     console.log('📊 Custom Analysis Data:', customAnalysis);
     
+    // ========================================================================
+    // CRITICAL: CALLS UNDER 10 SECONDS = TREAT AS UNANSWERED
+    // ========================================================================
+    // Regardless of what Retell says, if the call was under 10 seconds:
+    // - It's NOT a real conversation
+    // - Treat it as unanswered/unclassified
+    // - Apply double dial logic
+    // - DON'T show in call history
+    const isShortCall = durationSeconds < 10;
+    
+    if (isShortCall) {
+      console.log('');
+      console.log('⚡⚡⚡ ========== SHORT CALL DETECTED (<10 SECONDS) ========== ⚡⚡⚡');
+      console.log(`📞 Duration: ${durationSeconds.toFixed(1)}s - TOO SHORT!`);
+      console.log('🔄 Treating as UNANSWERED regardless of Retell analysis');
+      console.log('   → Will apply double dial logic');
+      console.log('   → Will NOT create call record (won\'t show in history)');
+      console.log('   → Lead stays as potential lead (unclassified)');
+      console.log('⚡⚡⚡ ====================================================== ⚡⚡⚡');
+      console.log('');
+    }
+    
     // Check if ANY outcome flag is true - this proves the call was answered!
-    const hasOutcomeFlag = customAnalysis.BOOKED === true || 
+    // BUT IGNORE THIS IF CALL IS UNDER 10 SECONDS!
+    const hasOutcomeFlag = !isShortCall && (
+                           customAnalysis.BOOKED === true || 
                            customAnalysis.NOT_INTERESTED === true || 
                            customAnalysis.CALLBACK === true || 
-                           customAnalysis.LIVE_TRANSFER === true;
+                           customAnalysis.LIVE_TRANSFER === true);
     
     // CRITICAL FIX: If ANY outcome flag is set, the call WAS answered!
     // Retell may incorrectly report in_voicemail=true for transferred calls
     // But if we got BOOKED=true, NOT_INTERESTED=true, etc., the person definitely picked up!
-    const callWasAnswered = !inVoicemail || hasOutcomeFlag;
+    // HOWEVER: If call was under 10 seconds, it's NOT considered answered!
+    const callWasAnswered = !isShortCall && (!inVoicemail || hasOutcomeFlag);
     
     console.log(`📊 Call classification:`);
     console.log(`   - Duration: ${durationSeconds}s`);
+    console.log(`   - Is short call (<10s): ${isShortCall}`);
     console.log(`   - In voicemail: ${inVoicemail}`);
     console.log(`   - Has outcome flag: ${hasOutcomeFlag} (BOOKED=${customAnalysis.BOOKED}, NOT_INTERESTED=${customAnalysis.NOT_INTERESTED})`);
-    console.log(`   - Was answered: ${callWasAnswered} (in_voicemail=${inVoicemail} OR hasOutcomeFlag=${hasOutcomeFlag})`);
+    console.log(`   - Was answered: ${callWasAnswered} (requires duration>=10s AND (not voicemail OR has outcome flag))`);
     console.log(`   - Was double dial: ${wasDoubleDial}`);
     
     if (!callWasAnswered) {
-      // NO ANSWER (voicemail OR just rang with no pickup)
-      console.log('📞 Call was NOT answered (no pickup)');
+      // NO ANSWER (voicemail OR just rang with no pickup OR short call <10s)
+      if (isShortCall) {
+        console.log('📞 Call was TOO SHORT (<10s) - treating as unanswered');
+      } else {
+        console.log('📞 Call was NOT answered (no pickup/voicemail)');
+      }
       
       if (!wasDoubleDial) {
         // First dial - NO ANSWER - DOUBLE DIAL NOW!
         shouldDoubleDial = true;
         shouldContinueToNextLead = false;
-        outcome = 'no_answer_first_attempt';
-        leadStatus = lead.status; // Keep current status
+        outcome = isShortCall ? 'short_call_first_attempt' : 'no_answer_first_attempt';
+        leadStatus = lead.status; // Keep current status - still a potential lead!
         console.log('🔄 FIRST ATTEMPT NO ANSWER - Will double dial immediately!');
         console.log('   → This does NOT count as a dial yet');
+        if (isShortCall) {
+          console.log('   → Short call: Lead stays UNCLASSIFIED (still callable)');
+        }
       } else {
         // Second dial also no answer - NOW count as 1 missed call
-        outcome = 'no_answer_double_attempt';
-        leadStatus = 'no_answer';
+        outcome = isShortCall ? 'short_call_double_attempt' : 'no_answer_double_attempt';
+        // For short calls, keep lead as unclassified so they stay callable
+        leadStatus = isShortCall ? 'unclassified' : 'no_answer';
         console.log('📵 SECOND ATTEMPT NO ANSWER - NOW counting as 1 missed call');
         console.log('   → Moving to next lead');
+        if (isShortCall) {
+          console.log('   → Short call: Lead marked as UNCLASSIFIED (still a potential lead!)');
+        }
         
         // This counts as 1 missed call in the current time period
       }
       
-      callCost = 0; // No charge for unanswered calls
+      callCost = 0; // No charge for unanswered/short calls
       
     } else {
       // CALL WAS PICKED UP!
@@ -364,9 +401,12 @@ export async function POST(request: Request) {
       console.log('✅ Lead updated successfully in database!');
     }
 
-    // Insert call record ONLY if it's the double dial (second attempt)
+    // Insert call record ONLY if it's the double dial (second attempt) OR answered
     // First attempt doesn't count as a dial
-    if (wasDoubleDial || callWasAnswered) {
+    // SHORT CALLS (<10s) = NEVER CREATE A RECORD (won't show in call history!)
+    const shouldCreateCallRecord = !isShortCall && (wasDoubleDial || callWasAnswered);
+    
+    if (shouldCreateCallRecord) {
       console.log(`💾 Creating call record (double dial or answered)...`);
       console.log(`   - Lead name: ${lead.name}`);
       console.log(`   - Phone: ${lead.phone}`);
@@ -692,7 +732,11 @@ export async function POST(request: Request) {
         console.log('');
       }
     } else {
-      console.log('⏭️  First attempt - NOT creating call record (waiting for double dial)');
+      if (isShortCall) {
+        console.log('⏭️  Short call (<10s) - NOT creating call record (won\'t show in history)');
+      } else {
+        console.log('⏭️  First attempt - NOT creating call record (waiting for double dial)');
+      }
     }
 
     // ========================================================================

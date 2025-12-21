@@ -69,7 +69,7 @@ export function MobileFooter() {
             © 2025 Sterling AI. All rights reserved.
           </p>
           <p className="text-xs text-gray-500 text-center">
-            Start your <span className="text-gray-300 font-bold">30 day</span> free trial today
+            Start your <span className="text-gray-300 font-bold">7 day</span> free trial today
           </p>
         </div>
       </div>

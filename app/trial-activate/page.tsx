@@ -66,7 +66,7 @@ export default function TrialActivatePage() {
             Activate Your<br className="sm:hidden" /> Free Trial
           </h1>
           <p className="text-gray-300 text-sm sm:text-lg md:text-xl px-4">
-            Add your payment method to start your 30-day trial
+            Add your payment method to start your 7-day trial
           </p>
         </div>
 
@@ -118,9 +118,9 @@ export default function TrialActivatePage() {
             <div className="flex items-start gap-2 sm:gap-3">
               <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-white font-bold text-xs sm:text-sm mb-1">Free for 30 days, then $499/month</p>
+                <p className="text-white font-bold text-xs sm:text-sm mb-1">Free for 7 days, then $499/month</p>
                 <p className="text-gray-300 text-[10px] sm:text-xs leading-relaxed">
-                  Your card will be automatically charged $499 when your trial ends. Cancel anytime before Day 30 to avoid charges.
+                  Your card will be automatically charged $499 when your trial ends. Cancel anytime before Day 7 to avoid charges.
                 </p>
               </div>
             </div>
@@ -180,7 +180,7 @@ export default function TrialActivatePage() {
           </button>
 
           <p className="mt-3 sm:mt-4 text-[10px] sm:text-xs text-center text-white/50">
-            No charge today • Billing starts automatically after 30 days
+            No charge today • Billing starts automatically after 7 days
           </p>
         </div>
 

@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       throw new Error('STRIPE_PRO_PRICE_ID not configured');
     }
 
-    // Create Stripe Checkout Session in SUBSCRIPTION mode with 30-day trial
+    // Create Stripe Checkout Session in SUBSCRIPTION mode with 7-day trial
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription', // SUBSCRIPTION mode - will auto-charge after trial!
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
         },
       ],
       subscription_data: {
-        trial_period_days: 30, // 30-day free trial
+        trial_period_days: 7, // 7-day free trial
         metadata: {
           user_id: user.id,
         },
