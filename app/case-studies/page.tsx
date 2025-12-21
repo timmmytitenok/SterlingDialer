@@ -59,10 +59,10 @@ export default function CaseStudiesPage() {
       <PublicNav />
       <MobilePublicNav />
       
-      {/* Animated Background */}
+      {/* Animated Background - Soft gradual glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-[700px] h-[700px] bg-green-500/10 rounded-full blur-3xl top-20 -left-40 animate-pulse" />
-        <div className="absolute w-[700px] h-[700px] bg-blue-500/10 rounded-full blur-3xl bottom-20 -right-40 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute w-[1000px] h-[1000px] bg-green-500/8 rounded-full top-[-300px] left-[-300px] animate-pulse" style={{ filter: 'blur(180px)' }} />
+        <div className="absolute w-[900px] h-[900px] bg-blue-500/8 rounded-full bottom-[-200px] right-[-300px] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '1s' }} />
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-40">

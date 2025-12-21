@@ -11,11 +11,11 @@ import Link from 'next/link';
 export default function PricingPage() {
   return (
     <div className="min-h-screen bg-[#0B1437] relative overflow-hidden">
-      {/* Animated Background */}
+      {/* Animated Background - Soft gradual glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-[800px] h-[800px] bg-blue-500/20 rounded-full blur-3xl -top-40 -left-40 animate-pulse" />
-        <div className="absolute w-[600px] h-[600px] bg-purple-500/20 rounded-full blur-3xl top-1/4 -right-40 animate-pulse" style={{ animationDelay: '1s', animationDuration: '4s' }} />
-        <div className="absolute w-[700px] h-[700px] bg-indigo-500/20 rounded-full blur-3xl bottom-0 left-1/3 animate-pulse" style={{ animationDelay: '2s', animationDuration: '5s' }} />
+        <div className="absolute w-[1000px] h-[1000px] bg-blue-500/8 rounded-full top-[-300px] left-[-300px] animate-pulse" style={{ filter: 'blur(180px)' }} />
+        <div className="absolute w-[900px] h-[900px] bg-purple-500/8 rounded-full top-[20%] right-[-300px] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '1s' }} />
+        <div className="absolute w-[1000px] h-[1000px] bg-indigo-500/8 rounded-full bottom-[-300px] left-[20%] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '2s' }} />
       </div>
 
       {/* Grid Pattern */}

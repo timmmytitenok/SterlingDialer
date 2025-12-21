@@ -116,11 +116,11 @@ export default function FAQPage() {
       <PublicNav />
       <MobilePublicNav />
       
-      {/* Animated Background - Fixed to cover entire page */}
+      {/* Animated Background - Soft gradual glow */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-3xl top-20 -left-40 animate-pulse" />
-        <div className="absolute w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-3xl top-1/2 -right-40 animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute w-[600px] h-[600px] bg-pink-500/10 rounded-full blur-3xl bottom-20 left-1/4 animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute w-[1000px] h-[1000px] bg-blue-500/8 rounded-full top-[-300px] left-[-300px] animate-pulse" style={{ filter: 'blur(180px)' }} />
+        <div className="absolute w-[900px] h-[900px] bg-purple-500/8 rounded-full top-[30%] right-[-300px] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '1s' }} />
+        <div className="absolute w-[1000px] h-[1000px] bg-pink-500/8 rounded-full bottom-[-300px] left-[20%] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '2s' }} />
       </div>
 
       {/* Grid Pattern - Fixed to cover entire page */}

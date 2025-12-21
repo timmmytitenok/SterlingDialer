@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Phone, Settings, X, Loader2, Calendar, Clock, User, ChevronDown, Eye, EyeOff } from 'lucide-react';
+import { Phone, Settings, X, Loader2, Calendar, Clock, User, ChevronDown, Eye, EyeOff, Shield, ShieldOff } from 'lucide-react';
 import { usePrivacy } from '@/contexts/privacy-context';
 
 interface AdminTestPanelProps {
@@ -28,6 +28,10 @@ export function AdminTestPanel({
     details?: any;
   } | null>(null);
   
+  // Bypass calling restrictions toggle
+  const [bypassRestrictions, setBypassRestrictions] = useState(false);
+  const [bypassLoading, setBypassLoading] = useState(false);
+  
   // Appointment modal state
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [appointmentLoading, setAppointmentLoading] = useState(false);
@@ -48,6 +52,45 @@ export function AdminTestPanel({
 
   // Privacy blur toggle
   const { blurSensitive, setBlurSensitive } = usePrivacy();
+
+  // Fetch bypass restrictions setting on mount
+  useEffect(() => {
+    const fetchBypassSetting = async () => {
+      try {
+        const response = await fetch(`/api/admin/bypass-restrictions?userId=${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setBypassRestrictions(data.bypassEnabled || false);
+        }
+      } catch (error) {
+        console.error('Failed to fetch bypass setting:', error);
+      }
+    };
+    fetchBypassSetting();
+  }, [userId]);
+
+  // Toggle bypass restrictions
+  const handleToggleBypass = async () => {
+    setBypassLoading(true);
+    try {
+      const response = await fetch('/api/admin/bypass-restrictions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          enabled: !bypassRestrictions
+        }),
+      });
+
+      if (response.ok) {
+        setBypassRestrictions(!bypassRestrictions);
+      }
+    } catch (error) {
+      console.error('Failed to toggle bypass:', error);
+    } finally {
+      setBypassLoading(false);
+    }
+  };
 
   // Time picker options
   const hours = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
@@ -270,6 +313,34 @@ export function AdminTestPanel({
               <div className="text-center pb-4 border-b border-purple-500/20">
                 <div className="text-sm text-gray-400 mb-1">Testing as:</div>
                 <div className="text-lg font-bold text-white">{userName}</div>
+              </div>
+
+              {/* Bypass Calling Restrictions Toggle */}
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-orange-900/30 to-red-900/20 rounded-xl border border-orange-500/30">
+                <div className="flex items-center gap-3">
+                  {bypassRestrictions ? (
+                    <ShieldOff className="w-5 h-5 text-orange-400" />
+                  ) : (
+                    <Shield className="w-5 h-5 text-gray-400" />
+                  )}
+                  <div>
+                    <div className="text-sm font-medium text-white">Bypass Restrictions</div>
+                    <div className="text-xs text-gray-400">Skip Sunday & hours check</div>
+                  </div>
+                </div>
+                <button
+                  onClick={handleToggleBypass}
+                  disabled={bypassLoading}
+                  className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                    bypassRestrictions 
+                      ? 'bg-orange-500 shadow-lg shadow-orange-500/30' 
+                      : 'bg-gray-600'
+                  } ${bypassLoading ? 'opacity-50' : ''}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-md ${
+                    bypassRestrictions ? 'left-7' : 'left-1'
+                  }`} />
+                </button>
               </div>
 
               {/* Privacy Blur Toggle */}

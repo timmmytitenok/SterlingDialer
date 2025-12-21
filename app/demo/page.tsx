@@ -131,11 +131,11 @@ export default function DemoPage() {
       <PublicNav />
       <MobilePublicNav />
       
-      {/* Animated Background - Same as Landing Page */}
+      {/* Animated Background - Soft gradual glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-[800px] h-[800px] bg-blue-500/10 rounded-full blur-3xl top-0 -left-40 animate-pulse" />
-        <div className="absolute w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-3xl top-1/3 -right-40 animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute w-[700px] h-[700px] bg-pink-500/10 rounded-full blur-3xl bottom-0 left-1/4 animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute w-[1000px] h-[1000px] bg-blue-500/8 rounded-full top-[-300px] left-[-300px] animate-pulse" style={{ filter: 'blur(180px)' }} />
+        <div className="absolute w-[900px] h-[900px] bg-purple-500/8 rounded-full top-[20%] right-[-300px] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '1s' }} />
+        <div className="absolute w-[1000px] h-[1000px] bg-pink-500/8 rounded-full bottom-[-300px] left-[20%] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '2s' }} />
       </div>
 
       {/* Grid Pattern - Same as Landing Page */}
@@ -176,10 +176,10 @@ export default function DemoPage() {
 
         {/* LISTEN TO STERLING AI SECTION - Glowy Two Cards */}
         <section className="py-10 sm:py-24 px-3 sm:px-4 relative">
-          {/* Extra glow for this section */}
+          {/* Extra glow for this section - Super soft gradual fade */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-3xl top-1/4 -left-20 animate-pulse" />
-            <div className="absolute w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-3xl top-1/4 -right-20 animate-pulse" style={{ animationDelay: '1.5s' }} />
+            <div className="absolute w-[800px] h-[800px] bg-blue-500/10 rounded-full top-[-100px] left-[-200px] animate-pulse" style={{ filter: 'blur(150px)' }} />
+            <div className="absolute w-[800px] h-[800px] bg-purple-500/10 rounded-full top-[-100px] right-[-200px] animate-pulse" style={{ filter: 'blur(150px)', animationDelay: '1.5s' }} />
           </div>
           
           <div className="max-w-6xl mx-auto relative z-10">
@@ -188,7 +188,7 @@ export default function DemoPage() {
               <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-400/30 rounded-full mb-4 sm:mb-8 shadow-lg shadow-blue-500/20">
                 <Headphones className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
                 <span className="text-sm sm:text-base font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Real AI Conversations</span>
-              </div>
+                  </div>
               
               {/* Desktop Big Title */}
               <h2 className="hidden sm:block text-5xl md:text-6xl lg:text-7xl font-bold mb-4 leading-tight">
@@ -205,7 +205,7 @@ export default function DemoPage() {
               </h2>
               
               <p className="text-base sm:text-xl text-gray-400 max-w-2xl mx-auto">Listen to real appointment bookings — made by AI</p>
-            </div>
+                  </div>
 
             {/* Two Big Glowy Cards - Side by Side */}
             <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
@@ -230,11 +230,11 @@ export default function DemoPage() {
                     
                     {/* Inner Card */}
                     <div className={`relative bg-[#0B1437] m-[2px] rounded-3xl overflow-hidden transition-all duration-300`}>
-                      {/* Glowing Orbs Inside Card */}
+                      {/* Glowing Orbs Inside Card - Soft gradual fade */}
                       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                        <div className={`absolute w-[300px] h-[300px] ${isFirst ? 'bg-blue-500/30' : 'bg-purple-500/30'} rounded-full blur-3xl -top-20 -right-20 ${isPlaying ? 'animate-pulse' : 'group-hover:animate-pulse'}`} />
-                        <div className={`absolute w-[200px] h-[200px] ${isFirst ? 'bg-cyan-500/20' : 'bg-pink-500/20'} rounded-full blur-2xl -bottom-10 -left-10 ${isPlaying ? 'animate-pulse' : 'group-hover:animate-pulse'}`} style={{ animationDelay: '0.5s' }} />
-                      </div>
+                        <div className={`absolute w-[400px] h-[400px] ${isFirst ? 'bg-blue-500/20' : 'bg-purple-500/20'} rounded-full -top-40 -right-40 ${isPlaying ? 'animate-pulse' : 'group-hover:animate-pulse'}`} style={{ filter: 'blur(80px)' }} />
+                        <div className={`absolute w-[300px] h-[300px] ${isFirst ? 'bg-cyan-500/15' : 'bg-pink-500/15'} rounded-full -bottom-20 -left-20 ${isPlaying ? 'animate-pulse' : 'group-hover:animate-pulse'}`} style={{ filter: 'blur(80px)', animationDelay: '0.5s' }} />
+                    </div>
                       
                       {/* Card Content */}
                       <div className="relative z-10 p-6 sm:p-8">
@@ -299,8 +299,8 @@ export default function DemoPage() {
                             {/* Glow on progress */}
                             <div 
                               className={`absolute top-0 h-full bg-gradient-to-r ${isFirst ? 'from-blue-400 to-cyan-300' : 'from-purple-400 to-pink-300'} rounded-full blur-sm opacity-50`}
-                              style={{ width: `${progress[rec.id]}%` }}
-                            />
+                            style={{ width: `${progress[rec.id]}%` }}
+                          />
                           </div>
                           
                           {/* Time & Speed Controls */}
@@ -326,28 +326,28 @@ export default function DemoPage() {
                       </div>
                     </div>
                     
-                    <audio 
+                  <audio 
                       ref={audioRefs[rec.id as keyof typeof audioRefs]}
                       src={rec.src}
                       onTimeUpdate={() => handleTimeUpdate(rec.id)}
                       onLoadedMetadata={() => handleLoadedMetadata(rec.id)}
                       onEnded={() => handleEnded(rec.id)}
-                      className="hidden"
-                    />
-                  </div>
+                    className="hidden"
+                  />
+                </div>
                 );
               })}
-            </div>
-          </div>
+                </div>
+              </div>
         </section>
 
         {/* HOW IT WORKS SECTION - Vibrant & Glowy */}
         <section className="py-12 sm:py-28 px-3 sm:px-4 relative overflow-hidden">
-          {/* Background Glow Effects */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute w-[400px] h-[400px] bg-blue-500/15 rounded-full blur-3xl top-0 left-1/4 animate-pulse" />
-            <div className="absolute w-[350px] h-[350px] bg-purple-500/15 rounded-full blur-3xl top-1/3 left-1/2 animate-pulse" style={{ animationDelay: '1s' }} />
-            <div className="absolute w-[400px] h-[400px] bg-green-500/15 rounded-full blur-3xl bottom-0 right-1/4 animate-pulse" style={{ animationDelay: '2s' }} />
+          {/* Background Glow Effects - Super soft gradual fade */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute w-[800px] h-[800px] bg-blue-500/10 rounded-full top-[-200px] left-[-100px] animate-pulse" style={{ filter: 'blur(150px)' }} />
+            <div className="absolute w-[700px] h-[700px] bg-purple-500/10 rounded-full top-[100px] left-1/2 -translate-x-1/2 animate-pulse" style={{ filter: 'blur(150px)', animationDelay: '1s' }} />
+            <div className="absolute w-[800px] h-[800px] bg-green-500/10 rounded-full bottom-[-200px] right-[-100px] animate-pulse" style={{ filter: 'blur(150px)', animationDelay: '2s' }} />
           </div>
           
           <div className="max-w-6xl mx-auto relative z-10">
@@ -370,15 +370,12 @@ export default function DemoPage() {
               <div className="hidden md:block absolute top-[4.5rem] left-[16%] right-[16%] h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 rounded-full blur-md opacity-50" />
               
               <div className="grid md:grid-cols-3 gap-6 sm:gap-10">
-                {/* Step 1 */}
+              {/* Step 1 */}
                 <div className="group relative animate-in fade-in slide-in-from-bottom" style={{ animationDelay: '100ms', animationDuration: '600ms' }}>
-                  {/* Gradient Border Wrapper */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl sm:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl sm:rounded-3xl p-[2px] opacity-50 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-full h-full bg-[#0B1437] rounded-2xl sm:rounded-3xl" />
-                  </div>
+                  {/* Gradient Glow Behind Card - Soft */}
+                  <div className="absolute -inset-4 bg-gradient-to-br from-blue-500/40 to-cyan-500/40 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ filter: 'blur(40px)' }} />
                   
-                  <div className="relative bg-[#0B1437]/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-blue-500/20 group-hover:border-blue-400/50 transition-all duration-300 group-hover:scale-[1.02]">
+                  <div className="relative bg-[#0B1437] rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-blue-500/30 group-hover:border-blue-400/60 transition-all duration-300 group-hover:scale-[1.02]">
                     {/* Floating Step Number */}
                     <div className="absolute -top-4 -right-2 sm:-top-5 sm:-right-3 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg shadow-blue-500/50 group-hover:scale-110 transition-transform">
                       1
@@ -386,28 +383,25 @@ export default function DemoPage() {
                     
                     {/* Glowing Icon */}
                     <div className="relative w-16 h-16 sm:w-20 sm:h-20 mb-6">
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-80 transition-opacity" />
+                      <div className="absolute -inset-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl opacity-40 group-hover:opacity-60 transition-opacity" style={{ filter: 'blur(20px)' }} />
                       <div className="relative w-full h-full bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300">
                         <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                       </div>
-                    </div>
+                  </div>
                     
                     <h3 className="text-xl sm:text-2xl font-bold text-white mb-3">Upload Your Leads</h3>
                     <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
-                      Import your old leads — The ones collecting dust. Sterling AI will start calling them all.
+                      Import your old leads — You know, the ones collecting dust.
                     </p>
                   </div>
                 </div>
                 
-                {/* Step 2 */}
+              {/* Step 2 */}
                 <div className="group relative animate-in fade-in slide-in-from-bottom" style={{ animationDelay: '200ms', animationDuration: '600ms' }}>
-                  {/* Gradient Border Wrapper */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl sm:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl sm:rounded-3xl p-[2px] opacity-50 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-full h-full bg-[#0B1437] rounded-2xl sm:rounded-3xl" />
-                  </div>
+                  {/* Gradient Glow Behind Card - Soft */}
+                  <div className="absolute -inset-4 bg-gradient-to-br from-purple-500/40 to-pink-500/40 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ filter: 'blur(40px)' }} />
                   
-                  <div className="relative bg-[#0B1437]/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-purple-500/20 group-hover:border-purple-400/50 transition-all duration-300 group-hover:scale-[1.02]">
+                  <div className="relative bg-[#0B1437] rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-purple-500/30 group-hover:border-purple-400/60 transition-all duration-300 group-hover:scale-[1.02]">
                     {/* Floating Step Number */}
                     <div className="absolute -top-4 -right-2 sm:-top-5 sm:-right-3 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg shadow-purple-500/50 group-hover:scale-110 transition-transform">
                       2
@@ -415,7 +409,7 @@ export default function DemoPage() {
                     
                     {/* Glowing Icon */}
                     <div className="relative w-16 h-16 sm:w-20 sm:h-20 mb-6">
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-80 transition-opacity" />
+                      <div className="absolute -inset-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl opacity-40 group-hover:opacity-60 transition-opacity" style={{ filter: 'blur(20px)' }} />
                       <div className="relative w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-xl shadow-purple-500/30 group-hover:scale-110 transition-transform duration-300">
                         <Rocket className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                       </div>
@@ -424,19 +418,16 @@ export default function DemoPage() {
                     <h3 className="text-xl sm:text-2xl font-bold text-white mb-3">Launch AI Agent</h3>
                     <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
                       Set your daily budget and Hit "Launch." AI starts calling immediately.
-                    </p>
-                  </div>
-                </div>
+                  </p>
+              </div>
+            </div>
 
-                {/* Step 3 */}
+              {/* Step 3 */}
                 <div className="group relative animate-in fade-in slide-in-from-bottom" style={{ animationDelay: '300ms', animationDuration: '600ms' }}>
-                  {/* Gradient Border Wrapper */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl sm:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl sm:rounded-3xl p-[2px] opacity-50 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-full h-full bg-[#0B1437] rounded-2xl sm:rounded-3xl" />
-                  </div>
+                  {/* Gradient Glow Behind Card - Soft */}
+                  <div className="absolute -inset-4 bg-gradient-to-br from-green-500/40 to-emerald-500/40 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ filter: 'blur(40px)' }} />
                   
-                  <div className="relative bg-[#0B1437]/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-green-500/20 group-hover:border-green-400/50 transition-all duration-300 group-hover:scale-[1.02]">
+                  <div className="relative bg-[#0B1437] rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-green-500/30 group-hover:border-green-400/60 transition-all duration-300 group-hover:scale-[1.02]">
                     {/* Floating Step Number */}
                     <div className="absolute -top-4 -right-2 sm:-top-5 sm:-right-3 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg shadow-green-500/50 group-hover:scale-110 transition-transform">
                       3
@@ -444,7 +435,7 @@ export default function DemoPage() {
                     
                     {/* Glowing Icon */}
                     <div className="relative w-16 h-16 sm:w-20 sm:h-20 mb-6">
-                      <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-80 transition-opacity" />
+                      <div className="absolute -inset-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl opacity-40 group-hover:opacity-60 transition-opacity" style={{ filter: 'blur(20px)' }} />
                       <div className="relative w-full h-full bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-xl shadow-green-500/30 group-hover:scale-110 transition-transform duration-300">
                         <Calendar className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                       </div>

@@ -20,10 +20,10 @@ export default function WelcomePage() {
 
   return (
     <div className="min-h-screen bg-[#0B1437] relative overflow-hidden flex items-center justify-center">
-      {/* Animated Background */}
+      {/* Animated Background - Soft gradual glow */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-[800px] h-[800px] bg-purple-500/20 rounded-full blur-3xl top-20 left-1/4 animate-pulse" />
-        <div className="absolute w-[600px] h-[600px] bg-blue-500/20 rounded-full blur-3xl bottom-20 right-1/4 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute w-[1000px] h-[1000px] bg-purple-500/10 rounded-full top-[-200px] left-[10%] animate-pulse" style={{ filter: 'blur(180px)' }} />
+        <div className="absolute w-[900px] h-[900px] bg-blue-500/10 rounded-full bottom-[-200px] right-[10%] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '1s' }} />
       </div>
 
       {/* Confetti - Only render on client */}

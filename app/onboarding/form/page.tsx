@@ -95,10 +95,10 @@ export default function OnboardingFormPage() {
 
   return (
     <div className="min-h-screen bg-[#0B1437] relative overflow-hidden md:flex md:items-center md:justify-center">
-      {/* Animated Background Effects */}
+      {/* Animated Background - Soft gradual glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -top-20 -left-20 animate-pulse"></div>
-        <div className="absolute w-96 h-96 bg-purple-500/10 rounded-full blur-3xl -bottom-20 -right-20 animate-pulse" style={{ animationDelay: '700ms' }}></div>
+        <div className="absolute w-[1000px] h-[1000px] bg-blue-500/8 rounded-full top-[-300px] left-[-300px] animate-pulse" style={{ filter: 'blur(180px)' }}></div>
+        <div className="absolute w-[900px] h-[900px] bg-purple-500/8 rounded-full bottom-[-200px] right-[-300px] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '700ms' }}></div>
       </div>
 
       {/* Grid Pattern Overlay */}
