@@ -174,111 +174,154 @@ export default function DemoPage() {
           </div>
         </section>
 
-        {/* LISTEN TO STERLING AI SECTION - Two Big Cards */}
-        <section className="py-8 sm:py-20 px-3 sm:px-4">
-          <div className="max-w-6xl mx-auto">
-            {/* Section Header */}
-            <div className="text-center mb-8 sm:mb-12 animate-in fade-in slide-in-from-bottom duration-700">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-3 sm:mb-6">
-                <CalendarCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
-                <span className="text-xs sm:text-sm font-medium text-blue-400">Live Appointment Bookings</span>
+        {/* LISTEN TO STERLING AI SECTION - Glowy Two Cards */}
+        <section className="py-10 sm:py-24 px-3 sm:px-4 relative">
+          {/* Extra glow for this section */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-3xl top-1/4 -left-20 animate-pulse" />
+            <div className="absolute w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-3xl top-1/4 -right-20 animate-pulse" style={{ animationDelay: '1.5s' }} />
+          </div>
+          
+          <div className="max-w-6xl mx-auto relative z-10">
+            {/* Section Header - BIGGER Title */}
+            <div className="text-center mb-10 sm:mb-16 animate-in fade-in slide-in-from-bottom duration-700">
+              <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-400/30 rounded-full mb-4 sm:mb-8 shadow-lg shadow-blue-500/20">
+                <Headphones className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+                <span className="text-sm sm:text-base font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Real AI Conversations</span>
               </div>
-              <h2 className="text-2xl sm:text-4xl font-bold text-white mb-2 sm:mb-3">
-                Hear Sterling AI In Action
+              
+              {/* Desktop Big Title */}
+              <h2 className="hidden sm:block text-5xl md:text-6xl lg:text-7xl font-bold mb-4 leading-tight">
+                <span className="text-white">Hear </span>
+                <span className="bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">Sterling AI</span>
+                <span className="text-white"> In Action</span>
               </h2>
-              <p className="text-sm sm:text-base text-gray-400">Listen to real AI-booked appointments</p>
+              
+              {/* Mobile Big Title */}
+              <h2 className="sm:hidden text-3xl font-bold mb-3 leading-tight">
+                <span className="text-white">Hear </span>
+                <span className="bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">Sterling AI</span>
+                <span className="text-white"> In Action</span>
+              </h2>
+              
+              <p className="text-base sm:text-xl text-gray-400 max-w-2xl mx-auto">Listen to real appointment bookings — made by AI</p>
             </div>
 
-            {/* Two Big Cards - Side by Side */}
-            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+            {/* Two Big Glowy Cards - Side by Side */}
+            <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
               {recordings.map((rec, index) => {
                 const isPlaying = activePlayer === rec.id;
+                const isFirst = rec.id === 1;
                 
                 return (
                   <div
                     key={rec.id}
-                    className={`group relative rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-500 cursor-pointer animate-in fade-in slide-in-from-bottom
+                    className={`group relative rounded-3xl overflow-hidden transition-all duration-500 cursor-pointer animate-in fade-in slide-in-from-bottom
                       ${isPlaying 
-                        ? 'scale-[1.02] shadow-2xl ring-2 ring-white/20' 
-                        : 'hover:scale-[1.03] hover:shadow-2xl'
-                      } ${rec.hoverGlow}`}
+                        ? 'scale-[1.02]' 
+                        : 'hover:scale-[1.04]'
+                      }`}
                     style={{ animationDelay: `${index * 150}ms`, animationDuration: '600ms' }}
                   >
-                    {/* Background Gradient */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${rec.gradient} opacity-10 group-hover:opacity-20 transition-opacity duration-500`} />
+                    {/* Animated Gradient Border */}
+                    <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${isFirst ? 'from-blue-500 via-cyan-500 to-blue-600' : 'from-purple-500 via-pink-500 to-purple-600'} p-[2px] ${isPlaying ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'} transition-opacity duration-300`}>
+                      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-transparent to-transparent animate-spin-slow" style={{ background: `conic-gradient(from 0deg, ${isFirst ? '#3b82f6, #06b6d4, #3b82f6' : '#a855f7, #ec4899, #a855f7'})`, animationDuration: '4s' }} />
+                    </div>
                     
-                    {/* Card Content */}
-                    <div className={`relative bg-[#1A2647]/95 backdrop-blur-xl border-2 ${isPlaying ? 'border-white/30' : rec.borderColor} ${rec.hoverBorder} rounded-2xl sm:rounded-3xl p-6 sm:p-8 transition-all duration-300`}>
-                      
-                      {/* Header with Icon */}
-                      <div className="flex items-start gap-4 mb-6">
-                        <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl ${rec.iconBg} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                          <CalendarCheck className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <p className={`text-xs sm:text-sm font-bold uppercase tracking-wider mb-1 bg-gradient-to-r ${rec.gradient} bg-clip-text text-transparent`}>
-                            {rec.subtitle}
-                          </p>
-                          <h3 className="text-xl sm:text-2xl font-bold text-white">{rec.title}</h3>
-                        </div>
+                    {/* Inner Card */}
+                    <div className={`relative bg-[#0B1437] m-[2px] rounded-3xl overflow-hidden transition-all duration-300`}>
+                      {/* Glowing Orbs Inside Card */}
+                      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                        <div className={`absolute w-[300px] h-[300px] ${isFirst ? 'bg-blue-500/30' : 'bg-purple-500/30'} rounded-full blur-3xl -top-20 -right-20 ${isPlaying ? 'animate-pulse' : 'group-hover:animate-pulse'}`} />
+                        <div className={`absolute w-[200px] h-[200px] ${isFirst ? 'bg-cyan-500/20' : 'bg-pink-500/20'} rounded-full blur-2xl -bottom-10 -left-10 ${isPlaying ? 'animate-pulse' : 'group-hover:animate-pulse'}`} style={{ animationDelay: '0.5s' }} />
                       </div>
                       
-                      {/* Description */}
-                      <p className="text-sm sm:text-base text-gray-400 mb-6 leading-relaxed">
-                        {rec.desc}
-                      </p>
-                      
-                      {/* Play Button - Big & Centered */}
-                      <div 
-                        onClick={() => togglePlay(rec.id)}
-                        className={`w-full py-4 sm:py-5 rounded-xl sm:rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 
-                          ${isPlaying 
-                            ? `bg-gradient-to-r ${rec.gradient} shadow-lg` 
-                            : `bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20`
-                          }`}
-                      >
-                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${
-                          isPlaying ? 'bg-white/20' : `bg-gradient-to-r ${rec.gradient}`
-                        }`}>
-                          {isPlaying ? (
-                            <Pause className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                          ) : (
-                            <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white ml-0.5" />
-                          )}
-                        </div>
-                        <span className="text-white font-semibold text-base sm:text-lg">
-                          {isPlaying ? 'Now Playing...' : 'Play Recording'}
-                        </span>
-                      </div>
-                      
-                      {/* Progress Section */}
-                      <div className="mt-5 space-y-3">
-                        {/* Progress Bar */}
-                        <div className="h-2 bg-gray-800/80 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full bg-gradient-to-r ${rec.progressBar} rounded-full transition-all duration-150`}
-                            style={{ width: `${progress[rec.id]}%` }}
-                          />
+                      {/* Card Content */}
+                      <div className="relative z-10 p-6 sm:p-8">
+                        {/* Header with Icon */}
+                        <div className="flex items-start gap-4 mb-6">
+                          <div className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br ${isFirst ? 'from-blue-500 to-cyan-500' : 'from-purple-500 to-pink-500'} flex items-center justify-center shadow-2xl ${isFirst ? 'shadow-blue-500/50' : 'shadow-purple-500/50'} group-hover:scale-110 transition-transform duration-300`}>
+                            <CalendarCheck className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                            {/* Glow ring */}
+                            <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${isFirst ? 'from-blue-400 to-cyan-400' : 'from-purple-400 to-pink-400'} opacity-0 group-hover:opacity-50 blur-xl transition-opacity duration-300`} />
+                          </div>
+                          <div className="flex-1 pt-1">
+                            <p className={`text-sm sm:text-base font-bold uppercase tracking-wider mb-1 bg-gradient-to-r ${isFirst ? 'from-blue-400 to-cyan-400' : 'from-purple-400 to-pink-400'} bg-clip-text text-transparent`}>
+                              {rec.subtitle}
+                            </p>
+                            <h3 className="text-2xl sm:text-3xl font-bold text-white">{rec.title}</h3>
+                          </div>
                         </div>
                         
-                        {/* Time & Speed Controls */}
-                        <div className="flex items-center justify-between">
-                          {/* Time Display */}
-                          <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>{formatTime(currentTime[rec.id] || 0)}</span>
-                            <span>/</span>
-                            <span>{formatTime(duration[rec.id] || 0)}</span>
+                        {/* Description */}
+                        <p className="text-base sm:text-lg text-gray-300 mb-8 leading-relaxed">
+                          {rec.desc}
+                        </p>
+                        
+                        {/* Play Button - Big & Glowy */}
+                        <div 
+                          onClick={() => togglePlay(rec.id)}
+                          className={`relative w-full py-5 sm:py-6 rounded-2xl flex items-center justify-center gap-4 transition-all duration-300 overflow-hidden
+                            ${isPlaying 
+                              ? `bg-gradient-to-r ${isFirst ? 'from-blue-600 to-cyan-500' : 'from-purple-600 to-pink-500'} shadow-2xl ${isFirst ? 'shadow-blue-500/50' : 'shadow-purple-500/50'}` 
+                              : `bg-white/5 border-2 ${isFirst ? 'border-blue-500/30 hover:border-blue-400/60' : 'border-purple-500/30 hover:border-purple-400/60'} hover:bg-white/10`
+                            }`}
+                        >
+                          {/* Button glow effect */}
+                          {!isPlaying && (
+                            <div className={`absolute inset-0 bg-gradient-to-r ${isFirst ? 'from-blue-500/0 via-blue-500/10 to-blue-500/0' : 'from-purple-500/0 via-purple-500/10 to-purple-500/0'} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                          )}
+                          
+                          <div className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all shadow-lg ${
+                            isPlaying 
+                              ? 'bg-white/20 shadow-white/20' 
+                              : `bg-gradient-to-r ${isFirst ? 'from-blue-500 to-cyan-500 shadow-blue-500/50' : 'from-purple-500 to-pink-500 shadow-purple-500/50'}`
+                          }`}>
+                            {isPlaying ? (
+                              <Pause className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                            ) : (
+                              <Play className="w-6 h-6 sm:w-7 sm:h-7 text-white ml-1" />
+                            )}
+                          </div>
+                          <span className="relative text-white font-bold text-lg sm:text-xl">
+                            {isPlaying ? 'Now Playing...' : 'Play Recording'}
+                          </span>
+                        </div>
+                        
+                        {/* Progress Section */}
+                        <div className="mt-6 space-y-4">
+                          {/* Progress Bar - Glowy */}
+                          <div className="relative h-3 bg-gray-800/80 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full bg-gradient-to-r ${isFirst ? 'from-blue-500 to-cyan-400' : 'from-purple-500 to-pink-400'} rounded-full transition-all duration-150`}
+                              style={{ width: `${progress[rec.id]}%` }}
+                            />
+                            {/* Glow on progress */}
+                            <div 
+                              className={`absolute top-0 h-full bg-gradient-to-r ${isFirst ? 'from-blue-400 to-cyan-300' : 'from-purple-400 to-pink-300'} rounded-full blur-sm opacity-50`}
+                              style={{ width: `${progress[rec.id]}%` }}
+                            />
                           </div>
                           
-                          {/* Speed Control Button */}
-                          <button
-                            onClick={(e) => changeSpeed(rec.id, e)}
-                            className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 
-                              bg-gradient-to-r ${rec.gradient} text-white hover:opacity-90 active:scale-95`}
-                          >
-                            {playbackSpeed[rec.id]}x
-                          </button>
+                          {/* Time & Speed Controls */}
+                          <div className="flex items-center justify-between">
+                            {/* Time Display */}
+                            <div className="flex items-center gap-2 text-sm sm:text-base text-gray-400 font-medium">
+                              <Clock className="w-4 h-4" />
+                              <span>{formatTime(currentTime[rec.id] || 0)}</span>
+                              <span className="text-gray-600">/</span>
+                              <span>{formatTime(duration[rec.id] || 0)}</span>
+                            </div>
+                            
+                            {/* Speed Control Button - Glowy */}
+                            <button
+                              onClick={(e) => changeSpeed(rec.id, e)}
+                              className={`relative px-4 py-2 rounded-xl text-sm sm:text-base font-bold transition-all duration-200 
+                                bg-gradient-to-r ${isFirst ? 'from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400' : 'from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400'} text-white active:scale-95 shadow-lg ${isFirst ? 'shadow-blue-500/30' : 'shadow-purple-500/30'}`}
+                            >
+                              {playbackSpeed[rec.id]}x
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
