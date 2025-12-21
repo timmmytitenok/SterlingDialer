@@ -49,17 +49,17 @@ export async function GET(
     }
     
     // Create user signup dates map
-    const userSignupDates = new Map((authData?.users || []).map(u => [u.id, u.created_at]));
+    const userSignupDates = new Map((authData?.users || []).map((u: any) => [u.id, u.created_at]));
     
     // Add real signup date to referrals
-    const referrals = (referralsRaw || []).map(r => ({
+    const referrals = (referralsRaw || []).map((r: any) => ({
       ...r,
       user_signup_date: userSignupDates.get(r.user_id) || r.created_at,
     }));
 
     // Get profiles for names
     const { data: profiles } = await supabase.from('profiles').select('user_id, full_name');
-    const profilesMap = new Map((profiles || []).map(p => [p.user_id, p.full_name]));
+    const profilesMap = new Map((profiles || []).map((p: any) => [p.user_id, p.full_name]));
     
     // Get all referrals with sales person info to show current assignments
     const { data: allReferrals } = await supabase
@@ -71,15 +71,15 @@ export async function GET(
       .from('sales_team')
       .select('id, full_name');
     
-    const salesPeopleMap = new Map((allSalesPeople || []).map(sp => [sp.id, sp.full_name]));
-    const userAssignments = new Map((allReferrals || []).map(r => [r.user_id, r.sales_person_id]));
+    const salesPeopleMap = new Map((allSalesPeople || []).map((sp: any) => [sp.id, sp.full_name]));
+    const userAssignments = new Map((allReferrals || []).map((r: any) => [r.user_id, r.sales_person_id]));
     
     // Build users list from auth data (like User Management does)
     // Filter out users who are already assigned to ANY sales person
     const allUsers = (authData?.users || [])
-      .filter(u => !userAssignments.has(u.id)) // Only show unassigned users
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .map(u => ({
+      .filter((u: any) => !userAssignments.has(u.id)) // Only show unassigned users
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .map((u: any) => ({
         id: u.id,
         full_name: profilesMap.get(u.id) || 'Unnamed User',
         email: u.email || 'No email',
