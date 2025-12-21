@@ -13,7 +13,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { sheetUrl, googleSheetId, sheetName, tabName, columnMapping, minLeadAgeDays } = await request.json();
+    const { sheetUrl, googleSheetId, sheetName, tabName, columnMapping, minLeadAgeDays, leadType } = await request.json();
+
+    console.log('📋 CREATE SHEET - Received leadType:', leadType);
+    console.log('📋 CREATE SHEET - Lead Type Mapping: 1=NULL/Default, 2=FE, 3=FE Veteran, 4=Mortgage Protection');
 
     if (!sheetUrl || !googleSheetId || !columnMapping) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -58,8 +61,12 @@ export async function POST(request: Request) {
       street_address_column: colToLetter(columnMapping.street_address),
       min_lead_age_days: minLeadAgeDays || 0,
       is_active: true,
+      // Lead type for AI script selection (1=NULL, 2=FE, 3=FE Veteran, 4=MP)
+      lead_type: leadType || 1,
     };
 
+    console.log('📋 CREATE SHEET - Saving to database with lead_type:', insertData.lead_type);
+    
     const { data: sheet, error } = await supabase
       .from('user_google_sheets')
       .insert(insertData)
@@ -68,6 +75,7 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('❌ Database error:', error);
+      console.error('❌ This might be because lead_type column does not exist! Run the SQL migration.');
       
       // Handle unique constraint violation with a friendly message
       if (error.code === '23505') {
@@ -79,10 +87,15 @@ export async function POST(request: Request) {
       throw error;
     }
 
+    console.log('✅ CREATE SHEET - Sheet created successfully!');
+    console.log('✅ CREATE SHEET - Sheet ID:', sheet.id);
+    console.log('✅ CREATE SHEET - Saved lead_type:', sheet.lead_type);
+
     return NextResponse.json({
       success: true,
       message: 'Sheet connected successfully',
       sheetId: sheet.id,
+      leadType: sheet.lead_type, // Return this so we can verify
     });
 
   } catch (error: any) {

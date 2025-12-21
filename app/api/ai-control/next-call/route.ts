@@ -404,6 +404,13 @@ export async function POST(request: Request) {
         console.log(`   - Total calls made: ${nextLead.total_calls_made || 0} / 20`);
         console.log(`   - Call attempts today: ${nextLead.call_attempts_today || 0}`);
         console.log(`   - Last attempt date: ${nextLead.last_attempt_date || 'never'}`);
+        
+        // CRITICAL: Log lead_type from database
+        console.log(`   🎯 LEAD TYPE FROM DATABASE:`);
+        console.log(`   - lead_type value: ${nextLead.lead_type}`);
+        console.log(`   - lead_type type: ${typeof nextLead.lead_type}`);
+        console.log(`   - lead_type exists in object: ${'lead_type' in nextLead}`);
+        
         console.log(`   🏠 MORTGAGE PROTECTION FIELDS:`);
         console.log(`   - Lead Vendor column exists: ${'lead_vendor' in nextLead}`);
         console.log(`   - Lead Vendor value: "${nextLead.lead_vendor || '(EMPTY - NOT IN DATABASE!)'}"`);
@@ -583,13 +590,29 @@ export async function POST(request: Request) {
       leadId: nextLead.id,
       live_transfer: "true",
       attempt_number: String((nextLead.call_attempts_today || 0) + 1),
+      // Lead type for AI script selection - reference as {{lead_type}} in Retell
+      // 1 = NULL/default
+      // 2 = Final Expense (non-veteran)
+      // 3 = Final Expense (veteran)
+      // 4 = Mortgage Protection
+      lead_type: nextLead.lead_type || 1,  // Send as NUMBER, defaults to 1 if NULL
       // Mortgage Protection variables - ALWAYS send these so Retell script can reference them
       // In Retell, reference as {{lead_vendor}} and {{street_address}}
       lead_vendor: nextLead.lead_vendor || '',
       street_address: nextLead.street_address || '',
     };
     
-    // Log mortgage protection data for debugging
+    // Log lead type and mortgage protection data for debugging
+    console.log('');
+    console.log('🎯 ====== LEAD TYPE DEBUG ======');
+    console.log(`   Lead ID: ${nextLead.id}`);
+    console.log(`   Lead Name: ${nextLead.name}`);
+    console.log(`   Raw lead_type from DB: ${nextLead.lead_type} (type: ${typeof nextLead.lead_type})`);
+    console.log(`   Sending to Retell as: ${dynamicVariables.lead_type} (type: ${typeof dynamicVariables.lead_type})`);
+    const leadTypeLabels: Record<number, string> = { 1: 'NULL/Default', 2: 'Final Expense', 3: 'Final Expense (Veteran)', 4: 'Mortgage Protection' };
+    console.log(`   Meaning: ${leadTypeLabels[dynamicVariables.lead_type] || 'UNKNOWN'}`);
+    console.log('================================');
+    console.log('');
     console.log('🏠 Mortgage Protection Data:');
     console.log(`   Lead Vendor: "${nextLead.lead_vendor || '(not set)'}"`);
     console.log(`   Street Address: "${nextLead.street_address || '(not set)'}"`);
@@ -605,6 +628,8 @@ export async function POST(request: Request) {
         lead_name: nextLead.name,
         lead_phone: phoneToCall, // Use formatted phone!
         attempt_number: (nextLead.call_attempts_today || 0) + 1,
+        // Lead type for AI script selection (1=NULL, 2=FE, 3=FE Veteran, 4=MP)
+        lead_type: nextLead.lead_type || 1,
         // Include mortgage protection data in metadata too
         lead_vendor: nextLead.lead_vendor || null,
         street_address: nextLead.street_address || null,
@@ -613,6 +638,12 @@ export async function POST(request: Request) {
     };
 
     console.log('📞 Call payload:', JSON.stringify(callPayload, null, 2));
+    console.log('');
+    console.log('🚨 RETELL DYNAMIC VARIABLES BEING SENT:');
+    console.log(`   lead_type = ${dynamicVariables.lead_type} (${typeof dynamicVariables.lead_type})`);
+    console.log(`   lead_vendor = "${dynamicVariables.lead_vendor}"`);
+    console.log(`   street_address = "${dynamicVariables.street_address}"`);
+    console.log('');
     console.log('📞 Authorization header:', `Bearer ${retellApiKey.substring(0, 15)}...${retellApiKey.substring(retellApiKey.length - 5)}`);
     console.log('📞 API Endpoint:', 'https://api.retellai.com/v2/create-phone-call');
 
@@ -789,6 +820,15 @@ export async function POST(request: Request) {
       })
       .eq('user_id', userId);
 
+    // Include lead_type in response so you can see it in browser console!
+    const leadTypeSent = nextLead.lead_type || 1;
+    console.log(`✅ ====== CALL SUCCESS ======`);
+    console.log(`   Lead ID: ${nextLead.id}`);
+    console.log(`   Lead Name: ${nextLead.name}`);
+    console.log(`   lead_type SENT TO RETELL: ${leadTypeSent}`);
+    console.log(`   (1=Default, 2=FE, 3=FE Vet, 4=MP)`);
+    console.log(`================================`);
+    
     return NextResponse.json({
       success: true,
       callId: callData.call_id,
@@ -799,6 +839,9 @@ export async function POST(request: Request) {
       callsMadeToday: callsMadeToday + 1,
       currentSpend: currentSpend,
       spendLimit: dailySpendLimit,
+      // ADDED: Show lead_type in response so you can verify it's being sent!
+      lead_type: leadTypeSent,
+      lead_type_meaning: leadTypeLabels[leadTypeSent] || 'UNKNOWN',
     });
   } catch (error: any) {
     console.error('❌ Error in next-call:', error);

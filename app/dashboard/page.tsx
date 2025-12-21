@@ -54,9 +54,11 @@ export default async function DashboardPage() {
   // Get current date ranges IN USER'S TIMEZONE (not UTC!)
   // This fixes the bug where day was resetting at 7pm instead of midnight
   const startOfTodayISO = getStartOfTodayInUserTimezone(userTimezone);
+  const startOfYesterdayISO = getDaysAgoInUserTimezone(userTimezone, 1);
   const startOf7DaysISO = getDaysAgoInUserTimezone(userTimezone, 7);
   const startOf30DaysISO = getDaysAgoInUserTimezone(userTimezone, 30);
   const todayDateString = getTodayDateString(userTimezone);
+  const yesterdayDateString = getDateStringDaysAgo(userTimezone, 1);
 
   console.log(`📅 Today starts at: ${startOfTodayISO} (midnight in ${userTimezone})`);
   console.log(`📅 Today's date: ${todayDateString}`);
@@ -80,6 +82,14 @@ export default async function DashboardPage() {
     .select('*')
     .eq('user_id', user.id)
     .gte('created_at', startOfTodayISO);
+
+  // Yesterday's calls (between yesterday start and today start)
+  const { data: yesterdayCalls } = await supabase
+    .from('calls')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('created_at', startOfYesterdayISO)
+    .lt('created_at', startOfTodayISO);
 
   const { data: last7DaysCalls } = await supabase
     .from('calls')
@@ -106,6 +116,9 @@ export default async function DashboardPage() {
   // Find today's admin stats
   const adminStatsToday = allAdminStats?.find(stat => stat.date === todayDateString);
   console.log(`📊 Admin-adjusted stats for today (${todayDateString}):`, adminStatsToday);
+
+  // Find yesterday's admin stats
+  const adminStatsYesterday = allAdminStats?.find(stat => stat.date === yesterdayDateString);
 
   // Calculate admin adjustments for different time periods
   const last7DaysDate = getDateStringDaysAgo(userTimezone, 7);
@@ -468,6 +481,27 @@ export default async function DashboardPage() {
     return r.date === today; // Compare date strings
   }).reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;
 
+  // Calculate YESTERDAY's specific stats (with admin adjustments)
+  const totalCallsYesterdayReal = yesterdayCalls?.length || 0;
+  const adminDialsYesterday = adminStatsYesterday?.total_calls || 0;
+  const finalTotalCallsYesterday = totalCallsYesterdayReal + adminDialsYesterday;
+  
+  const connectedCallsYesterday = yesterdayCalls?.filter(c => c.disposition === 'answered' || c.connected === true).length || 0;
+  const connectionRateYesterday = finalTotalCallsYesterday > 0 ? ((connectedCallsYesterday / finalTotalCallsYesterday) * 100).toFixed(1) : '0.0';
+  
+  const notInterestedYesterday = (yesterdayCalls?.filter(c => c.outcome === 'not_interested').length || 0) + (adminStatsYesterday?.not_interested || 0);
+  const callbacksYesterday = (yesterdayCalls?.filter(c => c.outcome === 'callback_later').length || 0) + (adminStatsYesterday?.callbacks || 0);
+  const transfersYesterday = (yesterdayCalls?.filter(c => c.outcome === 'live_transfer').length || 0) + (adminStatsYesterday?.live_transfers || 0);
+  const policiesSoldYesterday = (soldPolicies?.filter(p => {
+    return p.sold_at >= startOfYesterdayISO && p.sold_at < startOfTodayISO;
+  }).length || 0) + (adminStatsYesterday?.policies_sold || 0);
+  const revenueYesterday = revenueData?.filter(r => {
+    return r.date === yesterdayDateString;
+  }).reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;
+  const appointmentsYesterday = (allAppointmentsData?.filter(apt => {
+    return apt.created_at >= startOfYesterdayISO && apt.created_at < startOfTodayISO;
+  }).length || 0) + (adminStatsYesterday?.appointments_booked || 0);
+
   // Prepare call activity chart data (using user's timezone for accurate date boundaries!)
   const callActivityData = [];
   for (let i = 29; i >= 0; i--) {
@@ -596,6 +630,17 @@ export default async function DashboardPage() {
             callbacks: callbacksToday,
             transfers: transfersToday,
             appointments: appointmentsToday,
+          }}
+          yesterdayStats={{
+            totalCalls: finalTotalCallsYesterday,
+            connectionRate: connectionRateYesterday,
+            connectedCalls: connectedCallsYesterday,
+            policiesSold: policiesSoldYesterday,
+            revenue: revenueYesterday,
+            notInterested: notInterestedYesterday,
+            callbacks: callbacksYesterday,
+            transfers: transfersYesterday,
+            appointments: appointmentsYesterday,
           }}
           allTimeStats={{
             totalCalls,

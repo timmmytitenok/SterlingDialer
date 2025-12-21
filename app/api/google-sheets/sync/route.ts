@@ -44,6 +44,9 @@ export async function POST(request: Request) {
 
     // For now, sync the first sheet (or the one specified)
     const sheetConfig = sheetConfigs[0];
+    
+    console.log('🔄 SYNC - Sheet Config lead_type:', sheetConfig.lead_type);
+    console.log('🔄 SYNC - Lead Type Mapping: 1=NULL/Default, 2=FE, 3=FE Veteran, 4=Mortgage Protection');
 
     // Get service account credentials from environment
     const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
@@ -408,6 +411,8 @@ export async function POST(request: Request) {
           synced_from_sheet: true,
           is_qualified: isQualified,
           updated_at: new Date().toISOString(),
+          // Lead type for AI script selection (1=NULL, 2=FE, 3=FE Veteran, 4=MP)
+          lead_type: sheetConfig.lead_type || 1,
         };
         
         // Add lead_generated_at if we have a valid date
@@ -444,6 +449,8 @@ export async function POST(request: Request) {
           synced_from_sheet: true,
           is_qualified: isQualified,
           times_dialed: 0,
+          // Lead type for AI script selection (1=NULL, 2=FE, 3=FE Veteran, 4=MP)
+          lead_type: sheetConfig.lead_type || 1,
         };
         
         // Add lead_generated_at if we have a valid date

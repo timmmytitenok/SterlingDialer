@@ -152,6 +152,32 @@ export function CustomizableStatCard({
   const formattedValue = Math.round(animatedValue).toLocaleString();
   const displayValue = selectedOption.prefix ? `${selectedOption.prefix}${formattedValue}` : formattedValue;
 
+  // Show skeleton while loading preference
+  if (isLoading) {
+    return (
+      <div className="bg-gradient-to-br from-gray-500/10 to-gray-600/5 rounded-xl p-6 border border-gray-500/20 transition-all duration-200 relative overflow-visible animate-pulse">
+        {/* Skeleton for Change button */}
+        <div className="absolute top-3 right-3">
+          <div className="w-16 h-6 rounded-lg bg-white/5"></div>
+        </div>
+
+        {/* Skeleton for icon */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="w-10 h-10 rounded-lg bg-gray-600/30"></div>
+        </div>
+        
+        {/* Skeleton for title */}
+        <div className="h-4 w-32 bg-gray-600/30 rounded mb-3"></div>
+        
+        {/* Skeleton for value */}
+        <div className="h-10 w-20 bg-gray-600/40 rounded mb-2"></div>
+        
+        {/* Skeleton for subtitle */}
+        <div className="h-3 w-24 bg-gray-600/20 rounded"></div>
+      </div>
+    );
+  }
+
   return (
     <div className={`bg-gradient-to-br ${colorClass} rounded-xl p-6 border transition-all duration-200 hover:scale-[1.02] hover:shadow-lg relative overflow-visible ${isOpen ? 'z-[9999]' : ''}`}>
       {/* Stat Switcher Button */}

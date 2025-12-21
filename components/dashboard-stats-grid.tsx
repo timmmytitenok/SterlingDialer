@@ -2,54 +2,27 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-interface DashboardStatsGridProps {
-  todayStats: {
-    totalCalls: number;
-    connectionRate: string;
-    connectedCalls: number;
-    policiesSold: number;
-    revenue: number;
-    notInterested: number;
-    callbacks: number;
-    transfers: number;
-    appointments: number;
-  };
-  allTimeStats: {
-    totalCalls: number;
-    connectionRate: string;
-    connectedCalls: number;
-    policiesSold: number;
-    revenue: number;
-    notInterested: number;
-    callbacks: number;
-    transfers: number;
-    appointments: number;
-  };
-  last7DaysStats: {
-    totalCalls: number;
-    connectionRate: string;
-    connectedCalls: number;
-    policiesSold: number;
-    revenue: number;
-    notInterested: number;
-    callbacks: number;
-    transfers: number;
-    appointments: number;
-  };
-  last30DaysStats: {
-    totalCalls: number;
-    connectionRate: string;
-    connectedCalls: number;
-    policiesSold: number;
-    revenue: number;
-    notInterested: number;
-    callbacks: number;
-    transfers: number;
-    appointments: number;
-  };
+interface StatsData {
+  totalCalls: number;
+  connectionRate: string;
+  connectedCalls: number;
+  policiesSold: number;
+  revenue: number;
+  notInterested: number;
+  callbacks: number;
+  transfers: number;
+  appointments: number;
 }
 
-type Period = 'today' | 'all' | '7days' | '30days';
+interface DashboardStatsGridProps {
+  todayStats: StatsData;
+  yesterdayStats: StatsData;
+  allTimeStats: StatsData;
+  last7DaysStats: StatsData;
+  last30DaysStats: StatsData;
+}
+
+type Period = 'today' | 'yesterday' | 'all' | '7days' | '30days';
 
 // Counter animation component
 function AnimatedNumber({ value, prefix = '', suffix = '' }: { value: number | string; prefix?: string; suffix?: string }) {
@@ -111,10 +84,20 @@ function AnimatedNumber({ value, prefix = '', suffix = '' }: { value: number | s
   );
 }
 
-export function DashboardStatsGrid({ todayStats, allTimeStats, last7DaysStats, last30DaysStats }: DashboardStatsGridProps) {
+export function DashboardStatsGrid({ todayStats, yesterdayStats, allTimeStats, last7DaysStats, last30DaysStats }: DashboardStatsGridProps) {
   const [period, setPeriod] = useState<Period>('all');
 
-  const currentStats = period === 'today' ? todayStats : period === 'all' ? allTimeStats : period === '7days' ? last7DaysStats : last30DaysStats;
+  const getStats = () => {
+    switch (period) {
+      case 'today': return todayStats;
+      case 'yesterday': return yesterdayStats;
+      case 'all': return allTimeStats;
+      case '7days': return last7DaysStats;
+      case '30days': return last30DaysStats;
+    }
+  };
+  
+  const currentStats = getStats();
 
   return (
     <div>
@@ -139,6 +122,16 @@ export function DashboardStatsGrid({ todayStats, allTimeStats, last7DaysStats, l
           }`}
         >
           Today
+        </button>
+        <button
+          onClick={() => setPeriod('yesterday')}
+          className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+            period === 'yesterday'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+              : 'bg-[#1A2647] text-gray-400 hover:text-white hover:bg-[#1A2647]/80 border border-gray-800'
+          }`}
+        >
+          Yesterday
         </button>
         <button
           onClick={() => setPeriod('7days')}

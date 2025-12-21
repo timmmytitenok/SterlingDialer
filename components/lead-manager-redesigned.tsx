@@ -80,6 +80,7 @@ const LEAD_STATUS_OPTIONS = [
 ];
 import { ColumnMapperRedesigned } from './column-mapper-redesigned';
 import { SheetTabSelector } from './sheet-tab-selector';
+import { LeadTypeSelector, LeadTypeResult, LeadTypeValue } from './lead-type-selector';
 
 // Skeleton Loading Component for Leads Table
 function LeadsTableSkeleton() {
@@ -163,9 +164,27 @@ type Lead = {
   pickup_rate?: number;
   source_type?: 'google_sheet' | 'csv' | 'manual';
   source_name?: string;
+  // Lead type for AI script selection (1=FE, 2=FE Veteran, 3=MP)
+  lead_type?: number;
   // Mortgage Protection specific fields
   lead_vendor?: string;
   street_address?: string;
+};
+
+// Helper to get lead type label
+// 1 = NULL/default, 2 = Final Expense, 3 = Final Expense (Veteran), 4 = Mortgage Protection
+const getLeadTypeLabel = (leadType?: number): { label: string; icon: string; color: string } => {
+  switch (leadType) {
+    case 2:
+      return { label: 'Final Expense', icon: '💚', color: 'green' };
+    case 3:
+      return { label: 'Final Expense (Veteran)', icon: '🎖️', color: 'amber' };
+    case 4:
+      return { label: 'Mortgage Protection', icon: '🏠', color: 'blue' };
+    case 1:
+    default:
+      return { label: 'Unknown', icon: '❓', color: 'gray' };
+  }
 };
 
 type GoogleSheet = {
@@ -210,6 +229,8 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   const [sheetUrl, setSheetUrl] = useState('');
   const [showColumnMapper, setShowColumnMapper] = useState(false);
   const [showTabSelector, setShowTabSelector] = useState(false);
+  const [showLeadTypeSelector, setShowLeadTypeSelector] = useState(false);
+  const [selectedLeadType, setSelectedLeadType] = useState<LeadTypeResult | null>(null);
   const [currentSheet, setCurrentSheet] = useState<{ id: string; name: string; googleSheetId: string } | null>(null);
   const [sheetHeaders, setSheetHeaders] = useState<{ index: number; name: string }[]>([]);
   const [columnDetections, setColumnDetections] = useState<any>(null);
@@ -255,6 +276,36 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   const [statusUpdates, setStatusUpdates] = useState<Record<string, string>>({});
   const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
   const [openStatusDropdownId, setOpenStatusDropdownId] = useState<string | null>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<{ top?: number; bottom?: number; left: number }>({ left: 0 });
+  
+  // Smart dropdown positioning - uses fixed positioning to escape table stacking context
+  const handleStatusDropdownToggle = (leadId: string, buttonElement: HTMLButtonElement) => {
+    if (openStatusDropdownId === leadId) {
+      setOpenStatusDropdownId(null);
+      return;
+    }
+    
+    // Calculate position based on button location
+    const rect = buttonElement.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const dropdownHeight = 320; // Approximate height of dropdown (8 options * ~40px each)
+    
+    if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+      // Open above
+      setDropdownStyle({
+        bottom: window.innerHeight - rect.top + 4,
+        left: rect.left,
+      });
+    } else {
+      // Open below
+      setDropdownStyle({
+        top: rect.bottom + 4,
+        left: rect.left,
+      });
+    }
+    
+    setOpenStatusDropdownId(leadId);
+  };
   
   // Summary stats
   const [leadStats, setLeadStats] = useState({
@@ -568,13 +619,29 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       setAvailableTabs(tabsData.sheets);
       setCurrentSheet({ id: '', name: sheetName, googleSheetId });
       setShowAddSheet(false);
-      setShowTabSelector(true);
+      
+      // Show lead type selector first (before tab selector)
+      setShowLeadTypeSelector(true);
 
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message });
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle lead type selection
+  const handleLeadTypeSelect = (result: LeadTypeResult) => {
+    setSelectedLeadType(result);
+    setShowLeadTypeSelector(false);
+    setShowTabSelector(true);
+  };
+
+  const handleLeadTypeSelectorCancel = () => {
+    setShowLeadTypeSelector(false);
+    setSelectedLeadType(null);
+    setCurrentSheet(null);
+    setSheetUrl('');
   };
 
   const handleSelectTab = async (tabName: string) => {
@@ -634,6 +701,11 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
 
       // Create sheet record
       setSyncProgress(10);
+      
+      const leadTypeToSend = selectedLeadType?.leadType ?? 1;
+      console.log('🎯 LEAD TYPE BEING SENT TO API:', leadTypeToSend);
+      console.log('🎯 Selected Lead Type Object:', selectedLeadType);
+      
       const createResponse = await fetch('/api/google-sheets/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -650,6 +722,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
             street_address: mapping.street_address ?? -1,
           },
           minLeadAgeDays: 0, // No age filtering
+          leadType: leadTypeToSend, // Pass lead type (1=FE, 2=FE Veteran, 3=MP)
         }),
       });
 
@@ -660,9 +733,33 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
 
       const createData = await createResponse.json();
       dbSheetId = createData.sheetId;
+      console.log('✅ Sheet created with ID:', dbSheetId);
+      console.log('✅ Sheet lead_type confirmed:', createData.leadType);
 
-      // Sync leads
-      setSyncProgress(30);
+      // Start jittery progress animation that runs during sync
+      // 3x slower: interval every 450ms instead of 150ms
+      let currentProgress = 30;
+      let syncComplete = false;
+      setSyncProgress(currentProgress);
+      
+      const progressInterval = setInterval(() => {
+        if (syncComplete) {
+          // If sync is done, quickly finish the animation
+          currentProgress = Math.min(currentProgress + 15, 100);
+        } else {
+          // Slow jitter: add random increment between 0.5-1.5% (3x slower)
+          const jitter = Math.random() * 1 + 0.5;
+          currentProgress = Math.min(currentProgress + jitter, 97);
+        }
+        setSyncProgress(Math.round(currentProgress));
+        
+        // Clear interval when we hit 100
+        if (currentProgress >= 100) {
+          clearInterval(progressInterval);
+        }
+      }, 450); // 3x slower (450ms instead of 150ms)
+
+      // Sync leads (this is the actual API call that takes time)
       const syncResponse = await fetch('/api/google-sheets/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -671,13 +768,24 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
 
       const syncData = await syncResponse.json();
 
-      // Simulate progress
-      for (let i = 40; i <= 90; i += 10) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        setSyncProgress(i);
-      }
-
-      setSyncProgress(100);
+      // Mark sync as complete - this will speed up the animation
+      syncComplete = true;
+      
+      // Wait for progress bar to finish (max 2 seconds)
+      await new Promise<void>((resolve) => {
+        const checkInterval = setInterval(() => {
+          if (currentProgress >= 100) {
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 100);
+        // Safety timeout
+        setTimeout(() => {
+          clearInterval(progressInterval);
+          setSyncProgress(100);
+          resolve();
+        }, 2000);
+      });
 
       if (syncResponse.ok) {
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -696,6 +804,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       setCurrentSheet(null);
       setSheetUrl('');
       setSyncProgress(0);
+      setSelectedLeadType(null);
     }
   };
 
@@ -1610,7 +1719,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setOpenStatusDropdownId(openStatusDropdownId === lead.id ? null : lead.id);
+                                          handleStatusDropdownToggle(lead.id, e.currentTarget);
                                         }}
                                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all hover:scale-105 cursor-pointer ${
                                           LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(lead))?.className || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
@@ -1619,12 +1728,19 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                                         <span>
                                           {LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(lead))?.label || lead.status}
                                         </span>
-                                        <ChevronDown className="w-3 h-3 opacity-60" />
+                                        <ChevronDown className={`w-3 h-3 opacity-60 transition-transform ${openStatusDropdownId === lead.id ? 'rotate-180' : ''}`} />
                                       </button>
                                       
-                                      {/* Dropdown Menu */}
+                                      {/* Dropdown Menu - Fixed positioning to escape table stacking context */}
                                       {openStatusDropdownId === lead.id && (
-                                        <div className="absolute z-50 mt-1 left-0 w-44 bg-[#1A2647] border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+                                        <div 
+                                          className="fixed z-[99999] w-44 bg-[#1A2647] border border-gray-700 rounded-lg shadow-2xl shadow-black/50 overflow-hidden"
+                                          style={{
+                                            top: dropdownStyle.top !== undefined ? `${dropdownStyle.top}px` : 'auto',
+                                            bottom: dropdownStyle.bottom !== undefined ? `${dropdownStyle.bottom}px` : 'auto',
+                                            left: `${dropdownStyle.left}px`,
+                                          }}
+                                        >
                                           {LEAD_STATUS_OPTIONS.map((option) => (
                                             <button
                                               key={option.value}
@@ -1733,6 +1849,14 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
         </div>
       )}
 
+      {/* Lead Type Selector Modal - Shows first before tab selector */}
+      {showLeadTypeSelector && (
+        <LeadTypeSelector
+          onSelect={handleLeadTypeSelect}
+          onCancel={handleLeadTypeSelectorCancel}
+        />
+      )}
+
       {/* Tab Selector Modal */}
       {showTabSelector && availableTabs.length > 0 && (
         <SheetTabSelector
@@ -1751,6 +1875,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
             setCurrentSheet(null);
             setAvailableTabs([]);
             setSheetUrl('');
+            setSelectedLeadType(null);
           }}
         />
       )}
@@ -1767,8 +1892,9 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
             setSheetHeaders([]);
             setColumnDetections(null);
             setSheetUrl('');
+            setSelectedLeadType(null);
           }}
-          scriptType={scriptType}
+          scriptType={selectedLeadType?.scriptType || 'final_expense'}
           sheetName={currentSheet.name}
         />
       )}
@@ -1825,7 +1951,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setOpenStatusDropdownId(openStatusDropdownId === `modal-${selectedLead.id}` ? null : `modal-${selectedLead.id}`);
+                          handleStatusDropdownToggle(`modal-${selectedLead.id}`, e.currentTarget);
                         }}
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all hover:scale-105 cursor-pointer ${
                           LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(selectedLead))?.className || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
@@ -1834,12 +1960,19 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                         <span>
                           {LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(selectedLead))?.label || selectedLead.status}
                         </span>
-                        <ChevronDown className="w-3 h-3 opacity-60" />
+                        <ChevronDown className={`w-3 h-3 opacity-60 transition-transform ${openStatusDropdownId === `modal-${selectedLead.id}` ? 'rotate-180' : ''}`} />
                       </button>
                       
-                      {/* Dropdown Menu */}
+                      {/* Dropdown Menu - Fixed positioning to escape stacking context */}
                       {openStatusDropdownId === `modal-${selectedLead.id}` && (
-                        <div className="absolute z-50 mt-1 right-0 w-44 bg-[#1A2647] border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+                        <div 
+                          className="fixed z-[99999] w-44 bg-[#1A2647] border border-gray-700 rounded-lg shadow-2xl shadow-black/50 overflow-hidden"
+                          style={{
+                            top: dropdownStyle.top !== undefined ? `${dropdownStyle.top}px` : 'auto',
+                            bottom: dropdownStyle.bottom !== undefined ? `${dropdownStyle.bottom}px` : 'auto',
+                            left: `${dropdownStyle.left}px`,
+                          }}
+                        >
                           {LEAD_STATUS_OPTIONS.map((option) => (
                             <button
                               key={option.value}
@@ -1900,6 +2033,29 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                   </div>
                 </div>
               </div>
+
+              {/* Lead Type Card */}
+              {(() => {
+                const leadTypeInfo = getLeadTypeLabel(selectedLead.lead_type);
+                const colorClasses = {
+                  green: 'from-green-500/10 to-emerald-500/10 border-green-500/30 text-green-400',
+                  amber: 'from-amber-500/10 to-orange-500/10 border-amber-500/30 text-amber-400',
+                  blue: 'from-blue-500/10 to-cyan-500/10 border-blue-500/30 text-blue-400',
+                };
+                return (
+                  <div className={`p-4 bg-gradient-to-br ${colorClasses[leadTypeInfo.color as keyof typeof colorClasses]} rounded-lg border`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg bg-${leadTypeInfo.color}-500/20 flex items-center justify-center text-xl`}>
+                        {leadTypeInfo.icon}
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wider">Lead Type</p>
+                        <p className="text-white font-bold text-lg">{leadTypeInfo.label}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Demographics Card */}
               <div className="p-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg border border-purple-500/20">
