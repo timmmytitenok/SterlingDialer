@@ -61,8 +61,8 @@ export async function POST(req: Request) {
         .eq('sales_person_id', commission.sales_person_id)
         .eq('status', 'pending');
 
-      const totalPaid = (paidTotal || []).reduce((sum, c) => sum + (c.amount || 0), 0);
-      const totalPending = (pendingTotal || []).reduce((sum, c) => sum + (c.amount || 0), 0);
+      const totalPaid = (paidTotal || []).reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
+      const totalPending = (pendingTotal || []).reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
 
       await supabase
         .from('sales_team')
