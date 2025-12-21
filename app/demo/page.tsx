@@ -6,7 +6,7 @@ import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { Upload, Rocket, Calendar, Play, Pause, DollarSign, Phone, CheckCircle, ArrowRight, Headphones, Clock, Target, TrendingUp, CalendarCheck } from 'lucide-react';
+import { Upload, Rocket, Calendar, Play, Pause, DollarSign, Phone, CheckCircle, ArrowRight, Headphones, Clock, Target, TrendingUp, CalendarCheck, Zap } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DemoPage() {
@@ -98,9 +98,9 @@ export default function DemoPage() {
   const recordings = [
     { 
       id: 1, 
-      title: 'Live Appointment Booking #1', 
+      title: 'Live Appointment Booking', 
       subtitle: 'Final Expense Lead', 
-      desc: 'AI qualifies lead and books appointment directly to agent\'s calendar', 
+      desc: 'AI qualifies lead and books appointment directly to calendar', 
       src: '/recordings/appointment-booked.mp3',
       gradient: 'from-blue-600 to-cyan-500',
       bgGlow: 'bg-blue-500/20',
@@ -112,9 +112,9 @@ export default function DemoPage() {
     },
     { 
       id: 2, 
-      title: 'Live Appointment Booking #2', 
-      subtitle: 'Mortgage Protection Lead', 
-      desc: 'AI handles objections and schedules callback appointment', 
+      title: 'Live Appointment Booking', 
+      subtitle: 'Final Expense Lead', 
+      desc: 'AI handles objections and schedules appointment', 
       src: '/recordings/busy-at-work.mp3',
       gradient: 'from-purple-600 to-pink-500',
       bgGlow: 'bg-purple-500/20',
@@ -341,68 +341,124 @@ export default function DemoPage() {
           </div>
         </section>
 
-        {/* HOW IT WORKS SECTION - Mobile Optimized */}
-        <section className="py-10 sm:py-24 px-3 sm:px-4">
-          <div className="max-w-5xl mx-auto">
-            {/* Section Header */}
-            <div className="text-center mb-8 sm:mb-14 animate-in fade-in slide-in-from-bottom duration-700">
-              <h2 className="text-2xl sm:text-4xl font-bold text-white mb-2 sm:mb-3">
-                How It Works
+        {/* HOW IT WORKS SECTION - Vibrant & Glowy */}
+        <section className="py-12 sm:py-28 px-3 sm:px-4 relative overflow-hidden">
+          {/* Background Glow Effects */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute w-[400px] h-[400px] bg-blue-500/15 rounded-full blur-3xl top-0 left-1/4 animate-pulse" />
+            <div className="absolute w-[350px] h-[350px] bg-purple-500/15 rounded-full blur-3xl top-1/3 left-1/2 animate-pulse" style={{ animationDelay: '1s' }} />
+            <div className="absolute w-[400px] h-[400px] bg-green-500/15 rounded-full blur-3xl bottom-0 right-1/4 animate-pulse" style={{ animationDelay: '2s' }} />
+          </div>
+          
+          <div className="max-w-6xl mx-auto relative z-10">
+            {/* Section Header - Bigger & Gradient */}
+            <div className="text-center mb-12 sm:mb-20 animate-in fade-in slide-in-from-bottom duration-700">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-green-500/20 border border-white/10 rounded-full mb-4 sm:mb-6">
+                <Zap className="w-4 h-4 text-yellow-400" />
+                <span className="text-sm font-semibold text-white">Simple 3-Step Process</span>
+              </div>
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4">
+                How It <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-green-400 bg-clip-text text-transparent">Works</span>
               </h2>
-              <p className="text-sm sm:text-base text-gray-400">Three simple steps. That's it.</p>
+              <p className="text-base sm:text-xl text-gray-400">Three simple steps. That's it.</p>
             </div>
 
-            {/* Steps - Stack on mobile */}
-            <div className="grid md:grid-cols-3 gap-4 sm:gap-8">
-              {/* Step 1 */}
-              <div className="group relative bg-[#1A2647] rounded-xl sm:rounded-2xl p-5 sm:p-8 border border-gray-800 hover:border-blue-500/50 transition-all duration-300 sm:hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20 animate-in fade-in slide-in-from-bottom" style={{ animationDelay: '100ms', animationDuration: '600ms' }}>
-                <div className="flex items-start gap-4 sm:block">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-blue-500/20 flex items-center justify-center sm:mb-5 group-hover:scale-110 transition-all border border-blue-500/30 flex-shrink-0">
-                    <Upload className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" />
+            {/* Steps - With Connecting Lines */}
+            <div className="relative">
+              {/* Connecting Line - Desktop Only */}
+              <div className="hidden md:block absolute top-[4.5rem] left-[16%] right-[16%] h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 rounded-full opacity-30" />
+              <div className="hidden md:block absolute top-[4.5rem] left-[16%] right-[16%] h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 rounded-full blur-md opacity-50" />
+              
+              <div className="grid md:grid-cols-3 gap-6 sm:gap-10">
+                {/* Step 1 */}
+                <div className="group relative animate-in fade-in slide-in-from-bottom" style={{ animationDelay: '100ms', animationDuration: '600ms' }}>
+                  {/* Gradient Border Wrapper */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl sm:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl sm:rounded-3xl p-[2px] opacity-50 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-full h-full bg-[#0B1437] rounded-2xl sm:rounded-3xl" />
                   </div>
-                  <div className="flex-1">
-                    <div className="text-blue-400 text-xs sm:text-sm font-bold mb-1 sm:mb-2">STEP 1</div>
-                    <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">Upload Your Leads</h3>
+                  
+                  <div className="relative bg-[#0B1437]/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-blue-500/20 group-hover:border-blue-400/50 transition-all duration-300 group-hover:scale-[1.02]">
+                    {/* Floating Step Number */}
+                    <div className="absolute -top-4 -right-2 sm:-top-5 sm:-right-3 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg shadow-blue-500/50 group-hover:scale-110 transition-transform">
+                      1
+                    </div>
+                    
+                    {/* Glowing Icon */}
+                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 mb-6">
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-80 transition-opacity" />
+                      <div className="relative w-full h-full bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300">
+                        <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                      </div>
+                    </div>
+                    
+                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-3">Upload Your Leads</h3>
                     <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
                       Import your old leads — The ones collecting dust. Sterling AI will start calling them all.
                     </p>
                   </div>
-                  </div>
                 </div>
                 
-              {/* Step 2 */}
-              <div className="group relative bg-[#1A2647] rounded-xl sm:rounded-2xl p-5 sm:p-8 border border-gray-800 hover:border-purple-500/50 transition-all duration-300 sm:hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 animate-in fade-in slide-in-from-bottom" style={{ animationDelay: '200ms', animationDuration: '600ms' }}>
-                <div className="flex items-start gap-4 sm:block">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-purple-500/20 flex items-center justify-center sm:mb-5 group-hover:scale-110 transition-all border border-purple-500/30 flex-shrink-0">
-                    <Rocket className="w-6 h-6 sm:w-7 sm:h-7 text-purple-400" />
+                {/* Step 2 */}
+                <div className="group relative animate-in fade-in slide-in-from-bottom" style={{ animationDelay: '200ms', animationDuration: '600ms' }}>
+                  {/* Gradient Border Wrapper */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl sm:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl sm:rounded-3xl p-[2px] opacity-50 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-full h-full bg-[#0B1437] rounded-2xl sm:rounded-3xl" />
+                  </div>
+                  
+                  <div className="relative bg-[#0B1437]/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-purple-500/20 group-hover:border-purple-400/50 transition-all duration-300 group-hover:scale-[1.02]">
+                    {/* Floating Step Number */}
+                    <div className="absolute -top-4 -right-2 sm:-top-5 sm:-right-3 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg shadow-purple-500/50 group-hover:scale-110 transition-transform">
+                      2
                     </div>
-                    <div className="flex-1">
-                    <div className="text-purple-400 text-xs sm:text-sm font-bold mb-1 sm:mb-2">STEP 2</div>
-                    <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">Launch AI Agent</h3>
+                    
+                    {/* Glowing Icon */}
+                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 mb-6">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-80 transition-opacity" />
+                      <div className="relative w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-xl shadow-purple-500/30 group-hover:scale-110 transition-transform duration-300">
+                        <Rocket className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                      </div>
+                    </div>
+                    
+                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-3">Launch AI Agent</h3>
                     <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
                       Set your daily budget and Hit "Launch." AI starts calling immediately.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-              {/* Step 3 */}
-              <div className="group relative bg-[#1A2647] rounded-xl sm:rounded-2xl p-5 sm:p-8 border border-gray-800 hover:border-green-500/50 transition-all duration-300 sm:hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20 animate-in fade-in slide-in-from-bottom" style={{ animationDelay: '300ms', animationDuration: '600ms' }}>
-                <div className="flex items-start gap-4 sm:block">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-green-500/20 flex items-center justify-center sm:mb-5 group-hover:scale-110 transition-all border border-green-500/30 flex-shrink-0">
-                    <Calendar className="w-6 h-6 sm:w-7 sm:h-7 text-green-400" />
+                    </p>
                   </div>
-                  <div className="flex-1">
-                    <div className="text-green-400 text-xs sm:text-sm font-bold mb-1 sm:mb-2">STEP 3</div>
-                    <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">Get Appointments</h3>
+                </div>
+
+                {/* Step 3 */}
+                <div className="group relative animate-in fade-in slide-in-from-bottom" style={{ animationDelay: '300ms', animationDuration: '600ms' }}>
+                  {/* Gradient Border Wrapper */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl sm:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl sm:rounded-3xl p-[2px] opacity-50 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-full h-full bg-[#0B1437] rounded-2xl sm:rounded-3xl" />
+                  </div>
+                  
+                  <div className="relative bg-[#0B1437]/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-green-500/20 group-hover:border-green-400/50 transition-all duration-300 group-hover:scale-[1.02]">
+                    {/* Floating Step Number */}
+                    <div className="absolute -top-4 -right-2 sm:-top-5 sm:-right-3 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg shadow-green-500/50 group-hover:scale-110 transition-transform">
+                      3
+                    </div>
+                    
+                    {/* Glowing Icon */}
+                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 mb-6">
+                      <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-80 transition-opacity" />
+                      <div className="relative w-full h-full bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-xl shadow-green-500/30 group-hover:scale-110 transition-transform duration-300">
+                        <Calendar className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                      </div>
+                    </div>
+                    
+                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-3">Get Appointments</h3>
                     <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
                       AI books appointments directly on your calendar. Wake up to a full schedule.
                     </p>
                   </div>
                 </div>
-                      </div>
-                    </div>
-                  </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* ROI CALCULATOR SECTION - Mobile Optimized */}
