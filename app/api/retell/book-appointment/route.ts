@@ -150,8 +150,6 @@ export async function POST(request: Request) {
         email: emailToUse,
         timeZone: timezone || 'America/New_York',
       },
-      guests: [], // Optional additional guests
-      meetingUrl: '', // Will be auto-generated if needed
       metadata: {
         leadId: leadId || 'unknown',
         userId: userId,
