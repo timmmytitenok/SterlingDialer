@@ -815,11 +815,36 @@ export async function POST(request: Request) {
     const retellTimezone = retellConfig.timezone || userTimezone || 'America/New_York';
     const userConfirmationEmail = retellConfig.confirmation_email || '';
     
+    // Calculate current time in user's timezone for Retell to use
+    const currentMoment = new Date();
+    const currentTimeFormatted = currentMoment.toLocaleString('en-US', {
+      timeZone: retellTimezone,
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    // Also get just the time for shorter references
+    const currentTimeShort = currentMoment.toLocaleString('en-US', {
+      timeZone: retellTimezone,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    // Get timezone abbreviation (EST, PST, etc.)
+    const tzAbbrev = currentMoment.toLocaleString('en-US', {
+      timeZone: retellTimezone,
+      timeZoneName: 'short',
+    }).split(' ').pop() || '';
+    
     console.log(`👤 User Agent Identity:`);
     console.log(`   Agent Name: ${userAgentName}`);
     console.log(`   Agent Pronoun: ${userAgentPronoun}`);
     console.log(`   Cal Event ID: ${userCalEventId || '(not set)'}`);
     console.log(`   Timezone: ${retellTimezone}`);
+    console.log(`   Current Time: ${currentTimeFormatted} (${tzAbbrev})`);
     console.log(`   Confirmation Email: ${userConfirmationEmail || '(not set)'}`);
 
     // Make call via Retell API
@@ -876,6 +901,9 @@ export async function POST(request: Request) {
       agent_pronoun: userAgentPronoun,
       cal_event_id: userCalEventId,
       timezone: retellTimezone,
+      timezone_abbrev: tzAbbrev,
+      current_time: currentTimeFormatted,  // e.g., "Monday, December 22, 4:52 PM"
+      current_time_short: currentTimeShort, // e.g., "4:52 PM"
       confirmation_email: userConfirmationEmail,
       
       // Lead information
