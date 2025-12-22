@@ -182,6 +182,8 @@ export async function POST(request: Request) {
 
     if (!calResponse.ok) {
       console.error('❌ Cal.com API error:', calResult);
+      console.error('❌ Cal.com HTTP status:', calResponse.status);
+      console.error('❌ Full Cal.com response:', JSON.stringify(calResult, null, 2));
       
       // Still create a pending appointment in our database
       if (leadId) {
@@ -192,7 +194,7 @@ export async function POST(request: Request) {
           customer_phone: customer_phone,
           customer_email: customer_email,
           status: 'pending_manual', // Needs manual scheduling
-          notes: `AI tried to book but Cal.com failed: ${calResult.message || 'Unknown error'}. Preferred time: ${preferred_time || 'Not specified'}`,
+          notes: `AI tried to book but Cal.com failed: ${calResult.message || JSON.stringify(calResult)}. Preferred time: ${actualStartTime || 'Not specified'}`,
           created_at: new Date().toISOString(),
         });
         console.log('📝 Created pending appointment record for manual follow-up');
@@ -200,9 +202,10 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ 
         success: false, 
-        error: calResult.message || 'Failed to book appointment',
+        error: calResult.message || calResult.error || JSON.stringify(calResult),
+        cal_error_details: calResult,
         needs_manual_booking: true,
-        preferred_time: preferred_time,
+        attempted_time: actualStartTime,
       }, { status: 200 }); // Return 200 so Retell doesn't retry
     }
 
