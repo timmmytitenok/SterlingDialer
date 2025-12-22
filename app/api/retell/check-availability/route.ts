@@ -22,11 +22,17 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log('📥 Received:', JSON.stringify(body, null, 2));
 
+    // Handle different formats Retell might send
+    // Sometimes it's {userId, date} and sometimes it's {args: {userId, date}}
+    const args = body.args || body;
+    
     const {
       userId,
       date,
       timezone = 'America/New_York',
-    } = body;
+    } = args;
+    
+    console.log('📦 Parsed args:', { userId, date, timezone });
 
     // DEBUG: Return what we received for troubleshooting
     if (!userId) {

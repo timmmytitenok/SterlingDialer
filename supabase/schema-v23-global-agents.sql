@@ -32,7 +32,7 @@ BEGIN
     COMMENT ON COLUMN user_retell_config.cal_event_id IS 'Cal.ai Event ID for booking appointments (e.g., "30min-meeting")';
   END IF;
 END $$;
-
+s
 -- Add agent_pronoun column to user_retell_config
 DO $$
 BEGIN

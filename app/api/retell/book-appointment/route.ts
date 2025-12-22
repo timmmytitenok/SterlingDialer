@@ -26,6 +26,11 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log('📥 Received:', JSON.stringify(body, null, 2));
 
+    // Handle different formats Retell might send
+    // Sometimes it's direct params and sometimes it's {args: {...}}
+    const args = body.args || body;
+    console.log('📦 Parsed args:', JSON.stringify(args, null, 2));
+
     const {
       userId,
       leadId,
@@ -38,7 +43,7 @@ export async function POST(request: Request) {
       start_time,
       end_time,
       timezone,
-    } = body;
+    } = args;
 
     if (!userId) {
       console.error('❌ Missing userId');
