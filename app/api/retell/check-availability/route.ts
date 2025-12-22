@@ -116,18 +116,18 @@ export async function POST(request: Request) {
     const endDate = new Date(targetDate);
     endDate.setHours(23, 59, 59, 999);
 
-    // Cal.com availability API
-    const calApiUrl = `https://api.cal.com/v1/availability`;
+    // Cal.com slots API - use /v1/slots endpoint which works with eventTypeId
+    const calApiUrl = `https://api.cal.com/v1/slots`;
     const params = new URLSearchParams({
       apiKey: retellConfig.cal_ai_api_key,
       eventTypeId: retellConfig.cal_event_id,
-      dateFrom: startDate.toISOString().split('T')[0],
-      dateTo: endDate.toISOString().split('T')[0],
+      startTime: startDate.toISOString(),
+      endTime: endDate.toISOString(),
       timeZone: timezone,
     });
 
-    console.log('📤 Calling Cal.com Availability API...');
-    console.log(`   URL: ${calApiUrl}?eventTypeId=${retellConfig.cal_event_id}&dateFrom=${startDate.toISOString().split('T')[0]}&dateTo=${endDate.toISOString().split('T')[0]}`);
+    console.log('📤 Calling Cal.com Slots API...');
+    console.log(`   URL: ${calApiUrl}?eventTypeId=${retellConfig.cal_event_id}&startTime=${startDate.toISOString()}&endTime=${endDate.toISOString()}`);
 
     const calResponse = await fetch(`${calApiUrl}?${params.toString()}`, {
       method: 'GET',
@@ -149,8 +149,8 @@ export async function POST(request: Request) {
     }
 
     // Parse available slots from Cal.com response
-    // Cal.com returns slots in format: { slots: { "2024-01-15": [...times] } }
-    const slots = calResult.slots || calResult.busy || {};
+    // Cal.com /v1/slots returns: { slots: { "2024-01-15": [{time: "2024-01-15T09:00:00"}] } }
+    const slots = calResult.slots || {};
     const availableSlots: string[] = [];
     const availableSlotsISO: string[] = []; // For booking
     
@@ -196,6 +196,12 @@ export async function POST(request: Request) {
         message: `No available slots found for ${dateString}. Would you like to check a different day?`,
         available_slots: [],
         available_slots_iso: [],
+        SlotA: 'No slots available',
+        SlotB: 'No alternate slot',
+        SlotC: '',
+        SlotA_iso: '',
+        SlotB_iso: '',
+        SlotC_iso: '',
         date_checked: dateString,
         suggestion: 'Try checking a different day',
       });
@@ -217,6 +223,13 @@ export async function POST(request: Request) {
       message: summary,
       available_slots: limitedSlots,
       available_slots_iso: limitedSlotsISO, // For booking function to use
+      // Individual slots for easy AI reference
+      SlotA: limitedSlots[0] || 'No slots available',
+      SlotB: limitedSlots[1] || 'No alternate slot',
+      SlotC: limitedSlots[2] || '',
+      SlotA_iso: limitedSlotsISO[0] || '',
+      SlotB_iso: limitedSlotsISO[1] || '',
+      SlotC_iso: limitedSlotsISO[2] || '',
       total_slots_available: availableSlots.length,
       date_checked: targetDate.toLocaleDateString('en-US', {
         weekday: 'long',
