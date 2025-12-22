@@ -416,18 +416,20 @@ export async function GET(req: Request) {
     );
     const activeUsersToday = uniqueUsersToday.size;
 
-    // All-time calls
+    // All-time calls (excluding demo/admin users)
     const { count: totalCallsAllTime, error: allCallsError } = await supabase
       .from('calls')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .not('user_id', 'in', `(${ADMIN_USER_IDS.join(',')})`);
 
     if (allCallsError) throw allCallsError;
 
-    // All-time appointments
+    // All-time appointments (excluding demo/admin users)
     const { count: totalAppointmentsAllTime, error: allApptsError } = await supabase
       .from('calls')
       .select('*', { count: 'exact', head: true })
-      .eq('outcome', 'appointment_booked');
+      .eq('outcome', 'appointment_booked')
+      .not('user_id', 'in', `(${ADMIN_USER_IDS.join(',')})`);
 
     if (allApptsError) throw allApptsError;
 
