@@ -466,7 +466,8 @@ export async function POST(request: Request) {
       query = query.or('total_calls_made.is.null,total_calls_made.lt.20');
       
       // Exclude leads already called today
-      query = query.or(`call_attempts_today.is.null,call_attempts_today.eq.0,last_attempt_date.neq.${todayStr}`);
+      // EXCEPTION: needs_review leads can be retried even if attempted today
+      query = query.or(`call_attempts_today.is.null,call_attempts_today.eq.0,last_attempt_date.neq.${todayStr},status.eq.needs_review`);
       
       // Order by fewest attempts first (prioritize fresh leads)
       // Then by sheet_row_number to follow the same order as the Google Sheet
