@@ -44,8 +44,18 @@ export async function POST(request: Request) {
       console.error('❌ Missing userId');
       return NextResponse.json({ 
         success: false, 
-        error: 'userId is required' 
-      }, { status: 400 });
+        error: `userId is required. Received: ${JSON.stringify(body)}`,
+        debug_received: body,
+      }, { status: 200 });
+    }
+    
+    if (!start_time) {
+      console.error('❌ Missing start_time');
+      return NextResponse.json({ 
+        success: false, 
+        error: `start_time is required (use SlotA_iso from check_availability). Received: ${JSON.stringify(body)}`,
+        debug_received: body,
+      }, { status: 200 });
     }
 
     const supabase = createServiceRoleClient();
