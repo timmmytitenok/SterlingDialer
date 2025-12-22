@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
     // For now, sync the first sheet (or the one specified)
     const sheetConfig = sheetConfigs[0];
-    
+
     console.log('🔄 SYNC - Sheet Config lead_type:', sheetConfig.lead_type);
     console.log('🔄 SYNC - Lead Type Mapping: 1=NULL/Default, 2=FE, 3=FE Veteran, 4=Mortgage Protection');
 

@@ -195,10 +195,9 @@ export async function POST(request: Request) {
       console.log('');
       console.log('⚡⚡⚡ ========== SHORT CALL DETECTED (<10 SECONDS) ========== ⚡⚡⚡');
       console.log(`📞 Duration: ${durationSeconds.toFixed(1)}s - TOO SHORT!`);
-      console.log('🔄 Treating as UNANSWERED regardless of Retell analysis');
+      console.log('🔄 Treating as NO ANSWER regardless of Retell analysis');
       console.log('   → Will apply double dial logic');
-      console.log('   → Will NOT create call record (won\'t show in history)');
-      console.log('   → Lead stays as potential lead (unclassified)');
+      console.log('   → Lead status will be set to: no_answer');
       console.log('⚡⚡⚡ ====================================================== ⚡⚡⚡');
       console.log('');
     }
@@ -238,22 +237,20 @@ export async function POST(request: Request) {
         shouldDoubleDial = true;
         shouldContinueToNextLead = false;
         outcome = isShortCall ? 'short_call_first_attempt' : 'no_answer_first_attempt';
-        leadStatus = lead.status; // Keep current status - still a potential lead!
+        // Keep current status - we're about to double dial
+        leadStatus = lead.status || 'new';
         console.log('🔄 FIRST ATTEMPT NO ANSWER - Will double dial immediately!');
+        console.log('   → Lead status stays: ' + leadStatus + ' (waiting for double dial result)');
         console.log('   → This does NOT count as a dial yet');
-        if (isShortCall) {
-          console.log('   → Short call: Lead stays UNCLASSIFIED (still callable)');
-        }
       } else {
         // Second dial also no answer - NOW count as 1 missed call
         outcome = isShortCall ? 'short_call_double_attempt' : 'no_answer_double_attempt';
-        // For short calls, keep lead as unclassified so they stay callable
-        leadStatus = isShortCall ? 'unclassified' : 'no_answer';
+        // FIX: Always mark as no_answer after double dial attempt, even for short calls
+        // This is clearer for users - if they didn't answer twice, it's "no answer"
+        leadStatus = 'no_answer';
         console.log('📵 SECOND ATTEMPT NO ANSWER - NOW counting as 1 missed call');
+        console.log('   → Lead status set to: no_answer');
         console.log('   → Moving to next lead');
-        if (isShortCall) {
-          console.log('   → Short call: Lead marked as UNCLASSIFIED (still a potential lead!)');
-        }
         
         // This counts as 1 missed call in the current time period
       }
@@ -319,36 +316,38 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
     };
     
-    // CRITICAL: A DOUBLE-DIAL (2 physical calls) = 1 ATTEMPT
-    // Increment counter ONLY when lead session is complete:
-    // - First call answered → Session complete, increment by 1
-    // - First call no answer, then double-dial → Session complete after 2nd call, increment by 1
-    // 
-    // Logic: Increment if this is the FINAL call for this lead session
-    // That's either: (wasDoubleDial) OR (callWasAnswered and !wasDoubleDial)
+    // CORRECT LOGIC:
+    // 1. First dial no answer → DON'T count yet, trigger double dial
+    // 2. Double dial no answer → NOW count as 1 dial, set status to no_answer
+    // 3. Call answered (first or double) → count as 1 dial
+    const currentAttempts = lead.call_attempts_today || 0;
+    
     if (wasDoubleDial || callWasAnswered) {
-      const currentAttempts = lead.call_attempts_today || 0;
-      
-      // CRITICAL: Only increment by 1, regardless of how many physical calls were made
+      // Either double dial completed OR call was answered
+      // NOW we count as 1 dial
       leadUpdate.call_attempts_today = currentAttempts + 1;
       leadUpdate.last_attempt_date = todayStr;
       
-      console.log(`   🔢 ATTEMPT COUNT: ${currentAttempts} → ${leadUpdate.call_attempts_today}`);
-      console.log(`   📅 Last attempt date: ${todayStr}`);
-      console.log(`   ✅ Lead session complete - counted as 1 attempt`);
-      console.log(`   ${wasDoubleDial ? '(Double-dial completed)' : '(Answered on first call)'}`);
+      if (wasDoubleDial && !callWasAnswered) {
+        console.log(`   🔢 DOUBLE DIAL NO ANSWER - NOW counting as 1 dial`);
+      } else if (callWasAnswered) {
+        console.log(`   🔢 CALL ANSWERED - Counting as 1 dial`);
+      }
+      console.log(`   📅 call_attempts_today: ${currentAttempts} → ${leadUpdate.call_attempts_today}`);
+      console.log(`   📌 Status: ${leadStatus}`);
     } else {
-      console.log(`   ⏸️  First attempt no answer - NOT incrementing yet`);
-      console.log(`   🔁 Will double-dial before counting as attempt`);
-      console.log(`   📊 call_attempts_today stays at: ${lead.call_attempts_today || 0}`);
+      // First attempt no answer - DON'T count yet, will double dial
+      console.log(`   ⏸️ FIRST ATTEMPT NO ANSWER - NOT counting yet`);
+      console.log(`   🔁 Will double-dial first, then count after`);
+      console.log(`   📊 call_attempts_today stays at: ${currentAttempts}`);
     }
     
     // ========================================================================
     // SIMPLIFIED TRACKING - 20 ATTEMPT SYSTEM
     // ========================================================================
-    // Increment counters on double dial OR if call was answered
+    // Increment counters only when session is complete (after double dial OR if answered)
     if (wasDoubleDial || callWasAnswered) {
-      console.log('📊 Call completed - incrementing counters...');
+      console.log('📊 Session complete - incrementing total call counters...');
       
       // Increment times_dialed (legacy column)
       if (lead.times_dialed !== undefined) {
@@ -384,7 +383,7 @@ export async function POST(request: Request) {
         console.log('   ✅ Status changed to: dead_lead');
       }
     } else {
-      console.log('📊 First attempt no answer - NOT incrementing counters (waiting for double dial)');
+      console.log('📊 First attempt no answer - NOT incrementing counters yet (waiting for double dial)');
     }
     
     console.log('📝 Final update object:', JSON.stringify(leadUpdate, null, 2));
@@ -403,8 +402,9 @@ export async function POST(request: Request) {
 
     // Insert call record ONLY if it's the double dial (second attempt) OR answered
     // First attempt doesn't count as a dial
-    // SHORT CALLS (<10s) = NEVER CREATE A RECORD (won't show in call history!)
-    const shouldCreateCallRecord = !isShortCall && (wasDoubleDial || callWasAnswered);
+    // FIX: Short calls on DOUBLE DIAL attempt DO create a record now!
+    // Only skip record for first attempt (about to double dial)
+    const shouldCreateCallRecord = wasDoubleDial || callWasAnswered;
     
     if (shouldCreateCallRecord) {
       console.log(`💾 Creating call record (double dial or answered)...`);
@@ -732,11 +732,7 @@ export async function POST(request: Request) {
         console.log('');
       }
     } else {
-      if (isShortCall) {
-        console.log('⏭️  Short call (<10s) - NOT creating call record (won\'t show in history)');
-      } else {
-        console.log('⏭️  First attempt - NOT creating call record (waiting for double dial)');
-      }
+      console.log('⏭️  First attempt - NOT creating call record (waiting for double dial)');
     }
 
     // ========================================================================
@@ -1017,30 +1013,45 @@ export async function POST(request: Request) {
         });
       }
     } else if (wasDoubleDial && !callWasAnswered) {
-      // Double dial no answer - NOW increment counter (counts as 1 complete attempt)
+      // Double dial no answer - NOW increment (session complete)
+      console.log('');
+      console.log('📊 ========== DOUBLE DIAL NO ANSWER - UPDATING COUNTS ==========');
+      
       // IMPORTANT: Re-fetch current value to avoid race conditions!
-      const { data: freshSettings } = await supabase
+      const { data: freshSettings, error: fetchError } = await supabase
         .from('ai_control_settings')
         .select('calls_made_today')
         .eq('user_id', userId)
         .single();
       
+      if (fetchError) {
+        console.error('❌ Error fetching ai_control_settings:', fetchError);
+      }
+      
       const currentCallCount = freshSettings?.calls_made_today || 0;
       const newCallCount = currentCallCount + 1;
       
-      console.log(`📞 Double dial no answer - incrementing calls_made_today: ${currentCallCount} → ${newCallCount}`);
-      console.log(`   This counts as completing 1 lead attempt`);
+      console.log(`📞 Double dial no answer - NOW incrementing calls_made_today: ${currentCallCount} → ${newCallCount}`);
+      console.log(`   This counts as 1 completed dial attempt`);
       
-      await supabase
+      const { error: updateError } = await supabase
         .from('ai_control_settings')
         .update({
           calls_made_today: newCallCount,
           last_call_status: 'no_answer',
         })
         .eq('user_id', userId);
+      
+      if (updateError) {
+        console.error('❌ Error updating calls_made_today:', updateError);
+      } else {
+        console.log(`✅ calls_made_today updated successfully to ${newCallCount}`);
+      }
+      console.log('📊 ============================================================');
+      console.log('');
     } else if (!wasDoubleDial && !callWasAnswered) {
-      // First attempt no answer - DON'T increment counter yet (will double dial)
-      console.log(`📞 First attempt no answer - NOT incrementing counter (waiting for double dial)`);
+      // First attempt no answer - DON'T increment yet (waiting for double dial)
+      console.log(`📞 First attempt no answer - NOT incrementing yet (waiting for double dial)`);
       console.log(`   Calls made today stays at: ${aiSettings.calls_made_today || 0}`);
     } else {
       console.log(`📞 Unexpected state - wasDoubleDial: ${wasDoubleDial}, answered: ${callWasAnswered}`);
@@ -1076,6 +1087,7 @@ export async function POST(request: Request) {
         }
         
         // Make the call directly
+        // CRITICAL: All dynamic variables MUST be strings for Retell API!
         const doublDialPayload = {
           agent_id: retellConfig.retell_agent_id,
           to_number: lead.phone,
@@ -1088,11 +1100,17 @@ export async function POST(request: Request) {
             was_double_dial: true,
           },
           retell_llm_dynamic_variables: {
-            customer_name: lead.name,
-            lead_name: lead.name,
-            userId: userId,
-            leadId: leadId,
+            customer_name: String(lead.name || 'there'),
+            lead_name: String(lead.name || ''),
+            lead_phone: String(lead.phone || ''),
+            userId: String(userId),
+            leadId: String(leadId),
             live_transfer: "true",
+            attempt_number: "2",
+            // Lead type - MUST be string!
+            lead_type: String(lead.lead_type || 1),
+            lead_vendor: String(lead.lead_vendor || ''),
+            street_address: String(lead.street_address || ''),
           },
         };
         
@@ -1108,8 +1126,12 @@ export async function POST(request: Request) {
         
         if (!retellResponse.ok) {
           const errorText = await retellResponse.text();
-          console.error('❌ Retell API failed:', errorText.substring(0, 200));
-      } else {
+          console.error('❌❌❌ DOUBLE DIAL FAILED! ❌❌❌');
+          console.error('   Status:', retellResponse.status);
+          console.error('   Error:', errorText.substring(0, 500));
+          // Note: Status and count already updated on first attempt, so no need to update again
+          console.log('ℹ️ Lead already marked as no_answer and counted on first attempt');
+        } else {
           const callData = await retellResponse.json();
           console.log('✅✅✅ DOUBLE DIAL SUCCESSFUL!');
           console.log('   Call ID:', callData.call_id);

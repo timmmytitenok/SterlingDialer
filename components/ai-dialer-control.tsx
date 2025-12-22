@@ -28,8 +28,8 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
   });
   const [showNoLeadsWarning, setShowNoLeadsWarning] = useState(false);
   const [noLeadsMessage, setNoLeadsMessage] = useState('');
-  const [showLeadsExhaustedModal, setShowLeadsExhaustedModal] = useState(false);
-  const [leadsExhaustedCount, setLeadsExhaustedCount] = useState(0);
+  const [noLeadsReason, setNoLeadsReason] = useState<'no_sheets' | 'no_leads' | 'all_dialed_today' | 'all_exhausted' | null>(null);
+  const [noLeadsData, setNoLeadsData] = useState<{ potentialLeadsCount?: number; leadsDialedToday?: number } | null>(null);
   const [previousStatus, setPreviousStatus] = useState<any>(null);
   const [dialerSettings, setDialerSettings] = useState<any>(null);
   const [isLaunching, setIsLaunching] = useState(false);
@@ -122,17 +122,14 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
       const leadsCheckResponse = await fetch(`/api/ai-control/check-leads?userId=${userId}`);
       const leadsCheckData = await leadsCheckResponse.json();
       
-      // Check if all leads have been dialed today (new condition!)
-      if (leadsCheckData.allLeadsDialedToday) {
-        setActionLoading(false);
-        setLeadsExhaustedCount(leadsCheckData.totalCallableLeads || 0);
-        setShowLeadsExhaustedModal(true);
-        return;
-      }
-      
       if (!leadsCheckData.hasCallableLeads) {
         setActionLoading(false);
         setNoLeadsMessage(leadsCheckData.message || 'You have no leads available to call.');
+        setNoLeadsReason(leadsCheckData.reason || null);
+        setNoLeadsData({
+          potentialLeadsCount: leadsCheckData.potentialLeadsCount,
+          leadsDialedToday: leadsCheckData.leadsDialedToday,
+        });
         setShowNoLeadsWarning(true);
         return;
       }
@@ -273,7 +270,6 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
       case 'paused-budget': return 'yellow';
       case 'paused-balance': return 'red';
       case 'no-leads': return 'orange';
-      case 'leads-exhausted-today': return 'blue';
       case 'error': return 'red';
       default: return 'gray';
     }
@@ -287,7 +283,6 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
       case 'paused-budget': return 'PAUSED - BUDGET';
       case 'paused-balance': return 'PAUSED - LOW BALANCE';
       case 'no-leads': return 'NO LEADS';
-      case 'leads-exhausted-today': return 'DONE FOR TODAY';
       case 'error': return 'ERROR';
       default: return 'LOADING';
     }
@@ -332,7 +327,6 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
   const isRunning = status?.status === 'running';
   const isPausedBudget = status?.status === 'paused-budget';
   const isOutsideHours = status?.status === 'outside-hours';
-  const isLeadsExhaustedToday = status?.status === 'leads-exhausted-today';
   const noBudgetSet = status && status.dailyBudgetCents === 0;
   const color = getStatusColor();
   
@@ -614,16 +608,12 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                   color === 'purple' ? 'bg-purple-500/20 border-purple-500' :
                   color === 'yellow' ? 'bg-yellow-500/20 border-yellow-500' :
                   color === 'red' ? 'bg-red-500/20 border-red-500' :
-                  color === 'blue' ? 'bg-blue-500/20 border-blue-500' :
-                  color === 'orange' ? 'bg-orange-500/20 border-orange-500' :
                   'bg-gray-800/30 border-gray-700'
                 }`}>
                   {isRunning ? (
                     <Activity className="w-16 h-16 text-green-400 animate-pulse-fast" />
                   ) : isOutsideHours ? (
                     <Clock className="w-16 h-16 text-purple-400" />
-                  ) : isLeadsExhaustedToday ? (
-                    <CheckCircle className="w-16 h-16 text-blue-400" />
                   ) : (
                     <Zap className="w-16 h-16 text-gray-500" />
                   )}
@@ -636,14 +626,12 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                 color === 'purple' ? 'bg-purple-500/20 text-purple-400 border-2 border-purple-500/40' :
                 color === 'yellow' ? 'bg-yellow-500/20 text-yellow-400 border-2 border-yellow-500/40' :
                 color === 'red' ? 'bg-red-500/20 text-red-400 border-2 border-red-500/40' :
-                color === 'blue' ? 'bg-blue-500/20 text-blue-400 border-2 border-blue-500/40' :
-                color === 'orange' ? 'bg-orange-500/20 text-orange-400 border-2 border-orange-500/40' :
                 'bg-gray-500/20 text-gray-400 border-2 border-gray-500/40'
               }`}>
                 {getStatusText()}
               </div>
 
-              {/* Subtext - or special status messages */}
+              {/* Subtext - or special outside hours message */}
               {isOutsideHours ? (
                 <div className="mb-8 space-y-3">
                   <div className="flex items-center justify-center gap-2 text-purple-300">
@@ -657,50 +645,6 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                     <p className="text-purple-200 text-sm">
                      🌙  The AI dialer operates between <span className="font-bold">9:00 AM - 6:00 PM (Mon-Sat)</span> to ensure calls are made during appropriate business hours. 🌙
                     </p>
-                  </div>
-                </div>
-              ) : isLeadsExhaustedToday ? (
-                <div className="mb-8 space-y-3">
-                  {/* Glowing background effect */}
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
-                    <div className="relative px-8 py-6 bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl backdrop-blur-sm">
-                      {/* Icon with glow */}
-                      <div className="flex justify-center mb-4">
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-blue-500/40 blur-xl rounded-full" />
-                          <div className="relative w-16 h-16 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-full flex items-center justify-center border-2 border-blue-500/40">
-                            <CheckCircle className="w-8 h-8 text-blue-400" />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Title */}
-                      <h3 className="text-xl font-bold text-center bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                        Great Progress Today! 🎉
-                      </h3>
-                      
-                      {/* Message */}
-                      <p className="text-gray-300 text-center mb-3">
-                        You've dialed all <span className="text-blue-400 font-bold">{status?.totalCallableLeads || 0}</span> available leads today.
-                      </p>
-                      
-                      {/* Subtext */}
-                      <p className="text-gray-400 text-sm text-center">
-                        These leads will be ready to call again tomorrow. 
-                        <br />
-                        <span className="text-blue-300">Upload more leads to keep dialing now!</span>
-                      </p>
-                      
-                      {/* Stats pill */}
-                      <div className="mt-4 flex justify-center">
-                        <div className="px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full">
-                          <span className="text-sm text-blue-300">
-                            📞 {status?.leadsDialedToday || 0} leads dialed today
-                          </span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               ) : (
@@ -1094,208 +1038,207 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
         </div>
       )}
 
-      {/* No Leads Warning Modal */}
+      {/* No Leads Warning Modal - Different styles for different reasons */}
       {showNoLeadsWarning && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-3xl max-w-lg w-full shadow-[0_0_80px_rgba(245,158,11,0.3)] animate-in fade-in zoom-in-95 duration-400">
-            {/* Outer Glow Ring */}
-            <div className="absolute -inset-[2px] bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 rounded-3xl opacity-60 blur-sm animate-pulse" style={{ animationDuration: '2s' }} />
-            
-            {/* Inner Card */}
-            <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-3xl overflow-hidden">
-              {/* Animated Background Glows */}
-              <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute w-80 h-80 bg-amber-500/20 rounded-full blur-[100px] -top-32 -right-32 animate-pulse" style={{ animationDuration: '3s' }} />
-                <div className="absolute w-64 h-64 bg-orange-500/20 rounded-full blur-[80px] -bottom-20 -left-20 animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }} />
-                <div className="absolute w-40 h-40 bg-yellow-500/15 rounded-full blur-[60px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
-              </div>
+          {noLeadsReason === 'all_dialed_today' ? (
+            /* ============ SPECIAL MODAL: All Leads Dialed Today ============ */
+            <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-3xl max-w-lg w-full shadow-[0_0_80px_rgba(59,130,246,0.3)] animate-in fade-in zoom-in-95 duration-400">
+              {/* Outer Glow Ring - Blue/Green for positive message */}
+              <div className="absolute -inset-[2px] bg-gradient-to-r from-blue-500 via-emerald-500 to-blue-500 rounded-3xl opacity-60 blur-sm animate-pulse" style={{ animationDuration: '2s' }} />
+              
+              {/* Inner Card */}
+              <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-3xl overflow-hidden">
+                {/* Animated Background Glows */}
+                <div className="absolute inset-0 overflow-hidden">
+                  <div className="absolute w-80 h-80 bg-blue-500/20 rounded-full blur-[100px] -top-32 -right-32 animate-pulse" style={{ animationDuration: '3s' }} />
+                  <div className="absolute w-64 h-64 bg-emerald-500/20 rounded-full blur-[80px] -bottom-20 -left-20 animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }} />
+                  <div className="absolute w-40 h-40 bg-cyan-500/15 rounded-full blur-[60px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
+                </div>
 
-              {/* Top Glow Line */}
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+                {/* Top Glow Line */}
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
 
-              <div className="relative">
-                {/* Header */}
-                <div className="p-6 border-b border-amber-500/20">
-                  <div className="flex items-start gap-4">
-                    <div className="relative">
-                      {/* Icon Glow */}
-                      <div className="absolute inset-0 bg-amber-500/40 rounded-2xl blur-xl animate-pulse" />
-                      <div className="relative w-16 h-16 bg-gradient-to-br from-amber-500/30 to-orange-600/30 rounded-2xl border-2 border-amber-500/60 flex items-center justify-center shadow-lg shadow-amber-500/40">
-                        <AlertCircle className="w-9 h-9 text-amber-400" />
+                <div className="relative">
+                  {/* Header */}
+                  <div className="p-6 border-b border-blue-500/20">
+                    <div className="flex items-start gap-4">
+                      <div className="relative">
+                        {/* Icon Glow */}
+                        <div className="absolute inset-0 bg-emerald-500/40 rounded-2xl blur-xl animate-pulse" />
+                        <div className="relative w-16 h-16 bg-gradient-to-br from-emerald-500/30 to-blue-600/30 rounded-2xl border-2 border-emerald-500/60 flex items-center justify-center shadow-lg shadow-emerald-500/40">
+                          <span className="text-4xl">🎯</span>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-300 to-blue-300 bg-clip-text text-transparent mb-1">Great Work Today!</h2>
+                        <p className="text-sm text-emerald-400/80">You&apos;ve dialed all available leads</p>
+                      </div>
+                      <button
+                        onClick={() => setShowNoLeadsWarning(false)}
+                        className="p-2 hover:bg-blue-500/10 rounded-xl transition-all duration-200 border border-transparent hover:border-blue-500/30"
+                      >
+                        <X className="w-5 h-5 text-gray-400 hover:text-blue-300" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6">
+                    {/* Stats Card */}
+                    <div className="relative bg-gradient-to-br from-emerald-950/40 to-blue-950/30 border border-emerald-500/30 rounded-2xl p-5 mb-6 shadow-inner">
+                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-2xl" />
+                      <div className="relative text-center">
+                        <div className="flex items-center justify-center gap-3 mb-3">
+                          <div className="w-14 h-14 bg-emerald-500/20 rounded-xl flex items-center justify-center border border-emerald-500/30 shadow-lg shadow-emerald-500/20">
+                            <span className="text-3xl">✅</span>
+                          </div>
+                        </div>
+                        <p className="text-3xl font-bold text-white mb-1">
+                          {noLeadsData?.leadsDialedToday || 0} Leads Dialed
+                        </p>
+                        <p className="text-emerald-400 text-sm">
+                          out of {noLeadsData?.potentialLeadsCount || 0} available leads today
+                        </p>
                       </div>
                     </div>
-                    <div className="flex-1">
-                      <h2 className="text-2xl font-bold bg-gradient-to-r from-amber-300 to-orange-300 bg-clip-text text-transparent mb-1">No Leads to Call!</h2>
-                      <p className="text-sm text-amber-400/80">Upload leads to continue</p>
+
+                    {/* Info Box */}
+                    <div className="bg-blue-950/30 border border-blue-500/20 rounded-xl p-4 mb-6">
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl">💡</span>
+                        <div>
+                          <p className="text-gray-100 font-medium mb-1">What now?</p>
+                          <p className="text-gray-400 text-sm leading-relaxed">
+                            These leads will be available again tomorrow! Or you can upload new leads to continue calling today.
+                          </p>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Action Buttons */}
+                    <div className="space-y-3">
+                      <a
+                        href="/dashboard/leads"
+                        onClick={() => setShowNoLeadsWarning(false)}
+                        className="group relative overflow-hidden block w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-400 hover:to-blue-400 text-white font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] shadow-xl shadow-emerald-500/30 hover:shadow-2xl hover:shadow-emerald-500/40 text-center text-lg"
+                      >
+                        <span className="relative z-10 flex items-center justify-center gap-3">
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                          Upload More Leads
+                        </span>
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
+                      </a>
+
+                      <button
+                        onClick={() => setShowNoLeadsWarning(false)}
+                        className="w-full px-6 py-3.5 bg-gray-800/60 hover:bg-gray-800/80 border border-gray-600/50 hover:border-blue-500/30 text-gray-300 hover:text-white font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
+                      >
+                        <span className="text-lg">🌙</span>
+                        Come Back Tomorrow
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* ============ DEFAULT MODAL: No Leads / Other Reasons ============ */
+            <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-3xl max-w-lg w-full shadow-[0_0_80px_rgba(245,158,11,0.3)] animate-in fade-in zoom-in-95 duration-400">
+              {/* Outer Glow Ring */}
+              <div className="absolute -inset-[2px] bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 rounded-3xl opacity-60 blur-sm animate-pulse" style={{ animationDuration: '2s' }} />
+              
+              {/* Inner Card */}
+              <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-3xl overflow-hidden">
+                {/* Animated Background Glows */}
+                <div className="absolute inset-0 overflow-hidden">
+                  <div className="absolute w-80 h-80 bg-amber-500/20 rounded-full blur-[100px] -top-32 -right-32 animate-pulse" style={{ animationDuration: '3s' }} />
+                  <div className="absolute w-64 h-64 bg-orange-500/20 rounded-full blur-[80px] -bottom-20 -left-20 animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }} />
+                  <div className="absolute w-40 h-40 bg-yellow-500/15 rounded-full blur-[60px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
+                </div>
+
+                {/* Top Glow Line */}
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+
+                <div className="relative">
+                  {/* Header */}
+                  <div className="p-6 border-b border-amber-500/20">
+                    <div className="flex items-start gap-4">
+                      <div className="relative">
+                        {/* Icon Glow */}
+                        <div className="absolute inset-0 bg-amber-500/40 rounded-2xl blur-xl animate-pulse" />
+                        <div className="relative w-16 h-16 bg-gradient-to-br from-amber-500/30 to-orange-600/30 rounded-2xl border-2 border-amber-500/60 flex items-center justify-center shadow-lg shadow-amber-500/40">
+                          <AlertCircle className="w-9 h-9 text-amber-400" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-amber-300 to-orange-300 bg-clip-text text-transparent mb-1">No Leads to Call!</h2>
+                        <p className="text-sm text-amber-400/80">Upload leads to continue</p>
+                      </div>
+                      <button
+                        onClick={() => setShowNoLeadsWarning(false)}
+                        className="p-2 hover:bg-amber-500/10 rounded-xl transition-all duration-200 border border-transparent hover:border-amber-500/30"
+                      >
+                        <X className="w-5 h-5 text-gray-400 hover:text-amber-300" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6">
+                    <div className="relative bg-gradient-to-br from-amber-950/40 to-orange-950/30 border border-amber-500/30 rounded-2xl p-5 mb-6 shadow-inner">
+                      {/* Inner glow */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent rounded-2xl" />
+                      <div className="relative flex items-start gap-4">
+                        <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center border border-amber-500/30 shadow-lg shadow-amber-500/20">
+                          <span className="text-2xl">⚠️</span>
+                        </div>
+                        <div>
+                          <p className="text-gray-100 leading-relaxed text-base font-medium mb-2">
+                            {noLeadsMessage || 'No active Google Sheets found. Please upload and activate a lead sheet first!'}
+                          </p>
+                          <p className="text-gray-400 text-sm">
+                            All your leads may have been called, booked, or marked as not interested.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Upload Leads Button */}
+                    <a
+                      href="/dashboard/leads"
+                      onClick={() => setShowNoLeadsWarning(false)}
+                      className="group relative overflow-hidden block w-full px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-gray-900 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] shadow-xl shadow-amber-500/40 hover:shadow-2xl hover:shadow-amber-500/50 text-center text-lg"
+                    >
+                      <span className="relative z-10 flex items-center justify-center gap-3">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Upload New Leads
+                      </span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
+                    </a>
+
+                    <p className="text-center text-gray-500 text-sm mt-4">
+                      Go to Lead Manager → Google Sheets tab → Upload your lead sheet
+                    </p>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="p-6 pt-0">
                     <button
                       onClick={() => setShowNoLeadsWarning(false)}
-                      className="p-2 hover:bg-amber-500/10 rounded-xl transition-all duration-200 border border-transparent hover:border-amber-500/30"
+                      className="w-full px-6 py-3.5 bg-gray-800/60 hover:bg-gray-800/80 border border-gray-600/50 hover:border-amber-500/30 text-gray-300 hover:text-white font-semibold rounded-xl transition-all duration-300"
                     >
-                      <X className="w-5 h-5 text-gray-400 hover:text-amber-300" />
+                      Close
                     </button>
                   </div>
                 </div>
-
-                {/* Content */}
-                <div className="p-6">
-                  <div className="relative bg-gradient-to-br from-amber-950/40 to-orange-950/30 border border-amber-500/30 rounded-2xl p-5 mb-6 shadow-inner">
-                    {/* Inner glow */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent rounded-2xl" />
-                    <div className="relative flex items-start gap-4">
-                      <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center border border-amber-500/30 shadow-lg shadow-amber-500/20">
-                        <span className="text-2xl">⚠️</span>
-                      </div>
-                      <div>
-                        <p className="text-gray-100 leading-relaxed text-base font-medium mb-2">
-                          {noLeadsMessage || 'No active Google Sheets found. Please upload and activate a lead sheet first!'}
-                        </p>
-                        <p className="text-gray-400 text-sm">
-                          All your leads may have been called, booked, or marked as not interested.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Upload Leads Button */}
-                  <a
-                    href="/dashboard/leads"
-                    onClick={() => setShowNoLeadsWarning(false)}
-                    className="group relative overflow-hidden block w-full px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-gray-900 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] shadow-xl shadow-amber-500/40 hover:shadow-2xl hover:shadow-amber-500/50 text-center text-lg"
-                  >
-                    <span className="relative z-10 flex items-center justify-center gap-3">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                      </svg>
-                      Upload New Leads
-                    </span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
-                  </a>
-
-                  <p className="text-center text-gray-500 text-sm mt-4">
-                    Go to Lead Manager → Google Sheets tab → Upload your lead sheet
-                  </p>
-                </div>
-
-                {/* Footer */}
-                <div className="p-6 pt-0">
-                  <button
-                    onClick={() => setShowNoLeadsWarning(false)}
-                    className="w-full px-6 py-3.5 bg-gray-800/60 hover:bg-gray-800/80 border border-gray-600/50 hover:border-amber-500/30 text-gray-300 hover:text-white font-semibold rounded-xl transition-all duration-300"
-                  >
-                    Close
-                  </button>
-                </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Leads Exhausted Today Modal - Beautiful glowy design */}
-      {showLeadsExhaustedModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-3xl max-w-lg w-full shadow-[0_0_80px_rgba(59,130,246,0.3)] animate-in fade-in zoom-in-95 duration-400">
-            {/* Outer Glow Ring */}
-            <div className="absolute -inset-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-3xl opacity-60 blur-sm animate-pulse" style={{ animationDuration: '2s' }} />
-            
-            {/* Inner Card */}
-            <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-3xl overflow-hidden">
-              {/* Animated Background Glows */}
-              <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute w-80 h-80 bg-blue-500/20 rounded-full blur-[100px] -top-32 -right-32 animate-pulse" style={{ animationDuration: '3s' }} />
-                <div className="absolute w-64 h-64 bg-indigo-500/20 rounded-full blur-[80px] -bottom-20 -left-20 animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }} />
-                <div className="absolute w-40 h-40 bg-purple-500/15 rounded-full blur-[60px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
-              </div>
-
-              {/* Top Glow Line */}
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-400 to-transparent" />
-
-              <div className="relative">
-                {/* Header */}
-                <div className="p-6 border-b border-blue-500/20">
-                  <div className="flex items-start gap-4">
-                    <div className="relative">
-                      {/* Icon Glow */}
-                      <div className="absolute inset-0 bg-blue-500/40 rounded-2xl blur-xl animate-pulse" />
-                      <div className="relative w-16 h-16 bg-gradient-to-br from-blue-500/30 to-indigo-600/30 rounded-2xl border-2 border-blue-500/60 flex items-center justify-center shadow-lg shadow-blue-500/40">
-                        <CheckCircle className="w-9 h-9 text-blue-400" />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-300 via-indigo-300 to-purple-300 bg-clip-text text-transparent mb-1">Great Progress! 🎉</h2>
-                      <p className="text-sm text-blue-400/80">All leads dialed for today</p>
-                    </div>
-                    <button
-                      onClick={() => setShowLeadsExhaustedModal(false)}
-                      className="p-2 hover:bg-blue-500/10 rounded-xl transition-all duration-200 border border-transparent hover:border-blue-500/30"
-                    >
-                      <X className="w-5 h-5 text-gray-400 hover:text-blue-300" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6">
-                  <div className="relative bg-gradient-to-br from-blue-950/40 to-indigo-950/30 border border-blue-500/30 rounded-2xl p-5 mb-6 shadow-inner">
-                    {/* Inner glow */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent rounded-2xl" />
-                    <div className="relative flex items-start gap-4">
-                      <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center border border-blue-500/30 shadow-lg shadow-blue-500/20">
-                        <span className="text-2xl">📞</span>
-                      </div>
-                      <div>
-                        <p className="text-gray-100 leading-relaxed text-base font-medium mb-2">
-                          You've already dialed all <span className="text-blue-400 font-bold">{leadsExhaustedCount}</span> available leads today!
-                        </p>
-                        <p className="text-gray-400 text-sm">
-                          Each lead can only be called once per day. They'll be ready to dial again tomorrow.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="flex items-center justify-center gap-3 mb-6">
-                    <div className="px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full">
-                      <span className="text-sm text-blue-300">
-                        ✅ {leadsExhaustedCount} leads dialed today
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Upload Leads Button */}
-                  <a
-                    href="/dashboard/leads"
-                    onClick={() => setShowLeadsExhaustedModal(false)}
-                    className="group relative overflow-hidden block w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 text-white font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] shadow-xl shadow-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/50 text-center text-lg"
-                  >
-                    <span className="relative z-10 flex items-center justify-center gap-3">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                      </svg>
-                      Upload More Leads
-                    </span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
-                  </a>
-
-                  <p className="text-center text-gray-500 text-sm mt-4">
-                    Upload new leads to keep dialing now, or come back tomorrow!
-                  </p>
-                </div>
-
-                {/* Footer */}
-                <div className="p-6 pt-0">
-                  <button
-                    onClick={() => setShowLeadsExhaustedModal(false)}
-                    className="w-full px-6 py-3.5 bg-gray-800/60 hover:bg-gray-800/80 border border-gray-600/50 hover:border-blue-500/30 text-gray-300 hover:text-white font-semibold rounded-xl transition-all duration-300"
-                  >
-                    Got it, come back tomorrow
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       )}
 

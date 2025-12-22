@@ -782,7 +782,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
         // Safety timeout
         setTimeout(() => {
           clearInterval(progressInterval);
-          setSyncProgress(100);
+      setSyncProgress(100);
           resolve();
         }, 2000);
       });

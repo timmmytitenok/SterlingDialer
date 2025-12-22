@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     };
 
     console.log('📋 CREATE SHEET - Saving to database with lead_type:', insertData.lead_type);
-    
+
     const { data: sheet, error } = await supabase
       .from('user_google_sheets')
       .insert(insertData)

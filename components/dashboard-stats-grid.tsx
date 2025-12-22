@@ -3,15 +3,15 @@
 import { useState, useEffect, useRef } from 'react';
 
 interface StatsData {
-  totalCalls: number;
-  connectionRate: string;
-  connectedCalls: number;
-  policiesSold: number;
-  revenue: number;
-  notInterested: number;
-  callbacks: number;
-  transfers: number;
-  appointments: number;
+    totalCalls: number;
+    connectionRate: string;
+    connectedCalls: number;
+    policiesSold: number;
+    revenue: number;
+    notInterested: number;
+    callbacks: number;
+    transfers: number;
+    appointments: number;
 }
 
 interface DashboardStatsGridProps {
