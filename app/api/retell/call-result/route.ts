@@ -765,19 +765,36 @@ export async function POST(request: Request) {
         console.log('⏳ Waiting 5 seconds for Cal.ai to process booking...');
         await new Promise(resolve => setTimeout(resolve, 5000));
         
-        // Check if we already created an appointment for this lead
+        // Check if we already created an appointment for this lead (from book-appointment webhook)
+        // Check both scheduled_at AND scheduled_time since they use different column names
         const { data: existingAppt } = await supabase
           .from('appointments')
-          .select('id, scheduled_at')
+          .select('id, scheduled_at, scheduled_time, status, created_at')
           .eq('lead_id', leadId)
+          .in('status', ['scheduled', 'pending', 'pending_manual'])
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
         
-        if (existingAppt) {
-          console.log('✅ Appointment already exists!');
-          console.log(`   - ID: ${existingAppt.id}`);
-          console.log(`   - Scheduled: ${existingAppt.scheduled_at}`);
+        // Also check if appointment was created very recently (within last 5 minutes) for this user
+        const { data: recentAppt } = await supabase
+          .from('appointments')
+          .select('id, scheduled_at, scheduled_time, prospect_phone, customer_phone')
+          .eq('user_id', userId)
+          .gte('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString()) // Last 5 minutes
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        const hasExistingAppointment = existingAppt || 
+          (recentAppt && (recentAppt.prospect_phone === lead.phone || recentAppt.customer_phone === lead.phone));
+        
+        if (hasExistingAppointment) {
+          const appt = existingAppt || recentAppt;
+          console.log('✅ Appointment already exists (created by book-appointment webhook)!');
+          console.log(`   - ID: ${appt?.id}`);
+          console.log(`   - Scheduled: ${appt?.scheduled_at || appt?.scheduled_time}`);
+          console.log('   - Skipping duplicate creation');
         } else {
           // ============================================================
           // QUERY CAL.AI API FOR THE BOOKING
