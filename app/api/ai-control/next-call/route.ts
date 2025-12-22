@@ -800,10 +800,36 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    if (!retellConfig.phone_number) {
-      console.error('❌ Missing phone_number');
+    // Select the correct phone number based on lead_type
+    // lead_type 2 or 3 = Final Expense (use phone_number_fe)
+    // lead_type 4 = Mortgage Protection (use phone_number_mp)
+    const phoneNumberFE = retellConfig.phone_number_fe || retellConfig.phone_number;
+    const phoneNumberMP = retellConfig.phone_number_mp;
+    
+    let selectedPhoneNumber: string | null = null;
+    let phoneSource = '';
+    
+    if (nextLead.lead_type === 4) {
+      // Mortgage Protection - use MP phone
+      selectedPhoneNumber = phoneNumberMP || phoneNumberFE; // Fallback to FE if MP not set
+      phoneSource = phoneNumberMP ? 'Mortgage Protection' : 'Final Expense (fallback)';
+    } else {
+      // Final Expense (lead_type 2, 3, or default) - use FE phone
+      selectedPhoneNumber = phoneNumberFE;
+      phoneSource = 'Final Expense';
+    }
+    
+    console.log(`📞 Phone Number Selection:`);
+    console.log(`   Lead Type: ${nextLead.lead_type}`);
+    console.log(`   Phone FE: ${phoneNumberFE || '(not set)'}`);
+    console.log(`   Phone MP: ${phoneNumberMP || '(not set)'}`);
+    console.log(`   Selected: ${selectedPhoneNumber || '(none)'} (${phoneSource})`);
+
+    if (!selectedPhoneNumber) {
+      console.error('❌ Missing phone number for this lead type');
+      const phoneType = nextLead.lead_type === 4 ? 'Mortgage Protection' : 'Final Expense';
       return NextResponse.json({ 
-        error: 'Outbound phone number not configured. Go to Admin → Manage Users to set your phone number.' 
+        error: `No ${phoneType} phone number configured. Go to Admin → Manage Users to set your phone numbers.` 
       }, { status: 400 });
     }
     
@@ -859,7 +885,7 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    console.log(`📞 Making call with Agent: ${selectedAgentId} (${agentSource}), From: ${retellConfig.phone_number}, To: ${nextLead.phone}`);
+    console.log(`📞 Making call with Agent: ${selectedAgentId} (${agentSource}), From: ${selectedPhoneNumber}, To: ${nextLead.phone}`);
 
     // Build dynamic variables for Retell
     // CRITICAL: Retell requires ALL values to be STRINGS! No numbers, no booleans, no nulls!
@@ -974,7 +1000,7 @@ export async function POST(request: Request) {
     const callPayload = {
       agent_id: selectedAgentId,  // Uses global agent based on lead_type, or user's custom agent
       to_number: phoneToCall, // Use formatted phone!
-      from_number: retellConfig.phone_number,
+      from_number: selectedPhoneNumber, // Uses FE or MP phone based on lead_type
       metadata: {
         user_id: userId,
         lead_id: nextLead.id,

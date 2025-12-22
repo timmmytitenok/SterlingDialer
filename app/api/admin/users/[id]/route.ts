@@ -293,6 +293,8 @@ export async function GET(
       // AI Configuration - safely handle missing data
       retell_agent_id: retellConfig.data?.retell_agent_id ?? null,
       retell_phone_number: retellConfig.data?.phone_number ?? null,
+      phone_number_fe: retellConfig.data?.phone_number_fe ?? retellConfig.data?.phone_number ?? null,
+      phone_number_mp: retellConfig.data?.phone_number_mp ?? null,
       retell_agent_name: retellConfig.data?.agent_name ?? null,
       agent_name: retellConfig.data?.agent_name ?? null,
       agent_pronoun: retellConfig.data?.agent_pronoun ?? 'she/her',

@@ -20,9 +20,12 @@ export async function POST(request: Request) {
 
     // Parse request body
     const body = await request.json();
-    const { userId, agentId, phoneNumber, agentName, agentPronoun, calApiKey, calAiApiKey, calEventId, costPerMinute, timezone, confirmationEmail } = body;
+    const { userId, agentId, phoneNumber, phoneNumberFE, phoneNumberMP, agentName, agentPronoun, calApiKey, calAiApiKey, calEventId, costPerMinute, timezone, confirmationEmail } = body;
     // Support both old and new field names
     const calAiKey = calAiApiKey || calApiKey;
+    // Support both legacy single phone and new dual phone numbers
+    const phoneFE = phoneNumberFE || phoneNumber; // Fallback to legacy single number for FE
+    const phoneMP = phoneNumberMP;
 
     if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
@@ -30,7 +33,8 @@ export async function POST(request: Request) {
 
     console.log(`🔧 Updating Retell config for user ${userId}:`, {
       agentId: agentId || 'not set (using global agents)',
-      phoneNumber: phoneNumber || 'not set',
+      phoneNumberFE: phoneFE || 'not set',
+      phoneNumberMP: phoneMP || 'not set',
       agentName: agentName || 'not set',
       agentPronoun: agentPronoun || 'she/her',
       calAiApiKey: calAiKey ? '***SET***' : 'not set',
@@ -53,7 +57,10 @@ export async function POST(request: Request) {
     };
     
     if (agentId !== undefined) updateFields.retell_agent_id = agentId || null;
-    if (phoneNumber !== undefined) updateFields.phone_number = phoneNumber || null;
+    // Store phone numbers - FE goes to legacy phone_number field for backwards compatibility
+    if (phoneFE !== undefined) updateFields.phone_number = phoneFE || null;
+    if (phoneFE !== undefined) updateFields.phone_number_fe = phoneFE || null;
+    if (phoneMP !== undefined) updateFields.phone_number_mp = phoneMP || null;
     if (agentName !== undefined) updateFields.agent_name = agentName || null;
     if (agentPronoun !== undefined) updateFields.agent_pronoun = agentPronoun || 'she/her';
     if (calAiKey !== undefined) updateFields.cal_ai_api_key = calAiKey || null;
@@ -81,7 +88,9 @@ export async function POST(request: Request) {
         .insert({
           user_id: userId,
           retell_agent_id: agentId || null,
-          phone_number: phoneNumber || null,
+          phone_number: phoneFE || null, // Legacy field for backwards compatibility
+          phone_number_fe: phoneFE || null,
+          phone_number_mp: phoneMP || null,
           agent_name: agentName || null,
           agent_pronoun: agentPronoun || 'she/her',
           cal_ai_api_key: calAiKey || null,

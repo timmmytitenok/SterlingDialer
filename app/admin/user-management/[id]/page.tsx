@@ -48,6 +48,8 @@ interface UserDetail {
   ai_maintenance_mode: boolean;
   retell_agent_id: string | null;
   retell_phone_number: string | null;
+  phone_number_fe: string | null;
+  phone_number_mp: string | null;
   cal_api_key: string | null;
   has_active_subscription: boolean;
   subscription_tier: string | null;
@@ -79,7 +81,8 @@ export default function AdminUserDetailPage() {
   
   // AI Agent configuration
   const [agentId, setAgentId] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumberFE, setPhoneNumberFE] = useState(''); // Final Expense phone
+  const [phoneNumberMP, setPhoneNumberMP] = useState(''); // Mortgage Protection phone
   const [calApiKey, setCalApiKey] = useState('');
   const [calEventId, setCalEventId] = useState('');
   const [agentName, setAgentName] = useState('');
@@ -154,7 +157,10 @@ export default function AdminUserDetailPage() {
       
       // Set AI config values if they exist
       if (data.user.retell_agent_id) setAgentId(data.user.retell_agent_id);
-      if (data.user.retell_phone_number) setPhoneNumber(data.user.retell_phone_number);
+      // Load phone numbers - prefer separate FE/MP, fallback to legacy single number
+      if (data.user.phone_number_fe) setPhoneNumberFE(data.user.phone_number_fe);
+      else if (data.user.retell_phone_number) setPhoneNumberFE(data.user.retell_phone_number);
+      if (data.user.phone_number_mp) setPhoneNumberMP(data.user.phone_number_mp);
       if (data.user.cal_api_key) setCalApiKey(data.user.cal_api_key);
       if (data.user.cal_event_id) setCalEventId(data.user.cal_event_id);
       if (data.user.agent_name) setAgentName(data.user.agent_name);
@@ -720,22 +726,41 @@ export default function AdminUserDetailPage() {
               </div>
             </div>
 
-            {/* Input Grid - Row 1: Phone & Calendar */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
-              {/* Phone Number */}
+            {/* Input Grid - Row 1: Phone Numbers */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+              {/* Final Expense Phone Number */}
               <div className="group/input">
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                  📞 Phone Number
+                  💚 Final Expense Phone
                 </label>
                 <input
                   type="text"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  value={phoneNumberFE}
+                  onChange={(e) => setPhoneNumberFE(e.target.value)}
                   placeholder="+15551234567"
-                  className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-gray-600/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 focus:outline-none font-mono text-sm transition-all hover:border-gray-500/70 placeholder:text-gray-500"
+                  className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-green-500/40 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none font-mono text-sm transition-all hover:border-green-500/60 placeholder:text-gray-500"
                 />
+                <p className="text-xs text-gray-500 mt-1">Used for Final Expense leads</p>
               </div>
 
+              {/* Mortgage Protection Phone Number */}
+              <div className="group/input">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
+                  🏠 Mortgage Protection Phone
+                </label>
+                <input
+                  type="text"
+                  value={phoneNumberMP}
+                  onChange={(e) => setPhoneNumberMP(e.target.value)}
+                  placeholder="+15551234567"
+                  className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-blue-500/40 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none font-mono text-sm transition-all hover:border-blue-500/60 placeholder:text-gray-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Used for Mortgage Protection leads</p>
+              </div>
+            </div>
+
+            {/* Input Grid - Row 2: Calendar */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
               {/* Cal.ai API Key */}
               <div className="group/input">
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
@@ -876,7 +901,8 @@ export default function AdminUserDetailPage() {
                       body: JSON.stringify({
                         userId: user.id,
                         agentId: agentId.trim() || null,
-                        phoneNumber: phoneNumber.trim() || null,
+                        phoneNumberFE: phoneNumberFE.trim() || null,
+                        phoneNumberMP: phoneNumberMP.trim() || null,
                         calApiKey: calApiKey.trim() || null,
                         calEventId: calEventId.trim() || null,
                         agentName: agentName.trim() || null,
