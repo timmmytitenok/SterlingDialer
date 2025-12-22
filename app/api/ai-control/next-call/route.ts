@@ -677,14 +677,13 @@ export async function POST(request: Request) {
     console.log(`📞 Making call with Agent: ${retellConfig.retell_agent_id}, From: ${retellConfig.phone_number}, To: ${nextLead.phone}`);
 
     // Build dynamic variables for Retell
-    // IMPORTANT: Retell requires ALL values to be STRINGS!
-    // ALWAYS include lead_vendor and street_address (even if empty) for Mortgage Protection scripts
-    const dynamicVariables: any = {
-      customer_name: nextLead.name || 'there',
-      lead_name: nextLead.name || '',
-      lead_phone: phoneToCall, // Use formatted phone!
-      userId: userId,
-      leadId: nextLead.id,
+    // CRITICAL: Retell requires ALL values to be STRINGS! No numbers, no booleans, no nulls!
+    const dynamicVariables: Record<string, string> = {
+      customer_name: String(nextLead.name || 'there'),
+      lead_name: String(nextLead.name || ''),
+      lead_phone: String(phoneToCall || ''),
+      userId: String(userId),
+      leadId: String(nextLead.id),
       live_transfer: "true",
       attempt_number: String((nextLead.call_attempts_today || 0) + 1),
       // Lead type for AI script selection - reference as {{lead_type}} in Retell
@@ -692,12 +691,22 @@ export async function POST(request: Request) {
       // "2" = Final Expense (non-veteran)
       // "3" = Final Expense (veteran)
       // "4" = Mortgage Protection
-      lead_type: String(nextLead.lead_type || 1),  // MUST be STRING for Retell API!
-      // Mortgage Protection variables - ALWAYS send these so Retell script can reference them
-      // In Retell, reference as {{lead_vendor}} and {{street_address}}
-      lead_vendor: nextLead.lead_vendor || '',
-      street_address: nextLead.street_address || '',
+      lead_type: String(nextLead.lead_type || 1),
+      // Mortgage Protection variables
+      lead_vendor: String(nextLead.lead_vendor || ''),
+      street_address: String(nextLead.street_address || ''),
     };
+    
+    // VERIFY all values are strings
+    console.log('🔍 Verifying all dynamic variables are strings:');
+    for (const [key, value] of Object.entries(dynamicVariables)) {
+      const valueType = typeof value;
+      if (valueType !== 'string') {
+        console.error(`❌ PROBLEM: ${key} is ${valueType}, not string! Value: ${value}`);
+      } else {
+        console.log(`   ✅ ${key}: "${value}" (string)`);
+      }
+    }
     
     // Log lead type and mortgage protection data for debugging
     console.log('');
