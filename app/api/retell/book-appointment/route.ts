@@ -102,29 +102,33 @@ export async function POST(request: Request) {
     console.log(`   Agent Name: ${retellConfig.agent_name || 'Not set'}`);
 
     // Build the Cal.com API request
-    // Using Cal.com's booking API: https://cal.com/docs/enterprise-features/api/api-reference/bookings
+    // Using Cal.com's booking API v2 format with responses object
     const calApiUrl = 'https://api.cal.com/v1/bookings';
+    
+    // Generate a placeholder email if not provided
+    const emailToUse = customer_email || `${customer_phone?.replace(/\D/g, '') || 'lead'}@ai-booking.com`;
     
     const bookingPayload: any = {
       eventTypeId: parseInt(retellConfig.cal_event_id),
-      name: customer_name || 'Unknown',
-      email: customer_email || `${customer_phone?.replace(/\D/g, '') || 'unknown'}@placeholder.com`,
-      phone: customer_phone,
-      notes: notes || `Booked via AI Agent${retellConfig.agent_name ? ` (${retellConfig.agent_name})` : ''}`,
+      start: start_time, // Required: ISO format start time
+      // Cal.com now requires responses object for form fields
+      responses: {
+        name: customer_name || 'AI Booked Lead',
+        email: emailToUse,
+        phone: customer_phone || '',
+        notes: notes || `Booked via AI Agent${retellConfig.agent_name ? ` (${retellConfig.agent_name})` : ''}`,
+      },
       timeZone: timezone || 'America/New_York',
       language: 'en',
       metadata: {
-        leadId: leadId,
+        leadId: leadId || 'unknown',
         userId: userId,
         bookedBy: 'ai_agent',
-        agentName: retellConfig.agent_name,
+        agentName: retellConfig.agent_name || 'AI',
       },
     };
 
-    // If specific times provided, use them
-    if (start_time) {
-      bookingPayload.start = start_time;
-    }
+    // Add end time if provided
     if (end_time) {
       bookingPayload.end = end_time;
     }
