@@ -210,18 +210,23 @@ export async function POST(request: Request) {
                            customAnalysis.CALLBACK === true || 
                            customAnalysis.LIVE_TRANSFER === true);
     
-    // CRITICAL FIX: If ANY outcome flag is set, the call WAS answered!
-    // Retell may incorrectly report in_voicemail=true for transferred calls
-    // But if we got BOOKED=true, NOT_INTERESTED=true, etc., the person definitely picked up!
-    // HOWEVER: If call was under 10 seconds, it's NOT considered answered!
-    const callWasAnswered = !isShortCall && (!inVoicemail || hasOutcomeFlag);
+    // CRITICAL FIX: A call is ONLY answered if:
+    // 1. Not a short call (<10 seconds)
+    // 2. NOT voicemail OR has an actual outcome flag
+    // 3. Has at least ONE outcome flag OR duration is significant (>30s) indicating real conversation
+    // 
+    // If call is 10-30 seconds with no outcome flags and no voicemail detection,
+    // it's likely a ring-no-answer that Retell didn't properly classify
+    const isLikelyNoAnswer = !hasOutcomeFlag && durationSeconds < 30 && !inVoicemail;
+    const callWasAnswered = !isShortCall && !isLikelyNoAnswer && (!inVoicemail || hasOutcomeFlag);
     
     console.log(`📊 Call classification:`);
-    console.log(`   - Duration: ${durationSeconds}s`);
+    console.log(`   - Duration: ${durationSeconds.toFixed(1)}s`);
     console.log(`   - Is short call (<10s): ${isShortCall}`);
     console.log(`   - In voicemail: ${inVoicemail}`);
-    console.log(`   - Has outcome flag: ${hasOutcomeFlag} (BOOKED=${customAnalysis.BOOKED}, NOT_INTERESTED=${customAnalysis.NOT_INTERESTED})`);
-    console.log(`   - Was answered: ${callWasAnswered} (requires duration>=10s AND (not voicemail OR has outcome flag))`);
+    console.log(`   - Has outcome flag: ${hasOutcomeFlag} (BOOKED=${customAnalysis.BOOKED}, NOT_INTERESTED=${customAnalysis.NOT_INTERESTED}, CALLBACK=${customAnalysis.CALLBACK}, LIVE_TRANSFER=${customAnalysis.LIVE_TRANSFER})`);
+    console.log(`   - Is likely no-answer (10-30s, no flags, no voicemail): ${isLikelyNoAnswer}`);
+    console.log(`   - Was answered: ${callWasAnswered}`);
     console.log(`   - Was double dial: ${wasDoubleDial}`);
     
     if (!callWasAnswered) {
