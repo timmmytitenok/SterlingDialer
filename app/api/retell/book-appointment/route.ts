@@ -215,11 +215,14 @@ export async function POST(request: Request) {
       }, { status: 200 }); // Return 200 so Retell doesn't retry
     }
 
-    // Success! Create appointment record
-    console.log('✅ Appointment booked successfully!');
+    // Success! Cal.com booking created
+    // NOTE: Don't create appointment record here - let call-result handle it when call ends
+    // This prevents duplicate appointments (one during call, one after)
+    console.log('✅ Cal.com appointment booked successfully!');
+    console.log('📝 Appointment record will be created by call-result webhook when call ends');
     
     if (leadId) {
-      // Update lead status
+      // Only update lead status - appointment record created by call-result
       await supabase
         .from('leads')
         .update({ 
@@ -227,27 +230,7 @@ export async function POST(request: Request) {
           last_call_outcome: 'booked',
         })
         .eq('id', leadId);
-
-      // Create appointment record
-      const { error: appointmentError } = await supabase.from('appointments').insert({
-        user_id: userId,
-        lead_id: leadId,
-        customer_name: customer_name,
-        customer_phone: customer_phone,
-        customer_email: customer_email,
-        status: 'scheduled',
-        cal_booking_id: calResult.id?.toString(),
-        cal_booking_uid: calResult.uid,
-        scheduled_time: calResult.startTime || start_time,
-        notes: notes,
-        created_at: new Date().toISOString(),
-      });
-
-      if (appointmentError) {
-        console.error('⚠️ Failed to create appointment record:', appointmentError);
-      } else {
-        console.log('📝 Appointment record created in database');
-      }
+      console.log('✅ Lead status updated to booked');
     }
 
     return NextResponse.json({
@@ -259,6 +242,9 @@ export async function POST(request: Request) {
         startTime: calResult.startTime,
         endTime: calResult.endTime,
       },
+      // Pass booking info so call-result can use it
+      cal_booking_id: calResult.id?.toString(),
+      cal_booking_uid: calResult.uid,
     });
 
   } catch (error: any) {
