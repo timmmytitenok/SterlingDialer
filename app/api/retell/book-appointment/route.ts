@@ -24,12 +24,26 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    console.log('📥 Received:', JSON.stringify(body, null, 2));
+    console.log('📥 RAW BODY RECEIVED:', JSON.stringify(body, null, 2));
+    console.log('📥 BODY KEYS:', Object.keys(body));
 
     // Handle different formats Retell might send
     // Sometimes it's direct params and sometimes it's {args: {...}}
     const args = body.args || body;
-    console.log('📦 Parsed args:', JSON.stringify(args, null, 2));
+    console.log('📦 PARSED ARGS:', JSON.stringify(args, null, 2));
+    console.log('📦 ARGS KEYS:', Object.keys(args));
+    
+    // DEBUG MODE: If debug=true is passed, just return what we received
+    if (body.debug || args.debug) {
+      return NextResponse.json({
+        debug: true,
+        message: 'Debug mode - showing what was received',
+        raw_body: body,
+        raw_body_keys: Object.keys(body),
+        parsed_args: args,
+        parsed_args_keys: Object.keys(args),
+      });
+    }
 
     const {
       userId,
@@ -75,9 +89,10 @@ export async function POST(request: Request) {
       console.error('   All args received:', JSON.stringify(args, null, 2));
       return NextResponse.json({ 
         success: false, 
-        error: `start_time is required. Use the ISO format slot from check_availability (e.g., SlotA_iso). Received fields: ${Object.keys(args).join(', ')}`,
-        debug_received: body,
-        hint: 'Make sure to pass start_time with an ISO datetime like 2025-12-23T09:00:00-05:00',
+        error: `Missing start_time. I received these fields: ${Object.keys(args).join(', ')}. Please provide start_time in ISO format.`,
+        received_body: body,
+        received_args: args,
+        hint: 'Pass start_time with ISO datetime like 2025-12-23T09:00:00-05:00',
       }, { status: 200 });
     }
 
