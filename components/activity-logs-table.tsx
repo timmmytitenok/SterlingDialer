@@ -538,6 +538,10 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
     if (!outcome) return <span className="text-gray-400">No outcome</span>;
 
     const configs: Record<string, { label: string; className: string }> = {
+      no_answer: {
+        label: 'No Answer',
+        className: 'bg-slate-800/50 text-slate-400 border border-slate-700/60'
+      },
       unclassified: {
         label: 'Unclassified',
         className: 'bg-gray-600/30 text-gray-300 border border-gray-600/40'

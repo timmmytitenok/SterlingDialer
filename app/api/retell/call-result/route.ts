@@ -236,7 +236,8 @@ export async function POST(request: Request) {
         // First dial - NO ANSWER - DOUBLE DIAL NOW!
         shouldDoubleDial = true;
         shouldContinueToNextLead = false;
-        outcome = isShortCall ? 'short_call_first_attempt' : 'no_answer_first_attempt';
+        // Use simple outcome for tracking (won't create record yet anyway)
+        outcome = 'no_answer';
         // Keep current status - we're about to double dial
         leadStatus = lead.status || 'new';
         console.log('🔄 FIRST ATTEMPT NO ANSWER - Will double dial immediately!');
@@ -244,12 +245,12 @@ export async function POST(request: Request) {
         console.log('   → This does NOT count as a dial yet');
       } else {
         // Second dial also no answer - NOW count as 1 missed call
-        outcome = isShortCall ? 'short_call_double_attempt' : 'no_answer_double_attempt';
-        // FIX: Always mark as no_answer after double dial attempt, even for short calls
-        // This is clearer for users - if they didn't answer twice, it's "no answer"
+        // FIX: Use simple 'no_answer' outcome so UI displays it correctly!
+        outcome = 'no_answer';
         leadStatus = 'no_answer';
         console.log('📵 SECOND ATTEMPT NO ANSWER - NOW counting as 1 missed call');
         console.log('   → Lead status set to: no_answer');
+        console.log('   → Outcome: no_answer');
         console.log('   → Moving to next lead');
         
         // This counts as 1 missed call in the current time period
