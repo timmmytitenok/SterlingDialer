@@ -715,8 +715,8 @@ export async function POST(request: Request) {
     console.log(`   Lead Name: ${nextLead.name}`);
     console.log(`   Raw lead_type from DB: ${nextLead.lead_type} (type: ${typeof nextLead.lead_type})`);
     console.log(`   Sending to Retell as: ${dynamicVariables.lead_type} (type: ${typeof dynamicVariables.lead_type})`);
-    const leadTypeLabels: Record<number, string> = { 1: 'NULL/Default', 2: 'Final Expense', 3: 'Final Expense (Veteran)', 4: 'Mortgage Protection' };
-    console.log(`   Meaning: ${leadTypeLabels[dynamicVariables.lead_type] || 'UNKNOWN'}`);
+    const leadTypeLabels: Record<string, string> = { '1': 'NULL/Default', '2': 'Final Expense', '3': 'Final Expense (Veteran)', '4': 'Mortgage Protection' };
+    console.log(`   Meaning: ${leadTypeLabels[String(dynamicVariables.lead_type)] || 'UNKNOWN'}`);
     console.log('================================');
     console.log('');
     console.log('🏠 Mortgage Protection Data:');
