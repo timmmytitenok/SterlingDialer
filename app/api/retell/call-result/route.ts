@@ -176,11 +176,23 @@ export async function POST(request: Request) {
       // 1. UPDATE THE LEAD
       const newTimesDialed = (lead.times_dialed || 0) + 1;
       const newTotalCalls = (lead.total_calls_made || 0) + 1;
+      const newCallAttemptsToday = (lead.call_attempts_today || 0) + 1;
+      
+      // Get today's date string for tracking "already called today"
+      const { data: settingsForTz } = await supabase
+        .from('ai_control_settings')
+        .select('user_timezone')
+        .eq('user_id', userId)
+        .single();
+      const userTz = settingsForTz?.user_timezone || 'America/New_York';
+      const todayStrDD = getTodayDateString(userTz);
       
       console.log('📝 UPDATING LEAD:');
       console.log(`   Lead ID: ${leadId}`);
       console.log(`   status: ${lead.status} → no_answer`);
       console.log(`   times_dialed: ${lead.times_dialed || 0} → ${newTimesDialed}`);
+      console.log(`   call_attempts_today: ${lead.call_attempts_today || 0} → ${newCallAttemptsToday}`);
+      console.log(`   last_attempt_date: → ${todayStrDD}`);
       
       const { error: leadErr } = await supabase
         .from('leads')
@@ -188,6 +200,8 @@ export async function POST(request: Request) {
           status: 'no_answer',
           times_dialed: newTimesDialed,
           total_calls_made: newTotalCalls,
+          call_attempts_today: newCallAttemptsToday,
+          last_attempt_date: todayStrDD,
           last_call_outcome: 'no_answer',
           last_dial_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -197,7 +211,7 @@ export async function POST(request: Request) {
       if (leadErr) {
         console.error('❌ LEAD UPDATE FAILED:', leadErr);
       } else {
-        console.log('✅ LEAD UPDATED: status=no_answer, times_dialed=' + newTimesDialed);
+        console.log('✅ LEAD UPDATED: status=no_answer, times_dialed=' + newTimesDialed + ', call_attempts_today=' + newCallAttemptsToday);
       }
       
       // 2. UPDATE calls_made_today
