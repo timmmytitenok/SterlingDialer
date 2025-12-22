@@ -44,10 +44,10 @@ export async function POST(request: Request) {
       costPerMinute: costPerMinute !== undefined ? `$${costPerMinute}` : 'not set',
     });
 
-    // Check if config exists
+    // Check if config exists and get current values
     const { data: existing } = await supabase
       .from('user_retell_config')
-      .select('id')
+      .select('id, phone_number_fe, phone_number_mp, cal_ai_api_key, cal_event_id, agent_name')
       .eq('user_id', userId)
       .maybeSingle();
 
@@ -67,6 +67,34 @@ export async function POST(request: Request) {
     if (calEventId !== undefined) updateFields.cal_event_id = calEventId || null;
     if (timezone !== undefined) updateFields.timezone = timezone || 'America/New_York';
     if (confirmationEmail !== undefined) updateFields.confirmation_email = confirmationEmail || null;
+
+    // Check if AI is fully configured - set is_active to true
+    // Required: at least one phone number, cal api key, cal event id, agent name
+    // Merge existing values with new values to determine full config status
+    const finalPhoneFE = phoneFE !== undefined ? phoneFE : existing?.phone_number_fe;
+    const finalPhoneMP = phoneMP !== undefined ? phoneMP : existing?.phone_number_mp;
+    const finalCalKey = calAiKey !== undefined ? calAiKey : existing?.cal_ai_api_key;
+    const finalCalEventId = calEventId !== undefined ? calEventId : existing?.cal_event_id;
+    const finalAgentName = agentName !== undefined ? agentName : existing?.agent_name;
+    
+    const hasPhone = !!(finalPhoneFE || finalPhoneMP);
+    const hasCalKey = !!finalCalKey;
+    const hasCalEventId = !!finalCalEventId;
+    const hasAgentName = !!finalAgentName;
+    
+    console.log('🔍 Checking config completeness:', { hasPhone, hasCalKey, hasCalEventId, hasAgentName });
+    
+    if (hasPhone && hasCalKey && hasCalEventId && hasAgentName) {
+      updateFields.is_active = true;
+      console.log('✅ AI fully configured - setting is_active = true');
+    } else {
+      console.log('⚠️ AI not fully configured yet - missing:', {
+        phone: !hasPhone,
+        calKey: !hasCalKey,
+        calEventId: !hasCalEventId,
+        agentName: !hasAgentName
+      });
+    }
 
     if (existing) {
       // Update existing
