@@ -252,7 +252,7 @@ export async function POST(req: Request) {
                 subscription_tier: 'free_trial',
                 free_trial_started_at: new Date().toISOString(),
                 free_trial_ends_at: trialEnd.toISOString(),
-                cost_per_minute: 0.30,
+                cost_per_minute: 0.40,
                 stripe_customer_id: customerId,
                 has_active_subscription: true,
                 // DON'T set onboarding_all_complete - they need to do Quick Setup!
@@ -275,11 +275,11 @@ export async function POST(req: Request) {
           const maxCalls = 999999; // Unlimited
           const hasChecker = true;
           const callerCount = 99; // Unlimited
-          const costPerMinute = 0.30; // Everyone pays $0.30/min
+          const costPerMinute = 0.40; // Everyone pays $0.40/min
 
           console.log('💎 SterlingAI Pro Access subscription');
           console.log('   - Tier: pro');
-          console.log('   - Cost per minute: $0.30');
+          console.log('   - Cost per minute: $0.40');
           console.log('   - Features: Unlimited');
 
           // Upsert subscription
@@ -573,8 +573,8 @@ export async function POST(req: Request) {
 
       console.log('🎯 Determined tier:', { tier, maxCalls, hasChecker, callerCount });
 
-      // Everyone pays $0.30/min - ONE SIMPLE PRICE
-      const costPerMinuteForSub = 0.30;
+      // Everyone pays $0.40/min - ONE SIMPLE PRICE
+      const costPerMinuteForSub = 0.40;
 
       // Upsert subscription
       const { error: upsertError } = await supabase
@@ -607,7 +607,7 @@ export async function POST(req: Request) {
 
       console.log(`✅ Subscription ${event.type === 'customer.subscription.created' ? 'created' : 'updated'} for user:`, userProfile2.user_id, `Tier: ${tier}`);
 
-      // Everyone pays $0.30/min - ONE SIMPLE PRICE
+      // Everyone pays $0.40/min - ONE SIMPLE PRICE
       const costPerMinute = 0.30;
 
       console.log(`💰 Setting cost_per_minute to $${costPerMinute} for ${tier} tier`);

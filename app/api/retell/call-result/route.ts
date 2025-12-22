@@ -339,7 +339,7 @@ export async function POST(request: Request) {
       .eq('user_id', userId)
       .single();
 
-    const costPerMinute = userProfile?.cost_per_minute || 0.30; // Default to $0.30 (starter)
+    const costPerMinute = userProfile?.cost_per_minute || 0.40; // Default to $0.40
     console.log(`💰 User cost per minute: $${costPerMinute} (tier: ${userProfile?.subscription_tier || 'unknown'})`);
 
     const userTimezone = aiSettings.user_timezone || 'America/New_York';

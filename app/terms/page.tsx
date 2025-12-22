@@ -58,7 +58,7 @@ export default function TermsPage() {
                 <ul className="space-y-2 list-disc list-inside">
                   <li>SterlingAI uses a <span className="font-bold">monthly subscription</span> model.</li>
                   <li>Subscription cost: <span className="font-bold">$499/month</span>, billed automatically through Stripe.</li>
-                  <li>Calls are billed <span className="font-bold">pay-as-you-go at $0.30 per minute</span>.</li>
+                  <li>Calls are billed <span className="font-bold">pay-as-you-go at $0.40 per minute</span>.</li>
                   <li>A valid payment method is required to place calls.</li>
                   <li>Subscription renews automatically until canceled.</li>
                   <li><span className="font-bold">No refunds</span> for subscription fees or unused call minutes.</li>
@@ -68,7 +68,7 @@ export default function TermsPage() {
                   <p className="font-bold text-white mb-2">Free Trial Terms:</p>
                   <ul className="space-y-1 list-disc list-inside text-sm">
                     <li>Free trial lasts <span className="font-bold">7 days</span>.</li>
-                    <li>Calls during the trial are still billed at $0.30/min.</li>
+                    <li>Calls during the trial are still billed at $0.40/min.</li>
                     <li>Your subscription begins automatically unless canceled before the trial ends.</li>
                     <li>By starting the trial, you authorize SterlingAI to charge your payment method at renewal unless you cancel.</li>
                   </ul>
@@ -78,7 +78,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-bold text-white mb-4">3. Call Balance & Credits</h2>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>Calls deduct from your <span className="font-bold">prepaid call balance</span>, charged at $0.30/min.</li>
+                  <li>Calls deduct from your <span className="font-bold">prepaid call balance</span>, charged at $0.40/min.</li>
                   <li>You must maintain sufficient balance to allow calls to continue.</li>
                   <li>Auto-refill can be enabled to automatically add funds when the balance falls below $1.</li>
                   <li><span className="font-bold">All call credit purchases are final and non-refundable.</span></li>

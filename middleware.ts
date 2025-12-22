@@ -57,8 +57,12 @@ export const config = {
      * - api/debug/instant-subscribe (Debug tool - instant subscription for testing)
      * - api/admin/complete-pending-referrals (Admin tool - temp for testing)
      * - api/admin/master-login (Master password login - no auth needed)
+     * - api/demo/login (Demo dashboard login - no auth needed)
+     * - api/demo/refresh-data (Demo data refresh - no auth needed)
+     * - api/retell/book-appointment (Retell webhook for booking - no auth needed)
+     * - api/retell/live-transfer (Retell webhook for transfers - no auth needed)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|fil|webp)$|api/appointments/cal-webhook|api/ai-control/complete|api/ai-control/next-call|api/retell/call-result|api/stripe/webhook|api/referral/validate-simple|api/referral/credit|api/debug/instant-subscribe|api/admin/complete-pending-referrals|api/admin/master-login).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|fil|webp)$|api/appointments/cal-webhook|api/ai-control/complete|api/ai-control/next-call|api/retell/call-result|api/retell/book-appointment|api/retell/live-transfer|api/stripe/webhook|api/referral/validate-simple|api/referral/credit|api/debug/instant-subscribe|api/admin/complete-pending-referrals|api/admin/master-login|api/demo/login|api/demo/refresh-data).*)',
   ],
 };
 

@@ -278,154 +278,213 @@ export function AdminTestPanel({
       </button>
 
       {/* Admin Panel */}
-      {isOpen && (
-        <div 
-          className={`fixed bottom-24 right-6 z-50 bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl shadow-2xl border-2 border-purple-500/50 transition-all duration-300 ${
-            isMinimized ? 'w-80 h-16' : 'w-96 max-h-[600px]'
-          }`}
-        >
+      <div 
+        className={`fixed bottom-24 right-6 z-50 bg-gradient-to-br from-[#121c3d] via-[#0d1529] to-[#0a1020] rounded-2xl shadow-2xl border border-purple-500/40 overflow-hidden transition-all duration-500 ease-out origin-bottom-right ${
+          isOpen 
+            ? 'opacity-100 scale-100 translate-y-0' 
+            : 'opacity-0 scale-75 translate-y-4 pointer-events-none'
+        } ${
+          isMinimized ? 'w-80 h-16' : 'w-[420px]'
+        }`}
+        style={{
+          transitionTimingFunction: isOpen ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : 'cubic-bezier(0.4, 0, 0.2, 1)'
+        }}
+      >
+          {/* Decorative glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent" />
+          
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-purple-500/30">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-purple-500 animate-pulse"></div>
-              <h3 className="text-white font-semibold">🛡️ Admin Tools</h3>
+          <div className="relative flex items-center justify-between px-5 py-4 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                  <Settings className="w-4 h-4 text-white" />
+                </div>
+                <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-[#121c3d] animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-sm">Admin Tools</h3>
+                <p className="text-gray-500 text-[10px]">Testing Environment</p>
+              </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1">
               <button
                 onClick={() => setIsMinimized(!isMinimized)}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-all"
               >
-                {isMinimized ? '□' : '_'}
+                {isMinimized ? '□' : '−'}
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-all"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
           {/* Content */}
           {!isMinimized && (
-            <div className="p-6 space-y-4">
-              {/* User Name */}
-              <div className="text-center pb-4 border-b border-purple-500/20">
-                <div className="text-sm text-gray-400 mb-1">Testing as:</div>
-                <div className="text-lg font-bold text-white">{userName}</div>
-              </div>
-
-              {/* Bypass Calling Restrictions Toggle */}
-              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-orange-900/30 to-red-900/20 rounded-xl border border-orange-500/30">
-                <div className="flex items-center gap-3">
-                  {bypassRestrictions ? (
-                    <ShieldOff className="w-5 h-5 text-orange-400" />
-                  ) : (
-                    <Shield className="w-5 h-5 text-gray-400" />
-                  )}
-                  <div>
-                    <div className="text-sm font-medium text-white">Bypass Restrictions</div>
-                    <div className="text-xs text-gray-400">Skip Sunday & hours check</div>
-                  </div>
+            <div className={`p-5 space-y-5 transition-all duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+              style={{ animationDelay: '100ms' }}
+            >
+              {/* User Badge */}
+              <div className="flex items-center justify-center gap-3 py-3 px-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/20 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '50ms' }}>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                  {userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                 </div>
-                <button
-                  onClick={handleToggleBypass}
-                  disabled={bypassLoading}
-                  className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
-                    bypassRestrictions 
-                      ? 'bg-orange-500 shadow-lg shadow-orange-500/30' 
-                      : 'bg-gray-600'
-                  } ${bypassLoading ? 'opacity-50' : ''}`}
-                >
-                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-md ${
-                    bypassRestrictions ? 'left-7' : 'left-1'
-                  }`} />
-                </button>
-              </div>
-
-              {/* Privacy Blur Toggle */}
-              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-800/50 to-gray-700/30 rounded-xl border border-gray-600/30">
-                <div className="flex items-center gap-3">
-                  {blurSensitive ? (
-                    <EyeOff className="w-5 h-5 text-amber-400" />
-                  ) : (
-                    <Eye className="w-5 h-5 text-gray-400" />
-                  )}
-                  <div>
-                    <div className="text-sm font-medium text-white">Privacy Mode</div>
-                    <div className="text-xs text-gray-400">Blur phone numbers</div>
-                  </div>
+                <div className="text-center">
+                  <p className="text-[10px] text-purple-400 uppercase tracking-wider font-semibold">Testing as</p>
+                  <p className="text-white font-bold">{userName}</p>
                 </div>
-                <button
-                  onClick={() => setBlurSensitive(!blurSensitive)}
-                  className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
-                    blurSensitive 
-                      ? 'bg-amber-500 shadow-lg shadow-amber-500/30' 
-                      : 'bg-gray-600'
-                  }`}
-                >
-                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-md ${
-                    blurSensitive ? 'left-7' : 'left-1'
-                  }`} />
-                </button>
               </div>
 
-              {/* Launch AI Button */}
-              <button
-                onClick={handleLaunchAI}
-                disabled={loading}
-                className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 flex items-center justify-center gap-3 ${
-                  loading 
-                    ? 'bg-gray-600 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-blue-500/50 hover:scale-105'
-                }`}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                    <span>Calling...</span>
-                  </>
-                ) : (
-                  <>
-                    <Phone className="w-6 h-6" />
-                    <span>Launch AI Agent</span>
-                  </>
-                )}
-              </button>
-              
-              <div className="text-xs text-center text-gray-400">
-                📞 Will call: <span className="font-mono text-blue-400">+1 (614) 940-3824</span>
+              {/* Settings Section */}
+              <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '100ms' }}>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold px-1">Settings</p>
+                
+                {/* Bypass Restrictions Toggle */}
+                <div className="flex items-center justify-between p-3 bg-white/[0.02] hover:bg-white/[0.04] rounded-xl border border-white/5 transition-all group">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                      bypassRestrictions 
+                        ? 'bg-orange-500/20 text-orange-400' 
+                        : 'bg-gray-800/50 text-gray-500 group-hover:bg-gray-800'
+                    }`}>
+                      {bypassRestrictions ? <ShieldOff className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">Bypass Restrictions</p>
+                      <p className="text-[11px] text-gray-500">Skip Sunday & hours check</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleToggleBypass}
+                    disabled={bypassLoading}
+                    className={`relative w-11 h-6 rounded-full transition-all duration-300 ${
+                      bypassRestrictions 
+                        ? 'bg-orange-500 shadow-lg shadow-orange-500/30' 
+                        : 'bg-gray-700'
+                    } ${bypassLoading ? 'opacity-50' : ''}`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-md ${
+                      bypassRestrictions ? 'left-6' : 'left-1'
+                    }`} />
+                  </button>
+                </div>
+
+                {/* Privacy Blur Toggle */}
+                <div className="flex items-center justify-between p-3 bg-white/[0.02] hover:bg-white/[0.04] rounded-xl border border-white/5 transition-all group">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                      blurSensitive 
+                        ? 'bg-violet-500/20 text-violet-400' 
+                        : 'bg-gray-800/50 text-gray-500 group-hover:bg-gray-800'
+                    }`}>
+                      {blurSensitive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">Privacy Mode</p>
+                      <p className="text-[11px] text-gray-500">Blur phone numbers</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setBlurSensitive(!blurSensitive)}
+                    className={`relative w-11 h-6 rounded-full transition-all duration-300 ${
+                      blurSensitive 
+                        ? 'bg-violet-500 shadow-lg shadow-violet-500/30' 
+                        : 'bg-gray-700'
+                    }`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-md ${
+                      blurSensitive ? 'left-6' : 'left-1'
+                    }`} />
+                  </button>
+                </div>
               </div>
 
-              {/* Add Appointment Button */}
-              <button
-                onClick={() => setShowAppointmentModal(true)}
-                className="w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-emerald-500/50 hover:scale-105"
-              >
-                <Calendar className="w-6 h-6" />
-                <span>Add Appointment</span>
-              </button>
-              
-              <div className="text-xs text-center text-gray-400">
-                📅 Creates appointment for this user's dashboard
+              {/* Actions Section */}
+              <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms' }}>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold px-1">Quick Actions</p>
+                
+                {/* Launch AI Button - Premium Card Style */}
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl opacity-30 group-hover:opacity-50 blur transition-all duration-300" />
+                  <button
+                    onClick={handleLaunchAI}
+                    disabled={loading}
+                    className={`relative w-full p-4 rounded-xl transition-all duration-300 ${
+                      loading 
+                        ? 'bg-gray-800 cursor-not-allowed' 
+                        : 'bg-gradient-to-br from-[#0d1a30] to-[#0a1525] hover:from-[#0f1f38] hover:to-[#0c1a2c] border border-blue-500/20 hover:border-blue-500/40'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
+                        loading 
+                          ? 'bg-gray-700' 
+                          : 'bg-gradient-to-br from-blue-500 to-cyan-500 shadow-blue-500/30'
+                      }`}>
+                        {loading ? (
+                          <Loader2 className="w-6 h-6 text-white animate-spin" />
+                        ) : (
+                          <Phone className="w-6 h-6 text-white" />
+                        )}
+                      </div>
+                      <div className="text-left flex-1">
+                        <p className="text-white font-bold text-base">{loading ? 'Calling...' : 'Launch AI Agent'}</p>
+                        <p className="text-blue-400/80 text-xs font-mono">+1 (614) 940-3824</p>
+                      </div>
+                      {!loading && (
+                        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <span className="text-blue-400 text-lg">→</span>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                </div>
+
+                {/* Add Appointment Button - Premium Card Style */}
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl opacity-30 group-hover:opacity-50 blur transition-all duration-300" />
+                  <button
+                    onClick={() => setShowAppointmentModal(true)}
+                    className="relative w-full p-4 rounded-xl transition-all duration-300 bg-gradient-to-br from-[#0d1a30] to-[#0a1525] hover:from-[#0f1f38] hover:to-[#0c1a2c] border border-emerald-500/20 hover:border-emerald-500/40"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                        <Calendar className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="text-left flex-1">
+                        <p className="text-white font-bold text-base">Add Appointment</p>
+                        <p className="text-emerald-400/80 text-xs">Create for this user</p>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span className="text-emerald-400 text-lg">+</span>
+                      </div>
+                    </div>
+                  </button>
+                </div>
               </div>
 
               {/* Result Message */}
               {result && (
-                <div className={`p-4 rounded-lg border ${
+                <div className={`p-4 rounded-xl border ${
                   result.success 
-                    ? 'bg-green-600/10 border-green-500/30 text-green-300' 
-                    : 'bg-red-600/10 border-red-500/30 text-red-300'
+                    ? 'bg-green-500/10 border-green-500/30' 
+                    : 'bg-red-500/10 border-red-500/30'
                 }`}>
-                  <div className="text-sm font-medium">
-                    {result.success ? '✅ ' : '❌ '}{result.message}
+                  <div className={`text-sm font-medium flex items-center gap-2 ${
+                    result.success ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    <span className="text-lg">{result.success ? '✓' : '✕'}</span>
+                    {result.message}
                   </div>
                 </div>
               )}
             </div>
           )}
         </div>
-      )}
 
       {/* Appointment Modal */}
       {showAppointmentModal && (

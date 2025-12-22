@@ -90,7 +90,7 @@ export default function PricingPage() {
                     $499<span className="text-base sm:text-lg md:text-2xl font-normal text-white/60"> / month</span>
                   </div>
                   <div className="mt-2 text-sm sm:text-base md:text-lg text-emerald-400 font-semibold">
-                    + $0.30 per minute for calls
+                    + $0.40 per minute for calls
                   </div>
                 </div>
 

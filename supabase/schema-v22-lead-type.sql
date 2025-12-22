@@ -5,12 +5,14 @@
 -- AI script should be used for each individual lead.
 --
 -- Lead Type Values:
---   1 = Final Expense (non-veteran)
---   2 = Final Expense (veteran)
---   3 = Mortgage Protection
+--   1 = NULL/default (fallback, should not be used)
+--   2 = Final Expense (non-veteran)
+--   3 = Veterans Final Expense (veteran)
+--   4 = Mortgage Protection
 --
 -- The lead_type is sent to Retell as a variable so the
 -- AI agent knows which script/prompt to use.
+-- Reference it in Retell as {{lead_type}}
 -- =====================================================
 
 -- 1. Add lead_type to leads table
@@ -28,8 +30,8 @@ CREATE INDEX IF NOT EXISTS idx_leads_lead_type
 ON leads(lead_type);
 
 -- 4. Add comments for documentation
-COMMENT ON COLUMN leads.lead_type IS 'Lead type for AI script selection: 1=Final Expense, 2=Final Expense (Veteran), 3=Mortgage Protection';
-COMMENT ON COLUMN user_google_sheets.lead_type IS 'Default lead type for all leads from this sheet: 1=Final Expense, 2=Final Expense (Veteran), 3=Mortgage Protection';
+COMMENT ON COLUMN leads.lead_type IS 'Lead type for AI script selection: 1=default, 2=Final Expense, 3=Veterans Final Expense, 4=Mortgage Protection';
+COMMENT ON COLUMN user_google_sheets.lead_type IS 'Default lead type for all leads from this sheet: 1=default, 2=Final Expense, 3=Veterans Final Expense, 4=Mortgage Protection';
 
 -- =====================================================
 -- VERIFICATION QUERIES

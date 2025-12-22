@@ -4,7 +4,7 @@ import { isAdminMode } from '@/lib/admin-check';
 
 /**
  * POST /api/admin/users/update-retell
- * Update a user's Retell configuration
+ * Update a user's Retell configuration and cost per minute
  */
 export async function POST(request: Request) {
   try {
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
     // Parse request body
     const body = await request.json();
-    const { userId, agentId, phoneNumber, agentName, calApiKey, calAiApiKey } = body;
+    const { userId, agentId, phoneNumber, agentName, agentPronoun, calApiKey, calAiApiKey, calEventId, costPerMinute } = body;
     // Support both old and new field names
     const calAiKey = calAiApiKey || calApiKey;
 
@@ -29,10 +29,13 @@ export async function POST(request: Request) {
     }
 
     console.log(`🔧 Updating Retell config for user ${userId}:`, {
-      agentId: agentId || 'not set',
+      agentId: agentId || 'not set (using global agents)',
       phoneNumber: phoneNumber || 'not set',
       agentName: agentName || 'not set',
+      agentPronoun: agentPronoun || 'she/her',
       calAiApiKey: calAiKey ? '***SET***' : 'not set',
+      calEventId: calEventId || 'not set',
+      costPerMinute: costPerMinute !== undefined ? `$${costPerMinute}` : 'not set',
     });
 
     // Check if config exists
@@ -50,7 +53,9 @@ export async function POST(request: Request) {
     if (agentId !== undefined) updateFields.retell_agent_id = agentId || null;
     if (phoneNumber !== undefined) updateFields.phone_number = phoneNumber || null;
     if (agentName !== undefined) updateFields.agent_name = agentName || null;
+    if (agentPronoun !== undefined) updateFields.agent_pronoun = agentPronoun || 'she/her';
     if (calAiKey !== undefined) updateFields.cal_ai_api_key = calAiKey || null;
+    if (calEventId !== undefined) updateFields.cal_event_id = calEventId || null;
 
     if (existing) {
       // Update existing
@@ -74,7 +79,9 @@ export async function POST(request: Request) {
           retell_agent_id: agentId || null,
           phone_number: phoneNumber || null,
           agent_name: agentName || null,
+          agent_pronoun: agentPronoun || 'she/her',
           cal_ai_api_key: calAiKey || null,
+          cal_event_id: calEventId || null,
           retell_api_key: 'SET_BY_ADMIN',
           is_active: true,
         });
@@ -85,6 +92,44 @@ export async function POST(request: Request) {
       }
 
       console.log('✅ Created new config');
+    }
+
+    // Update cost_per_minute in profiles table if provided
+    if (costPerMinute !== undefined) {
+      const costValue = parseFloat(costPerMinute);
+      if (!isNaN(costValue) && costValue > 0) {
+        console.log(`💰 Updating cost_per_minute to $${costValue} for user ${userId}`);
+        
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ 
+            cost_per_minute: costValue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+
+        if (profileError) {
+          console.error('⚠️ Error updating cost_per_minute in profiles:', profileError);
+          // Don't fail the whole request, just log the error
+        } else {
+          console.log(`✅ Cost per minute updated to $${costValue}`);
+        }
+
+        // Also update in subscriptions table if exists
+        const { error: subError } = await supabase
+          .from('subscriptions')
+          .update({ 
+            cost_per_minute: costValue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+
+        if (subError) {
+          console.log('ℹ️ No subscription to update (may not exist yet)');
+        } else {
+          console.log(`✅ Subscription cost_per_minute also updated`);
+        }
+      }
     }
 
     return NextResponse.json({

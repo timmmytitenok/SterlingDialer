@@ -317,6 +317,12 @@ export async function GET(req: Request) {
     if (userCountError) throw userCountError;
 
     // Active AI Users (users with AI configured)
+    // Exclude admin accounts (Timmy and Sterling Demo) from stats
+    const ADMIN_USER_IDS = [
+      'd33602b3-4b0c-4ec7-938d-7b1d31722dc5', // Timmy
+      '7619c63f-fcc3-4ff3-83ac-33595b5640a5', // Sterling Demo
+    ];
+    
     const { data: retellConfigs, error: retellError } = await supabase
       .from('user_retell_config')
       .select('user_id, retell_agent_id, phone_number')
@@ -324,7 +330,9 @@ export async function GET(req: Request) {
       .not('phone_number', 'is', null);
     
     if (retellError) throw retellError;
-    const activeUsers = retellConfigs?.length || 0;
+    
+    // Filter out admin accounts from active users count
+    const activeUsers = retellConfigs?.filter((r: any) => !ADMIN_USER_IDS.includes(r.user_id)).length || 0;
 
     // Pro access users (active pro subscriptions ONLY - exclude VIP)
     const proUsers = allSubscriptions?.filter((s: any) => 
@@ -401,7 +409,11 @@ export async function GET(req: Request) {
 
     if (usersError) throw usersError;
 
-    const uniqueUsersToday = new Set(todayUserIds?.map((c: any) => c.user_id).filter(Boolean));
+    // Filter out admin accounts from unique users today
+    const uniqueUsersToday = new Set(
+      todayUserIds?.map((c: any) => c.user_id)
+        .filter((userId: string) => userId && !ADMIN_USER_IDS.includes(userId))
+    );
     const activeUsersToday = uniqueUsersToday.size;
 
     // All-time calls

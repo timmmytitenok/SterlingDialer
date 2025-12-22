@@ -254,7 +254,7 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
           <p className="text-xl md:text-2xl font-bold text-blue-400 mb-1">
             {tierInfo.price > 0 ? `$${tierInfo.price}` : '$0'}<span className="text-sm md:text-base text-gray-400 font-normal">/month</span>
           </p>
-          <p className="text-xs md:text-sm text-gray-400 mb-3">+ $0.30 per minute for calls</p>
+          <p className="text-xs md:text-sm text-gray-400 mb-3">+ $0.40 per minute for calls</p>
           
           {/* Status Badge */}
           <div className={`inline-flex items-center gap-2 px-2.5 md:px-3 py-1.5 rounded-full ${

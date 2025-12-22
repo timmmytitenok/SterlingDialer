@@ -134,7 +134,7 @@ export async function POST(request: Request) {
           .eq('user_id', userId)
           .single();
         
-        const costPerMinute = userProfile?.cost_per_minute || 0.30; // Default to $0.30 if not set
+        const costPerMinute = userProfile?.cost_per_minute || 0.40; // Default to $0.40 if not set
         console.log(`💰 User's cost per minute: $${costPerMinute}`);
         
         // DIRECT DEDUCTION - Don't use fetch, do it here directly
@@ -201,7 +201,7 @@ export async function POST(request: Request) {
         .eq('user_id', userId)
         .single();
       
-      const costPerMinute = userProfile?.cost_per_minute || 0.30; // Default to $0.30 if not set
+      const costPerMinute = userProfile?.cost_per_minute || 0.40; // Default to $0.40 if not set
       const callCost = duration ? (duration / 60) * costPerMinute : 0; // Calculate actual call cost using user's rate
       
       console.log(`📊 Updating AI costs for ${today}: +$${callCost.toFixed(4)} (at $${costPerMinute}/min)`);

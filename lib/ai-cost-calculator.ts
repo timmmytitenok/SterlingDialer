@@ -29,15 +29,16 @@ export async function getUserRatePerMinute(): Promise<number> {
       .eq('key', 'user_rate_per_minute')
       .single();
 
-    return data ? parseFloat(data.value) : 0.30; // Default to $0.30 if not found
+    return data ? parseFloat(data.value) : 0.40; // Default to $0.40 if not found
   } catch (error) {
     console.error('Error fetching user rate per minute:', error);
-    return 0.30; // Default fallback
+    return 0.40; // Default fallback
   }
 }
 
 // Calculate actual AI expense for a refill amount
-export async function calculateAIExpense(refillAmount: number): Promise<{
+// Now supports custom user rate for per-user pricing
+export async function calculateAIExpense(refillAmount: number, customUserRate?: number): Promise<{
   expense: number;
   profit: number;
   profitMargin: number;
@@ -45,8 +46,9 @@ export async function calculateAIExpense(refillAmount: number): Promise<{
   aiCostPerMinute: number;
   userRatePerMinute: number;
 }> {
-  const aiCostPerMinute = await getAICostPerMinute();
-  const userRatePerMinute = await getUserRatePerMinute();
+  const aiCostPerMinute = await getAICostPerMinute(); // Your expense: $0.15/min
+  // Use custom user rate if provided, otherwise fetch global default
+  const userRatePerMinute = customUserRate || await getUserRatePerMinute();
   
   const minutesPurchased = refillAmount / userRatePerMinute;
   const expense = minutesPurchased * aiCostPerMinute;
@@ -73,4 +75,24 @@ export async function calculateAIExpense(refillAmount: number): Promise<{
   });
   
   return result;
+}
+
+// Calculate profit for a specific user based on their custom rate
+export function calculateUserProfit(refillAmount: number, userCostPerMinute: number, yourExpensePerMinute: number = 0.15): {
+  profit: number;
+  expense: number;
+  minutesPurchased: number;
+  profitMargin: number;
+} {
+  const minutesPurchased = refillAmount / userCostPerMinute;
+  const expense = minutesPurchased * yourExpensePerMinute;
+  const profit = refillAmount - expense;
+  const profitMargin = ((userCostPerMinute - yourExpensePerMinute) / userCostPerMinute) * 100;
+  
+  return {
+    profit: Math.round(profit * 100) / 100,
+    expense: Math.round(expense * 100) / 100,
+    minutesPurchased: Math.round(minutesPurchased * 100) / 100,
+    profitMargin: Math.round(profitMargin * 10) / 10,
+  };
 }

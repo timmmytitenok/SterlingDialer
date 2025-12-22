@@ -164,7 +164,7 @@ type Lead = {
   pickup_rate?: number;
   source_type?: 'google_sheet' | 'csv' | 'manual';
   source_name?: string;
-  // Lead type for AI script selection (1=FE, 2=FE Veteran, 3=MP)
+  // Lead type for AI script selection (2=FE, 3=Veterans FE, 4=MP)
   lead_type?: number;
   // Mortgage Protection specific fields
   lead_vendor?: string;
@@ -702,9 +702,22 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       // Create sheet record
       setSyncProgress(10);
       
-      const leadTypeToSend = selectedLeadType?.leadType ?? 1;
+      // BULLETPROOF: Check if selectedLeadType exists, if not something went wrong
+      if (!selectedLeadType || !selectedLeadType.leadType) {
+        console.error('❌❌❌ CRITICAL ERROR: selectedLeadType is null/undefined!');
+        console.error('   This should NOT happen - user should have selected a lead type!');
+        console.error('   selectedLeadType:', selectedLeadType);
+        // Show alert to user
+        alert('Error: Lead type was not properly selected. Please try again and make sure to select Final Expense, Veterans, or Mortgage Protection.');
+        setLoading(false);
+        setShowSyncProgress(false);
+        return;
+      }
+      
+      const leadTypeToSend = selectedLeadType.leadType;
       console.log('🎯 LEAD TYPE BEING SENT TO API:', leadTypeToSend);
       console.log('🎯 Selected Lead Type Object:', selectedLeadType);
+      console.log(`🎯 Lead Type Meaning: ${leadTypeToSend === 2 ? 'Final Expense' : leadTypeToSend === 3 ? 'Veterans FE' : leadTypeToSend === 4 ? 'Mortgage Protection' : 'UNKNOWN'}`);
       
       const createResponse = await fetch('/api/google-sheets/create', {
         method: 'POST',
@@ -722,7 +735,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
             street_address: mapping.street_address ?? -1,
           },
           minLeadAgeDays: 0, // No age filtering
-          leadType: leadTypeToSend, // Pass lead type (1=FE, 2=FE Veteran, 3=MP)
+          leadType: leadTypeToSend, // Pass lead type (2=FE, 3=Veterans FE, 4=MP)
         }),
       });
 

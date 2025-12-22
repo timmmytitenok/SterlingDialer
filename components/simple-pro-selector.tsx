@@ -150,7 +150,7 @@ export function SimpleProSelector({ currentTier, hideFreeTrial = false }: Simple
             </p>
             <div className="flex items-center justify-between">
               <span className="text-gray-400">Per-minute rate:</span>
-              <span className="text-2xl font-bold text-blue-400">$0.30/min</span>
+              <span className="text-2xl font-bold text-blue-400">$0.40/min</span>
             </div>
             <p className="text-xs text-gray-500 mt-2">
               Auto-refill $25 when balance drops below $1

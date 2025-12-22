@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Sparkles, ExternalLink, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 interface SalesSidebarProps {
   salesPerson: {
@@ -15,11 +16,29 @@ interface SalesSidebarProps {
 export function SalesSidebar({ salesPerson }: SalesSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [loadingDemo, setLoadingDemo] = useState(false);
 
   const navigation = [
     { name: 'Dashboard', href: '/sales/dashboard', icon: LayoutDashboard },
     { name: 'My Users', href: '/sales/users', icon: Users },
   ];
+
+  const openDemoDashboard = async () => {
+    setLoadingDemo(true);
+    try {
+      // Refresh/populate demo data first
+      const response = await fetch('/api/demo/refresh-data', { method: 'POST' });
+      if (!response.ok) {
+        console.error('Failed to refresh demo data');
+      }
+      // Open the demo dashboard login page which will auto-login and redirect
+      window.open('/api/demo/login', '_blank');
+    } catch (error) {
+      console.error('Error opening demo dashboard:', error);
+    } finally {
+      setLoadingDemo(false);
+    }
+  };
 
   const handleSignOut = () => {
     localStorage.removeItem('sales_session');
@@ -61,6 +80,26 @@ export function SalesSidebar({ salesPerson }: SalesSidebarProps) {
             </Link>
           );
         })}
+
+        {/* Divider */}
+        <div className="py-3">
+          <div className="border-t border-gray-800"></div>
+        </div>
+
+        {/* Demo Dashboard - Opens Real Dashboard with Fake Data */}
+        <button
+          onClick={openDemoDashboard}
+          disabled={loadingDemo}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 bg-gradient-to-r from-purple-600/20 to-blue-600/20 text-purple-400 border border-purple-500/30 hover:from-purple-600/30 hover:to-blue-600/30 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loadingDemo ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Sparkles className="w-5 h-5" />
+          )}
+          <span className="font-medium flex-1 text-left">Demo Dashboard</span>
+          <ExternalLink className="w-4 h-4 opacity-60" />
+        </button>
       </nav>
 
       {/* Sign Out */}

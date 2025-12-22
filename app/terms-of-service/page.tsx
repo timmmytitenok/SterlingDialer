@@ -44,7 +44,7 @@ export default function TermsOfServicePage() {
                 <strong className="text-white">Free Trial:</strong> New users receive a 7-day free trial. Your payment method will be charged automatically when the trial ends unless you cancel before Day 7.
               </p>
               <p className="mb-3">
-                <strong className="text-white">Subscription Fees:</strong> Pro Access is billed at $499/month plus $0.30 per minute for calls made by the AI agent.
+                <strong className="text-white">Subscription Fees:</strong> Pro Access is billed at $499/month plus $0.40 per minute for calls made by the AI agent.
               </p>
               <p className="mb-3">
                 <strong className="text-white">Auto-Refill:</strong> When you enable auto-refill for call balance, your payment method will be automatically charged $25 when your balance drops below $1. You can disable auto-refill at any time.

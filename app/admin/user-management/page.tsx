@@ -67,12 +67,16 @@ export default function AdminUsersPage() {
 
       const data = await response.json();
       
-      // Sort users with Timmy (main account) always first, then newest users at top
+      // Sort users with special accounts first, then newest users at top
       const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
+      const DEMO_ID = '7619c63f-fcc3-4ff3-83ac-33595b5640a5';
       const sortedUsers = (data.users || []).sort((a: User, b: User) => {
-        // Timmy always first
+        // Timmy always first (#000)
         if (a.id === TIMMY_ID) return -1;
         if (b.id === TIMMY_ID) return 1;
+        // Sterling Demo second (#000)
+        if (a.id === DEMO_ID) return -1;
+        if (b.id === DEMO_ID) return 1;
         // Everyone else by creation date (newest first)
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
@@ -87,22 +91,23 @@ export default function AdminUsersPage() {
     }
   };
 
-  // Create a permanent user number map based on creation order (oldest = #001)
-  // This number NEVER changes even if users are deleted
+  // Create a permanent user number map based on creation order
+  // Sterling Demo and Timmy = #000, everyone else starts at #001 (oldest first)
   const getUserNumber = (userId: string): string => {
-    // Sort all users by created_at ascending (oldest first)
-    const sortedByCreation = [...allUsers].sort((a, b) => 
+    const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
+    const DEMO_ID = '7619c63f-fcc3-4ff3-83ac-33595b5640a5';
+    
+    // Special accounts always show #000
+    if (userId === DEMO_ID || userId === TIMMY_ID) return '000';
+    
+    // Filter out special accounts, then sort by created_at ascending (oldest first = #001)
+    const regularUsers = allUsers.filter(u => u.id !== DEMO_ID && u.id !== TIMMY_ID);
+    const sortedByCreation = [...regularUsers].sort((a, b) => 
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
+    
     const position = sortedByCreation.findIndex(u => u.id === userId);
-    let number = position >= 0 ? position + 1 : 0;
-    
-    // Swap Timmy (#002) and Gage (#001) display numbers
-    const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
-    const GAGE_ID = '92899ba3-15fa-47bf-84c4-7cc1ea9101dc';
-    
-    if (userId === TIMMY_ID) number = 1; // Timmy shows as #001
-    if (userId === GAGE_ID) number = 2;  // Gage shows as #002
+    const number = position >= 0 ? position + 1 : 0;
     
     return number > 0 ? String(number).padStart(3, '0') : '???';
   };
@@ -124,32 +129,44 @@ export default function AdminUsersPage() {
 
     const now = new Date();
     const thirtyOneDaysAgo = new Date(now.getTime() - 31 * 24 * 60 * 60 * 1000);
+    const TIMMY_ID_FILTER = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
+    const DEMO_ID_FILTER = '7619c63f-fcc3-4ff3-83ac-33595b5640a5';
 
     const filtered = allUsers.filter(user => {
+      // Admin accounts should not appear in filtered lists (except 'all')
+      const isAdmin = user.id === TIMMY_ID_FILTER || user.id === DEMO_ID_FILTER;
+      
       if (filter === 'needs_onboarding') {
-        // Step 1 (form) not complete
-        return user.setup_status === 'account_created';
+        // Step 1 (form) not complete - exclude admins
+        return !isAdmin && user.setup_status === 'account_created';
       }
       if (filter === 'needs_ai_setup') {
-        // Step 1 (form) complete but AI not configured
-        return user.setup_status === 'onboarding_complete';
+        // Step 1 (form) complete but AI not configured - exclude admins
+        return !isAdmin && user.setup_status === 'onboarding_complete';
       }
       if (filter === 'active') {
-        // AI configured and active
-        return user.setup_status === 'active';
+        // AI configured and active - exclude admins
+        return !isAdmin && user.setup_status === 'active';
       }
       if (filter === 'dead') {
+        // Exclude admins from dead accounts
+        if (isAdmin) return false;
         const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at) : new Date(user.created_at);
         return lastSignIn < thirtyOneDaysAgo;
       }
       return true;
     });
 
-    // Keep Timmy first, then newest users at top
+    // Keep Timmy and Demo first, then newest users at top
     const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
+    const DEMO_ID = '7619c63f-fcc3-4ff3-83ac-33595b5640a5';
     const sortedFiltered = filtered.sort((a, b) => {
+      // Timmy always first
       if (a.id === TIMMY_ID) return -1;
       if (b.id === TIMMY_ID) return 1;
+      // Sterling Demo second
+      if (a.id === DEMO_ID) return -1;
+      if (b.id === DEMO_ID) return 1;
       // Newest first
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
@@ -157,19 +174,36 @@ export default function AdminUsersPage() {
     setUsers(sortedFiltered);
   };
 
-  // Calculate stats
+  // Calculate stats (excluding admin accounts)
   const now = new Date();
   const thirtyOneDaysAgo = new Date(now.getTime() - 31 * 24 * 60 * 60 * 1000);
+  const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
+  const DEMO_ID = '7619c63f-fcc3-4ff3-83ac-33595b5640a5';
   
-  const needsOnboarding = allUsers.filter(u => u.setup_status === 'account_created').length; // Step 1 (form) not complete
-  const needsAISetup = allUsers.filter(u => u.setup_status === 'onboarding_complete').length; // Step 1 (form) complete but AI not configured
-  const activeAccounts = allUsers.filter(u => u.setup_status === 'active').length; // AI is configured
-  const deadAccounts = allUsers.filter(u => {
+  // Filter out admin accounts from stats
+  const regularUsers = allUsers.filter(u => u.id !== TIMMY_ID && u.id !== DEMO_ID);
+  
+  const needsOnboarding = regularUsers.filter(u => u.setup_status === 'account_created').length; // Step 1 (form) not complete
+  const needsAISetup = regularUsers.filter(u => u.setup_status === 'onboarding_complete').length; // Step 1 (form) complete but AI not configured
+  const activeAccounts = regularUsers.filter(u => u.setup_status === 'active').length; // AI is configured
+  const deadAccounts = regularUsers.filter(u => {
     const lastSignIn = u.last_sign_in_at ? new Date(u.last_sign_in_at) : new Date(u.created_at);
     return lastSignIn < thirtyOneDaysAgo;
   }).length;
 
   const getStatusBadge = (user: User) => {
+    const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
+    const DEMO_ID = '7619c63f-fcc3-4ff3-83ac-33595b5640a5';
+    
+    // Admin accounts show special ADMIN badge
+    if (user.id === TIMMY_ID || user.id === DEMO_ID) {
+      return (
+        <span className="inline-flex items-center px-3 py-1 rounded-full border text-xs font-bold bg-purple-500/10 text-purple-400 border-purple-500/30">
+          ADMIN
+        </span>
+      );
+    }
+    
     // Check if dead (inactive 31+ days)
     const now = new Date();
     const thirtyOneDaysAgo = new Date(now.getTime() - 31 * 24 * 60 * 60 * 1000);

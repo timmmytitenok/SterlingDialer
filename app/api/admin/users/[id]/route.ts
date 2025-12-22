@@ -93,12 +93,21 @@ export async function GET(
     let refillProfit = 0;
     let refillCount = 0;
     
-    // Count refills - only count real Stripe payments with positive amounts
+    // Get user's cost per minute (default $0.40, your expense is $0.15)
+    const userCostPerMinute = profile.data?.cost_per_minute || 0.40;
+    const yourExpensePerMinute = 0.15;
+    const profitPerMinute = userCostPerMinute - yourExpensePerMinute;
+    
+    // Count refills - calculate profit based on user's specific rate
     (revenueData.data || []).forEach((t: any) => {
       if (t.stripe_payment_intent_id && t.amount > 0) {
         refillCount++;
-        refillProfit += 14.25; // $14.25 profit per $25 refill
-        console.log(`  ✅ Refill found - Amount: $${t.amount}, Profit: $14.25`);
+        // Calculate profit: refill amount divided by user's rate = minutes, minutes * profit margin = profit
+        const refillAmount = t.amount;
+        const minutesPurchased = refillAmount / userCostPerMinute;
+        const thisRefillProfit = minutesPurchased * profitPerMinute;
+        refillProfit += thisRefillProfit;
+        console.log(`  ✅ Refill found - Amount: $${refillAmount}, Minutes: ${minutesPurchased.toFixed(2)}, User rate: $${userCostPerMinute}/min, Profit: $${thisRefillProfit.toFixed(2)}`);
       }
     });
     
@@ -285,7 +294,10 @@ export async function GET(
       retell_agent_id: retellConfig.data?.retell_agent_id ?? null,
       retell_phone_number: retellConfig.data?.phone_number ?? null,
       retell_agent_name: retellConfig.data?.agent_name ?? null,
+      agent_name: retellConfig.data?.agent_name ?? null,
+      agent_pronoun: retellConfig.data?.agent_pronoun ?? 'she/her',
       cal_api_key: retellConfig.data?.cal_ai_api_key ?? null,
+      cal_event_id: retellConfig.data?.cal_event_id ?? null,
       script_type: retellConfig.data?.script_type ?? 'final_expense',
       ai_is_active: retellConfig.data?.is_active ?? false,
       ai_maintenance_mode: profile.data?.ai_maintenance_mode ?? false,
@@ -295,6 +307,7 @@ export async function GET(
       has_active_subscription: profile.data?.has_active_subscription ?? 
         (profile.data?.subscription_status === 'trialing' || profile.data?.subscription_status === 'active' ? true : false),
       subscription_tier: profile.data?.subscription_tier ?? 'none',
+      cost_per_minute: userCostPerMinute, // User's custom rate per minute
       
       // Dialer Settings - safely handle missing data
       dialer_automation_enabled: dialerSettings.data?.auto_start_enabled ?? false,

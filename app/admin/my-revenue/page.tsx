@@ -493,10 +493,7 @@ export default function AdminRevenuePage() {
         {/* MOBILE REVENUE TITLE */}
         {mobileTab === 'revenue' && (
           <div className="md:hidden mb-4">
-            <h1 
-              onClick={() => setShowAdjustModal(true)}
-              className="text-2xl font-bold text-white flex items-center gap-2"
-            >
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
               💰 My Revenue
             </h1>
           </div>
@@ -546,17 +543,8 @@ export default function AdminRevenuePage() {
         {/* DESKTOP HEADER - Always visible on desktop */}
         <div className="hidden md:flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 mb-6 md:mb-8 pt-6 md:pt-0">
           <div>
-            <h1 
-              onClick={() => setShowAdjustModal(true)}
-              className="text-4xl md:text-4xl font-bold text-white mb-4 md:mb-2 px-2 md:px-0 cursor-pointer hover:text-purple-400 hover:scale-105 transition-all duration-200 select-none group"
-              title="💡 Secret: Click to adjust revenue & expenses"
-            >
-              <span className="inline-flex items-center gap-2">
-                💰 My Revenue
-                <span className="text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                  (click me)
-                </span>
-              </span>
+            <h1 className="text-4xl md:text-4xl font-bold text-white mb-4 md:mb-2 px-2 md:px-0">
+              💰 My Revenue
             </h1>
             <p className="text-sm md:text-base text-gray-400 hidden md:block">
               Track revenue, profits, and expenses across all sources

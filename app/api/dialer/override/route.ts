@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Estimate cost (assuming 1 min per lead at $0.30/min)
+    // Estimate cost (assuming 1 min per lead at $0.40/min)
     const minutesPerLead = 1;
     const costPerMinute = 0.30;
     const estimatedCostCents = Math.round(extraLeads * minutesPerLead * costPerMinute * 100);

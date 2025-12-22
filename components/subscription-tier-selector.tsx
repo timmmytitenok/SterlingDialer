@@ -111,7 +111,7 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
               <span className="text-2xl text-gray-400">/month</span>
             </div>
             <p className="text-gray-300 text-lg">
-              Full access + pay-as-you-go minutes ($0.30/min)
+              Full access + pay-as-you-go minutes ($0.40/min)
             </p>
           </div>
 
@@ -140,7 +140,7 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
             </p>
             <div className="flex items-center justify-between">
               <span className="text-gray-400">Per-minute rate:</span>
-              <span className="text-2xl font-bold text-blue-400">$0.30/min</span>
+              <span className="text-2xl font-bold text-blue-400">$0.40/min</span>
             </div>
             <p className="text-xs text-gray-500 mt-2">
               Auto-refill $25 when balance drops below $1

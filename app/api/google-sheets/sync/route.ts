@@ -2,6 +2,46 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
 
+// =====================================================
+// BLOCKED LEAD VENDORS - These names cannot be passed to Retell
+// to avoid getting flagged/blocked. If detected, lead_vendor = null
+// =====================================================
+const BLOCKED_VENDORS = [
+  // Major Banks
+  'chase', 'wells', 'fargo', 'wells fargo', 'citi', 'citibank',
+  'bank of america', 'boa', 'capital one', 'discover',
+  'us bank', 'pnc', 'td bank', 'truist', 'fifth third',
+  'regions', 'keybank', 'huntington', 'ally', 'sofi',
+  'navy federal', 'usaa',
+  // Mortgage Companies
+  'rocket', 'quicken', 'freedom mortgage', 'mr. cooper', 'mr cooper',
+  'pennymac', 'newrez', 'loandepot', 'loan depot', 'fairway',
+  'guild mortgage', 'caliber', 'flagstar', 'suntrust', 'phh',
+  // Government Programs
+  'fha', 'va', 'hud', 'usda', 'fannie mae', 'freddie mac',
+  'social security', 'medicare', 'medicaid',
+];
+
+/**
+ * Check if a vendor name is blocked and should not be sent to Retell
+ * Returns null if blocked, otherwise returns the original vendor name
+ */
+const sanitizeLeadVendor = (vendor: string | null): string | null => {
+  if (!vendor) return null;
+  
+  const vendorLower = vendor.toLowerCase().trim();
+  
+  // Check if vendor contains any blocked term
+  for (const blocked of BLOCKED_VENDORS) {
+    if (vendorLower === blocked || vendorLower.includes(blocked)) {
+      console.log(`🚫 BLOCKED VENDOR DETECTED: "${vendor}" matches blocked term "${blocked}" - setting to null`);
+      return null;
+    }
+  }
+  
+  return vendor;
+};
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
@@ -47,6 +87,26 @@ export async function POST(request: Request) {
 
     console.log('🔄 SYNC - Sheet Config lead_type:', sheetConfig.lead_type);
     console.log('🔄 SYNC - Lead Type Mapping: 1=NULL/Default, 2=FE, 3=FE Veteran, 4=Mortgage Protection');
+    
+    // BULLETPROOF: If sheet doesn't have a valid lead_type (2, 3, or 4), REJECT the sync
+    const validLeadTypes = [2, 3, 4];
+    if (!validLeadTypes.includes(sheetConfig.lead_type)) {
+      console.error('❌❌❌ CRITICAL ERROR: Sheet lead_type is invalid!');
+      console.error(`   Sheet ID: ${sheetConfig.id}`);
+      console.error(`   Sheet Name: ${sheetConfig.sheet_name}`);
+      console.error(`   lead_type value: ${sheetConfig.lead_type}`);
+      console.error('   Expected: 2 (Final Expense), 3 (Veterans FE), or 4 (Mortgage Protection)');
+      
+      return NextResponse.json({
+        error: 'This sheet has an invalid lead type. Please delete and re-add the sheet, making sure to select Final Expense, Veterans, or Mortgage Protection.',
+        sheetId: sheetConfig.id,
+        sheetName: sheetConfig.sheet_name,
+        currentLeadType: sheetConfig.lead_type,
+        validLeadTypes: [2, 3, 4],
+      }, { status: 400 });
+    }
+    
+    console.log(`✅ Sheet has valid lead_type: ${sheetConfig.lead_type} (${sheetConfig.lead_type === 2 ? 'Final Expense' : sheetConfig.lead_type === 3 ? 'Veterans FE' : 'Mortgage Protection'})`);
 
     // Get service account credentials from environment
     const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
@@ -137,18 +197,20 @@ export async function POST(request: Request) {
         return best.score >= 30 ? best.index : -1;
       };
 
+      // ONLY auto-detect name and phone - everything else requires manual mapping
       nameCol = detectColumn(['name', 'full name', 'fullname', 'contact', 'contact name', 'customer', 'lead name', 'first name', 'last name']);
       phoneCol = detectColumn(['phone', 'phone number', 'telephone', 'tel', 'mobile', 'cell', 'contact number', 'number']);
-      emailCol = detectColumn(['email', 'e-mail', 'mail', 'email address', 'contact email', 'e mail']);
-      stateCol = detectColumn(['state', 'st', 'location', 'province', 'region']);
-      dateCol = detectColumn(['date', 'date generated', 'date created', 'created date', 'lead date', 'generated', 'timestamp', 'created at', 'created_at']);
-      ageCol = -1; // Not used anymore
-      statusCol = -1; // Not used anymore
-      // Mortgage Protection columns (auto-detect)
-      leadVendorCol = detectColumn(['vendor', 'lead vendor', 'source', 'lead source', 'vendor name']);
-      streetAddressCol = detectColumn(['address', 'street address', 'street', 'property address', 'home address']);
+      // Optional fields - no auto-detect, user must manually select
+      emailCol = -1;
+      stateCol = -1;
+      dateCol = -1;
+      ageCol = -1;
+      statusCol = -1;
+      leadVendorCol = -1;
+      streetAddressCol = -1;
 
-      console.log('🔍 Auto-detected columns:', { nameCol, phoneCol, emailCol, stateCol, dateCol, leadVendorCol, streetAddressCol });
+      console.log('🔍 Auto-detected columns (only name & phone):', { nameCol, phoneCol });
+      console.log('   ℹ️ Other columns require manual mapping: email, state, date, lead_vendor, street_address');
       
       if (nameCol === -1 || phoneCol === -1) {
         console.error('❌ Could not detect required columns (Name, Phone)!');
@@ -317,7 +379,9 @@ export async function POST(request: Request) {
       const state = normalizeState(rawState); // Normalize state to abbreviation
       const dateStr = dateCol >= 0 && row[dateCol] ? row[dateCol].toString().trim() : null;
       // Mortgage Protection fields
-      const leadVendor = leadVendorCol >= 0 && row[leadVendorCol] ? row[leadVendorCol].toString().trim() : null;
+      // Sanitize lead_vendor to block restricted names (banks, govt programs, etc.)
+      const rawLeadVendor = leadVendorCol >= 0 && row[leadVendorCol] ? row[leadVendorCol].toString().trim() : null;
+      const leadVendor = sanitizeLeadVendor(rawLeadVendor);
       const streetAddress = streetAddressCol >= 0 && row[streetAddressCol] ? row[streetAddressCol].toString().trim() : null;
 
       // Parse date if available
@@ -411,8 +475,9 @@ export async function POST(request: Request) {
           synced_from_sheet: true,
           is_qualified: isQualified,
           updated_at: new Date().toISOString(),
-          // Lead type for AI script selection (1=NULL, 2=FE, 3=FE Veteran, 4=MP)
-          lead_type: sheetConfig.lead_type || 1,
+          // Lead type for AI script selection (2=FE, 3=FE Veteran, 4=MP)
+          // BULLETPROOF: Sheet lead_type is already validated above
+          lead_type: sheetConfig.lead_type,
         };
         
         // Add lead_generated_at if we have a valid date
@@ -449,8 +514,9 @@ export async function POST(request: Request) {
           synced_from_sheet: true,
           is_qualified: isQualified,
           times_dialed: 0,
-          // Lead type for AI script selection (1=NULL, 2=FE, 3=FE Veteran, 4=MP)
-          lead_type: sheetConfig.lead_type || 1,
+          // Lead type for AI script selection (2=FE, 3=FE Veteran, 4=MP)
+          // BULLETPROOF: Sheet lead_type is already validated above
+          lead_type: sheetConfig.lead_type,
         };
         
         // Add lead_generated_at if we have a valid date

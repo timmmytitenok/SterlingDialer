@@ -2,6 +2,84 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getTodayDateString } from '@/lib/timezone-helpers';
 
+// =====================================================
+// BLOCKED LEAD VENDORS - Safety check before sending to Retell
+// These names will be converted to empty string to avoid getting flagged
+// =====================================================
+const BLOCKED_VENDORS = [
+  // Major Banks
+  'chase', 'wells', 'fargo', 'wells fargo', 'citi', 'citibank',
+  'bank of america', 'boa', 'capital one', 'discover',
+  'us bank', 'pnc', 'td bank', 'truist', 'fifth third',
+  'regions', 'keybank', 'huntington', 'ally', 'sofi',
+  'navy federal', 'usaa',
+  // Mortgage Companies
+  'rocket', 'quicken', 'freedom mortgage', 'mr. cooper', 'mr cooper',
+  'pennymac', 'newrez', 'loandepot', 'loan depot', 'fairway',
+  'guild mortgage', 'caliber', 'flagstar', 'suntrust', 'phh',
+  // Government Programs
+  'fha', 'va', 'hud', 'usda', 'fannie mae', 'freddie mac',
+  'social security', 'medicare', 'medicaid',
+];
+
+// Placeholder value when lead_vendor is blocked or missing
+// Check this in Retell: {{#if (eq lead_vendor "123456")}} = data unavailable
+const VENDOR_PLACEHOLDER = '123456';
+
+// =====================================================
+// GLOBAL AGENT IDs - One agent per script type
+// Set these in your .env.local and Vercel environment
+// =====================================================
+const GLOBAL_AGENT_FE = process.env.RETELL_AGENT_ID_FE || null;      // Final Expense
+const GLOBAL_AGENT_VET = process.env.RETELL_AGENT_ID_VET || null;    // Veterans Final Expense
+const GLOBAL_AGENT_MP = process.env.RETELL_AGENT_ID_MP || null;      // Mortgage Protection
+
+/**
+ * Select the correct global agent based on lead_type
+ * Falls back to user's custom agent if global not configured
+ */
+const selectAgentByLeadType = (leadType: number | null, userAgentId: string | null): { agentId: string | null; agentSource: string } => {
+  // lead_type: 2=Final Expense, 3=Veterans FE, 4=Mortgage Protection
+  switch (leadType) {
+    case 2:
+      if (GLOBAL_AGENT_FE) {
+        return { agentId: GLOBAL_AGENT_FE, agentSource: 'GLOBAL_FE' };
+      }
+      break;
+    case 3:
+      if (GLOBAL_AGENT_VET) {
+        return { agentId: GLOBAL_AGENT_VET, agentSource: 'GLOBAL_VET' };
+      }
+      break;
+    case 4:
+      if (GLOBAL_AGENT_MP) {
+        return { agentId: GLOBAL_AGENT_MP, agentSource: 'GLOBAL_MP' };
+      }
+      break;
+  }
+  
+  // Fallback to user's configured agent (legacy support)
+  return { agentId: userAgentId, agentSource: 'USER_CUSTOM' };
+};
+
+/**
+ * Sanitize lead_vendor - returns "123456" placeholder if blocked or null
+ */
+const sanitizeVendorForRetell = (vendor: string | null | undefined): string => {
+  if (!vendor) return VENDOR_PLACEHOLDER;
+  
+  const vendorLower = vendor.toLowerCase().trim();
+  
+  for (const blocked of BLOCKED_VENDORS) {
+    if (vendorLower === blocked || vendorLower.includes(blocked)) {
+      console.log(`🚫 BLOCKED VENDOR (safety check): "${vendor}" - sending placeholder "${VENDOR_PLACEHOLDER}" to Retell`);
+      return VENDOR_PLACEHOLDER;
+    }
+  }
+  
+  return vendor;
+};
+
 /**
  * Call-by-Call System - Get Next Lead and Make Call
  * This replaces the N8N batch processing system
@@ -629,6 +707,8 @@ export async function POST(request: Request) {
         has_agent_id: !!retellConfig.retell_agent_id,
         has_phone: !!retellConfig.phone_number,
         agent_name: retellConfig.agent_name,
+        agent_pronoun: retellConfig.agent_pronoun || 'she/her',
+        cal_event_id: retellConfig.cal_event_id,
         script_type: retellConfig.script_type || 'final_expense'
       } : null
     });
@@ -639,6 +719,12 @@ export async function POST(request: Request) {
     if (scriptType === 'mortgage_protection') {
       console.log(`   ⚠️ MORTGAGE PROTECTION MODE - lead_vendor and street_address SHOULD be sent!`);
     }
+    
+    // Log global agent configuration
+    console.log('🌐 Global Agent Configuration:');
+    console.log(`   RETELL_AGENT_ID_FE: ${GLOBAL_AGENT_FE ? 'SET (' + GLOBAL_AGENT_FE.substring(0, 15) + '...)' : '❌ NOT SET'}`);
+    console.log(`   RETELL_AGENT_ID_VET: ${GLOBAL_AGENT_VET ? 'SET (' + GLOBAL_AGENT_VET.substring(0, 15) + '...)' : '❌ NOT SET'}`);
+    console.log(`   RETELL_AGENT_ID_MP: ${GLOBAL_AGENT_MP ? 'SET (' + GLOBAL_AGENT_MP.substring(0, 15) + '...)' : '❌ NOT SET'}`);
 
     if (configError || !retellConfig) {
       console.error('❌ No Retell config found for user');
@@ -647,11 +733,46 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Validate config has required fields
-    if (!retellConfig.retell_agent_id) {
-      console.error('❌ Missing retell_agent_id');
+    // Select the correct agent based on lead_type (uses global agents if configured)
+    const { agentId: selectedAgentId, agentSource } = selectAgentByLeadType(
+      nextLead.lead_type,
+      retellConfig.retell_agent_id
+    );
+    
+    console.log(`🤖 Agent Selection:`);
+    console.log(`   Lead Type: ${nextLead.lead_type}`);
+    console.log(`   User's Custom Agent ID: ${retellConfig.retell_agent_id || '❌ NOT SET'}`);
+    console.log(`   Selected Agent: ${selectedAgentId ? selectedAgentId.substring(0, 20) + '...' : '❌ NONE - THIS IS THE PROBLEM!'}`);
+    console.log(`   Agent Source: ${agentSource}`);
+    
+    // If no agent selected, give clear error
+    if (!selectedAgentId) {
+      console.error('');
+      console.error('🚨🚨🚨 NO AGENT CONFIGURED! 🚨🚨🚨');
+      console.error('');
+      console.error('To fix this, do ONE of these:');
+      console.error('');
+      console.error('Option 1: Set GLOBAL agent in Vercel environment:');
+      console.error('   - RETELL_AGENT_ID_FE for Final Expense (lead_type 2)');
+      console.error('   - RETELL_AGENT_ID_VET for Veterans (lead_type 3)');
+      console.error('   - RETELL_AGENT_ID_MP for Mortgage Protection (lead_type 4)');
+      console.error('');
+      console.error('Option 2: Set USER agent in Admin → User Management:');
+      console.error(`   - Go to user ${userId} settings`);
+      console.error('   - Add their Retell Agent ID');
+      console.error('');
+    }
+
+    // Validate we have an agent to use
+    if (!selectedAgentId) {
+      console.error('❌ No agent available for this lead_type');
+      console.error(`   Lead Type: ${nextLead.lead_type}`);
+      console.error(`   Global FE: ${GLOBAL_AGENT_FE ? 'SET' : 'NOT SET'}`);
+      console.error(`   Global VET: ${GLOBAL_AGENT_VET ? 'SET' : 'NOT SET'}`);
+      console.error(`   Global MP: ${GLOBAL_AGENT_MP ? 'SET' : 'NOT SET'}`);
+      console.error(`   User Agent: ${retellConfig.retell_agent_id ? 'SET' : 'NOT SET'}`);
       return NextResponse.json({ 
-        error: 'Retell Agent ID not configured. Go to Admin → Manage Users to set your Agent ID.' 
+        error: `No Retell agent configured for lead_type ${nextLead.lead_type}. Set RETELL_AGENT_ID_FE, RETELL_AGENT_ID_VET, or RETELL_AGENT_ID_MP in environment.` 
       }, { status: 400 });
     }
 
@@ -661,6 +782,16 @@ export async function POST(request: Request) {
         error: 'Outbound phone number not configured. Go to Admin → Manage Users to set your phone number.' 
       }, { status: 400 });
     }
+    
+    // Get user-specific agent identity
+    const userAgentName = retellConfig.agent_name || 'Sarah';
+    const userAgentPronoun = retellConfig.agent_pronoun || 'she/her';
+    const userCalEventId = retellConfig.cal_event_id || '';
+    
+    console.log(`👤 User Agent Identity:`);
+    console.log(`   Agent Name: ${userAgentName}`);
+    console.log(`   Agent Pronoun: ${userAgentPronoun}`);
+    console.log(`   Cal Event ID: ${userCalEventId || '(not set)'}`);
 
     // Make call via Retell API
     const retellApiKey = process.env.RETELL_API_KEY;
@@ -674,11 +805,49 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    console.log(`📞 Making call with Agent: ${retellConfig.retell_agent_id}, From: ${retellConfig.phone_number}, To: ${nextLead.phone}`);
+    console.log(`📞 Making call with Agent: ${selectedAgentId} (${agentSource}), From: ${retellConfig.phone_number}, To: ${nextLead.phone}`);
 
     // Build dynamic variables for Retell
     // CRITICAL: Retell requires ALL values to be STRINGS! No numbers, no booleans, no nulls!
+    
+    // ========================================================================
+    // MORTGAGE PROTECTION LOGIC: Both lead_vendor AND street_address must exist
+    // If either is missing/blocked, send BOTH as "123456" placeholder
+    // mp_opener: "1" = missing data (generic opener), "2" = both have data (full opener)
+    // ========================================================================
+    const sanitizedVendor = sanitizeVendorForRetell(nextLead.lead_vendor);
+    const sanitizedAddress = nextLead.street_address?.trim() || '';
+    
+    // Check if vendor is the placeholder (blocked/missing) or address is empty
+    const vendorIsPlaceholder = sanitizedVendor === VENDOR_PLACEHOLDER;
+    const addressIsMissing = sanitizedAddress === '';
+    
+    // Both must have REAL data, or both get placeholder
+    const hasBothMPFields = !vendorIsPlaceholder && !addressIsMissing;
+    const finalLeadVendor = hasBothMPFields ? sanitizedVendor : VENDOR_PLACEHOLDER;
+    const finalStreetAddress = hasBothMPFields ? sanitizedAddress : VENDOR_PLACEHOLDER;
+    
+    // mp_opener: "1" = missing data (use generic opener), "2" = both have data (use full opener)
+    const mpOpener = hasBothMPFields ? '2' : '1';
+    
+    console.log(`🏠 MORTGAGE PROTECTION OPENER: mp_opener = "${mpOpener}"`);
+    if (mpOpener === '1') {
+      console.log(`   ⚠️ mp_opener=1: Missing data - use GENERIC opener`);
+      console.log(`   - lead_vendor: "${sanitizedVendor}" → "${VENDOR_PLACEHOLDER}"`);
+      console.log(`   - street_address: "${sanitizedAddress || '(empty)'}" → "${VENDOR_PLACEHOLDER}"`);
+    } else {
+      console.log(`   ✅ mp_opener=2: Both fields have data - use FULL opener`);
+      console.log(`   - lead_vendor: "${finalLeadVendor}"`);
+      console.log(`   - street_address: "${finalStreetAddress}"`);
+    }
+    
     const dynamicVariables: Record<string, string> = {
+      // User-specific agent identity (each user has their own name/pronoun)
+      agent_name: userAgentName,
+      agent_pronoun: userAgentPronoun,
+      cal_event_id: userCalEventId,
+      
+      // Lead information
       customer_name: String(nextLead.name || 'there'),
       lead_name: String(nextLead.name || ''),
       lead_phone: String(phoneToCall || ''),
@@ -686,15 +855,20 @@ export async function POST(request: Request) {
       leadId: String(nextLead.id),
       live_transfer: "true",
       attempt_number: String((nextLead.call_attempts_today || 0) + 1),
+      
       // Lead type for AI script selection - reference as {{lead_type}} in Retell
-      // "1" = NULL/default
+      // "1" = NULL/default (should NOT happen for properly imported leads)
       // "2" = Final Expense (non-veteran)
       // "3" = Final Expense (veteran)
       // "4" = Mortgage Protection
-      lead_type: String(nextLead.lead_type || 1),
-      // Mortgage Protection variables
-      lead_vendor: String(nextLead.lead_vendor || ''),
-      street_address: String(nextLead.street_address || ''),
+      // CRITICAL: Use actual lead_type from database, warn if missing
+      lead_type: String(nextLead.lead_type ?? 1),
+      
+      // Mortgage Protection variables - BOTH must exist or BOTH get placeholder
+      lead_vendor: finalLeadVendor,
+      street_address: finalStreetAddress,
+      // mp_opener: "1" = missing data (generic opener), "2" = both have data (full opener)
+      mp_opener: mpOpener,
     };
     
     // VERIFY all values are strings
@@ -717,6 +891,20 @@ export async function POST(request: Request) {
     console.log(`   Sending to Retell as: ${dynamicVariables.lead_type} (type: ${typeof dynamicVariables.lead_type})`);
     const leadTypeLabels: Record<string, string> = { '1': 'NULL/Default', '2': 'Final Expense', '3': 'Final Expense (Veteran)', '4': 'Mortgage Protection' };
     console.log(`   Meaning: ${leadTypeLabels[String(dynamicVariables.lead_type)] || 'UNKNOWN'}`);
+    
+    // CRITICAL WARNING: If lead_type is 1 but we have MP fields, something is wrong!
+    if (dynamicVariables.lead_type === '1' && (nextLead.lead_vendor || nextLead.street_address)) {
+      console.error('❌❌❌ WARNING: lead_type is 1 but lead has vendor/address data!');
+      console.error('   This lead may have been imported before lead_type was properly set.');
+      console.error('   The lead in the database needs to be updated with lead_type = 4');
+      console.error(`   Lead ID to fix: ${nextLead.id}`);
+    }
+    
+    // Also warn if lead_type was null/undefined in database
+    if (nextLead.lead_type === null || nextLead.lead_type === undefined) {
+      console.error('❌ WARNING: lead_type is NULL in database! Defaulted to 1.');
+      console.error(`   Lead ID: ${nextLead.id} needs lead_type set in database.`);
+    }
     console.log('================================');
     console.log('');
     console.log('🏠 Mortgage Protection Data:');
@@ -725,7 +913,7 @@ export async function POST(request: Request) {
     console.log(`   Sending to Retell: lead_vendor="${dynamicVariables.lead_vendor}", street_address="${dynamicVariables.street_address}"`);
 
     const callPayload = {
-      agent_id: retellConfig.retell_agent_id,
+      agent_id: selectedAgentId,  // Uses global agent based on lead_type, or user's custom agent
       to_number: phoneToCall, // Use formatted phone!
       from_number: retellConfig.phone_number,
       metadata: {
@@ -735,10 +923,16 @@ export async function POST(request: Request) {
         lead_phone: phoneToCall, // Use formatted phone!
         attempt_number: (nextLead.call_attempts_today || 0) + 1,
         // Lead type for AI script selection (1=NULL, 2=FE, 3=FE Veteran, 4=MP)
-        lead_type: nextLead.lead_type || 1,
+        lead_type: nextLead.lead_type ?? 1,
         // Include mortgage protection data in metadata too
-        lead_vendor: nextLead.lead_vendor || null,
-        street_address: nextLead.street_address || null,
+        lead_vendor: finalLeadVendor || null,
+        street_address: finalStreetAddress || null,
+        // mp_opener: "1" = generic opener (missing data), "2" = full opener (both have data)
+        mp_opener: mpOpener,
+        // Agent selection metadata
+        agent_source: agentSource,
+        agent_name: userAgentName,
+        agent_pronoun: userAgentPronoun,
       },
       retell_llm_dynamic_variables: dynamicVariables,
     };
@@ -749,6 +943,7 @@ export async function POST(request: Request) {
     console.log(`   lead_type = ${dynamicVariables.lead_type} (${typeof dynamicVariables.lead_type})`);
     console.log(`   lead_vendor = "${dynamicVariables.lead_vendor}"`);
     console.log(`   street_address = "${dynamicVariables.street_address}"`);
+    console.log(`   mp_opener = "${dynamicVariables.mp_opener}" (1=generic opener, 2=full opener)`);
     console.log('');
     console.log('📞 Authorization header:', `Bearer ${retellApiKey.substring(0, 15)}...${retellApiKey.substring(retellApiKey.length - 5)}`);
     console.log('📞 API Endpoint:', 'https://api.retellai.com/v2/create-phone-call');
@@ -931,7 +1126,10 @@ export async function POST(request: Request) {
     console.log(`✅ ====== CALL SUCCESS ======`);
     console.log(`   Lead ID: ${nextLead.id}`);
     console.log(`   Lead Name: ${nextLead.name}`);
-    console.log(`   lead_type SENT TO RETELL: ${leadTypeSent}`);
+    console.log(`   🤖 Agent Used: ${selectedAgentId?.substring(0, 20)}... (${agentSource})`);
+    console.log(`   👤 Agent Identity: ${userAgentName} (${userAgentPronoun})`);
+    console.log(`   📅 Cal Event ID: ${userCalEventId || '(not set)'}`);
+    console.log(`   🎯 lead_type SENT TO RETELL: ${leadTypeSent}`);
     console.log(`   (1=Default, 2=FE, 3=FE Vet, 4=MP)`);
     console.log(`================================`);
     
@@ -945,9 +1143,13 @@ export async function POST(request: Request) {
       callsMadeToday: callsMadeToday + 1,
       currentSpend: currentSpend,
       spendLimit: dailySpendLimit,
-      // ADDED: Show lead_type in response so you can verify it's being sent!
+      // Show lead_type in response so you can verify it's being sent!
       lead_type: leadTypeSent,
-      lead_type_meaning: leadTypeLabels[leadTypeSent] || 'UNKNOWN',
+      lead_type_meaning: leadTypeLabels[String(leadTypeSent)] || 'UNKNOWN',
+      // Show agent selection info
+      agent_source: agentSource,
+      agent_name: userAgentName,
+      agent_pronoun: userAgentPronoun,
     });
   } catch (error: any) {
     console.error('❌ Error in next-call:', error);

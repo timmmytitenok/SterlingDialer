@@ -15,8 +15,26 @@ export async function POST(request: Request) {
 
     const { sheetUrl, googleSheetId, sheetName, tabName, columnMapping, minLeadAgeDays, leadType } = await request.json();
 
-    console.log('📋 CREATE SHEET - Received leadType:', leadType);
-    console.log('📋 CREATE SHEET - Lead Type Mapping: 1=NULL/Default, 2=FE, 3=FE Veteran, 4=Mortgage Protection');
+    console.log('📋 CREATE SHEET - Received leadType:', leadType, `(type: ${typeof leadType})`);
+    console.log('📋 CREATE SHEET - Lead Type Mapping: 2=FE, 3=FE Veteran, 4=Mortgage Protection');
+    
+    // BULLETPROOF: Validate leadType is one of the expected values (2, 3, or 4)
+    const validLeadTypes = [2, 3, 4];
+    if (!validLeadTypes.includes(leadType)) {
+      console.error('❌❌❌ CRITICAL ERROR: leadType is invalid!');
+      console.error(`   Received: ${leadType} (type: ${typeof leadType})`);
+      console.error('   Expected: 2 (Final Expense), 3 (Veterans FE), or 4 (Mortgage Protection)');
+      
+      // If leadType is 1, null, or undefined, reject the request
+      if (leadType === 1 || leadType === null || leadType === undefined) {
+        return NextResponse.json({
+          error: 'Invalid lead type. Please select Final Expense, Veterans, or Mortgage Protection.',
+          receivedLeadType: leadType,
+        }, { status: 400 });
+      }
+    }
+    
+    console.log(`✅ Valid leadType: ${leadType} (${leadType === 2 ? 'Final Expense' : leadType === 3 ? 'Veterans FE' : leadType === 4 ? 'Mortgage Protection' : 'Unknown'})`);
 
     if (!sheetUrl || !googleSheetId || !columnMapping) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -61,8 +79,9 @@ export async function POST(request: Request) {
       street_address_column: colToLetter(columnMapping.street_address),
       min_lead_age_days: minLeadAgeDays || 0,
       is_active: true,
-      // Lead type for AI script selection (1=NULL, 2=FE, 3=FE Veteran, 4=MP)
-      lead_type: leadType || 1,
+      // Lead type for AI script selection (2=FE, 3=FE Veteran, 4=MP)
+      // BULLETPROOF: leadType is already validated above, use it directly
+      lead_type: leadType,
     };
 
     console.log('📋 CREATE SHEET - Saving to database with lead_type:', insertData.lead_type);

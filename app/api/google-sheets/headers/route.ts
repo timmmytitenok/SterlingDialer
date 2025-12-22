@@ -74,13 +74,17 @@ export async function POST(request: Request) {
       return { index: best.index, confidence: best.score >= 50 ? 'high' : best.score > 0 ? 'medium' : 'low' };
     };
 
-    // Detect columns with multiple keyword variations
+    // Detect columns - ONLY name and phone auto-detect, everything else is optional/manual
     const detections = {
+      // Required fields - auto-detect
       name: detectColumn(['name', 'full name', 'fullname', 'contact', 'contact name', 'customer', 'lead name', 'first name', 'last name'], headers),
       phone: detectColumn(['phone', 'phone number', 'telephone', 'tel', 'mobile', 'cell', 'contact number', 'number'], headers),
-      email: detectColumn(['email', 'e-mail', 'mail', 'email address', 'contact email', 'e mail'], headers),
-      state: detectColumn(['state', 'st', 'location', 'province', 'region'], headers),
-      date: detectColumn(['date', 'date generated', 'date created', 'created date', 'lead date', 'generated', 'timestamp', 'created at', 'created_at'], headers),
+      // Optional fields - user must manually select (no auto-detect)
+      email: { index: -1, confidence: 'low' },
+      state: { index: -1, confidence: 'low' },
+      date: { index: -1, confidence: 'low' },
+      lead_vendor: { index: -1, confidence: 'low' },
+      street_address: { index: -1, confidence: 'low' },
     };
 
     // Determine if we need manual mapping
