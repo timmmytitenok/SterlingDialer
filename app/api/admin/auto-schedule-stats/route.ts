@@ -42,7 +42,7 @@ export async function GET() {
 
     // Filter out admin users
     const filteredUsers = (autoScheduleUsers || []).filter(
-      user => !ADMIN_USER_IDS.includes(user.user_id)
+      (user: any) => !ADMIN_USER_IDS.includes(user.user_id)
     );
 
     console.log(`✅ Found ${filteredUsers.length} users with Auto Schedule enabled (excluding admins)`);
