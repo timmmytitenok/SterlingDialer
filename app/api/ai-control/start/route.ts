@@ -251,6 +251,17 @@ export async function POST(request: Request) {
           firstCallResult: callResult,
         });
       }
+      
+      // FALLBACK: If we get here, something unexpected happened
+      console.warn('⚠️ Unexpected callResult - no success/done/error:', callResult);
+      return NextResponse.json({ 
+        success: false, 
+        message: 'First call returned unexpected result',
+        mode: executionMode,
+        targetLeads: executionMode === 'leads' ? (targetLeadCount || dailyCallLimit) : null,
+        firstCallResult: callResult,
+        warning: 'Call may not have been initiated'
+      });
     } catch (error: any) {
       console.error('');
       console.error('❌ ========== EXCEPTION DURING CALL INITIATION ==========');
@@ -295,11 +306,12 @@ export async function POST(request: Request) {
       );
     }
 
+    // This should never be reached - all paths above return
+    console.error('⚠️ UNEXPECTED: Reached end of start function without returning');
     return NextResponse.json({ 
-      success: true, 
-      message: 'AI started successfully with call-by-call system',
+      success: false, 
+      message: 'Unexpected code path - check server logs',
       mode: executionMode,
-      targetLeads: executionMode === 'leads' ? (targetLeadCount || dailyCallLimit) : null,
     });
   } catch (error: any) {
     console.error('Error starting AI:', error);
