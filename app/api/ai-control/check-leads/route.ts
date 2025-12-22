@@ -43,7 +43,7 @@ export async function GET(request: Request) {
       .eq('user_id', userId)
       .eq('is_qualified', true)
       .in('google_sheet_id', activeSheetIds)
-      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment'])
+      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment', 'needs_review'])
       .or('total_calls_made.is.null,total_calls_made.lt.20'); // Not dead leads (20+ attempts)
 
     if (error) {

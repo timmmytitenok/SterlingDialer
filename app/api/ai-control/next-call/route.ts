@@ -371,7 +371,7 @@ export async function POST(request: Request) {
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .in('google_sheet_id', activeSheetIds)
-      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment']);
+      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment', 'needs_review']);
     console.log(`📊 DEBUG - Leads with callable STATUS in active sheets: ${callableStatusLeads || 0}`);
     
     // Now the actual count - qualified + right status + active sheet
@@ -381,7 +381,7 @@ export async function POST(request: Request) {
       .eq('user_id', userId)
       .eq('is_qualified', true)
       .in('google_sheet_id', activeSheetIds)
-      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment']);
+      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment', 'needs_review']);
     
     console.log(`📊 FINAL - Callable leads (qualified + right status + active sheet): ${totalLeadsCount || 0}`);
     
@@ -458,7 +458,7 @@ export async function POST(request: Request) {
         .eq('user_id', userId)
         .eq('is_qualified', true)
         .in('google_sheet_id', activeSheetIds)
-        .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment']);
+        .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment', 'needs_review']);
       
       // Exclude leads that hit 20 attempts (marked as dead)
       // Use total_calls_made if it exists, otherwise check status != 'dead_lead'
