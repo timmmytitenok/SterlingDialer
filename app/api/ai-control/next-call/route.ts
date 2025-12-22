@@ -37,10 +37,17 @@ const GLOBAL_AGENT_MP = process.env.RETELL_AGENT_ID_MP || null;      // Mortgage
 /**
  * Select the correct global agent based on lead_type
  * Falls back to user's custom agent if global not configured
+ * If lead_type is null/1, defaults to Final Expense agent
  */
 const selectAgentByLeadType = (leadType: number | null, userAgentId: string | null): { agentId: string | null; agentSource: string } => {
-  // lead_type: 2=Final Expense, 3=Veterans FE, 4=Mortgage Protection
-  switch (leadType) {
+  // lead_type: 1/null=Default (use FE), 2=Final Expense, 3=Veterans FE, 4=Mortgage Protection
+  
+  // Handle null, undefined, or 1 (default) - use Final Expense
+  const effectiveLeadType = leadType === null || leadType === undefined || leadType === 1 ? 2 : leadType;
+  
+  console.log(`🎯 Agent Selection - leadType: ${leadType} → effectiveLeadType: ${effectiveLeadType}`);
+  
+  switch (effectiveLeadType) {
     case 2:
       if (GLOBAL_AGENT_FE) {
         return { agentId: GLOBAL_AGENT_FE, agentSource: 'GLOBAL_FE' };
@@ -50,15 +57,31 @@ const selectAgentByLeadType = (leadType: number | null, userAgentId: string | nu
       if (GLOBAL_AGENT_VET) {
         return { agentId: GLOBAL_AGENT_VET, agentSource: 'GLOBAL_VET' };
       }
+      // If no Veterans agent, fall back to FE
+      if (GLOBAL_AGENT_FE) {
+        console.log('⚠️ No Veterans agent, falling back to Final Expense agent');
+        return { agentId: GLOBAL_AGENT_FE, agentSource: 'GLOBAL_FE_FALLBACK' };
+      }
       break;
     case 4:
       if (GLOBAL_AGENT_MP) {
         return { agentId: GLOBAL_AGENT_MP, agentSource: 'GLOBAL_MP' };
       }
+      // If no MP agent, fall back to FE
+      if (GLOBAL_AGENT_FE) {
+        console.log('⚠️ No Mortgage Protection agent, falling back to Final Expense agent');
+        return { agentId: GLOBAL_AGENT_FE, agentSource: 'GLOBAL_FE_FALLBACK' };
+      }
       break;
   }
   
-  // Fallback to user's configured agent (legacy support)
+  // Final fallback: try FE agent, then user's custom agent
+  if (GLOBAL_AGENT_FE) {
+    console.log('⚠️ Using Final Expense agent as final fallback');
+    return { agentId: GLOBAL_AGENT_FE, agentSource: 'GLOBAL_FE_FALLBACK' };
+  }
+  
+  // Last resort: user's configured agent (legacy support)
   return { agentId: userAgentId, agentSource: 'USER_CUSTOM' };
 };
 
