@@ -677,21 +677,22 @@ export async function POST(request: Request) {
     console.log(`📞 Making call with Agent: ${retellConfig.retell_agent_id}, From: ${retellConfig.phone_number}, To: ${nextLead.phone}`);
 
     // Build dynamic variables for Retell
+    // IMPORTANT: Retell requires ALL values to be STRINGS!
     // ALWAYS include lead_vendor and street_address (even if empty) for Mortgage Protection scripts
     const dynamicVariables: any = {
       customer_name: nextLead.name || 'there',
-      lead_name: nextLead.name,
+      lead_name: nextLead.name || '',
       lead_phone: phoneToCall, // Use formatted phone!
       userId: userId,
       leadId: nextLead.id,
       live_transfer: "true",
       attempt_number: String((nextLead.call_attempts_today || 0) + 1),
       // Lead type for AI script selection - reference as {{lead_type}} in Retell
-      // 1 = NULL/default
-      // 2 = Final Expense (non-veteran)
-      // 3 = Final Expense (veteran)
-      // 4 = Mortgage Protection
-      lead_type: nextLead.lead_type || 1,  // Send as NUMBER, defaults to 1 if NULL
+      // "1" = NULL/default
+      // "2" = Final Expense (non-veteran)
+      // "3" = Final Expense (veteran)
+      // "4" = Mortgage Protection
+      lead_type: String(nextLead.lead_type || 1),  // MUST be STRING for Retell API!
       // Mortgage Protection variables - ALWAYS send these so Retell script can reference them
       // In Retell, reference as {{lead_vendor}} and {{street_address}}
       lead_vendor: nextLead.lead_vendor || '',
