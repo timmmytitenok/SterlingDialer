@@ -131,7 +131,7 @@ export default function DemoPage() {
       <PublicNav />
       <MobilePublicNav />
       
-      {/* Animated Background - Soft gradual glow */}
+      {/* Animated Background - Soft gradual glow (matches landing page exactly) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute w-[1000px] h-[1000px] bg-blue-500/8 rounded-full top-[-300px] left-[-300px] animate-pulse" style={{ filter: 'blur(180px)' }} />
         <div className="absolute w-[900px] h-[900px] bg-purple-500/8 rounded-full top-[20%] right-[-300px] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '1s' }} />
@@ -140,6 +140,12 @@ export default function DemoPage() {
 
       {/* Grid Pattern - Same as Landing Page */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
+      
+      {/* Smooth color transitions between sections - no sharp edges */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute w-full h-[600px] top-[20%] bg-gradient-to-b from-transparent via-blue-500/3 to-transparent" />
+        <div className="absolute w-full h-[600px] top-[50%] bg-gradient-to-b from-transparent via-purple-500/3 to-transparent" />
+      </div>
 
       <div className="relative z-10">
         {/* HERO SECTION - Mobile Optimized */}
@@ -176,11 +182,6 @@ export default function DemoPage() {
 
         {/* LISTEN TO STERLING AI SECTION - Glowy Two Cards */}
         <section className="py-10 sm:py-24 px-3 sm:px-4 relative">
-          {/* Extra glow for this section - Super soft gradual fade */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute w-[800px] h-[800px] bg-blue-500/10 rounded-full top-[-100px] left-[-200px] animate-pulse" style={{ filter: 'blur(150px)' }} />
-            <div className="absolute w-[800px] h-[800px] bg-purple-500/10 rounded-full top-[-100px] right-[-200px] animate-pulse" style={{ filter: 'blur(150px)', animationDelay: '1.5s' }} />
-          </div>
           
           <div className="max-w-6xl mx-auto relative z-10">
             {/* Section Header - BIGGER Title */}
@@ -343,12 +344,6 @@ export default function DemoPage() {
 
         {/* HOW IT WORKS SECTION - Vibrant & Glowy */}
         <section className="py-12 sm:py-28 px-3 sm:px-4 relative overflow-hidden">
-          {/* Background Glow Effects - Super soft gradual fade */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute w-[800px] h-[800px] bg-blue-500/10 rounded-full top-[-200px] left-[-100px] animate-pulse" style={{ filter: 'blur(150px)' }} />
-            <div className="absolute w-[700px] h-[700px] bg-purple-500/10 rounded-full top-[100px] left-1/2 -translate-x-1/2 animate-pulse" style={{ filter: 'blur(150px)', animationDelay: '1s' }} />
-            <div className="absolute w-[800px] h-[800px] bg-green-500/10 rounded-full bottom-[-200px] right-[-100px] animate-pulse" style={{ filter: 'blur(150px)', animationDelay: '2s' }} />
-          </div>
           
           <div className="max-w-6xl mx-auto relative z-10">
             {/* Section Header - Bigger & Gradient */}
@@ -439,7 +434,7 @@ export default function DemoPage() {
                       <div className="relative w-full h-full bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-xl shadow-green-500/30 group-hover:scale-110 transition-transform duration-300">
                         <Calendar className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                       </div>
-                    </div>
+                  </div>
                     
                     <h3 className="text-xl sm:text-2xl font-bold text-white mb-3">Get Appointments</h3>
                     <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
@@ -447,9 +442,9 @@ export default function DemoPage() {
                     </p>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
+                      </div>
+                    </div>
+                  </div>
         </section>
 
         {/* ROI CALCULATOR SECTION - Mobile Optimized */}

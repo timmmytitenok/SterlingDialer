@@ -10,37 +10,43 @@ export function PublicNav() {
   const [hidden, setHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true); // Loading state for auth check
   const supabase = createClient();
 
   // Check auth state - only show dashboard if they have completed payment
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Check if they have completed payment and have stripe customer ID
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('subscription_tier, has_active_subscription, stripe_customer_id, onboarding_all_complete')
-          .eq('user_id', user.id)
-          .single();
+      setIsLoading(true);
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
         
-        // Only show dashboard if they have:
-        // 1. Completed onboarding AND have stripe customer (payment method added)
-        // 2. OR have an active subscription (already paying customers)
-        const hasCompletedPayment = profile?.stripe_customer_id && profile?.onboarding_all_complete;
-        const hasActiveSubscription = profile?.has_active_subscription === true;
-        
-        if (profile && (hasCompletedPayment || hasActiveSubscription)) {
-          console.log('🔍 Auth check in PublicNav: FULLY SIGNED UP (payment complete)');
-          setUser(user);
+        if (user) {
+          // Check if they have completed payment and have stripe customer ID
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('subscription_tier, has_active_subscription, stripe_customer_id, onboarding_all_complete')
+            .eq('user_id', user.id)
+            .single();
+          
+          // Only show dashboard if they have:
+          // 1. Completed onboarding AND have stripe customer (payment method added)
+          // 2. OR have an active subscription (already paying customers)
+          const hasCompletedPayment = profile?.stripe_customer_id && profile?.onboarding_all_complete;
+          const hasActiveSubscription = profile?.has_active_subscription === true;
+          
+          if (profile && (hasCompletedPayment || hasActiveSubscription)) {
+            console.log('🔍 Auth check in PublicNav: FULLY SIGNED UP (payment complete)');
+            setUser(user);
+          } else {
+            console.log('🔍 Auth check in PublicNav: NOT FULLY SIGNED UP (no payment)');
+            setUser(null);
+          }
         } else {
-          console.log('🔍 Auth check in PublicNav: NOT FULLY SIGNED UP (no payment)');
+          console.log('🔍 Auth check in PublicNav: NO USER');
           setUser(null);
         }
-      } else {
-        console.log('🔍 Auth check in PublicNav: NO USER');
-        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
     };
     checkUser();
@@ -171,7 +177,15 @@ export function PublicNav() {
           
           {/* Right Side: Conditional Based on Auth */}
           <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
-            {user === null ? (
+            {isLoading ? (
+              // LOADING: Show skeleton
+              <div className="flex items-center gap-4">
+                {/* Sign In skeleton */}
+                <div className="w-16 h-6 bg-white/10 rounded animate-pulse" />
+                {/* Button skeleton */}
+                <div className="w-32 h-10 bg-gradient-to-r from-purple-600/30 to-blue-600/30 rounded-full animate-pulse" />
+              </div>
+            ) : user === null ? (
               // NOT LOGGED IN: Show Sign In + Start Free Trial
               <>
                 {/* Sign In Link */}
@@ -208,7 +222,10 @@ export function PublicNav() {
 
           {/* Mobile CTA - Conditional */}
           <div className="lg:hidden">
-            {user !== null ? (
+            {isLoading ? (
+              // Mobile skeleton
+              <div className="w-24 h-10 bg-gradient-to-r from-purple-600/30 to-indigo-600/30 rounded-lg animate-pulse" />
+            ) : user !== null ? (
               <Link 
                 href="/dashboard" 
                 className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-lg hover:scale-105 transition-transform text-sm"

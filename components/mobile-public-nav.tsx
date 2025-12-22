@@ -12,6 +12,7 @@ export function MobilePublicNav() {
   const [hidden, setHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [legalOpen, setLegalOpen] = useState(false);
   const pathname = usePathname();
   const navRef = useRef<HTMLElement>(null);
@@ -20,29 +21,34 @@ export function MobilePublicNav() {
   // Check auth state - only show dashboard if they have completed payment
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Check if they have completed payment and have stripe customer ID
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('subscription_tier, has_active_subscription, stripe_customer_id, onboarding_all_complete')
-          .eq('user_id', user.id)
-          .single();
+      setIsLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
         
-        // Only show dashboard if they have:
-        // 1. Completed onboarding AND have stripe customer (payment method added)
-        // 2. OR have an active subscription (already paying customers)
-        const hasCompletedPayment = profile?.stripe_customer_id && profile?.onboarding_all_complete;
-        const hasActiveSubscription = profile?.has_active_subscription === true;
-        
-        if (profile && (hasCompletedPayment || hasActiveSubscription)) {
-          setUser(user);
+        if (user) {
+          // Check if they have completed payment and have stripe customer ID
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('subscription_tier, has_active_subscription, stripe_customer_id, onboarding_all_complete')
+            .eq('user_id', user.id)
+            .single();
+          
+          // Only show dashboard if they have:
+          // 1. Completed onboarding AND have stripe customer (payment method added)
+          // 2. OR have an active subscription (already paying customers)
+          const hasCompletedPayment = profile?.stripe_customer_id && profile?.onboarding_all_complete;
+          const hasActiveSubscription = profile?.has_active_subscription === true;
+          
+          if (profile && (hasCompletedPayment || hasActiveSubscription)) {
+            setUser(user);
+          } else {
+            setUser(null);
+          }
         } else {
           setUser(null);
         }
-      } else {
-        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
     };
     checkUser();
@@ -394,7 +400,14 @@ export function MobilePublicNav() {
             className="p-4 border-t border-gray-800/50 space-y-3"
             style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
           >
-            {!user ? (
+            {isLoading ? (
+              // LOADING: Show skeleton
+              <div className="space-y-3">
+                <div className="h-20 bg-gradient-to-r from-gray-800/50 to-gray-700/30 rounded-xl animate-pulse" />
+                <div className="h-12 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-xl animate-pulse" />
+                <div className="h-8 bg-gray-800/30 rounded-lg animate-pulse mx-auto w-48" />
+              </div>
+            ) : !user ? (
               // LOGGED OUT: Show trial banner + Start Free Trial + Sign In
               <>
                 {/* Free Trial Banner */}
