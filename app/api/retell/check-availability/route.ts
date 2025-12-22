@@ -98,12 +98,15 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Use agent's configured timezone, fallback to passed timezone or EST
-    const agentTimezone = retellConfig.timezone || timezone || 'America/New_York';
+    // Agent's timezone (for Cal.com availability query)
+    const agentTimezone = retellConfig.timezone || 'America/New_York';
+    // Lead's timezone (for displaying times to the lead) - passed from Retell or default to EST
+    const leadTimezone = timezone || 'America/New_York';
     
     console.log('✅ User config found');
     console.log(`   Cal.ai Event ID: ${retellConfig.cal_event_id}`);
     console.log(`   Agent Timezone: ${agentTimezone}`);
+    console.log(`   Lead Timezone: ${leadTimezone}`);
 
     // First, get the Cal.com user info from the API key to get their username
     console.log('📤 Fetching Cal.com user info...');
@@ -219,19 +222,20 @@ export async function POST(request: Request) {
             // Store ISO format for booking
             availableSlotsISO.push(time);
             
-            // Convert to readable format using agent's timezone
+            // Convert to readable format using LEAD's timezone
+            // The ISO time stays the same, so when booked it converts correctly
             const slotDate = new Date(time);
             const formattedTime = slotDate.toLocaleTimeString('en-US', {
               hour: 'numeric',
               minute: '2-digit',
               hour12: true,
-              timeZone: agentTimezone,
+              timeZone: leadTimezone, // Show to lead in THEIR timezone
             });
             const formattedDate = slotDate.toLocaleDateString('en-US', {
               weekday: 'long',
               month: 'long',
               day: 'numeric',
-              timeZone: agentTimezone,
+              timeZone: leadTimezone, // Show to lead in THEIR timezone
             });
             availableSlots.push(`${formattedDate} at ${formattedTime}`);
           }

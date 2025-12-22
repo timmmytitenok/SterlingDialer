@@ -129,14 +129,16 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Use agent's configured timezone for booking
-    const agentTimezone = retellConfig.timezone || timezone || 'America/New_York';
+    // Agent's timezone (from config) and Lead's timezone (passed from Retell)
+    const agentTimezone = retellConfig.timezone || 'America/New_York';
+    const leadTimezone = timezone || 'America/New_York'; // Lead's timezone for display
     
     console.log('✅ User config found:');
     console.log(`   Cal.ai API Key: ${retellConfig.cal_ai_api_key.substring(0, 15)}...`);
     console.log(`   Cal.ai Event ID: ${retellConfig.cal_event_id}`);
     console.log(`   Agent Name: ${retellConfig.agent_name || 'Not set'}`);
     console.log(`   Agent Timezone: ${agentTimezone}`);
+    console.log(`   Lead Timezone: ${leadTimezone}`);
 
     // Build the Cal.com API request
     // Using Cal.com's v2 API for bookings - more reliable format
@@ -146,14 +148,15 @@ export async function POST(request: Request) {
     const emailToUse = customer_email || `${customer_phone?.replace(/\D/g, '') || 'lead'}@ai-booking.com`;
     
     // V2 API format uses "attendee" instead of "responses"
-    // Use AGENT's timezone for consistent booking
+    // Use LEAD's timezone so they see the correct time in confirmation
+    // The ISO start time already encodes the exact moment, Cal.com converts for agent
     const bookingPayload: any = {
       eventTypeId: parseInt(retellConfig.cal_event_id),
-      start: actualStartTime, // Required: ISO format start time
+      start: actualStartTime, // ISO format - e.g., 2025-12-23T09:00:00-08:00 (9am PST)
       attendee: {
         name: customer_name || 'AI Booked Lead',
         email: emailToUse,
-        timeZone: agentTimezone, // Use agent's timezone for booking
+        timeZone: leadTimezone, // Lead's timezone for their confirmation
       },
       metadata: {
         leadId: leadId || 'unknown',
