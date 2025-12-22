@@ -298,6 +298,8 @@ export async function GET(
       agent_pronoun: retellConfig.data?.agent_pronoun ?? 'she/her',
       cal_api_key: retellConfig.data?.cal_ai_api_key ?? null,
       cal_event_id: retellConfig.data?.cal_event_id ?? null,
+      timezone: retellConfig.data?.timezone ?? 'America/New_York',
+      confirmation_email: retellConfig.data?.confirmation_email ?? null,
       script_type: retellConfig.data?.script_type ?? 'final_expense',
       ai_is_active: retellConfig.data?.is_active ?? false,
       ai_maintenance_mode: profile.data?.ai_maintenance_mode ?? false,

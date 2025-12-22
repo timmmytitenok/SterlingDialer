@@ -85,6 +85,8 @@ export default function AdminUserDetailPage() {
   const [agentName, setAgentName] = useState('');
   const [agentPronoun, setAgentPronoun] = useState('she/her');
   const [costPerMinute, setCostPerMinute] = useState('0.40');
+  const [timezone, setTimezone] = useState('America/New_York');
+  const [confirmationEmail, setConfirmationEmail] = useState('');
   const [scriptType, setScriptType] = useState<'final_expense' | 'mortgage_protection'>('final_expense');
   
 
@@ -157,6 +159,8 @@ export default function AdminUserDetailPage() {
       if (data.user.cal_event_id) setCalEventId(data.user.cal_event_id);
       if (data.user.agent_name) setAgentName(data.user.agent_name);
       if (data.user.agent_pronoun) setAgentPronoun(data.user.agent_pronoun);
+      if (data.user.timezone) setTimezone(data.user.timezone);
+      if (data.user.confirmation_email) setConfirmationEmail(data.user.confirmation_email);
       if (data.user.script_type) setScriptType(data.user.script_type);
       if (data.user.cost_per_minute !== undefined) setCostPerMinute(data.user.cost_per_minute.toString());
       
@@ -816,6 +820,46 @@ export default function AdminUserDetailPage() {
               </div>
             </div>
 
+            {/* Input Grid - Row 3: Timezone & Email */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+              {/* Timezone */}
+              <div className="group/input">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
+                  🌍 Timezone
+                </label>
+                <select
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-sky-500/40 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 focus:outline-none text-sm transition-all hover:border-sky-500/60 cursor-pointer appearance-none"
+                  style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%239CA3AF\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5rem' }}
+                >
+                  <option value="America/New_York">Eastern (America/New_York)</option>
+                  <option value="America/Chicago">Central (America/Chicago)</option>
+                  <option value="America/Denver">Mountain (America/Denver)</option>
+                  <option value="America/Phoenix">Arizona (America/Phoenix)</option>
+                  <option value="America/Los_Angeles">Pacific (America/Los_Angeles)</option>
+                  <option value="America/Anchorage">Alaska (America/Anchorage)</option>
+                  <option value="Pacific/Honolulu">Hawaii (Pacific/Honolulu)</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Use in Retell: {"{{current_time_" + timezone + "}}"}</p>
+              </div>
+
+              {/* Confirmation Email */}
+              <div className="group/input">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
+                  📧 Confirmation Email
+                </label>
+                <input
+                  type="email"
+                  value={confirmationEmail}
+                  onChange={(e) => setConfirmationEmail(e.target.value)}
+                  placeholder="agent@example.com"
+                  className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-orange-500/40 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none text-sm transition-all hover:border-orange-500/60 placeholder:text-gray-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Booking confirmations sent here</p>
+              </div>
+            </div>
+
             {/* Agent ID (hidden - using global agents now) */}
             <input type="hidden" value={agentId} />
 
@@ -838,6 +882,8 @@ export default function AdminUserDetailPage() {
                         agentName: agentName.trim() || null,
                         agentPronoun: agentPronoun || 'she/her',
                         costPerMinute: parseFloat(costPerMinute) || 0.40,
+                        timezone: timezone || 'America/New_York',
+                        confirmationEmail: confirmationEmail.trim() || null,
                       }),
                     });
 

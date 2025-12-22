@@ -736,6 +736,7 @@ export async function POST(request: Request) {
       } : null
     });
     
+    
     // Log script type for Mortgage Protection debugging
     const scriptType = retellConfig?.script_type || 'final_expense';
     console.log(`🏠 Script Type: ${scriptType}`);
@@ -810,11 +811,16 @@ export async function POST(request: Request) {
     const userAgentName = retellConfig.agent_name || 'Sarah';
     const userAgentPronoun = retellConfig.agent_pronoun || 'she/her';
     const userCalEventId = retellConfig.cal_event_id || '';
+    // userTimezone is already declared above from aiSettings
+    const retellTimezone = retellConfig.timezone || userTimezone || 'America/New_York';
+    const userConfirmationEmail = retellConfig.confirmation_email || '';
     
     console.log(`👤 User Agent Identity:`);
     console.log(`   Agent Name: ${userAgentName}`);
     console.log(`   Agent Pronoun: ${userAgentPronoun}`);
     console.log(`   Cal Event ID: ${userCalEventId || '(not set)'}`);
+    console.log(`   Timezone: ${retellTimezone}`);
+    console.log(`   Confirmation Email: ${userConfirmationEmail || '(not set)'}`);
 
     // Make call via Retell API
     const retellApiKey = process.env.RETELL_API_KEY;
@@ -869,6 +875,8 @@ export async function POST(request: Request) {
       agent_name: userAgentName,
       agent_pronoun: userAgentPronoun,
       cal_event_id: userCalEventId,
+      timezone: retellTimezone,
+      confirmation_email: userConfirmationEmail,
       
       // Lead information
       customer_name: String(nextLead.name || 'there'),
@@ -956,6 +964,8 @@ export async function POST(request: Request) {
         agent_source: agentSource,
         agent_name: userAgentName,
         agent_pronoun: userAgentPronoun,
+        timezone: retellTimezone,
+        confirmation_email: userConfirmationEmail,
       },
       retell_llm_dynamic_variables: dynamicVariables,
     };
@@ -1173,6 +1183,7 @@ export async function POST(request: Request) {
       agent_source: agentSource,
       agent_name: userAgentName,
       agent_pronoun: userAgentPronoun,
+      timezone: retellTimezone,
     });
   } catch (error: any) {
     console.error('❌ Error in next-call:', error);

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
     // Parse request body
     const body = await request.json();
-    const { userId, agentId, phoneNumber, agentName, agentPronoun, calApiKey, calAiApiKey, calEventId, costPerMinute } = body;
+    const { userId, agentId, phoneNumber, agentName, agentPronoun, calApiKey, calAiApiKey, calEventId, costPerMinute, timezone, confirmationEmail } = body;
     // Support both old and new field names
     const calAiKey = calAiApiKey || calApiKey;
 
@@ -35,6 +35,8 @@ export async function POST(request: Request) {
       agentPronoun: agentPronoun || 'she/her',
       calAiApiKey: calAiKey ? '***SET***' : 'not set',
       calEventId: calEventId || 'not set',
+      timezone: timezone || 'America/New_York',
+      confirmationEmail: confirmationEmail || 'not set',
       costPerMinute: costPerMinute !== undefined ? `$${costPerMinute}` : 'not set',
     });
 
@@ -56,6 +58,8 @@ export async function POST(request: Request) {
     if (agentPronoun !== undefined) updateFields.agent_pronoun = agentPronoun || 'she/her';
     if (calAiKey !== undefined) updateFields.cal_ai_api_key = calAiKey || null;
     if (calEventId !== undefined) updateFields.cal_event_id = calEventId || null;
+    if (timezone !== undefined) updateFields.timezone = timezone || 'America/New_York';
+    if (confirmationEmail !== undefined) updateFields.confirmation_email = confirmationEmail || null;
 
     if (existing) {
       // Update existing
@@ -82,6 +86,8 @@ export async function POST(request: Request) {
           agent_pronoun: agentPronoun || 'she/her',
           cal_ai_api_key: calAiKey || null,
           cal_event_id: calEventId || null,
+          timezone: timezone || 'America/New_York',
+          confirmation_email: confirmationEmail || null,
           retell_api_key: 'SET_BY_ADMIN',
           is_active: true,
         });
