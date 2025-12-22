@@ -411,17 +411,20 @@ export async function POST(request: Request) {
     // 2. NOT voicemail OR has an actual outcome flag
     // 3. Has at least ONE outcome flag OR duration is significant (>30s) indicating real conversation
     // 
-    // If call is 10-30 seconds with no outcome flags and no voicemail detection,
-    // it's likely a ring-no-answer that Retell didn't properly classify
-    const isLikelyNoAnswer = !hasOutcomeFlag && durationSeconds < 30 && !inVoicemail;
-    const callWasAnswered = !isShortCall && !isLikelyNoAnswer && (!inVoicemail || hasOutcomeFlag);
+    // ========================================================================
+    // SIMPLE RULE: ANY call >= 10 seconds = ANSWERED. Period.
+    // ========================================================================
+    // User's explicit requirement: If they pick up and it lasts 10+ seconds,
+    // that's an answered call. No double dial. Shows in call history.
+    // Don't overcomplicate with "likely no answer" guessing.
+    const callWasAnswered = durationSeconds >= 10;
     
     console.log(`📊 Call classification:`);
     console.log(`   - Duration: ${durationSeconds.toFixed(1)}s`);
     console.log(`   - Is short call (<10s): ${isShortCall}`);
     console.log(`   - In voicemail: ${inVoicemail}`);
     console.log(`   - Has outcome flag: ${hasOutcomeFlag} (BOOKED=${customAnalysis.BOOKED}, NOT_INTERESTED=${customAnalysis.NOT_INTERESTED}, CALLBACK=${customAnalysis.CALLBACK}, LIVE_TRANSFER=${customAnalysis.LIVE_TRANSFER})`);
-    console.log(`   - Is likely no-answer (10-30s, no flags, no voicemail): ${isLikelyNoAnswer}`);
+    console.log(`   - Call >= 10s = ANSWERED: ${callWasAnswered}`);
     console.log(`   - Was answered: ${callWasAnswered}`);
     console.log(`   - Was double dial: ${wasDoubleDial}`);
     
