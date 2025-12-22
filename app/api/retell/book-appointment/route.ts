@@ -102,45 +102,44 @@ export async function POST(request: Request) {
     console.log(`   Agent Name: ${retellConfig.agent_name || 'Not set'}`);
 
     // Build the Cal.com API request
-    // Using Cal.com's booking API v2 format with responses object
-    const calApiUrl = 'https://api.cal.com/v1/bookings';
+    // Using Cal.com's v2 API for bookings - more reliable format
+    const calApiUrl = 'https://api.cal.com/v2/bookings';
     
     // Generate a placeholder email if not provided
     const emailToUse = customer_email || `${customer_phone?.replace(/\D/g, '') || 'lead'}@ai-booking.com`;
     
+    // V2 API format uses "attendee" instead of "responses"
     const bookingPayload: any = {
       eventTypeId: parseInt(retellConfig.cal_event_id),
       start: start_time, // Required: ISO format start time
-      // Cal.com now requires responses object for form fields
-      responses: {
+      attendee: {
         name: customer_name || 'AI Booked Lead',
         email: emailToUse,
-        phone: customer_phone || '',
-        notes: notes || `Booked via AI Agent${retellConfig.agent_name ? ` (${retellConfig.agent_name})` : ''}`,
+        timeZone: timezone || 'America/New_York',
       },
-      timeZone: timezone || 'America/New_York',
-      language: 'en',
+      guests: [], // Optional additional guests
+      meetingUrl: '', // Will be auto-generated if needed
       metadata: {
         leadId: leadId || 'unknown',
         userId: userId,
         bookedBy: 'ai_agent',
         agentName: retellConfig.agent_name || 'AI',
+        phone: customer_phone || '',
+        notes: notes || '',
       },
     };
 
-    // Add end time if provided
-    if (end_time) {
-      bookingPayload.end = end_time;
-    }
-
-    console.log('📤 Calling Cal.com API...');
+    console.log('📤 Calling Cal.com v2 API...');
     console.log(`   URL: ${calApiUrl}`);
     console.log(`   Payload:`, JSON.stringify(bookingPayload, null, 2));
 
-    const calResponse = await fetch(`${calApiUrl}?apiKey=${retellConfig.cal_ai_api_key}`, {
+    // V2 API uses Bearer token instead of query param
+    const calResponse = await fetch(calApiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${retellConfig.cal_ai_api_key}`,
+        'cal-api-version': '2024-08-13',
       },
       body: JSON.stringify(bookingPayload),
     });
