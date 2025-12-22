@@ -254,12 +254,15 @@ export async function POST(request: Request) {
       console.log('📞 Triggering next lead...');
       try {
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://sterlingdialer.com';
-        await fetch(`${baseUrl}/api/ai-control/next-call?user_id=${userId}`, {
-          method: 'GET',
+        const nextCallResponse = await fetch(`${baseUrl}/api/ai-control/next-call`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: userId }),
         });
-        console.log('✅ Next call triggered');
-      } catch (e) {
-        console.error('❌ Failed to trigger next call');
+        const nextCallResult = await nextCallResponse.json();
+        console.log('✅ Next call triggered:', nextCallResult.success ? 'SUCCESS' : 'FAILED');
+      } catch (e: any) {
+        console.error('❌ Failed to trigger next call:', e.message);
       }
       
       console.log('');
