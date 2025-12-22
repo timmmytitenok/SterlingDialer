@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     if (phoneFE !== undefined) updateFields.phone_number_fe = phoneFE || null;
     if (phoneMP !== undefined) updateFields.phone_number_mp = phoneMP || null;
     if (agentName !== undefined) updateFields.agent_name = agentName || null;
-    if (agentPronoun !== undefined) updateFields.agent_pronoun = agentPronoun || 'she/her';
+    if (agentPronoun !== undefined) updateFields.agent_pronoun = agentPronoun || 'She';
     if (calAiKey !== undefined) updateFields.cal_ai_api_key = calAiKey || null;
     if (calEventId !== undefined) updateFields.cal_event_id = calEventId || null;
     if (timezone !== undefined) updateFields.timezone = timezone || 'America/New_York';
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
           phone_number_fe: phoneFE || null,
           phone_number_mp: phoneMP || null,
           agent_name: agentName || null,
-          agent_pronoun: agentPronoun || 'she/her',
+          agent_pronoun: agentPronoun || 'She',
           cal_ai_api_key: calAiKey || null,
           cal_event_id: calEventId || null,
           timezone: timezone || 'America/New_York',

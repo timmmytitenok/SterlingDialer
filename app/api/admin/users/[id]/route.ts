@@ -297,7 +297,7 @@ export async function GET(
       phone_number_mp: retellConfig.data?.phone_number_mp ?? null,
       retell_agent_name: retellConfig.data?.agent_name ?? null,
       agent_name: retellConfig.data?.agent_name ?? null,
-      agent_pronoun: retellConfig.data?.agent_pronoun ?? 'she/her',
+      agent_pronoun: retellConfig.data?.agent_pronoun ?? 'She',
       cal_api_key: retellConfig.data?.cal_ai_api_key ?? null,
       cal_event_id: retellConfig.data?.cal_event_id ?? null,
       timezone: retellConfig.data?.timezone ?? 'America/New_York',

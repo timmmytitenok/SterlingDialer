@@ -730,7 +730,7 @@ export async function POST(request: Request) {
         has_agent_id: !!retellConfig.retell_agent_id,
         has_phone: !!retellConfig.phone_number,
         agent_name: retellConfig.agent_name,
-        agent_pronoun: retellConfig.agent_pronoun || 'she/her',
+        agent_pronoun: retellConfig.agent_pronoun || 'She',
         cal_event_id: retellConfig.cal_event_id,
         script_type: retellConfig.script_type || 'final_expense'
       } : null
@@ -835,7 +835,7 @@ export async function POST(request: Request) {
     
     // Get user-specific agent identity
     const userAgentName = retellConfig.agent_name || 'Sarah';
-    const userAgentPronoun = retellConfig.agent_pronoun || 'she/her';
+    const userAgentPronoun = retellConfig.agent_pronoun || 'She';
     const userCalEventId = retellConfig.cal_event_id || '';
     // userTimezone is already declared above from aiSettings
     const retellTimezone = retellConfig.timezone || userTimezone || 'America/New_York';

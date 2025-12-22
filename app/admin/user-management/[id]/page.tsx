@@ -86,7 +86,7 @@ export default function AdminUserDetailPage() {
   const [calApiKey, setCalApiKey] = useState('');
   const [calEventId, setCalEventId] = useState('');
   const [agentName, setAgentName] = useState('');
-  const [agentPronoun, setAgentPronoun] = useState('she/her');
+  const [agentPronoun, setAgentPronoun] = useState('She');
   const [costPerMinute, setCostPerMinute] = useState('0.40');
   const [timezone, setTimezone] = useState('America/New_York');
   const [confirmationEmail, setConfirmationEmail] = useState('');
@@ -726,162 +726,179 @@ export default function AdminUserDetailPage() {
               </div>
             </div>
 
-            {/* Input Grid - Row 1: Phone Numbers */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-              {/* Final Expense Phone Number */}
-              <div className="group/input">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                  💚 Final Expense Phone
-                </label>
-                <input
-                  type="text"
-                  value={phoneNumberFE}
-                  onChange={(e) => setPhoneNumberFE(e.target.value)}
-                  placeholder="+15551234567"
-                  className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-green-500/40 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none font-mono text-sm transition-all hover:border-green-500/60 placeholder:text-gray-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">Used for Final Expense leads</p>
+            {/* ═══════════════════════════════════════════════════════════════════ */}
+            {/* SECTION 1: PHONE NUMBERS */}
+            {/* ═══════════════════════════════════════════════════════════════════ */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center">
+                  <span className="text-white text-sm">📞</span>
+                </div>
+                <h4 className="text-sm font-bold text-white uppercase tracking-wider">Outbound Phone Numbers</h4>
               </div>
-
-              {/* Mortgage Protection Phone Number */}
-              <div className="group/input">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                  🏠 Mortgage Protection Phone
-                </label>
-                <input
-                  type="text"
-                  value={phoneNumberMP}
-                  onChange={(e) => setPhoneNumberMP(e.target.value)}
-                  placeholder="+15551234567"
-                  className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-blue-500/40 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none font-mono text-sm transition-all hover:border-blue-500/60 placeholder:text-gray-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">Used for Mortgage Protection leads</p>
-              </div>
-            </div>
-
-            {/* Input Grid - Row 2: Calendar */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-              {/* Cal.ai API Key */}
-              <div className="group/input">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                  📅 Cal.ai API Key
-                </label>
-                <input
-                  type="text"
-                  value={calApiKey}
-                  onChange={(e) => setCalApiKey(e.target.value)}
-                  placeholder="cal_live_xxxxxxxxxxxxxxxx"
-                  className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-gray-600/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 focus:outline-none font-mono text-sm transition-all hover:border-gray-500/70 placeholder:text-gray-500"
-                />
-              </div>
-
-              {/* Cal.ai Event ID */}
-              <div className="group/input">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                  📆 Cal.ai Event ID
-                </label>
-                <input
-                  type="text"
-                  value={calEventId}
-                  onChange={(e) => setCalEventId(e.target.value)}
-                  placeholder="30min-meeting"
-                  className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-gray-600/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 focus:outline-none font-mono text-sm transition-all hover:border-gray-500/70 placeholder:text-gray-500"
-                />
-              </div>
-            </div>
-
-            {/* Input Grid - Row 2: Agent Identity */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
-              {/* Agent Name */}
-              <div className="group/input">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                  🤖 Agent Name
-                </label>
-                <input
-                  type="text"
-                  value={agentName}
-                  onChange={(e) => setAgentName(e.target.value)}
-                  placeholder="Sarah"
-                  className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-purple-500/40 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 focus:outline-none text-sm transition-all hover:border-purple-500/60 placeholder:text-gray-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">AI says: "Hi, I'm {agentName || 'Sarah'}..."</p>
-              </div>
-
-              {/* Agent Pronoun */}
-              <div className="group/input">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                  👤 Agent Pronoun
-                </label>
-                <select
-                  value={agentPronoun}
-                  onChange={(e) => setAgentPronoun(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-purple-500/40 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 focus:outline-none text-sm transition-all hover:border-purple-500/60 cursor-pointer appearance-none"
-                  style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%239CA3AF\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5rem' }}
-                >
-                  <option value="she/her">She / Her</option>
-                  <option value="he/him">He / Him</option>
-                  <option value="they/them">They / Them</option>
-                </select>
-                <p className="text-xs text-gray-500 mt-1">Used in script references</p>
-              </div>
-
-              {/* Cost Per Minute */}
-              <div className="group/input">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                  💰 Cost Per Minute
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400 font-bold">$</span>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* Final Expense Phone */}
+                <div className="group/input">
+                  <label className="text-xs font-semibold text-green-400 uppercase tracking-wider block mb-2">
+                    💚 Final Expense
+                  </label>
                   <input
-                    type="number"
-                    value={costPerMinute}
-                    onChange={(e) => setCostPerMinute(e.target.value)}
-                    placeholder="0.40"
-                    step="0.01"
-                    min="0"
-                    className="w-full pl-8 pr-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-emerald-500/40 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 focus:outline-none font-mono text-sm transition-all hover:border-emerald-500/60 placeholder:text-gray-500"
+                    type="text"
+                    value={phoneNumberFE}
+                    onChange={(e) => setPhoneNumberFE(e.target.value)}
+                    placeholder="+15551234567"
+                    className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-green-500/40 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none font-mono text-sm transition-all hover:border-green-500/60 placeholder:text-gray-500"
+                  />
+                </div>
+                {/* Mortgage Protection Phone */}
+                <div className="group/input">
+                  <label className="text-xs font-semibold text-blue-400 uppercase tracking-wider block mb-2">
+                    🏠 Mortgage Protection
+                  </label>
+                  <input
+                    type="text"
+                    value={phoneNumberMP}
+                    onChange={(e) => setPhoneNumberMP(e.target.value)}
+                    placeholder="+15551234567"
+                    className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-blue-500/40 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none font-mono text-sm transition-all hover:border-blue-500/60 placeholder:text-gray-500"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Input Grid - Row 3: Timezone & Email */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-              {/* Timezone */}
-              <div className="group/input">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                  🌍 Timezone
-                </label>
-                <select
-                  value={timezone}
-                  onChange={(e) => setTimezone(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-sky-500/40 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 focus:outline-none text-sm transition-all hover:border-sky-500/60 cursor-pointer appearance-none"
-                  style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%239CA3AF\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5rem' }}
-                >
-                  <option value="America/New_York">Eastern (America/New_York)</option>
-                  <option value="America/Chicago">Central (America/Chicago)</option>
-                  <option value="America/Denver">Mountain (America/Denver)</option>
-                  <option value="America/Phoenix">Arizona (America/Phoenix)</option>
-                  <option value="America/Los_Angeles">Pacific (America/Los_Angeles)</option>
-                  <option value="America/Anchorage">Alaska (America/Anchorage)</option>
-                  <option value="Pacific/Honolulu">Hawaii (Pacific/Honolulu)</option>
-                </select>
-                <p className="text-xs text-gray-500 mt-1">Use in Retell: {"{{current_time_" + timezone + "}}"}</p>
+            {/* ═══════════════════════════════════════════════════════════════════ */}
+            {/* SECTION 2: AGENT IDENTITY */}
+            {/* ═══════════════════════════════════════════════════════════════════ */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                  <span className="text-white text-sm">🤖</span>
+                </div>
+                <h4 className="text-sm font-bold text-white uppercase tracking-wider">Agent Identity</h4>
               </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                {/* Agent Name */}
+                <div className="group/input">
+                  <label className="text-xs font-semibold text-purple-400 uppercase tracking-wider block mb-2">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={agentName}
+                    onChange={(e) => setAgentName(e.target.value)}
+                    placeholder="Sarah"
+                    className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-purple-500/40 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 focus:outline-none text-sm transition-all hover:border-purple-500/60 placeholder:text-gray-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">"Hi, I'm {agentName || 'Sarah'}..."</p>
+                </div>
+                {/* Agent Pronoun */}
+                <div className="group/input">
+                  <label className="text-xs font-semibold text-purple-400 uppercase tracking-wider block mb-2">
+                    Pronoun
+                  </label>
+                  <select
+                    value={agentPronoun}
+                    onChange={(e) => setAgentPronoun(e.target.value)}
+                    className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-purple-500/40 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 focus:outline-none text-sm transition-all hover:border-purple-500/60 cursor-pointer appearance-none"
+                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%239CA3AF\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5rem' }}
+                  >
+                    <option value="She">She</option>
+                    <option value="He">He</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">"{agentPronoun || 'She'} will call you..."</p>
+                </div>
+                {/* Cost Per Minute */}
+                <div className="group/input">
+                  <label className="text-xs font-semibold text-emerald-400 uppercase tracking-wider block mb-2">
+                    💰 Cost/Min
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400 font-bold">$</span>
+                    <input
+                      type="number"
+                      value={costPerMinute}
+                      onChange={(e) => setCostPerMinute(e.target.value)}
+                      placeholder="0.40"
+                      step="0.01"
+                      min="0"
+                      className="w-full pl-8 pr-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-emerald-500/40 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 focus:outline-none font-mono text-sm transition-all hover:border-emerald-500/60 placeholder:text-gray-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
 
-              {/* Confirmation Email */}
-              <div className="group/input">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                  📧 Confirmation Email
-                </label>
-                <input
-                  type="email"
-                  value={confirmationEmail}
-                  onChange={(e) => setConfirmationEmail(e.target.value)}
-                  placeholder="agent@example.com"
-                  className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-orange-500/40 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none text-sm transition-all hover:border-orange-500/60 placeholder:text-gray-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">Booking confirmations sent here</p>
+            {/* ═══════════════════════════════════════════════════════════════════ */}
+            {/* SECTION 3: CALENDAR & SCHEDULING */}
+            {/* ═══════════════════════════════════════════════════════════════════ */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-cyan-500 flex items-center justify-center">
+                  <span className="text-white text-sm">📅</span>
+                </div>
+                <h4 className="text-sm font-bold text-white uppercase tracking-wider">Calendar & Scheduling</h4>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-4">
+                {/* Cal.ai API Key */}
+                <div className="group/input">
+                  <label className="text-xs font-semibold text-sky-400 uppercase tracking-wider block mb-2">
+                    Cal.ai API Key
+                  </label>
+                  <input
+                    type="text"
+                    value={calApiKey}
+                    onChange={(e) => setCalApiKey(e.target.value)}
+                    placeholder="cal_live_xxxxxxxxxxxxxxxx"
+                    className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-sky-500/40 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 focus:outline-none font-mono text-sm transition-all hover:border-sky-500/60 placeholder:text-gray-500"
+                  />
+                </div>
+                {/* Cal.ai Event ID */}
+                <div className="group/input">
+                  <label className="text-xs font-semibold text-sky-400 uppercase tracking-wider block mb-2">
+                    Cal.ai Event ID
+                  </label>
+                  <input
+                    type="text"
+                    value={calEventId}
+                    onChange={(e) => setCalEventId(e.target.value)}
+                    placeholder="3685354"
+                    className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-sky-500/40 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 focus:outline-none font-mono text-sm transition-all hover:border-sky-500/60 placeholder:text-gray-500"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* Timezone */}
+                <div className="group/input">
+                  <label className="text-xs font-semibold text-sky-400 uppercase tracking-wider block mb-2">
+                    🌍 Timezone
+                  </label>
+                  <select
+                    value={timezone}
+                    onChange={(e) => setTimezone(e.target.value)}
+                    className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-sky-500/40 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 focus:outline-none text-sm transition-all hover:border-sky-500/60 cursor-pointer appearance-none"
+                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%239CA3AF\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5rem' }}
+                  >
+                    <option value="America/New_York">Eastern (EST)</option>
+                    <option value="America/Chicago">Central (CST)</option>
+                    <option value="America/Denver">Mountain (MST)</option>
+                    <option value="America/Phoenix">Arizona (MST)</option>
+                    <option value="America/Los_Angeles">Pacific (PST)</option>
+                    <option value="America/Anchorage">Alaska (AKST)</option>
+                    <option value="Pacific/Honolulu">Hawaii (HST)</option>
+                  </select>
+                </div>
+                {/* Confirmation Email */}
+                <div className="group/input">
+                  <label className="text-xs font-semibold text-orange-400 uppercase tracking-wider block mb-2">
+                    📧 Confirmation Email
+                  </label>
+                  <input
+                    type="email"
+                    value={confirmationEmail}
+                    onChange={(e) => setConfirmationEmail(e.target.value)}
+                    placeholder="agent@example.com"
+                    className="w-full px-4 py-3 bg-[#0B1437]/80 text-white rounded-xl border border-orange-500/40 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none text-sm transition-all hover:border-orange-500/60 placeholder:text-gray-500"
+                  />
               </div>
             </div>
 
