@@ -39,27 +39,45 @@ export async function POST(request: Request) {
       customer_email,
       preferred_time,
       notes,
-      // Cal.ai specific fields
+      // Cal.ai specific fields - handle multiple field name variations
       start_time,
+      startTime,
+      selected_slot,
+      slot,
+      time,
       end_time,
       timezone,
     } = args;
+
+    // Handle different field names Retell might use for the start time
+    const actualStartTime = start_time || startTime || selected_slot || slot || time || args.SlotA_iso || args.slotA_iso;
+    
+    console.log('🕐 Start time detection:');
+    console.log(`   start_time: ${start_time}`);
+    console.log(`   startTime: ${startTime}`);
+    console.log(`   selected_slot: ${selected_slot}`);
+    console.log(`   slot: ${slot}`);
+    console.log(`   time: ${time}`);
+    console.log(`   SlotA_iso: ${args.SlotA_iso}`);
+    console.log(`   → Using: ${actualStartTime}`);
 
     if (!userId) {
       console.error('❌ Missing userId');
       return NextResponse.json({ 
         success: false, 
-        error: `userId is required. Received: ${JSON.stringify(body)}`,
+        error: `userId is required. Received args: ${JSON.stringify(args)}`,
         debug_received: body,
       }, { status: 200 });
     }
     
-    if (!start_time) {
+    if (!actualStartTime) {
       console.error('❌ Missing start_time');
+      console.error('   All args received:', JSON.stringify(args, null, 2));
       return NextResponse.json({ 
         success: false, 
-        error: `start_time is required (use SlotA_iso from check_availability). Received: ${JSON.stringify(body)}`,
+        error: `start_time is required. Use the ISO format slot from check_availability (e.g., SlotA_iso). Received fields: ${Object.keys(args).join(', ')}`,
         debug_received: body,
+        hint: 'Make sure to pass start_time with an ISO datetime like 2025-12-23T09:00:00-05:00',
       }, { status: 200 });
     }
 
@@ -111,7 +129,7 @@ export async function POST(request: Request) {
     // V2 API format uses "attendee" instead of "responses"
     const bookingPayload: any = {
       eventTypeId: parseInt(retellConfig.cal_event_id),
-      start: start_time, // Required: ISO format start time
+      start: actualStartTime, // Required: ISO format start time
       attendee: {
         name: customer_name || 'AI Booked Lead',
         email: emailToUse,
