@@ -156,20 +156,30 @@ export async function POST(request: Request) {
     console.log('');
 
     // ========================================================================
-    // 🔥🔥🔥 IF DOUBLE DIAL: UPDATE LEAD AND RETURN. PERIOD. 🔥🔥🔥
+    // 🔥🔥🔥 DOUBLE DIAL NO ANSWER - EARLY RETURN 🔥🔥🔥
     // ========================================================================
-    // No complex conditions. If it's a double dial, update the lead to no_answer.
-    // This is the second attempt - we're done with this lead for now.
-    if (wasDoubleDial) {
-      // Calculate duration for this call
-      const durationSecondsDD = end_timestamp && start_timestamp 
-        ? (end_timestamp - start_timestamp) / 1000
-        : 0;
-      
+    // Only trigger if:
+    // 1. This is a double dial (second attempt)
+    // 2. AND the call was NOT answered (duration < 10 seconds)
+    // If they PICKED UP (duration >= 10s), let normal flow handle it!
+    
+    // Calculate duration for this call
+    const durationSecondsDD = end_timestamp && start_timestamp 
+      ? (end_timestamp - start_timestamp) / 1000
+      : 0;
+    
+    // Call is considered ANSWERED if duration >= 10 seconds
+    const callWasPickedUp = durationSecondsDD >= 10;
+    
+    console.log(`📞 Call duration: ${durationSecondsDD.toFixed(1)}s`);
+    console.log(`📞 Call was picked up (>=10s): ${callWasPickedUp}`);
+    
+    if (wasDoubleDial && !callWasPickedUp) {
+      // Double dial AND they didn't pick up - mark as no_answer
       console.log('');
       console.log('🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥');
-      console.log('🔥 DOUBLE DIAL DETECTED - UPDATING LEAD TO NO_ANSWER! 🔥');
-      console.log(`🔥 Duration: ${durationSecondsDD.toFixed(1)}s`);
+      console.log('🔥 DOUBLE DIAL + NO ANSWER - UPDATING LEAD TO NO_ANSWER! 🔥');
+      console.log(`🔥 Duration: ${durationSecondsDD.toFixed(1)}s (< 10s = not picked up)`);
       console.log('🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥');
       console.log('');
       
@@ -292,12 +302,20 @@ export async function POST(request: Request) {
       });
     }
     
+    // If we get here, either:
+    // 1. NOT a double dial (first attempt) - need to check if should double dial
+    // 2. IS a double dial but call WAS picked up (duration >= 10s) - process normally
+    if (wasDoubleDial && callWasPickedUp) {
+      console.log('');
+      console.log('📞 DOUBLE DIAL BUT CALL WAS PICKED UP!');
+      console.log(`📞 Duration: ${durationSecondsDD.toFixed(1)}s - Processing as normal answered call`);
+      console.log('');
+    }
+    
     // ========================================================================
     // CONTINUE WITH NORMAL FLOW FOR OTHER CASES
     // ========================================================================
-    const durationSeconds = end_timestamp && start_timestamp 
-      ? (end_timestamp - start_timestamp) / 1000
-      : 0;
+    const durationSeconds = durationSecondsDD; // Use already calculated value
     const durationMinutes = durationSeconds / 60;
 
     console.log(`📊 Call Duration: ${durationSeconds}s (${durationMinutes.toFixed(2)}min)`);
