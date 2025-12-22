@@ -15,10 +15,13 @@ export function PublicNav() {
 
   // Check auth state - only show dashboard if they have completed payment
   useEffect(() => {
+    let mounted = true;
+    
     const checkUser = async () => {
-      setIsLoading(true);
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (!mounted) return;
         
         if (user) {
           // Check if they have completed payment and have stripe customer ID
@@ -28,6 +31,8 @@ export function PublicNav() {
             .eq('user_id', user.id)
             .single();
           
+          if (!mounted) return;
+          
           // Only show dashboard if they have:
           // 1. Completed onboarding AND have stripe customer (payment method added)
           // 2. OR have an active subscription (already paying customers)
@@ -35,21 +40,34 @@ export function PublicNav() {
           const hasActiveSubscription = profile?.has_active_subscription === true;
           
           if (profile && (hasCompletedPayment || hasActiveSubscription)) {
-            console.log('🔍 Auth check in PublicNav: FULLY SIGNED UP (payment complete)');
             setUser(user);
           } else {
-            console.log('🔍 Auth check in PublicNav: NOT FULLY SIGNED UP (no payment)');
             setUser(null);
           }
         } else {
-          console.log('🔍 Auth check in PublicNav: NO USER');
           setUser(null);
         }
+      } catch (err) {
+        console.error('Auth check failed:', err);
+        if (mounted) setUser(null);
       } finally {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     };
+    
+    // Timeout fallback - show buttons after 2s even if auth check hangs
+    const timeout = setTimeout(() => {
+      if (mounted) {
+        setIsLoading(false);
+      }
+    }, 2000);
+    
     checkUser();
+    
+    return () => {
+      mounted = false;
+      clearTimeout(timeout);
+    };
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
