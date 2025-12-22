@@ -132,6 +132,28 @@ export async function GET() {
 
     const pendingLeads = uncalledLeads || totalLeads || 0;
     const todayLeadsAttempted = todayCalls; // Each call = one lead attempted
+    
+    // Check for "all leads dialed today" condition
+    // These are leads that could be called but were already called today
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { count: leadsDialedToday } = await supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('is_qualified', true)
+      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment', 'needs_review'])
+      .eq('last_attempt_date', todayStr);
+    
+    // Total callable leads (regardless of whether called today)
+    const { count: totalCallableLeads } = await supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('is_qualified', true)
+      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment', 'needs_review']);
+    
+    // If we have callable leads but they were all dialed today
+    const allLeadsDialedToday = (totalCallableLeads || 0) > 0 && (leadsDialedToday || 0) >= (totalCallableLeads || 0);
 
     // Get call balance
     const { data: callBalance } = await supabase
@@ -195,6 +217,12 @@ export async function GET() {
       status = 'no-leads';
       reason = 'No pending leads to call';
     }
+    
+    // Check if all leads were dialed today (idle status only)
+    if (status === 'idle' && allLeadsDialedToday) {
+      status = 'leads-exhausted-today';
+      reason = `All ${totalCallableLeads} leads have been dialed today. Come back tomorrow!`;
+    }
 
     // Detect budget mode by budget_limit_cents > 0
     const isBudgetMode = aiSettings?.budget_limit_cents && aiSettings.budget_limit_cents > 0;
@@ -235,6 +263,10 @@ export async function GET() {
       currentTime: currentTimeStr,
       userTimezone,
       callingHoursDisabled,
+      // Leads dialed today info
+      leadsDialedToday: leadsDialedToday || 0,
+      totalCallableLeads: totalCallableLeads || 0,
+      allLeadsDialedToday,
     });
   } catch (error: any) {
     console.error('Error fetching dialer status:', error);

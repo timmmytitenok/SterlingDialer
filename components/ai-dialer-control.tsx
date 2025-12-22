@@ -263,6 +263,7 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
       case 'paused-budget': return 'yellow';
       case 'paused-balance': return 'red';
       case 'no-leads': return 'orange';
+      case 'leads-exhausted-today': return 'blue';
       case 'error': return 'red';
       default: return 'gray';
     }
@@ -276,6 +277,7 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
       case 'paused-budget': return 'PAUSED - BUDGET';
       case 'paused-balance': return 'PAUSED - LOW BALANCE';
       case 'no-leads': return 'NO LEADS';
+      case 'leads-exhausted-today': return 'DONE FOR TODAY';
       case 'error': return 'ERROR';
       default: return 'LOADING';
     }
@@ -320,6 +322,7 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
   const isRunning = status?.status === 'running';
   const isPausedBudget = status?.status === 'paused-budget';
   const isOutsideHours = status?.status === 'outside-hours';
+  const isLeadsExhaustedToday = status?.status === 'leads-exhausted-today';
   const noBudgetSet = status && status.dailyBudgetCents === 0;
   const color = getStatusColor();
   
@@ -601,12 +604,16 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                   color === 'purple' ? 'bg-purple-500/20 border-purple-500' :
                   color === 'yellow' ? 'bg-yellow-500/20 border-yellow-500' :
                   color === 'red' ? 'bg-red-500/20 border-red-500' :
+                  color === 'blue' ? 'bg-blue-500/20 border-blue-500' :
+                  color === 'orange' ? 'bg-orange-500/20 border-orange-500' :
                   'bg-gray-800/30 border-gray-700'
                 }`}>
                   {isRunning ? (
                     <Activity className="w-16 h-16 text-green-400 animate-pulse-fast" />
                   ) : isOutsideHours ? (
                     <Clock className="w-16 h-16 text-purple-400" />
+                  ) : isLeadsExhaustedToday ? (
+                    <CheckCircle className="w-16 h-16 text-blue-400" />
                   ) : (
                     <Zap className="w-16 h-16 text-gray-500" />
                   )}
@@ -619,12 +626,14 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                 color === 'purple' ? 'bg-purple-500/20 text-purple-400 border-2 border-purple-500/40' :
                 color === 'yellow' ? 'bg-yellow-500/20 text-yellow-400 border-2 border-yellow-500/40' :
                 color === 'red' ? 'bg-red-500/20 text-red-400 border-2 border-red-500/40' :
+                color === 'blue' ? 'bg-blue-500/20 text-blue-400 border-2 border-blue-500/40' :
+                color === 'orange' ? 'bg-orange-500/20 text-orange-400 border-2 border-orange-500/40' :
                 'bg-gray-500/20 text-gray-400 border-2 border-gray-500/40'
               }`}>
                 {getStatusText()}
               </div>
 
-              {/* Subtext - or special outside hours message */}
+              {/* Subtext - or special status messages */}
               {isOutsideHours ? (
                 <div className="mb-8 space-y-3">
                   <div className="flex items-center justify-center gap-2 text-purple-300">
@@ -638,6 +647,50 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                     <p className="text-purple-200 text-sm">
                      🌙  The AI dialer operates between <span className="font-bold">9:00 AM - 6:00 PM (Mon-Sat)</span> to ensure calls are made during appropriate business hours. 🌙
                     </p>
+                  </div>
+                </div>
+              ) : isLeadsExhaustedToday ? (
+                <div className="mb-8 space-y-3">
+                  {/* Glowing background effect */}
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
+                    <div className="relative px-8 py-6 bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl backdrop-blur-sm">
+                      {/* Icon with glow */}
+                      <div className="flex justify-center mb-4">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-blue-500/40 blur-xl rounded-full" />
+                          <div className="relative w-16 h-16 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-full flex items-center justify-center border-2 border-blue-500/40">
+                            <CheckCircle className="w-8 h-8 text-blue-400" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Title */}
+                      <h3 className="text-xl font-bold text-center bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                        Great Progress Today! 🎉
+                      </h3>
+                      
+                      {/* Message */}
+                      <p className="text-gray-300 text-center mb-3">
+                        You've dialed all <span className="text-blue-400 font-bold">{status?.totalCallableLeads || 0}</span> available leads today.
+                      </p>
+                      
+                      {/* Subtext */}
+                      <p className="text-gray-400 text-sm text-center">
+                        These leads will be ready to call again tomorrow. 
+                        <br />
+                        <span className="text-blue-300">Upload more leads to keep dialing now!</span>
+                      </p>
+                      
+                      {/* Stats pill */}
+                      <div className="mt-4 flex justify-center">
+                        <div className="px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full">
+                          <span className="text-sm text-blue-300">
+                            📞 {status?.leadsDialedToday || 0} leads dialed today
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (
