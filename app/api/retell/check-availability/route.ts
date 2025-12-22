@@ -1,0 +1,240 @@
+import { createServiceRoleClient } from '@/lib/supabase/server';
+import { NextResponse } from 'next/server';
+
+/**
+ * POST /api/retell/check-availability
+ * 
+ * Custom webhook for Retell to check calendar availability using the USER's Cal.ai API key
+ * Returns available time slots for booking
+ * 
+ * Retell sends:
+ * - userId: The user whose calendar to check
+ * - date: The date to check (e.g., "2024-01-15" or "tomorrow")
+ * - timezone: Customer's timezone (optional, defaults to America/New_York)
+ */
+export async function POST(request: Request) {
+  console.log('');
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('📅 CHECK AVAILABILITY WEBHOOK');
+  console.log('═══════════════════════════════════════════════════════');
+
+  try {
+    const body = await request.json();
+    console.log('📥 Received:', JSON.stringify(body, null, 2));
+
+    const {
+      userId,
+      date,
+      timezone = 'America/New_York',
+    } = body;
+
+    if (!userId) {
+      console.error('❌ Missing userId');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'userId is required',
+        available_slots: [],
+      }, { status: 400 });
+    }
+
+    const supabase = createServiceRoleClient();
+
+    // Get user's Cal.ai configuration
+    const { data: retellConfig, error: configError } = await supabase
+      .from('user_retell_config')
+      .select('cal_ai_api_key, cal_event_id, agent_name')
+      .eq('user_id', userId)
+      .single();
+
+    if (configError || !retellConfig) {
+      console.error('❌ Failed to fetch user config:', configError);
+      return NextResponse.json({ 
+        success: false, 
+        error: 'User configuration not found',
+        available_slots: [],
+      }, { status: 404 });
+    }
+
+    if (!retellConfig.cal_ai_api_key) {
+      console.error('❌ User has no Cal.ai API key configured');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Cal.ai API key not configured',
+        available_slots: [],
+      }, { status: 400 });
+    }
+
+    if (!retellConfig.cal_event_id) {
+      console.error('❌ User has no Cal.ai Event ID configured');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Cal.ai Event ID not configured',
+        available_slots: [],
+      }, { status: 400 });
+    }
+
+    console.log('✅ User config found');
+    console.log(`   Cal.ai Event ID: ${retellConfig.cal_event_id}`);
+
+    // Parse the date - handle "tomorrow", "next monday", etc.
+    let targetDate = new Date();
+    
+    if (date) {
+      const dateLower = date.toLowerCase();
+      
+      if (dateLower === 'tomorrow') {
+        targetDate.setDate(targetDate.getDate() + 1);
+      } else if (dateLower === 'today') {
+        // Keep as today
+      } else if (dateLower.includes('next')) {
+        // Handle "next monday", "next week", etc.
+        const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const dayMatch = daysOfWeek.find(day => dateLower.includes(day));
+        
+        if (dayMatch) {
+          const targetDayIndex = daysOfWeek.indexOf(dayMatch);
+          const currentDayIndex = targetDate.getDay();
+          let daysToAdd = targetDayIndex - currentDayIndex;
+          if (daysToAdd <= 0) daysToAdd += 7; // Next week
+          targetDate.setDate(targetDate.getDate() + daysToAdd);
+        } else if (dateLower.includes('week')) {
+          targetDate.setDate(targetDate.getDate() + 7);
+        }
+      } else {
+        // Try to parse as a date string
+        const parsed = new Date(date);
+        if (!isNaN(parsed.getTime())) {
+          targetDate = parsed;
+        }
+      }
+    }
+
+    // Format dates for Cal.com API
+    const startDate = new Date(targetDate);
+    startDate.setHours(0, 0, 0, 0);
+    
+    const endDate = new Date(targetDate);
+    endDate.setHours(23, 59, 59, 999);
+
+    // Cal.com availability API
+    const calApiUrl = `https://api.cal.com/v1/availability`;
+    const params = new URLSearchParams({
+      apiKey: retellConfig.cal_ai_api_key,
+      eventTypeId: retellConfig.cal_event_id,
+      dateFrom: startDate.toISOString().split('T')[0],
+      dateTo: endDate.toISOString().split('T')[0],
+      timeZone: timezone,
+    });
+
+    console.log('📤 Calling Cal.com Availability API...');
+    console.log(`   URL: ${calApiUrl}?eventTypeId=${retellConfig.cal_event_id}&dateFrom=${startDate.toISOString().split('T')[0]}&dateTo=${endDate.toISOString().split('T')[0]}`);
+
+    const calResponse = await fetch(`${calApiUrl}?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const calResult = await calResponse.json();
+    console.log('📥 Cal.com response:', JSON.stringify(calResult, null, 2));
+
+    if (!calResponse.ok) {
+      console.error('❌ Cal.com API error:', calResult);
+      return NextResponse.json({ 
+        success: false, 
+        error: calResult.message || 'Failed to check availability',
+        available_slots: [],
+      }, { status: 200 }); // Return 200 so Retell doesn't retry
+    }
+
+    // Parse available slots from Cal.com response
+    // Cal.com returns slots in format: { slots: { "2024-01-15": [...times] } }
+    const slots = calResult.slots || calResult.busy || {};
+    const availableSlots: string[] = [];
+    const availableSlotsISO: string[] = []; // For booking
+    
+    // Format slots for the AI to read
+    for (const [dateKey, times] of Object.entries(slots)) {
+      if (Array.isArray(times)) {
+        for (const slot of times) {
+          const time = slot.time || slot;
+          if (typeof time === 'string') {
+            // Store ISO format for booking
+            availableSlotsISO.push(time);
+            
+            // Convert to readable format
+            const slotDate = new Date(time);
+            const formattedTime = slotDate.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true,
+              timeZone: timezone,
+            });
+            const formattedDate = slotDate.toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+              timeZone: timezone,
+            });
+            availableSlots.push(`${formattedDate} at ${formattedTime}`);
+          }
+        }
+      }
+    }
+
+    // If no slots found, provide a helpful message
+    if (availableSlots.length === 0) {
+      const dateString = targetDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+      });
+      
+      return NextResponse.json({
+        success: true,
+        message: `No available slots found for ${dateString}. Would you like to check a different day?`,
+        available_slots: [],
+        available_slots_iso: [],
+        date_checked: dateString,
+        suggestion: 'Try checking a different day',
+      });
+    }
+
+    // Limit to first 5 slots to keep response manageable for AI
+    const limitedSlots = availableSlots.slice(0, 5);
+    const limitedSlotsISO = availableSlotsISO.slice(0, 5);
+
+    console.log(`✅ Found ${availableSlots.length} available slots, returning ${limitedSlots.length}`);
+
+    // Create a nice summary for the AI to read
+    const summary = limitedSlots.length === 1 
+      ? `I have one available slot: ${limitedSlots[0]}`
+      : `I have ${limitedSlots.length} available slots: ${limitedSlots.join(', ')}`;
+
+    return NextResponse.json({
+      success: true,
+      message: summary,
+      available_slots: limitedSlots,
+      available_slots_iso: limitedSlotsISO, // For booking function to use
+      total_slots_available: availableSlots.length,
+      date_checked: targetDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+      }),
+    });
+
+  } catch (error: any) {
+    console.error('❌ Fatal error in check-availability webhook:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: error.message || 'Internal server error',
+        available_slots: [],
+      },
+      { status: 500 }
+    );
+  }
+}
+
