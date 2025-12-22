@@ -28,13 +28,32 @@ export async function POST(request: Request) {
       timezone = 'America/New_York',
     } = body;
 
+    // DEBUG: Return what we received for troubleshooting
     if (!userId) {
       console.error('❌ Missing userId');
+      console.error('📦 Full request body:', JSON.stringify(body, null, 2));
       return NextResponse.json({ 
         success: false, 
-        error: 'userId is required',
+        error: `userId is required. Received: ${JSON.stringify(body)}`,
         available_slots: [],
-      }, { status: 400 });
+        SlotA: 'Error: Missing userId',
+        SlotB: '',
+        SlotC: '',
+        debug_received: body,
+      }, { status: 200 }); // Return 200 so Retell shows the error
+    }
+    
+    if (!date) {
+      console.error('❌ Missing date');
+      return NextResponse.json({ 
+        success: false, 
+        error: `date is required. Received userId: ${userId}`,
+        available_slots: [],
+        SlotA: 'Error: Missing date',
+        SlotB: '',
+        SlotC: '',
+        debug_received: body,
+      }, { status: 200 });
     }
 
     const supabase = createServiceRoleClient();
