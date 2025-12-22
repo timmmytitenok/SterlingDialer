@@ -44,8 +44,14 @@ export async function GET() {
       // Step 1 = Form completion (onboarding_step_1_form)
       // Needs Onboarding = Step 1 NOT complete
       // Needs AI Setup = Step 1 complete BUT AI not configured
+      // GLOBAL AGENT SYSTEM: No longer need individual agent IDs
+      // Required: phone number, cal api key, cal event id, agent name
       let setupStatus = 'account_created';
-      const hasAIConfigured = retellConfig && retellConfig.retell_agent_id && retellConfig.phone_number;
+      const hasPhone = !!(retellConfig?.phone_number_fe || retellConfig?.phone_number_mp || retellConfig?.phone_number);
+      const hasCalKey = !!retellConfig?.cal_ai_api_key;
+      const hasCalEventId = !!retellConfig?.cal_event_id;
+      const hasAgentName = !!retellConfig?.agent_name;
+      const hasAIConfigured = hasPhone && hasCalKey && hasCalEventId && hasAgentName;
       const hasCompletedStep1 = profile?.onboarding_step_1_form === true;
       
       if (hasAIConfigured) {
