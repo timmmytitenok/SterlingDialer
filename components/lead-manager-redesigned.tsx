@@ -717,7 +717,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       const leadTypeToSend = selectedLeadType.leadType;
       console.log('🎯 LEAD TYPE BEING SENT TO API:', leadTypeToSend);
       console.log('🎯 Selected Lead Type Object:', selectedLeadType);
-      console.log(`🎯 Lead Type Meaning: ${leadTypeToSend === 2 ? 'Final Expense' : leadTypeToSend === 3 ? 'Veterans FE' : leadTypeToSend === 4 ? 'Mortgage Protection' : 'UNKNOWN'}`);
+      console.log(`🎯 Lead Type Meaning: ${leadTypeToSend === 2 ? 'Final Expense' : leadTypeToSend === 4 ? 'Mortgage Protection' : 'UNKNOWN'}`);
       
       const createResponse = await fetch('/api/google-sheets/create', {
         method: 'POST',
