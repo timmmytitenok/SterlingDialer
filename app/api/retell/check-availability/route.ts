@@ -76,6 +76,31 @@ export async function POST(request: Request) {
     console.log('✅ User config found');
     console.log(`   Cal.ai Event ID: ${retellConfig.cal_event_id}`);
 
+    // First, get the Cal.com user info from the API key to get their username
+    console.log('📤 Fetching Cal.com user info...');
+    const meResponse = await fetch(`https://api.cal.com/v1/me?apiKey=${retellConfig.cal_ai_api_key}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    const meResult = await meResponse.json();
+    console.log('📥 Cal.com /me response:', JSON.stringify(meResult, null, 2));
+    
+    if (!meResponse.ok || !meResult.user?.username) {
+      console.error('❌ Failed to get Cal.com user info');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Failed to verify Cal.com account. Check API key.',
+        available_slots: [],
+        SlotA: 'Calendar error',
+        SlotB: '',
+        SlotC: '',
+      }, { status: 200 });
+    }
+    
+    const calUsername = meResult.user.username;
+    console.log(`✅ Cal.com username: ${calUsername}`);
+
     // Parse the date - handle "tomorrow", "next monday", etc.
     let targetDate = new Date();
     
@@ -116,18 +141,19 @@ export async function POST(request: Request) {
     const endDate = new Date(targetDate);
     endDate.setHours(23, 59, 59, 999);
 
-    // Cal.com slots API - use /v1/slots endpoint which works with eventTypeId
+    // Cal.com slots API - include username for proper authentication
     const calApiUrl = `https://api.cal.com/v1/slots`;
     const params = new URLSearchParams({
       apiKey: retellConfig.cal_ai_api_key,
       eventTypeId: retellConfig.cal_event_id,
+      username: calUsername,
       startTime: startDate.toISOString(),
       endTime: endDate.toISOString(),
       timeZone: timezone,
     });
 
     console.log('📤 Calling Cal.com Slots API...');
-    console.log(`   URL: ${calApiUrl}?eventTypeId=${retellConfig.cal_event_id}&startTime=${startDate.toISOString()}&endTime=${endDate.toISOString()}`);
+    console.log(`   URL: ${calApiUrl}?eventTypeId=${retellConfig.cal_event_id}&username=${calUsername}&startTime=${startDate.toISOString()}&endTime=${endDate.toISOString()}`);
 
     const calResponse = await fetch(`${calApiUrl}?${params.toString()}`, {
       method: 'GET',
