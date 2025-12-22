@@ -25,7 +25,6 @@ export async function POST(request: Request) {
       .from('appointments')
       .update({
         status: 'cancelled',
-        updated_at: new Date().toISOString(),
       })
       .eq('id', appointmentId)
       .eq('user_id', user.id);
