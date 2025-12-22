@@ -84,7 +84,9 @@ export async function POST(request: Request) {
     
     console.log('🔍 Checking config completeness:', { hasPhone, hasCalKey, hasCalEventId, hasAgentName });
     
-    if (hasPhone && hasCalKey && hasCalEventId && hasAgentName) {
+    const isFullyConfigured = hasPhone && hasCalKey && hasCalEventId && hasAgentName;
+    
+    if (isFullyConfigured) {
       updateFields.is_active = true;
       console.log('✅ AI fully configured - setting is_active = true');
     } else {
@@ -135,6 +137,24 @@ export async function POST(request: Request) {
       }
 
       console.log('✅ Created new config');
+    }
+
+    // If AI is fully configured, update profile setup_status to 'active'
+    if (isFullyConfigured) {
+      console.log('🎯 Updating profile setup_status to active...');
+      const { error: statusError } = await supabase
+        .from('profiles')
+        .update({ 
+          setup_status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (statusError) {
+        console.error('⚠️ Error updating setup_status:', statusError);
+      } else {
+        console.log('✅ Profile setup_status set to ACTIVE');
+      }
     }
 
     // Update cost_per_minute in profiles table if provided
