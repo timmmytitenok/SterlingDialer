@@ -52,6 +52,21 @@ export async function GET(request: Request) {
     }
 
     const hasCallableLeads = (callableLeadsCount || 0) > 0;
+    
+    // Check if all leads have been dialed today
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { count: leadsNotDialedToday } = await supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('is_qualified', true)
+      .in('google_sheet_id', activeSheetIds)
+      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment', 'needs_review'])
+      .or('total_calls_made.is.null,total_calls_made.lt.20')
+      .or(`last_attempt_date.is.null,last_attempt_date.neq.${todayStr}`);
+    
+    // All leads dialed today = we have callable leads BUT none are available (all called today)
+    const allLeadsDialedToday = hasCallableLeads && (leadsNotDialedToday || 0) === 0;
 
     if (!hasCallableLeads) {
       // Get total leads to provide more context
@@ -93,10 +108,23 @@ export async function GET(request: Request) {
       });
     }
 
+    // If all leads were dialed today, return that info
+    if (allLeadsDialedToday) {
+      return NextResponse.json({
+        hasCallableLeads: false, // Can't call any right now
+        callableLeadsCount: 0,
+        totalCallableLeads: callableLeadsCount || 0,
+        allLeadsDialedToday: true,
+        message: `All ${callableLeadsCount} leads have been dialed today. Come back tomorrow!`,
+      });
+    }
+    
     return NextResponse.json({
       hasCallableLeads: true,
-      callableLeadsCount: callableLeadsCount || 0,
-      message: `Found ${callableLeadsCount} leads ready to call!`,
+      callableLeadsCount: leadsNotDialedToday || 0, // Only count leads NOT dialed today
+      totalCallableLeads: callableLeadsCount || 0,
+      allLeadsDialedToday: false,
+      message: `Found ${leadsNotDialedToday} leads ready to call!`,
     });
 
   } catch (error: any) {
