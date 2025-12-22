@@ -64,10 +64,10 @@ export async function POST(request: Request) {
 
     const supabase = createServiceRoleClient();
 
-    // Get user's Cal.ai configuration
+    // Get user's Cal.ai configuration including timezone
     const { data: retellConfig, error: configError } = await supabase
       .from('user_retell_config')
-      .select('cal_ai_api_key, cal_event_id, agent_name')
+      .select('cal_ai_api_key, cal_event_id, agent_name, timezone')
       .eq('user_id', userId)
       .single();
 
@@ -98,8 +98,12 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
+    // Use agent's configured timezone, fallback to passed timezone or EST
+    const agentTimezone = retellConfig.timezone || timezone || 'America/New_York';
+    
     console.log('✅ User config found');
     console.log(`   Cal.ai Event ID: ${retellConfig.cal_event_id}`);
+    console.log(`   Agent Timezone: ${agentTimezone}`);
 
     // First, get the Cal.com user info from the API key to get their username
     console.log('📤 Fetching Cal.com user info...');
@@ -167,6 +171,7 @@ export async function POST(request: Request) {
     endDate.setHours(23, 59, 59, 999);
 
     // Cal.com slots API - include username for proper authentication
+    // Use AGENT's timezone to get correct availability
     const calApiUrl = `https://api.cal.com/v1/slots`;
     const params = new URLSearchParams({
       apiKey: retellConfig.cal_ai_api_key,
@@ -174,7 +179,7 @@ export async function POST(request: Request) {
       username: calUsername,
       startTime: startDate.toISOString(),
       endTime: endDate.toISOString(),
-      timeZone: timezone,
+      timeZone: agentTimezone, // Use agent's timezone for availability
     });
 
     console.log('📤 Calling Cal.com Slots API...');
@@ -214,19 +219,19 @@ export async function POST(request: Request) {
             // Store ISO format for booking
             availableSlotsISO.push(time);
             
-            // Convert to readable format
+            // Convert to readable format using agent's timezone
             const slotDate = new Date(time);
             const formattedTime = slotDate.toLocaleTimeString('en-US', {
               hour: 'numeric',
               minute: '2-digit',
               hour12: true,
-              timeZone: timezone,
+              timeZone: agentTimezone,
             });
             const formattedDate = slotDate.toLocaleDateString('en-US', {
               weekday: 'long',
               month: 'long',
               day: 'numeric',
-              timeZone: timezone,
+              timeZone: agentTimezone,
             });
             availableSlots.push(`${formattedDate} at ${formattedTime}`);
           }

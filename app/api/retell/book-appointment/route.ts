@@ -98,10 +98,10 @@ export async function POST(request: Request) {
 
     const supabase = createServiceRoleClient();
 
-    // Get user's Cal.ai configuration
+    // Get user's Cal.ai configuration including timezone
     const { data: retellConfig, error: configError } = await supabase
       .from('user_retell_config')
-      .select('cal_ai_api_key, cal_event_id, agent_name')
+      .select('cal_ai_api_key, cal_event_id, agent_name, timezone')
       .eq('user_id', userId)
       .single();
 
@@ -129,10 +129,14 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
+    // Use agent's configured timezone for booking
+    const agentTimezone = retellConfig.timezone || timezone || 'America/New_York';
+    
     console.log('✅ User config found:');
     console.log(`   Cal.ai API Key: ${retellConfig.cal_ai_api_key.substring(0, 15)}...`);
     console.log(`   Cal.ai Event ID: ${retellConfig.cal_event_id}`);
     console.log(`   Agent Name: ${retellConfig.agent_name || 'Not set'}`);
+    console.log(`   Agent Timezone: ${agentTimezone}`);
 
     // Build the Cal.com API request
     // Using Cal.com's v2 API for bookings - more reliable format
@@ -142,13 +146,14 @@ export async function POST(request: Request) {
     const emailToUse = customer_email || `${customer_phone?.replace(/\D/g, '') || 'lead'}@ai-booking.com`;
     
     // V2 API format uses "attendee" instead of "responses"
+    // Use AGENT's timezone for consistent booking
     const bookingPayload: any = {
       eventTypeId: parseInt(retellConfig.cal_event_id),
       start: actualStartTime, // Required: ISO format start time
       attendee: {
         name: customer_name || 'AI Booked Lead',
         email: emailToUse,
-        timeZone: timezone || 'America/New_York',
+        timeZone: agentTimezone, // Use agent's timezone for booking
       },
       metadata: {
         leadId: leadId || 'unknown',
