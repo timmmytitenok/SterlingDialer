@@ -72,7 +72,7 @@ export async function GET(request: Request) {
   checks.leads = {
     callableCount: count || 0,
     error: leadsError?.message || null,
-    samples: leads?.map(l => ({
+    samples: leads?.map((l: any) => ({
       name: l.name,
       status: l.status,
       lead_type: l.lead_type,
