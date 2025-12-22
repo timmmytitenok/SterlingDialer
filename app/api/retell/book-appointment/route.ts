@@ -191,20 +191,9 @@ export async function POST(request: Request) {
       console.error('❌ Cal.com HTTP status:', calResponse.status);
       console.error('❌ Full Cal.com response:', JSON.stringify(calResult, null, 2));
       
-      // Still create a pending appointment in our database
-      if (leadId) {
-        await supabase.from('appointments').insert({
-          user_id: userId,
-          lead_id: leadId,
-          customer_name: customer_name,
-          customer_phone: customer_phone,
-          customer_email: customer_email,
-          status: 'pending_manual', // Needs manual scheduling
-          notes: `AI tried to book but Cal.com failed: ${calResult.message || JSON.stringify(calResult)}. Preferred time: ${actualStartTime || 'Not specified'}`,
-          created_at: new Date().toISOString(),
-        });
-        console.log('📝 Created pending appointment record for manual follow-up');
-      }
+      // DON'T create appointment here - let call-result handle it when call ends
+      // This prevents duplicate appointments
+      console.log('⚠️ Cal.com booking failed - call-result will handle appointment creation');
 
       return NextResponse.json({ 
         success: false, 

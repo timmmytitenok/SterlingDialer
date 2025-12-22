@@ -76,6 +76,28 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
+    // ========================================================================
+    // DEDUPLICATION CHECK - Prevent processing same call twice
+    // ========================================================================
+    const { data: existingCall } = await supabase
+      .from('calls')
+      .select('id')
+      .eq('call_id', call_id)
+      .maybeSingle();
+    
+    if (existingCall) {
+      console.log('⚠️ DUPLICATE WEBHOOK DETECTED - Call already processed!');
+      console.log(`   - Existing Call DB ID: ${existingCall.id}`);
+      console.log(`   - Retell Call ID: ${call_id}`);
+      console.log('   - Skipping to prevent duplicate processing');
+      return NextResponse.json({ 
+        received: true, 
+        skipped: true,
+        reason: 'Call already processed (duplicate webhook)' 
+      });
+    }
+    console.log('✅ First time processing this call - continuing...');
+
     // Extract metadata
     const userId = metadata?.user_id;
     const leadId = metadata?.lead_id;
