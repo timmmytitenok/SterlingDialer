@@ -48,7 +48,7 @@ export async function GET() {
     console.log(`✅ Found ${filteredUsers.length} users with Auto Schedule enabled (excluding admins)`);
 
     // Fetch each user's individual cost_per_minute from profiles
-    const userIds = filteredUsers.map(u => u.user_id);
+    const userIds = filteredUsers.map((u: any) => u.user_id);
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('user_id, cost_per_minute')
