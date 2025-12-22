@@ -14,7 +14,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 });
     }
 
-    console.log('📞 next-call called for userId:', userId);
+    console.log('');
+    console.log('═══════════════════════════════════════════════════════');
+    console.log('📞 NEXT-CALL ENDPOINT TRIGGERED');
+    console.log('═══════════════════════════════════════════════════════');
+    console.log(`   User ID: ${userId}`);
+    console.log(`   Time: ${new Date().toISOString()}`);
 
     // For server-to-server calls, use service role client to bypass RLS
     const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
@@ -90,12 +95,15 @@ export async function POST(request: Request) {
 
     // Check if AI is still running
     if (aiSettings.status !== 'running') {
+      console.log('🛑 [EXIT-1] AI status is not running:', aiSettings.status);
       return NextResponse.json({ 
         done: true, 
         reason: 'AI stopped',
-        message: 'AI has been stopped' 
+        message: `AI has been stopped (status: ${aiSettings.status})`,
+        exitPoint: 'EXIT-1-status-not-running'
       });
     }
+    console.log('✅ [CHECK-1] AI status is running - continuing...');
 
     // Get today's date in user's timezone
     const userTimezone = aiSettings.user_timezone || 'America/New_York';
@@ -130,7 +138,8 @@ export async function POST(request: Request) {
     // Check if daily spend limit reached
     const dailySpendLimit = aiSettings.daily_spend_limit || 10.00;
     if (currentSpend >= dailySpendLimit) {
-      console.log('🛑 Daily spend limit reached');
+      console.log('🛑 [EXIT-2] Daily spend limit reached');
+      console.log(`   Current spend: $${currentSpend}, Limit: $${dailySpendLimit}`);
       
       // Stop AI
       await supabase
@@ -143,8 +152,10 @@ export async function POST(request: Request) {
         reason: 'spend_limit_reached',
         message: `Daily spend limit of $${dailySpendLimit} reached`,
         totalSpent: currentSpend,
+        exitPoint: 'EXIT-2-daily-spend-limit'
       });
     }
+    console.log('✅ [CHECK-2] Within daily spend limit - continuing...');
 
     // Check stopping condition based on execution mode
     // Budget mode is detected by budget_limit_cents > 0
@@ -166,7 +177,8 @@ export async function POST(request: Request) {
       console.log(`   - Progress: $${sessionSpend.toFixed(2)} / $${(budgetLimitCents / 100).toFixed(2)}`);
       
       if (sessionSpendCents >= budgetLimitCents) {
-        console.log('🛑 Session budget limit reached!');
+        console.log('🛑 [EXIT-3] Session budget limit reached!');
+        console.log(`   Session spent: $${sessionSpend}, Budget: $${(budgetLimitCents / 100).toFixed(2)}`);
         
         await supabase
           .from('ai_control_settings')
@@ -180,6 +192,7 @@ export async function POST(request: Request) {
           sessionSpent: sessionSpend,
           budget: budgetLimitCents / 100,
           totalTodaySpend: currentSpend,
+          exitPoint: 'EXIT-3-session-budget-reached'
         });
       } else {
         const remainingCents = budgetLimitCents - sessionSpendCents;
@@ -190,7 +203,8 @@ export async function POST(request: Request) {
       const targetLeadCount = aiSettings.target_lead_count || 100;
       console.log(`📊 Lead Count Mode: ${callsMadeToday} / ${targetLeadCount} calls made`);
       if (callsMadeToday >= targetLeadCount) {
-        console.log('🛑 Daily call limit reached');
+        console.log('🛑 [EXIT-4] Daily call limit reached');
+        console.log(`   Calls made: ${callsMadeToday}, Target: ${targetLeadCount}`);
         
         await supabase
           .from('ai_control_settings')
@@ -202,6 +216,7 @@ export async function POST(request: Request) {
           reason: 'call_limit_reached',
           message: `Target of ${targetLeadCount} calls reached`,
           callsMade: callsMadeToday,
+          exitPoint: 'EXIT-4-call-limit-reached'
         });
       } else {
         console.log(`✅ Within limit, continuing (${targetLeadCount - callsMadeToday} calls remaining)`);
@@ -246,7 +261,7 @@ export async function POST(request: Request) {
       console.log(`   Current time: ${userTimeString}`);
     } else if (isSunday) {
       // Sunday is completely blocked
-      console.log(`🛑 Sunday is blocked - no calls on Sundays!`);
+      console.log(`🛑 [EXIT-5] Sunday is blocked - no calls on Sundays!`);
       
       await supabase
         .from('ai_control_settings')
@@ -258,11 +273,12 @@ export async function POST(request: Request) {
         reason: 'sunday_blocked',
         message: `No calls on Sundays. AI will resume Monday at 9:00 AM.`,
         userTime: userTimeString,
-        timezone: userTimezone
+        timezone: userTimezone,
+        exitPoint: 'EXIT-5-sunday-blocked'
       });
     } else if (!withinCallingHours) {
       // Normal mode - enforce calling hours
-      console.log(`🛑 Outside calling hours! Current time: ${currentHour}:${currentMinute.toString().padStart(2, '0')}`);
+      console.log(`🛑 [EXIT-6] Outside calling hours! Current time: ${currentHour}:${currentMinute.toString().padStart(2, '0')}`);
       console.log(`   Calling hours: 9am-6pm (${userTimezone})`);
       console.log(`   Current: ${currentHour < 9 ? 'Too early' : 'Too late'}`);
       
@@ -276,9 +292,11 @@ export async function POST(request: Request) {
         reason: 'outside_calling_hours',
         message: `Outside calling hours (9am-6pm in ${userTimezone}). Current time: ${userTimeString}`,
         userTime: userTimeString,
-        timezone: userTimezone
+        timezone: userTimezone,
+        exitPoint: 'EXIT-6-outside-calling-hours'
       });
     }
+    console.log('✅ [CHECK-3] Calling hours OK - continuing...');
     
     console.log(`✅ ${callingHoursDisabled ? 'Calling hours disabled - continuing anyway' : 'Within calling hours (9am-6pm, Mon-Sat)'}`);
 
@@ -299,7 +317,7 @@ export async function POST(request: Request) {
     console.log(`📊 Active Google Sheets: ${activeSheetIds.length}`);
     
     if (activeSheetIds.length === 0) {
-      console.log('❌ NO ACTIVE GOOGLE SHEETS!');
+      console.log('❌ [EXIT-7] NO ACTIVE GOOGLE SHEETS!');
       await supabase
         .from('ai_control_settings')
         .update({ status: 'stopped', last_call_status: 'no_leads' })
@@ -309,10 +327,54 @@ export async function POST(request: Request) {
         done: true,
         reason: 'no_active_sheets',
         message: 'No active Google Sheets found. Please upload and activate a sheet first.',
+        exitPoint: 'EXIT-7-no-active-sheets'
+      });
+    }
+    console.log('✅ [CHECK-4] Active sheets found:', activeSheetIds.length);
+    
+    // STEP 1: Count total callable leads
+    // First, let's see ALL leads for this user to understand the data
+    const { count: allLeadsCount, data: sampleLeadsForDebug } = await supabase
+      .from('leads')
+      .select('id, name, status, is_qualified, google_sheet_id', { count: 'exact' })
+      .eq('user_id', userId)
+      .limit(10);
+    
+    console.log(`📊 DEBUG - Total leads for user: ${allLeadsCount || 0}`);
+    if (sampleLeadsForDebug && sampleLeadsForDebug.length > 0) {
+      console.log('📊 DEBUG - Sample leads:');
+      sampleLeadsForDebug.forEach((lead, i) => {
+        console.log(`   ${i+1}. ${lead.name} | status: ${lead.status} | is_qualified: ${lead.is_qualified} | sheet_id: ${lead.google_sheet_id}`);
       });
     }
     
-    // STEP 1: Count total callable leads
+    // Check how many are in active sheets
+    const { count: leadsInActiveSheets } = await supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .in('google_sheet_id', activeSheetIds);
+    console.log(`📊 DEBUG - Leads in ACTIVE sheets: ${leadsInActiveSheets || 0}`);
+    
+    // Check how many are qualified
+    const { count: qualifiedLeads } = await supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('is_qualified', true)
+      .in('google_sheet_id', activeSheetIds);
+    console.log(`📊 DEBUG - Qualified leads in active sheets: ${qualifiedLeads || 0}`);
+    
+    // Check how many have callable status
+    const { count: callableStatusLeads } = await supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .in('google_sheet_id', activeSheetIds)
+      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment']);
+    console.log(`📊 DEBUG - Leads with callable STATUS in active sheets: ${callableStatusLeads || 0}`);
+    
+    // Now the actual count - qualified + right status + active sheet
     const { count: totalLeadsCount } = await supabase
       .from('leads')
       .select('*', { count: 'exact', head: true })
@@ -321,21 +383,54 @@ export async function POST(request: Request) {
       .in('google_sheet_id', activeSheetIds)
       .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment']);
     
-    console.log(`📊 Total callable leads in active sheets: ${totalLeadsCount || 0}`);
+    console.log(`📊 FINAL - Callable leads (qualified + right status + active sheet): ${totalLeadsCount || 0}`);
     
     if (!totalLeadsCount || totalLeadsCount === 0) {
-      console.log('❌ NO CALLABLE LEADS FOUND!');
+      console.log('❌ [EXIT-8] NO CALLABLE LEADS FOUND!');
+      console.log('❌ DIAGNOSIS:');
+      console.log(`   - Total leads: ${allLeadsCount || 0}`);
+      console.log(`   - In active sheets: ${leadsInActiveSheets || 0}`);
+      console.log(`   - Qualified: ${qualifiedLeads || 0}`);
+      console.log(`   - With callable status: ${callableStatusLeads || 0}`);
       await supabase
         .from('ai_control_settings')
         .update({ status: 'stopped', last_call_status: 'no_leads' })
         .eq('user_id', userId);
       
+      // Build helpful message based on diagnosis
+      let diagnosisMsg = 'No callable leads found. ';
+      if ((allLeadsCount || 0) === 0) {
+        diagnosisMsg += 'You have no leads uploaded.';
+      } else if ((leadsInActiveSheets || 0) === 0) {
+        diagnosisMsg += 'Your leads are not in any ACTIVE sheets. Go to Lead Manager and toggle the sheet ON.';
+      } else if ((qualifiedLeads || 0) === 0) {
+        diagnosisMsg += 'All leads are marked as NOT QUALIFIED (is_qualified=false). Check your lead data.';
+      } else if ((callableStatusLeads || 0) === 0) {
+        diagnosisMsg += 'All leads have been called already (status is not new/callback_later/no_answer).';
+      }
+      
       return NextResponse.json({
         done: true,
         reason: 'no_leads',
-        message: 'No callable leads found. All leads may have been exhausted or marked as dead.',
+        message: diagnosisMsg,
+        exitPoint: 'EXIT-8-no-callable-leads',
+        // Include debug data in response!
+        debug: {
+          totalLeads: allLeadsCount || 0,
+          leadsInActiveSheets: leadsInActiveSheets || 0,
+          qualifiedLeads: qualifiedLeads || 0,
+          callableStatusLeads: callableStatusLeads || 0,
+          activeSheetIds: activeSheetIds,
+          sampleLeads: sampleLeadsForDebug?.slice(0, 5).map(l => ({
+            name: l.name,
+            status: l.status,
+            is_qualified: l.is_qualified,
+            google_sheet_id: l.google_sheet_id
+          }))
+        }
       });
     }
+    console.log('✅ [CHECK-5] Callable leads found:', totalLeadsCount);
     
     // STEP 2: Get next callable lead
     // SIMPLIFIED LOGIC:

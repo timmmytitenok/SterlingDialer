@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse} from 'next/server';
 
 /**
@@ -8,6 +9,12 @@ import { NextResponse} from 'next/server';
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
+    
+    // Use service role client to bypass RLS for ai_control_settings updates
+    const supabaseAdmin = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     const {
       data: { user },
@@ -42,6 +49,18 @@ export async function POST(request: Request) {
       budget
     });
 
+    // FIRST: Fetch existing settings to preserve important values
+    const { data: existingSettings } = await supabaseAdmin
+      .from('ai_control_settings')
+      .select('disable_calling_hours, today_spend')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    console.log('📋 Existing settings:', {
+      disable_calling_hours: existingSettings?.disable_calling_hours,
+      today_spend: existingSettings?.today_spend,
+    });
+    
     // Prepare update data
     // NOTE: We store 'leads' in execution_mode to pass DB constraint, 
     // but use budget_limit_cents > 0 to detect actual budget mode
@@ -53,7 +72,11 @@ export async function POST(request: Request) {
       auto_transfer_calls: true,
       execution_mode: 'leads', // Always 'leads' to pass DB constraint
       last_call_status: 'starting',
+      // CRITICAL: Preserve the bypass restrictions setting!
+      disable_calling_hours: existingSettings?.disable_calling_hours === true,
     };
+    
+    console.log('📋 Will set disable_calling_hours to:', updateData.disable_calling_hours);
 
     // Store execution parameters based on mode
     if (executionMode === 'leads') {
@@ -68,15 +91,8 @@ export async function POST(request: Request) {
       updateData.budget_limit_cents = Math.round((budget || 1) * 100); // Convert dollars to cents
       console.log(`💰 Budget mode: Will dial until $${budget} spent (${updateData.budget_limit_cents} cents)`);
       
-      // SESSION-BASED BUDGET: Record current spend so budget only counts NEW spend in this session
-      // First fetch current today_spend
-      const { data: currentSettings } = await supabase
-        .from('ai_control_settings')
-        .select('today_spend')
-        .eq('user_id', user.id)
-        .single();
-      
-      const currentTodaySpend = currentSettings?.today_spend || 0;
+      // SESSION-BASED BUDGET: Use the already-fetched existingSettings
+      const currentTodaySpend = existingSettings?.today_spend || 0;
       updateData.session_start_spend = currentTodaySpend;
       console.log(`💰 Session start spend: $${currentTodaySpend.toFixed(2)} (only NEW spend counts toward $${budget} budget)`);
     } else if (executionMode === 'time') {
@@ -86,18 +102,31 @@ export async function POST(request: Request) {
     }
 
     // Update or create AI status to running (upsert ensures row exists)
-    const { error } = await supabase
+    // Use ADMIN client to bypass RLS!
+    const { error } = await supabaseAdmin
       .from('ai_control_settings')
       .upsert({
         ...updateData,
         user_id: user.id, // Include user_id for upsert
+        updated_at: new Date().toISOString(),
       }, {
         onConflict: 'user_id' // Upsert based on user_id
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Failed to update ai_control_settings:', error);
+      throw error;
+    }
 
+    // Verify the settings were saved correctly
+    const { data: verifySettings } = await supabaseAdmin
+      .from('ai_control_settings')
+      .select('status, disable_calling_hours, target_lead_count, budget_limit_cents')
+      .eq('user_id', user.id)
+      .single();
+    
     console.log('✅ AI status updated to running');
+    console.log('✅ Verified settings:', verifySettings);
 
     // ========================================================================
     // TRIGGER THE FIRST CALL
@@ -177,8 +206,8 @@ export async function POST(request: Request) {
       if (!callResponse.ok) {
         console.error('❌ Call endpoint returned error:', callResult);
         
-        // Revert AI status to stopped
-        await supabase
+        // Revert AI status to stopped (use admin client)
+        await supabaseAdmin
           .from('ai_control_settings')
           .update({ status: 'stopped' })
           .eq('user_id', user.id);
@@ -195,6 +224,33 @@ export async function POST(request: Request) {
       console.log('✅ ========== FIRST CALL INITIATED ==========');
       console.log('Result:', callResult);
       console.log('');
+      
+      // If the first call returned done: true, that's a problem!
+      if (callResult?.done) {
+        console.warn('⚠️ First call returned done=true immediately!');
+        console.warn('   Reason:', callResult.reason);
+        console.warn('   Exit Point:', callResult.exitPoint);
+        console.warn('   Message:', callResult.message);
+        
+        return NextResponse.json({ 
+          success: false, 
+          message: `AI stopped immediately: ${callResult.message || callResult.reason}`,
+          mode: executionMode,
+          targetLeads: executionMode === 'leads' ? (targetLeadCount || dailyCallLimit) : null,
+          firstCallResult: callResult,
+        });
+      }
+      
+      // If successful, return with call info
+      if (callResult?.success) {
+        return NextResponse.json({ 
+          success: true, 
+          message: 'AI started successfully - first call initiated!',
+          mode: executionMode,
+          targetLeads: executionMode === 'leads' ? (targetLeadCount || dailyCallLimit) : null,
+          firstCallResult: callResult,
+        });
+      }
     } catch (error: any) {
       console.error('');
       console.error('❌ ========== EXCEPTION DURING CALL INITIATION ==========');
@@ -205,7 +261,7 @@ export async function POST(request: Request) {
       
       // Check if AI is actually running (call might have succeeded despite error)
       console.log('🔍 Checking if call actually succeeded...');
-      const { data: statusCheck } = await supabase
+      const { data: statusCheck } = await supabaseAdmin
         .from('ai_control_settings')
         .select('status, current_call_id, last_call_status')
         .eq('user_id', user.id)
@@ -227,8 +283,8 @@ export async function POST(request: Request) {
       
       console.log('❌ Call did NOT succeed - no current_call_id found');
       
-      // Revert AI status to stopped
-      await supabase
+      // Revert AI status to stopped (use admin client)
+      await supabaseAdmin
         .from('ai_control_settings')
         .update({ status: 'stopped' })
         .eq('user_id', user.id);
