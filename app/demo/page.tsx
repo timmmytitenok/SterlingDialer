@@ -88,6 +88,26 @@ export default function DemoPage() {
     setCurrentTime(prev => ({...prev, [playerNum]: 0}));
   };
 
+  // Scroll reveal animation
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    document.querySelectorAll('.scroll-reveal, .scroll-reveal-left, .scroll-reveal-right, .scroll-reveal-scale').forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -181,7 +201,7 @@ export default function DemoPage() {
         </section>
 
         {/* LISTEN TO STERLING AI SECTION - Glowy Two Cards */}
-        <section className="py-10 sm:py-24 px-3 sm:px-4 relative">
+        <section className="scroll-reveal py-10 sm:py-24 px-3 sm:px-4 relative">
           
           <div className="max-w-6xl mx-auto relative z-10">
             {/* Section Header - BIGGER Title */}
@@ -343,7 +363,7 @@ export default function DemoPage() {
         </section>
 
         {/* HOW IT WORKS SECTION - Vibrant & Glowy */}
-        <section className="py-12 sm:py-28 px-3 sm:px-4 relative overflow-hidden">
+        <section className="scroll-reveal py-12 sm:py-28 px-3 sm:px-4 relative overflow-hidden">
           
           <div className="max-w-6xl mx-auto relative z-10">
             {/* Section Header - Bigger & Gradient */}
@@ -448,7 +468,7 @@ export default function DemoPage() {
         </section>
 
         {/* ROI CALCULATOR SECTION - Mobile Optimized */}
-        <section className="py-10 sm:py-24 px-3 sm:px-4">
+        <section className="scroll-reveal py-10 sm:py-24 px-3 sm:px-4">
           <div className="max-w-4xl mx-auto">
             <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl sm:rounded-2xl p-5 sm:p-12 border border-gray-800 animate-in fade-in zoom-in-95 duration-700">
               {/* Header */}
@@ -530,7 +550,7 @@ export default function DemoPage() {
         </section>
 
         {/* FINAL CTA - Mobile Optimized */}
-        <section className="py-10 sm:py-24 px-3 sm:px-4 pb-20 sm:pb-24">
+        <section className="scroll-reveal-scale py-10 sm:py-24 px-3 sm:px-4 pb-20 sm:pb-24">
           <div className="max-w-3xl mx-auto">
             <div className="relative overflow-hidden bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-xl sm:rounded-2xl p-6 sm:p-12 border-2 border-blue-500/30 text-center animate-in fade-in zoom-in-95 duration-700">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-purple-500/0 animate-pulse" />

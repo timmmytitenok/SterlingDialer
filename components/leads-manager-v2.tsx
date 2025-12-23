@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Plus, X, Phone, Mail, MapPin, Calendar, TrendingUp, FileSpreadsheet, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, X, Phone, Mail, MapPin, Calendar, TrendingUp, FileSpreadsheet, Search, ChevronLeft, ChevronRight, Clock, PhoneCall, PhoneOff, PhoneMissed, CheckCircle, XCircle, Voicemail, Home, User, Target } from 'lucide-react';
 
 type Lead = {
   id: string;
@@ -38,6 +38,20 @@ type GoogleSheet = {
   lead_count?: number;
 };
 
+type CallRecord = {
+  id: string;
+  call_id: string;
+  lead_name: string;
+  phone_number: string;
+  duration: number;
+  disposition: string;
+  outcome: string;
+  connected: boolean;
+  recording_url?: string;
+  in_voicemail?: boolean;
+  created_at: string;
+};
+
 interface LeadsManagerV2Props {
   userId: string;
 }
@@ -48,6 +62,8 @@ export function LeadsManagerV2({ userId }: LeadsManagerV2Props) {
   
   const [showLeadDetail, setShowLeadDetail] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [leadCallHistory, setLeadCallHistory] = useState<CallRecord[]>([]);
+  const [loadingCallHistory, setLoadingCallHistory] = useState(false);
   const [sheets, setSheets] = useState<GoogleSheet[]>([]);
   const [activeSection, setActiveSection] = useState('all');
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -60,6 +76,38 @@ export function LeadsManagerV2({ userId }: LeadsManagerV2Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const leadsPerPage = 100;
+
+  // Fetch call history when a lead is selected
+  const fetchCallHistory = async (leadId: string) => {
+    setLoadingCallHistory(true);
+    try {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { data, error } = await supabase
+        .from('calls')
+        .select('*')
+        .eq('lead_id', leadId)
+        .gte('created_at', sevenDaysAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (!error && data) {
+        setLeadCallHistory(data as CallRecord[]);
+      }
+    } catch (err) {
+      console.error('Error fetching call history:', err);
+    } finally {
+      setLoadingCallHistory(false);
+    }
+  };
+
+  // Handle lead selection
+  const handleSelectLead = (lead: Lead) => {
+    setSelectedLead(lead);
+    setShowLeadDetail(true);
+    fetchCallHistory(lead.id);
+  };
 
   useEffect(() => {
     fetchSheets();
@@ -415,10 +463,7 @@ export function LeadsManagerV2({ userId }: LeadsManagerV2Props) {
                   {paginatedLeads.map((lead) => (
                     <tr 
                       key={lead.id} 
-                      onClick={() => {
-                        setSelectedLead(lead);
-                        setShowLeadDetail(true);
-                      }}
+                      onClick={() => handleSelectLead(lead)}
                       className="hover:bg-[#0B1437]/50 transition-colors cursor-pointer"
                     >
                       {/* Name */}
@@ -531,137 +576,239 @@ export function LeadsManagerV2({ userId }: LeadsManagerV2Props) {
           </div>
         )}
 
-        {/* Lead Detail Modal */}
+        {/* Lead Detail Modal - Redesigned */}
         {showLeadDetail && selectedLead && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 max-w-lg w-full shadow-2xl">
-              <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 flex items-center justify-between rounded-t-2xl">
-                <h2 className="text-2xl font-bold text-white">Lead Details</h2>
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div 
+              className="relative bg-[#0a0f1e] rounded-3xl border border-purple-500/20 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-hidden"
+              style={{
+                boxShadow: '0 0 60px rgba(147, 51, 234, 0.15), 0 0 100px rgba(59, 130, 246, 0.1)'
+              }}
+            >
+              {/* Glowing background effects */}
+              <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
+              
+              {/* Header */}
+              <div className="relative bg-gradient-to-r from-purple-600/90 via-fuchsia-600/90 to-pink-600/90 p-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <User className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Lead Details</h2>
+                    <p className="text-xs text-white/70">View contact information & call history</p>
+                  </div>
+                </div>
                 <button
-                  onClick={() => setShowLeadDetail(false)}
-                  className="p-2 hover:bg-white/20 rounded-lg transition-all"
+                  onClick={() => {
+                    setShowLeadDetail(false);
+                    setLeadCallHistory([]);
+                  }}
+                  className="p-2 hover:bg-white/20 rounded-xl transition-all"
                 >
-                  <X className="w-6 h-6 text-white" />
+                  <X className="w-5 h-5 text-white" />
                 </button>
               </div>
 
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between">
+              {/* Scrollable Content */}
+              <div className="relative overflow-y-auto max-h-[calc(90vh-80px)] p-5 space-y-4">
+                
+                {/* Name & Status Header */}
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#1a1f35]/80 to-[#0f1525]/80 rounded-2xl border border-gray-700/50">
                   <h3 className="text-2xl font-bold text-white">{selectedLead.name}</h3>
                   {getStatusBadge(selectedLead.status)}
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
-                    <Phone className="w-5 h-5 text-blue-400" />
-                    <div>
-                      <p className="text-xs text-gray-400">Phone Number</p>
-                      <p className="text-white font-semibold">{formatPhone(selectedLead.phone)}</p>
-                    </div>
+                {/* Contact Information Section */}
+                <div className="p-4 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 rounded-2xl border border-cyan-500/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Phone className="w-4 h-4 text-cyan-400" />
+                    <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Contact Information</p>
                   </div>
-
-                  {selectedLead.email && (
-                    <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
-                      <Mail className="w-5 h-5 text-green-400" />
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 bg-[#0a0f1e]/60 rounded-xl border border-gray-700/30">
+                      <div className="p-2 bg-cyan-500/10 rounded-lg">
+                        <Phone className="w-4 h-4 text-cyan-400" />
+                      </div>
                       <div>
-                        <p className="text-xs text-gray-400">Email</p>
-                        <p className="text-white font-semibold">{selectedLead.email}</p>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider">Phone Number</p>
+                        <p className="text-white font-semibold">{formatPhone(selectedLead.phone)}</p>
                       </div>
                     </div>
-                  )}
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-gray-800/50 rounded-lg">
-                      <p className="text-xs text-gray-400 mb-1">Age</p>
-                      <p className="text-white font-semibold text-lg">{selectedLead.age || 'N/A'}</p>
-                    </div>
-                    <div className="p-3 bg-gray-800/50 rounded-lg">
-                      <p className="text-xs text-gray-400 mb-1">State</p>
-                      <p className="text-white font-semibold text-lg">{selectedLead.state || 'N/A'}</p>
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-gray-800/50 rounded-lg">
-                    <div className="flex items-center gap-2 mb-1">
-                      <TrendingUp className="w-4 h-4 text-purple-400" />
-                      <p className="text-xs text-gray-400">Total Calls Made</p>
-                    </div>
-                    <p className="text-white font-semibold text-lg">{selectedLead.total_calls_made || selectedLead.times_dialed || 0}</p>
-                  </div>
-
-                  {/* Missed Calls Tracking */}
-                  {(selectedLead.total_missed_calls || 0) > 0 && (
-                    <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-                      <p className="text-xs text-red-400 font-semibold mb-2">⏰ Missed Calls Tracking</p>
-                      <div className="grid grid-cols-3 gap-2 mb-2">
-                        <div className="text-center">
-                          <p className="text-xs text-gray-400">Morning</p>
-                          <p className="text-white font-bold">{selectedLead.morning_missed_calls || 0}/6</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-gray-400">Daytime</p>
-                          <p className="text-white font-bold">{selectedLead.daytime_missed_calls || 0}/6</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-gray-400">Evening</p>
-                          <p className="text-white font-bold">{selectedLead.evening_missed_calls || 0}/6</p>
-                        </div>
+                    <div className="flex items-center gap-3 p-3 bg-[#0a0f1e]/60 rounded-xl border border-gray-700/30">
+                      <div className="p-2 bg-emerald-500/10 rounded-lg">
+                        <Mail className="w-4 h-4 text-emerald-400" />
                       </div>
-                      <div className="pt-2 border-t border-red-500/20">
-                        <p className="text-xs text-gray-400">Total Missed</p>
-                        <p className="text-red-400 font-bold text-lg">{selectedLead.total_missed_calls || 0}/18</p>
-                        {(selectedLead.total_missed_calls || 0) >= 18 && (
-                          <p className="text-xs text-red-300 mt-1">💀 Marked as dead lead</p>
-                        )}
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider">Email</p>
+                        <p className="text-white font-semibold">{selectedLead.email || 'N/A'}</p>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Pickup Rate */}
-                  {(selectedLead.total_calls_made || 0) > 0 && (
-                    <div className="p-3 bg-gray-800/50 rounded-lg">
-                      <p className="text-xs text-gray-400 mb-1">Pickup Rate</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-white font-semibold text-lg">
-                          {selectedLead.pickup_rate?.toFixed(0) || 0}%
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          ({selectedLead.total_pickups || 0} answered / {selectedLead.total_calls_made || 0} calls)
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedLead.last_dial_at && (
-                    <div className="p-3 bg-gray-800/50 rounded-lg">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Calendar className="w-4 h-4 text-yellow-400" />
-                        <p className="text-xs text-gray-400">Last Called</p>
-                      </div>
-                      <p className="text-white font-semibold">
-                        {new Date(selectedLead.last_dial_at).toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Google Sheet Location */}
-                  <div className="p-4 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-500/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FileSpreadsheet className="w-5 h-5 text-blue-400" />
-                      <p className="text-sm font-semibold text-gray-300">Google Sheet Location</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-white font-semibold">
-                        {getSheetName(selectedLead.google_sheet_id)}
-                      </p>
-                      {selectedLead.sheet_row_number && (
-                        <p className="text-sm text-gray-400">
-                          Row: <span className="text-blue-400 font-mono">{selectedLead.sheet_row_number}</span>
-                        </p>
-                      )}
                     </div>
                   </div>
                 </div>
+
+                {/* Lead Type Section */}
+                {(selectedLead as any).lead_type && (
+                  <div className="p-4 bg-gradient-to-br from-amber-500/5 to-orange-500/5 rounded-2xl border border-amber-500/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Target className="w-4 h-4 text-amber-400" />
+                      <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Lead Type</p>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-[#0a0f1e]/60 rounded-xl border border-gray-700/30">
+                      <div className="p-2 bg-amber-500/10 rounded-lg">
+                        <Home className="w-4 h-4 text-amber-400" />
+                      </div>
+                      <p className="text-white font-bold text-lg">{(selectedLead as any).lead_type}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Demographics Section */}
+                <div className="p-4 bg-gradient-to-br from-purple-500/5 to-pink-500/5 rounded-2xl border border-purple-500/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <User className="w-4 h-4 text-purple-400" />
+                    <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider">Demographics</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-[#0a0f1e]/60 rounded-xl border border-gray-700/30 text-center">
+                      <div className="p-2 bg-purple-500/10 rounded-lg w-fit mx-auto mb-2">
+                        <User className="w-4 h-4 text-purple-400" />
+                      </div>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wider">Age</p>
+                      <p className="text-white font-bold text-xl">{selectedLead.age || 'N/A'}</p>
+                    </div>
+                    <div className="p-3 bg-[#0a0f1e]/60 rounded-xl border border-gray-700/30 text-center">
+                      <div className="p-2 bg-pink-500/10 rounded-lg w-fit mx-auto mb-2">
+                        <MapPin className="w-4 h-4 text-pink-400" />
+                      </div>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wider">State</p>
+                      <p className="text-white font-bold text-xl">{selectedLead.state || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mortgage Protection Data (if available) */}
+                {((selectedLead as any).street_address || (selectedLead as any).address) && (
+                  <div className="p-4 bg-gradient-to-br from-amber-500/5 to-yellow-500/5 rounded-2xl border border-amber-500/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Home className="w-4 h-4 text-amber-400" />
+                      <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Mortgage Protection Data</p>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-[#0a0f1e]/60 rounded-xl border border-gray-700/30">
+                      <div className="p-2 bg-amber-500/10 rounded-lg">
+                        <MapPin className="w-4 h-4 text-amber-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider">Street Address</p>
+                        <p className="text-white font-semibold uppercase">{(selectedLead as any).street_address || (selectedLead as any).address || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Lead Location Section */}
+                <div className="p-4 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 rounded-2xl border border-blue-500/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileSpreadsheet className="w-4 h-4 text-blue-400" />
+                    <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Lead Location</p>
+                  </div>
+                  <div className="p-3 bg-[#0a0f1e]/60 rounded-xl border border-gray-700/30">
+                    <p className="text-white font-semibold mb-1">
+                      {getSheetName(selectedLead.google_sheet_id)}
+                    </p>
+                    {(selectedLead as any).tab_name && (
+                      <p className="text-xs text-gray-400 mb-1">
+                        Tab: <span className="text-blue-400">{(selectedLead as any).tab_name}</span>
+                      </p>
+                    )}
+                    {selectedLead.sheet_row_number && (
+                      <p className="text-xs text-gray-400">
+                        Row: <span className="text-blue-400 font-mono">{selectedLead.sheet_row_number}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Call History Section - Last 7 Days */}
+                <div className="p-4 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 rounded-2xl border border-emerald-500/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-emerald-400" />
+                      <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Call History (Last 7 Days)</p>
+                    </div>
+                    <span className="text-xs text-gray-500">{leadCallHistory.length} calls</span>
+                  </div>
+                  
+                  {loadingCallHistory ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                      <span className="ml-2 text-sm text-gray-400">Loading call history...</span>
+                    </div>
+                  ) : leadCallHistory.length === 0 ? (
+                    <div className="text-center py-6 text-gray-500">
+                      <PhoneOff className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No calls in the last 7 days</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                      {leadCallHistory.map((call, index) => (
+                        <div 
+                          key={call.id || index}
+                          className={`p-3 rounded-xl border transition-all ${
+                            call.connected 
+                              ? 'bg-emerald-500/10 border-emerald-500/30' 
+                              : call.in_voicemail
+                              ? 'bg-amber-500/10 border-amber-500/30'
+                              : 'bg-red-500/10 border-red-500/30'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {call.connected ? (
+                                <CheckCircle className="w-4 h-4 text-emerald-400" />
+                              ) : call.in_voicemail ? (
+                                <Voicemail className="w-4 h-4 text-amber-400" />
+                              ) : (
+                                <PhoneMissed className="w-4 h-4 text-red-400" />
+                              )}
+                              <span className={`text-sm font-semibold ${
+                                call.connected 
+                                  ? 'text-emerald-400' 
+                                  : call.in_voicemail
+                                  ? 'text-amber-400'
+                                  : 'text-red-400'
+                              }`}>
+                                {call.connected ? 'Connected' : call.in_voicemail ? 'Voicemail' : 'No Answer'}
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {new Date(call.created_at).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {call.duration ? `${call.duration.toFixed(1)} min` : '0 min'}
+                            </span>
+                            {call.outcome && call.outcome !== 'no_answer' && (
+                              <span className="px-2 py-0.5 bg-gray-700/50 rounded-full text-gray-300">
+                                {call.outcome.replace(/_/g, ' ')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
               </div>
             </div>
           </div>

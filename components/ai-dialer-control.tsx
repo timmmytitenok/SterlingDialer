@@ -902,7 +902,7 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
           initialMode={dialerSettings?.execution_mode || 'budget'}
           initialLeadCount={dialerSettings?.target_lead_count}
           initialTargetTime={dialerSettings?.target_time_military}
-          maxCallsAllowed={600}
+          maxCallsAllowed={800}
           subscriptionTier={dialerSettings?.subscription_tier}
           onClose={() => setShowBudgetModal(false)}
           onLaunched={() => {

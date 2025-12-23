@@ -12,18 +12,23 @@ export default function LandingPage() {
   const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Scroll reveal animation observer
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('animate-in');
+            entry.target.classList.add('revealed');
           }
         });
       },
-      { threshold: 0.1 }
+      { 
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px' // Trigger slightly before element is fully in view
+      }
     );
 
-    document.querySelectorAll('.fade-in-section').forEach((el) => {
+    // Observe all scroll-reveal elements
+    document.querySelectorAll('.scroll-reveal, .scroll-reveal-left, .scroll-reveal-right, .scroll-reveal-scale').forEach((el) => {
       observer.observe(el);
     });
 
@@ -151,15 +156,15 @@ export default function LandingPage() {
 
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-8 max-w-4xl mx-auto animate-slide-up px-4" style={{ animationDelay: '0.3s' }}>
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-white/10 text-center">
+              <div className="scroll-reveal bg-white/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-white/10 text-center">
                 <div className="text-4xl lg:text-5xl font-bold text-blue-400 mb-1 lg:mb-2">720+</div>
                 <div className="text-gray-400 text-sm lg:text-base">Leads Per Day</div>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-white/10 text-center">
+              <div className="scroll-reveal delay-1 bg-white/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-white/10 text-center">
                 <div className="text-4xl lg:text-5xl font-bold text-indigo-400 mb-1 lg:mb-2">50+</div>
                 <div className="text-gray-400 text-sm lg:text-base">Appointments Per Month</div>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-white/10 text-center">
+              <div className="scroll-reveal delay-2 bg-white/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-white/10 text-center">
                 <div className="text-4xl lg:text-5xl font-bold text-purple-400 mb-1 lg:mb-2">24/7</div>
                 <div className="text-gray-400 text-sm lg:text-base">AI Availability</div>
               </div>
@@ -168,7 +173,7 @@ export default function LandingPage() {
         </section>
 
         {/* Features Section */}
-        <section className="container mx-auto px-6 py-20 fade-in-section opacity-0">
+        <section className="container mx-auto px-6 py-20 scroll-reveal">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-5xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
@@ -181,7 +186,7 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
               {/* Feature 1 - Automated Calling */}
-              <div className="group bg-gradient-to-br from-emerald-500/10 to-green-600/5 rounded-2xl p-6 lg:p-8 border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-emerald-500/20">
+              <div className="scroll-reveal group bg-gradient-to-br from-emerald-500/10 to-green-600/5 rounded-2xl p-6 lg:p-8 border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-emerald-500/20">
                 <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-4 lg:mb-6 group-hover:scale-110 transition-transform">
                   <Phone className="w-6 h-6 lg:w-7 lg:h-7 text-emerald-400" />
                 </div>
@@ -192,7 +197,7 @@ export default function LandingPage() {
               </div>
 
               {/* Feature 1.5 - Massive Volume */}
-              <div className="group bg-gradient-to-br from-yellow-500/10 to-amber-600/5 rounded-2xl p-6 lg:p-8 border border-yellow-500/20 hover:border-yellow-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-yellow-500/20">
+              <div className="scroll-reveal delay-1 group bg-gradient-to-br from-yellow-500/10 to-amber-600/5 rounded-2xl p-6 lg:p-8 border border-yellow-500/20 hover:border-yellow-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-yellow-500/20">
                 <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-yellow-500/20 flex items-center justify-center mb-4 lg:mb-6 group-hover:scale-110 transition-transform">
                   <Zap className="w-6 h-6 lg:w-7 lg:h-7 text-yellow-400" />
                 </div>
@@ -203,7 +208,7 @@ export default function LandingPage() {
               </div>
 
               {/* Feature 2 - Smart Scheduling */}
-              <div className="group bg-gradient-to-br from-blue-500/10 to-cyan-600/5 rounded-2xl p-6 lg:p-8 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20">
+              <div className="scroll-reveal delay-2 group bg-gradient-to-br from-blue-500/10 to-cyan-600/5 rounded-2xl p-6 lg:p-8 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20">
                 <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-blue-500/20 flex items-center justify-center mb-4 lg:mb-6 group-hover:scale-110 transition-transform">
                   <Calendar className="w-6 h-6 lg:w-7 lg:h-7 text-blue-400" />
                 </div>
@@ -214,7 +219,7 @@ export default function LandingPage() {
               </div>
 
               {/* Feature 3 - Live Transfer */}
-              <div className="group bg-gradient-to-br from-red-500/10 to-rose-600/5 rounded-2xl p-6 lg:p-8 border border-red-500/20 hover:border-red-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-red-500/20">
+              <div className="scroll-reveal delay-3 group bg-gradient-to-br from-red-500/10 to-rose-600/5 rounded-2xl p-6 lg:p-8 border border-red-500/20 hover:border-red-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-red-500/20">
                 <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-red-500/20 flex items-center justify-center mb-4 lg:mb-6 group-hover:scale-110 transition-transform">
                   <Zap className="w-6 h-6 lg:w-7 lg:h-7 text-red-400" />
                 </div>
@@ -225,7 +230,7 @@ export default function LandingPage() {
               </div>
 
               {/* Feature 5 - Revenue Tracking (HIDDEN ON DESKTOP, shows on mobile only) */}
-              <div className="lg:hidden group bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-2xl p-6 lg:p-8 border border-green-500/20 hover:border-green-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-green-500/20">
+              <div className="scroll-reveal delay-4 lg:hidden group bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-2xl p-6 lg:p-8 border border-green-500/20 hover:border-green-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-green-500/20">
                 <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-green-500/20 flex items-center justify-center mb-4 lg:mb-6 group-hover:scale-110 transition-transform">
                   <TrendingUp className="w-6 h-6 lg:w-7 lg:h-7 text-green-400" />
                 </div>
@@ -236,7 +241,7 @@ export default function LandingPage() {
               </div>
 
               {/* Feature 6 - Deep Analytics (SHOWS ON DESKTOP & MOBILE) */}
-              <div className="group bg-gradient-to-br from-indigo-500/10 to-blue-600/5 rounded-2xl p-6 lg:p-8 border border-indigo-500/20 hover:border-indigo-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/20">
+              <div className="scroll-reveal delay-4 group bg-gradient-to-br from-indigo-500/10 to-blue-600/5 rounded-2xl p-6 lg:p-8 border border-indigo-500/20 hover:border-indigo-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/20">
                 <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-indigo-500/20 flex items-center justify-center mb-4 lg:mb-6 group-hover:scale-110 transition-transform">
                   <BarChart3 className="w-6 h-6 lg:w-7 lg:h-7 text-indigo-400" />
                 </div>
@@ -247,7 +252,7 @@ export default function LandingPage() {
               </div>
 
               {/* Feature 7 - Mobile App */}
-              <div className="group bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-2xl p-6 lg:p-8 border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20 relative">
+              <div className="scroll-reveal delay-5 group bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-2xl p-6 lg:p-8 border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20 relative">
                 {/* Coming Soon Badge */}
                 <div className="absolute top-3 right-3 px-2 py-1 bg-purple-600/80 text-white text-[10px] font-bold rounded-full backdrop-blur-sm">
                   COMING SOON
@@ -265,7 +270,7 @@ export default function LandingPage() {
         </section>
 
         {/* How It Works */}
-        <section className="container mx-auto px-6 py-20 fade-in-section opacity-0">
+        <section className="container mx-auto px-6 py-20 scroll-reveal">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-10">
               <h2 className="text-4xl md:text-6xl font-bold text-white mb-6">
@@ -278,7 +283,7 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Step 1 */}
-              <div className="group relative pt-6">
+              <div className="scroll-reveal-left group relative pt-6">
                 <div className="relative overflow-hidden bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-8 border-2 border-blue-500/30 hover:border-blue-500/60 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/30">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 via-blue-500/5 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   <div className="absolute -top-3 left-6 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-xl shadow-blue-500/50 border-2 border-[#0B1437] leading-none pt-1">
@@ -297,7 +302,7 @@ export default function LandingPage() {
               </div>
 
               {/* Step 2 */}
-              <div className="group relative pt-6">
+              <div className="scroll-reveal delay-2 group relative pt-6">
                 <div className="relative overflow-hidden bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-8 border-2 border-indigo-500/30 hover:border-indigo-500/60 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/30">
                   <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-indigo-500/5 to-indigo-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   <div className="absolute -top-3 left-6 w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-xl shadow-indigo-500/50 border-2 border-[#0B1437] leading-none pt-1">
@@ -316,7 +321,7 @@ export default function LandingPage() {
               </div>
 
               {/* Step 3 */}
-              <div className="group relative pt-6">
+              <div className="scroll-reveal-right group relative pt-6">
                 <div className="relative overflow-hidden bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-8 border-2 border-purple-500/30 hover:border-purple-500/60 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30">
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 via-purple-500/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   <div className="absolute -top-3 left-6 w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-xl shadow-xl shadow-purple-500/50 border-2 border-[#0B1437] leading-none pt-1">
@@ -338,7 +343,7 @@ export default function LandingPage() {
         </section>
 
         {/* Social Proof */}
-        <section className="container mx-auto px-6 py-20 fade-in-section opacity-0">
+        <section className="container mx-auto px-6 py-20 scroll-reveal">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
@@ -348,7 +353,7 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Testimonial 1 */}
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300">
+              <div className="scroll-reveal bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300">
                 <div className="flex items-center gap-2 mb-4">
                   {[...Array(5)].map((_, i) => (
                     <span key={i} className="text-yellow-400">★</span>
@@ -369,7 +374,7 @@ export default function LandingPage() {
               </div>
 
               {/* Testimonial 2 */}
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300">
+              <div className="scroll-reveal delay-1 bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300">
                 <div className="flex items-center gap-2 mb-4">
                   {[...Array(5)].map((_, i) => (
                     <span key={i} className="text-yellow-400">★</span>
@@ -390,7 +395,7 @@ export default function LandingPage() {
               </div>
 
               {/* Testimonial 3 */}
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300">
+              <div className="scroll-reveal delay-2 bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300">
                 <div className="flex items-center gap-2 mb-4">
                   {[...Array(5)].map((_, i) => (
                     <span key={i} className="text-yellow-400">★</span>
@@ -414,7 +419,7 @@ export default function LandingPage() {
         </section>
 
         {/* Mobile Apps Teaser Section */}
-        <section className="container mx-auto px-6 py-20 fade-in-section opacity-0">
+        <section className="container mx-auto px-6 py-20 scroll-reveal">
           <div className="max-w-6xl mx-auto">
             <div className="relative bg-gradient-to-br from-purple-600/10 to-pink-600/10 rounded-3xl p-6 md:p-12 border-2 border-purple-500/30 overflow-hidden group hover:border-purple-500/50 transition-all">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/10 to-pink-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -479,7 +484,7 @@ export default function LandingPage() {
         </section>
 
         {/* Final CTA */}
-        <section className="container mx-auto px-6 py-20 fade-in-section opacity-0">
+        <section className="container mx-auto px-6 py-20 scroll-reveal-scale">
           <div className="max-w-4xl mx-auto">
             <div className="relative bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-3xl p-6 md:p-12 lg:p-16 border-2 border-blue-500/30 overflow-hidden group hover:border-blue-500/50 transition-all">
               {/* Animated background */}
@@ -531,6 +536,19 @@ export default function LandingPage() {
                   <Zap className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-green-400 animate-pulse" />
                   7-Day Free Trial — Pay Only for Minutes <span className="font-bold">You</span> Use
                 </p>
+                
+                {/* Schedule Call CTA */}
+                <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-white/10">
+                  <p className="text-gray-400 text-sm mb-3">Not sure if Sterling AI is right for you?</p>
+                  <Link
+                    href="/schedule-call"
+                    className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 font-medium transition-colors group"
+                  >
+                    <Phone className="w-4 h-4" />
+                    Schedule a Free Consultation
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

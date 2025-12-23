@@ -64,7 +64,9 @@ import {
   Plus, FileSpreadsheet, Upload, UserPlus, Search, Settings, 
   ExternalLink, Trash2, X, Check, AlertCircle,
   Phone, Mail, MapPin, TrendingUp, Calendar, Sparkles, ArrowRight,
-  ChevronLeft, ChevronRight, Users, Target, Skull, Zap, ChevronDown, Loader2
+  ChevronLeft, ChevronRight, Users, Target, Skull, Zap, ChevronDown, Loader2,
+  Clock, PhoneCall, PhoneOff, PhoneMissed, CheckCircle, XCircle, Voicemail, Home, User,
+  Play, Pause, Volume2
 } from 'lucide-react';
 
 // Status options for the editable dropdown (in order)
@@ -259,6 +261,76 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   const leadsPerPage = 50;
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showLeadDetail, setShowLeadDetail] = useState(false);
+  const [leadCallHistory, setLeadCallHistory] = useState<{
+    id: string;
+    call_id: string;
+    lead_name: string;
+    phone_number: string;
+    duration: number;
+    disposition: string;
+    outcome: string;
+    connected: boolean;
+    recording_url?: string;
+    in_voicemail?: boolean;
+    created_at: string;
+  }[]>([]);
+  const [loadingCallHistory, setLoadingCallHistory] = useState(false);
+  const [playingCallId, setPlayingCallId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Handle audio playback
+  const toggleAudioPlayback = (callId: string, recordingUrl: string) => {
+    if (playingCallId === callId) {
+      // Stop playing
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      setPlayingCallId(null);
+    } else {
+      // Stop any current audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      // Play new audio
+      audioRef.current = new Audio(recordingUrl);
+      audioRef.current.play();
+      audioRef.current.onended = () => setPlayingCallId(null);
+      setPlayingCallId(callId);
+    }
+  };
+
+  // Fetch call history when a lead is selected
+  const fetchCallHistory = async (leadId: string) => {
+    setLoadingCallHistory(true);
+    try {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { data, error } = await supabase
+        .from('calls')
+        .select('*')
+        .eq('lead_id', leadId)
+        .gte('created_at', sevenDaysAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (!error && data) {
+        setLeadCallHistory(data);
+      }
+    } catch (err) {
+      console.error('Error fetching call history:', err);
+    } finally {
+      setLoadingCallHistory(false);
+    }
+  };
+
+  // Handle opening lead detail modal
+  const openLeadDetail = (lead: Lead) => {
+    setSelectedLead(lead);
+    setShowLeadDetail(true);
+    fetchCallHistory(lead.id);
+  };
   
   // Server-side pagination state
   const [totalLeadCount, setTotalLeadCount] = useState(0);
@@ -1572,7 +1644,6 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                         <option value="new">New Leads</option>
                         <option value="no_answer">No Answer</option>
                         <option value="callback_later">Callback</option>
-                        <option value="potential_appointment">Potential Appointments</option>
                         <option value="appointment_booked">Confirmed Appointments</option>
                         <option value="live_transfer">Live Transfers</option>
                         <option value="dead">Dead Leads</option>
@@ -1681,10 +1752,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                           {paginatedLeads.map((lead) => (
                             <tr 
                               key={lead.id} 
-                              onClick={() => {
-                                setSelectedLead(lead);
-                                setShowLeadDetail(true);
-                              }}
+                              onClick={() => openLeadDetail(lead)}
                               className="hover:bg-[#0B1437]/50 transition-colors cursor-pointer"
                             >
                               <td className="px-6 py-4 whitespace-nowrap">
@@ -1928,31 +1996,70 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
         />
       )}
 
-      {/* Lead Detail Modal */}
+      {/* Lead Detail Modal - Redesigned */}
       {showLeadDetail && selectedLead && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-[#1A2647] to-[#0F172A] rounded-2xl border border-gray-700 max-w-lg w-full shadow-2xl">
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              // Stop audio when closing
+              if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+              }
+              setPlayingCallId(null);
+              setShowLeadDetail(false);
+              setSelectedLead(null);
+              setLeadCallHistory([]);
+            }
+          }}
+        >
+          <div 
+            className="relative bg-[#0d1225]/95 backdrop-blur-xl rounded-3xl border border-purple-500/30 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+            style={{
+              boxShadow: '0 0 80px rgba(147, 51, 234, 0.2), 0 0 120px rgba(59, 130, 246, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+            }}
+          >
+            {/* Glowing background effects */}
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-600/15 rounded-full blur-3xl pointer-events-none" />
+            
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-2xl font-bold text-white">Lead Details</h2>
+            <div className="relative bg-gradient-to-r from-purple-600/90 via-fuchsia-600/90 to-pink-600/90 p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Lead Details</h2>
+                  <p className="text-xs text-white/70">View contact information & call history</p>
+                </div>
+              </div>
               <button
                 onClick={() => {
+                  // Stop audio when closing
+                  if (audioRef.current) {
+                    audioRef.current.pause();
+                    audioRef.current = null;
+                  }
+                  setPlayingCallId(null);
                   setShowLeadDetail(false);
                   setSelectedLead(null);
+                  setLeadCallHistory([]);
                 }}
-                className="p-2 hover:bg-white/20 rounded-lg transition-all"
+                className="p-2 hover:bg-white/20 rounded-xl transition-all hover:scale-110"
               >
-                <X className="w-6 h-6 text-white" />
+                <X className="w-5 h-5 text-white" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              {/* Name and Status */}
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-2xl font-bold text-white">
-                  {selectedLead.name}
-                </h3>
-                {/* Editable Status in Detail Modal */}
+            {/* Scrollable Content */}
+            <div className="relative overflow-y-auto max-h-[calc(90vh-80px)] p-5 space-y-4">
+              
+              {/* Name & Status Header */}
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#1a1f35]/60 to-[#0f1525]/60 rounded-2xl border border-gray-700/30 backdrop-blur-sm">
+                <h3 className="text-2xl font-bold text-white">{selectedLead.name}</h3>
+                {/* Editable Status */}
                 <div className="relative lead-status-dropdown">
                   {updatingLeadId === selectedLead.id ? (
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/20 text-gray-400 border border-gray-500/30">
@@ -1966,17 +2073,13 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                           e.stopPropagation();
                           handleStatusDropdownToggle(`modal-${selectedLead.id}`, e.currentTarget);
                         }}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all hover:scale-105 cursor-pointer ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all hover:scale-105 cursor-pointer ${
                           LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(selectedLead))?.className || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
                         } border`}
                       >
-                        <span>
-                          {LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(selectedLead))?.label || selectedLead.status}
-                        </span>
+                        <span>{LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(selectedLead))?.label || selectedLead.status}</span>
                         <ChevronDown className={`w-3 h-3 opacity-60 transition-transform ${openStatusDropdownId === `modal-${selectedLead.id}` ? 'rotate-180' : ''}`} />
                       </button>
-                      
-                      {/* Dropdown Menu - Fixed positioning to escape stacking context */}
                       {openStatusDropdownId === `modal-${selectedLead.id}` && (
                         <div 
                           className="fixed z-[99999] w-44 bg-[#1A2647] border border-gray-700 rounded-lg shadow-2xl shadow-black/50 overflow-hidden"
@@ -1991,7 +2094,6 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                               key={option.value}
                               onClick={(e) => {
                                 handleLeadStatusChange(selectedLead, option.value, e);
-                                // Update selectedLead too
                                 setSelectedLead({ ...selectedLead, status: option.value });
                               }}
                               className={`w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-gray-700/50 transition-colors ${
@@ -2013,19 +2115,19 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                 </div>
               </div>
 
-              {/* Contact Information Card */}
-              <div className="p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg border border-green-500/20">
-                <p className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <Phone className="w-4 h-4" /> Contact Information
-                </p>
+              {/* 1. Contact Information Section */}
+              <div className="p-4 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 rounded-2xl border border-cyan-500/20 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <Phone className="w-4 h-4 text-cyan-400" />
+                  <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Contact Information</p>
+                </div>
                 <div className="space-y-3">
-                  {/* Phone */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
-                      <Phone className="w-4 h-4 text-green-400" />
+                  <div className="flex items-center gap-3 p-3 bg-[#0a0f1e]/40 rounded-xl border border-gray-700/20">
+                    <div className="p-2 bg-cyan-500/10 rounded-lg">
+                      <Phone className="w-4 h-4 text-cyan-400" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400">Phone Number</p>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wider">Phone Number</p>
                       <p 
                         className={`text-white font-semibold ${blurSensitive ? 'blur-sm select-none' : ''}`}
                         style={blurSensitive ? { filter: 'blur(4px)', userSelect: 'none' } : {}}
@@ -2034,35 +2136,56 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                       </p>
                     </div>
                   </div>
-                  {/* Email */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
-                      <Mail className="w-4 h-4 text-green-400" />
+                  <div className="flex items-center gap-3 p-3 bg-[#0a0f1e]/40 rounded-xl border border-gray-700/20">
+                    <div className="p-2 bg-emerald-500/10 rounded-lg">
+                      <Mail className="w-4 h-4 text-emerald-400" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400">Email</p>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wider">Email</p>
                       <p className="text-white font-semibold">{selectedLead.email || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Lead Type Card */}
+              {/* 2. Demographics Section */}
+              <div className="p-4 bg-gradient-to-br from-purple-500/5 to-pink-500/5 rounded-2xl border border-purple-500/20 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="w-4 h-4 text-purple-400" />
+                  <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider">Demographics</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-[#0a0f1e]/40 rounded-xl border border-gray-700/20 text-center">
+                    <div className="p-2 bg-purple-500/10 rounded-lg w-fit mx-auto mb-2 text-lg">🎂</div>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Age</p>
+                    <p className="text-white font-bold text-xl">{selectedLead.age || 'N/A'}</p>
+                  </div>
+                  <div className="p-3 bg-[#0a0f1e]/40 rounded-xl border border-gray-700/20 text-center">
+                    <div className="p-2 bg-pink-500/10 rounded-lg w-fit mx-auto mb-2">
+                      <MapPin className="w-4 h-4 text-pink-400" />
+                    </div>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">State</p>
+                    <p className="text-white font-bold text-xl">{selectedLead.state || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Lead Type Card */}
               {(() => {
                 const leadTypeInfo = getLeadTypeLabel(selectedLead.lead_type);
                 const colorClasses = {
-                  green: 'from-green-500/10 to-emerald-500/10 border-green-500/30 text-green-400',
-                  amber: 'from-amber-500/10 to-orange-500/10 border-amber-500/30 text-amber-400',
-                  blue: 'from-blue-500/10 to-cyan-500/10 border-blue-500/30 text-blue-400',
+                  green: 'from-green-500/5 to-emerald-500/5 border-green-500/20',
+                  amber: 'from-amber-500/5 to-orange-500/5 border-amber-500/20',
+                  blue: 'from-blue-500/5 to-cyan-500/5 border-blue-500/20',
                 };
                 return (
-                  <div className={`p-4 bg-gradient-to-br ${colorClasses[leadTypeInfo.color as keyof typeof colorClasses]} rounded-lg border`}>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg bg-${leadTypeInfo.color}-500/20 flex items-center justify-center text-xl`}>
+                  <div className={`p-4 bg-gradient-to-br ${colorClasses[leadTypeInfo.color as keyof typeof colorClasses]} rounded-2xl border backdrop-blur-sm`}>
+                    <div className="flex items-center gap-3 p-3 bg-[#0a0f1e]/40 rounded-xl border border-gray-700/20">
+                      <div className="p-2 bg-amber-500/10 rounded-lg text-xl">
                         {leadTypeInfo.icon}
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400 uppercase tracking-wider">Lead Type</p>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider">Lead Type</p>
                         <p className="text-white font-bold text-lg">{leadTypeInfo.label}</p>
                       </div>
                     </div>
@@ -2070,53 +2193,31 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                 );
               })()}
 
-              {/* Demographics Card */}
-              <div className="p-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg border border-purple-500/20">
-                <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <Users className="w-4 h-4" /> Demographics
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-sm">🎂</div>
-                    <div>
-                      <p className="text-xs text-gray-400">Age</p>
-                      <p className="text-white font-semibold text-lg">{selectedLead.age || 'N/A'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                      <MapPin className="w-4 h-4 text-purple-400" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400">State</p>
-                      <p className="text-white font-semibold text-lg">{selectedLead.state || 'N/A'}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-                
-              {/* Mortgage Protection Fields - Only show if data exists */}
+              {/* 4. Mortgage Protection Data */}
               {(selectedLead.lead_vendor || selectedLead.street_address) && (
-                <div className="p-4 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-lg border border-cyan-500/30">
-                  <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <span>🏠</span> Mortgage Protection Data
-                  </p>
+                <div className="p-4 bg-gradient-to-br from-amber-500/5 to-yellow-500/5 rounded-2xl border border-amber-500/20 backdrop-blur-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Home className="w-4 h-4 text-amber-400" />
+                    <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Mortgage Protection Data</p>
+                  </div>
                   <div className="space-y-3">
                     {selectedLead.lead_vendor && (
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-sm">🏢</div>
+                      <div className="flex items-center gap-3 p-3 bg-[#0a0f1e]/40 rounded-xl border border-gray-700/20">
+                        <div className="p-2 bg-amber-500/10 rounded-lg text-sm">🏢</div>
                         <div>
-                          <p className="text-xs text-gray-400">Lead Vendor</p>
+                          <p className="text-[10px] text-gray-500 uppercase tracking-wider">Lead Vendor</p>
                           <p className="text-white font-semibold">{selectedLead.lead_vendor}</p>
                         </div>
                       </div>
                     )}
                     {selectedLead.street_address && (
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-sm">📍</div>
+                      <div className="flex items-center gap-3 p-3 bg-[#0a0f1e]/40 rounded-xl border border-gray-700/20">
+                        <div className="p-2 bg-amber-500/10 rounded-lg">
+                          <MapPin className="w-4 h-4 text-amber-400" />
+                        </div>
                         <div>
-                          <p className="text-xs text-gray-400">Street Address</p>
-                          <p className="text-white font-semibold">{selectedLead.street_address}</p>
+                          <p className="text-[10px] text-gray-500 uppercase tracking-wider">Street Address</p>
+                          <p className="text-white font-semibold uppercase">{selectedLead.street_address}</p>
                         </div>
                       </div>
                     )}
@@ -2124,15 +2225,15 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                 </div>
               )}
 
-              {/* Google Sheet Location */}
+              {/* 5. Lead Location Section */}
               {selectedLead.google_sheet_id && (
-                <div className="p-4 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-500/20">
-                  <div className="flex items-center gap-2 mb-2">
+                <div className="p-4 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 rounded-2xl border border-blue-500/20 backdrop-blur-sm">
+                  <div className="flex items-center gap-2 mb-3">
                     <FileSpreadsheet className="w-4 h-4 text-blue-400" />
                     <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Lead Location</p>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-white font-semibold text-sm">
+                  <div className="p-3 bg-[#0a0f1e]/40 rounded-xl border border-gray-700/20">
+                    <p className="text-white font-semibold mb-1">
                       {(() => {
                         const sheet = sheets.find(s => s.id === selectedLead.google_sheet_id);
                         return sheet?.sheet_name || 'Unknown Sheet';
@@ -2141,19 +2242,124 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                     {(() => {
                       const sheet = sheets.find(s => s.id === selectedLead.google_sheet_id);
                       return sheet?.tab_name && (
-                        <p className="text-blue-300 text-xs">
-                          Tab: {sheet.tab_name}
+                        <p className="text-xs text-gray-400 mb-1">
+                          Tab: <span className="text-blue-400">{sheet.tab_name}</span>
                         </p>
                       );
                     })()}
                     {selectedLead.sheet_row_number && (
-                      <p className="text-sm text-gray-400">
+                      <p className="text-xs text-gray-400">
                         Row: <span className="text-blue-400 font-mono">{selectedLead.sheet_row_number}</span>
                       </p>
                     )}
                   </div>
                 </div>
               )}
+
+              {/* 6. Call History Section - Last 7 Days */}
+              <div className="p-4 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 rounded-2xl border border-emerald-500/20 backdrop-blur-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                    <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Call History (Last 7 Days)</p>
+                  </div>
+                  <span className="text-xs text-gray-500">{leadCallHistory.length} calls</span>
+                </div>
+                
+                {loadingCallHistory ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                    <span className="ml-2 text-sm text-gray-400">Loading call history...</span>
+                  </div>
+                ) : leadCallHistory.length === 0 ? (
+                  <div className="text-center py-6 text-gray-500">
+                    <PhoneOff className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No calls in the last 7 days</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {leadCallHistory.map((call, index) => (
+                      <div 
+                        key={call.id || index}
+                        className={`p-3 rounded-xl border transition-all ${
+                          call.connected 
+                            ? 'bg-emerald-500/10 border-emerald-500/30' 
+                            : call.in_voicemail
+                            ? 'bg-amber-500/10 border-amber-500/30'
+                            : 'bg-red-500/10 border-red-500/30'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {call.connected ? (
+                              <CheckCircle className="w-4 h-4 text-emerald-400" />
+                            ) : call.in_voicemail ? (
+                              <Voicemail className="w-4 h-4 text-amber-400" />
+                            ) : (
+                              <PhoneMissed className="w-4 h-4 text-red-400" />
+                            )}
+                            <span className={`text-sm font-semibold ${
+                              call.connected 
+                                ? 'text-emerald-400' 
+                                : call.in_voicemail
+                                ? 'text-amber-400'
+                                : 'text-red-400'
+                            }`}>
+                              {call.connected ? 'Connected' : call.in_voicemail ? 'Voicemail' : 'No Answer'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {/* Play Recording Button - Only show if duration >= 10 seconds (0.167 min) */}
+                            {call.recording_url && call.duration && call.duration >= 0.167 && (
+                              <button
+                                onClick={() => toggleAudioPlayback(call.id, call.recording_url!)}
+                                className={`p-1.5 rounded-lg transition-all hover:scale-110 ${
+                                  playingCallId === call.id 
+                                    ? 'bg-emerald-500/30 text-emerald-400' 
+                                    : 'bg-gray-700/50 text-gray-400 hover:text-white hover:bg-gray-600/50'
+                                }`}
+                                title={playingCallId === call.id ? 'Stop' : 'Play Recording'}
+                              >
+                                {playingCallId === call.id ? (
+                                  <Pause className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Play className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            )}
+                            <span className="text-xs text-gray-500">
+                              {new Date(call.created_at).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {call.duration ? `${call.duration.toFixed(1)} min` : '0 min'}
+                          </span>
+                          {call.outcome && call.outcome !== 'no_answer' && (
+                            <span className="px-2 py-0.5 bg-gray-700/50 rounded-full text-gray-300">
+                              {call.outcome.replace(/_/g, ' ')}
+                            </span>
+                          )}
+                          {call.recording_url && call.duration && call.duration >= 0.167 && (
+                            <span className="flex items-center gap-1 text-emerald-400/70">
+                              <Volume2 className="w-3 h-3" />
+                              Recording available
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
           </div>
         </div>

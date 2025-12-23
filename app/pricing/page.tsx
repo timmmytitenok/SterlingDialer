@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { PublicNav } from '@/components/public-nav';
 import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
@@ -9,6 +10,25 @@ import { CheckCircle2, Zap, ArrowRight, Phone, Calendar, BarChart3, Clock, Shiel
 import Link from 'next/link';
 
 export default function PricingPage() {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    document.querySelectorAll('.scroll-reveal, .scroll-reveal-left, .scroll-reveal-right, .scroll-reveal-scale').forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#0B1437] relative overflow-hidden">
       {/* Animated Background - Soft gradual glow */}
@@ -59,7 +79,7 @@ export default function PricingPage() {
           </div>
 
           {/* Main Pricing Card - Simple & High-Conversion */}
-          <div className="max-w-4xl mx-auto mb-8 sm:mb-12 px-2 sm:px-4 animate-in fade-in zoom-in duration-700">
+          <div className="scroll-reveal-scale max-w-4xl mx-auto mb-8 sm:mb-12 px-2 sm:px-4">
             <div className="group relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 border-2 border-blue-500/40 shadow-2xl transition-all duration-500 hover:scale-105 hover:border-blue-500/70 hover:shadow-3xl hover:shadow-blue-500/60 overflow-hidden">
               
               {/* Animated Glow Effect */}
@@ -140,7 +160,7 @@ export default function PricingPage() {
           </div>
 
           {/* Detailed Features Section - Below the Card */}
-          <div className="max-w-6xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4">
+          <div className="scroll-reveal max-w-6xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4">
             <div className="text-center mb-6 sm:mb-8 md:mb-10">
               <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-white/50 mb-1.5 sm:mb-2">
                 WHAT'S INCLUDED
@@ -294,7 +314,7 @@ export default function PricingPage() {
           </div>
 
           {/* ROI Calculator */}
-          <div className="max-w-4xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4 md:px-0">
+          <div className="scroll-reveal max-w-4xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4 md:px-0">
             <div className="bg-gradient-to-br from-green-500/10 to-emerald-600/5 rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 lg:p-10 border border-green-500/20">
               <div className="text-center mb-5 sm:mb-6 md:mb-8">
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1.5 sm:mb-2">See Your ROI</h2>
@@ -348,7 +368,7 @@ export default function PricingPage() {
 
 
           {/* Features Grid */}
-          <div className="max-w-6xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4">
+          <div className="scroll-reveal max-w-6xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-6 sm:mb-8 md:mb-12 px-4">
               Built for Insurance Professionals
             </h2>
@@ -381,7 +401,7 @@ export default function PricingPage() {
           </div>
 
           {/* FAQ Section */}
-          <div className="max-w-3xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4">
+          <div className="scroll-reveal max-w-3xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-6 sm:mb-8 md:mb-12 px-4">
               Frequently Asked Questions
             </h2>
@@ -418,7 +438,7 @@ export default function PricingPage() {
           </div>
 
           {/* Old Leads Section - Moved to Bottom */}
-          <div className="max-w-5xl mx-auto mb-12 sm:mb-16 md:mb-20 animate-in fade-in zoom-in duration-700 px-3 sm:px-4 md:px-0">
+          <div className="scroll-reveal-scale max-w-5xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4 md:px-0">
             <div className="relative overflow-hidden bg-gradient-to-br from-blue-600/10 to-purple-600/10 rounded-xl sm:rounded-2xl p-6 sm:p-6 md:p-8 lg:p-12 border border-blue-500/30">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-purple-500/0 animate-pulse" />
               <div className="relative text-center">
@@ -437,6 +457,24 @@ export default function PricingPage() {
                   <span className="text-green-400 font-bold text-sm sm:text-sm md:text-base">Sterling AI pays for itself!</span>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Schedule Call CTA */}
+          <div className="scroll-reveal max-w-2xl mx-auto text-center mb-12 sm:mb-16 px-4">
+            <div className="p-6 sm:p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
+              <h3 className="text-2xl sm:text-4xl font-bold text-white mb-3">Still Have Questions?</h3>
+              <p className="text-gray-400 text-sm sm:text-base mb-6">
+                Book a free 15-minute call and I'll show you exactly how Sterling AI can help grow your business today.
+              </p>
+              <Link
+                href="/schedule-call"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-105 group"
+              >
+                <Phone className="w-5 h-5" />
+                Schedule Free Consultation
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </div>
           </div>
 

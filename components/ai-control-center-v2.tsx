@@ -928,9 +928,9 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
           initialLimit={subscriptionFeatures?.maxDailyCalls || initialSettings.daily_call_limit || 600}
           initialTransfer={initialSettings.auto_transfer_calls || true}
           initialMode={initialSettings.execution_mode || 'time'}
-          initialLeadCount={initialSettings.target_lead_count || subscriptionFeatures?.maxDailyCalls || initialSettings.daily_call_limit || 600}
+          initialLeadCount={initialSettings.target_lead_count || subscriptionFeatures?.maxDailyCalls || initialSettings.daily_call_limit || 800}
           initialTargetTime={initialSettings.target_time_military || null}
-          maxCallsAllowed={subscriptionFeatures?.maxDailyCalls || 600}
+          maxCallsAllowed={subscriptionFeatures?.maxDailyCalls || 800}
           subscriptionTier={subscriptionFeatures?.tier === 'none' ? null : (subscriptionFeatures?.tier as 'starter' | 'pro' | 'elite' | null)}
           onClose={() => setShowLaunchModal(false)}
           onLaunched={handleLaunched}

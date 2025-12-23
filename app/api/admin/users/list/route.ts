@@ -47,42 +47,48 @@ export async function GET() {
       const retellConfig = retellConfigs.data?.find((r: any) => r.user_id === authUser.id);
 
       // 4 STATUSES:
-      // 1. useless - Account created but NO subscription (hasn't started free trial)
-      // 2. needs_onboarding - Has subscription/trial but Step 1 NOT completed
-      // 3. needs_ai_config - Step 1 completed but AI dialer is BLOCKED
-      // 4. active - AI dialer is UNBLOCKED (ai_setup_status === 'ready' or 'completed')
+      // 1. active - AI dialer is UNBLOCKED (OVERRIDES ALL OTHER CHECKS)
+      // 2. useless - Account created but NO subscription (hasn't started free trial)
+      // 3. needs_onboarding - Has subscription/trial but Step 1 NOT completed
+      // 4. needs_ai_config - Step 1 completed but AI dialer is BLOCKED
       
-      // Check if user has started their free trial/subscription
-      // Multiple ways to detect this:
-      const hasSubRecord = subscription && (subscription.status === 'active' || subscription.status === 'trialing');
-      const hasStripeCustomer = !!profile?.stripe_customer_id;
-      const profileHasSub = profile?.has_active_subscription === true || 
-                           profile?.subscription_status === 'active' || 
-                           profile?.subscription_status === 'trialing' ||
-                           (profile?.subscription_tier && profile?.subscription_tier !== 'none' && profile?.subscription_tier !== 'free');
-      const hasSubscription = hasSubRecord || hasStripeCustomer || profileHasSub;
+      // FIRST CHECK: Is AI dialer UNBLOCKED? 
+      // ai_maintenance_mode = true means BLOCKED
+      // ai_maintenance_mode = false means UNBLOCKED (admin explicitly unblocked)
+      // ai_maintenance_mode = null/undefined means BLOCKED by default (not yet unblocked)
+      const aiUnblocked = profile?.ai_maintenance_mode === false;
       
-      // Check if Step 1 (Quick Setup form) is complete
-      const hasCompletedStep1 = profile?.onboarding_step_1_form === true || 
-                                profile?.onboarding_completed === true;
+      let setupStatus = 'useless'; // Default
       
-      // Check if AI dialer is UNBLOCKED (ai_setup_status === 'ready' or 'completed')
-      const aiUnblocked = profile?.ai_setup_status === 'ready' || profile?.ai_setup_status === 'completed';
-      
-      let setupStatus = 'useless'; // Default: no subscription
-      
-      if (!hasSubscription) {
-        // No subscription/trial started = useless
-        setupStatus = 'useless';
-      } else if (!hasCompletedStep1) {
-        // Has subscription but Step 1 NOT done
-        setupStatus = 'needs_onboarding';
-      } else if (!aiUnblocked) {
-        // Step 1 done but AI dialer BLOCKED
-        setupStatus = 'needs_ai_config';
-      } else {
-        // AI dialer UNBLOCKED = ACTIVE
+      if (aiUnblocked) {
+        // AI UNBLOCKED = ACTIVE (overrides all other checks)
         setupStatus = 'active';
+      } else {
+        // AI is blocked, check other conditions
+        
+        // Check if user has started their free trial/subscription
+        const hasSubRecord = subscription && (subscription.status === 'active' || subscription.status === 'trialing');
+        const hasStripeCustomer = !!profile?.stripe_customer_id;
+        const profileHasSub = profile?.has_active_subscription === true || 
+                             profile?.subscription_status === 'active' || 
+                             profile?.subscription_status === 'trialing' ||
+                             (profile?.subscription_tier && profile?.subscription_tier !== 'none' && profile?.subscription_tier !== 'free');
+        const hasSubscription = hasSubRecord || hasStripeCustomer || profileHasSub;
+        
+        // Check if Step 1 (Quick Setup form) is complete
+        const hasCompletedStep1 = profile?.onboarding_step_1_form === true || 
+                                  profile?.onboarding_completed === true;
+        
+        if (!hasSubscription) {
+          // No subscription/trial started = useless
+          setupStatus = 'useless';
+        } else if (!hasCompletedStep1) {
+          // Has subscription but Step 1 NOT done
+          setupStatus = 'needs_onboarding';
+        } else {
+          // Step 1 done but AI dialer BLOCKED
+          setupStatus = 'needs_ai_config';
+        }
       }
 
       // Determine account type

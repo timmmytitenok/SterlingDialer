@@ -316,13 +316,26 @@ export async function GET(req: Request) {
 
     if (userCountError) throw userCountError;
 
-    // Active AI Users (users with AI configured)
+    // Active AI Users (users with AI dialer UNBLOCKED)
+    // ai_maintenance_mode = false means UNBLOCKED/ACTIVE
     // Exclude admin accounts (Timmy and Sterling Demo) from stats
     const ADMIN_USER_IDS = [
       'd33602b3-4b0c-4ec7-938d-7b1d31722dc5', // Timmy
       '7619c63f-fcc3-4ff3-83ac-33595b5640a5', // Sterling Demo
     ];
     
+    // Get users with AI dialer unblocked (ai_maintenance_mode = false)
+    const { data: activeProfiles, error: activeError } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('ai_maintenance_mode', false);
+    
+    if (activeError) throw activeError;
+    
+    // Filter out admin accounts from active users count
+    const activeUsers = activeProfiles?.filter((p: any) => !ADMIN_USER_IDS.includes(p.user_id)).length || 0;
+    
+    // Still need retell configs for VIP check below
     const { data: retellConfigs, error: retellError } = await supabase
       .from('user_retell_config')
       .select('user_id, retell_agent_id, phone_number')
@@ -330,9 +343,6 @@ export async function GET(req: Request) {
       .not('phone_number', 'is', null);
     
     if (retellError) throw retellError;
-    
-    // Filter out admin accounts from active users count
-    const activeUsers = retellConfigs?.filter((r: any) => !ADMIN_USER_IDS.includes(r.user_id)).length || 0;
 
     // Pro access users (active pro subscriptions ONLY - exclude VIP)
     const proUsers = allSubscriptions?.filter((s: any) => 
@@ -373,29 +383,34 @@ export async function GET(req: Request) {
     // ============================================
     
     // Today's calls - use COUNT queries to avoid 1000 row limit!
-    // Total calls today
+    // EXCLUDE ADMIN ACCOUNTS (Timmy's test calls) from ALL today stats
+    
+    // Total calls today (excluding admin accounts)
     const { count: totalCallsToday, error: callsError } = await supabase
       .from('calls')
       .select('*', { count: 'exact', head: true })
-      .gte('created_at', today.toISOString());
+      .gte('created_at', today.toISOString())
+      .not('user_id', 'in', `(${ADMIN_USER_IDS.join(',')})`);
 
     if (callsError) throw callsError;
 
-    // Connected calls today (answered or connected)
+    // Connected calls today (excluding admin accounts)
     const { count: connectedCallsToday, error: connectedError } = await supabase
       .from('calls')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', today.toISOString())
-      .or('disposition.eq.answered,connected.eq.true');
+      .or('disposition.eq.answered,connected.eq.true')
+      .not('user_id', 'in', `(${ADMIN_USER_IDS.join(',')})`);
 
     if (connectedError) throw connectedError;
 
-    // Appointments booked today
+    // Appointments booked today (excluding admin accounts)
     const { count: appointmentsToday, error: apptsError } = await supabase
       .from('calls')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', today.toISOString())
-      .eq('outcome', 'appointment_booked');
+      .eq('outcome', 'appointment_booked')
+      .not('user_id', 'in', `(${ADMIN_USER_IDS.join(',')})`);
 
     if (apptsError) throw apptsError;
     
@@ -405,6 +420,7 @@ export async function GET(req: Request) {
       .from('calls')
       .select('user_id')
       .gte('created_at', today.toISOString())
+      .not('user_id', 'in', `(${ADMIN_USER_IDS.join(',')})`)
       .limit(50000); // High limit to handle busy days
 
     if (usersError) throw usersError;

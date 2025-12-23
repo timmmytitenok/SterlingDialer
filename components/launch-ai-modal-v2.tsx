@@ -28,7 +28,7 @@ export function LaunchAIModalV2({
   initialMode = 'budget',
   initialLeadCount,
   initialTargetTime,
-  maxCallsAllowed = 600,
+  maxCallsAllowed = 800,
   subscriptionTier = null,
   onClose, 
   onLaunched 
@@ -336,19 +336,19 @@ export function LaunchAIModalV2({
                     <input
                       type="range"
                       min="1"
-                      max="30"
+                      max="60"
                       value={budget}
                       onChange={(e) => handleBudgetChange(parseInt(e.target.value))}
                       className="w-full h-3 rounded-full appearance-none cursor-pointer transition-all"
                       style={{
-                        background: `linear-gradient(to right, #06B6D4 0%, #06B6D4 ${((budget - 1) / 29) * 100}%, #374151 ${((budget - 1) / 29) * 100}%, #374151 100%)`
+                        background: `linear-gradient(to right, #06B6D4 0%, #06B6D4 ${((budget - 1) / 59) * 100}%, #374151 ${((budget - 1) / 59) * 100}%, #374151 100%)`
                       }}
                     />
                   </div>
                   <div className="flex justify-between text-sm font-semibold px-2">
                     <span className="text-gray-500">$1</span>
-                    <span className="text-gray-400">$15</span>
-                    <span className="text-cyan-400">$30</span>
+                    <span className="text-gray-400">$30</span>
+                    <span className="text-cyan-400">$60</span>
                   </div>
                 </div>
               </div>

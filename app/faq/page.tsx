@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { PublicNav } from '@/components/public-nav';
 import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
@@ -10,6 +11,24 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 export default function FAQPage() {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    document.querySelectorAll('.scroll-reveal, .scroll-reveal-left, .scroll-reveal-right, .scroll-reveal-scale').forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const faqs = [
@@ -161,7 +180,7 @@ export default function FAQPage() {
 
 
         {/* FAQ Accordion */}
-        <div className="space-y-4 mb-16">
+        <div className="scroll-reveal space-y-4 mb-16">
           {faqs.map((faq, index) => (
             <div
               key={index}
@@ -195,7 +214,7 @@ export default function FAQPage() {
         </div>
 
         {/* CTA Section */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-xl sm:rounded-2xl p-6 sm:p-10 md:p-12 border border-blue-500/30 text-center animate-in fade-in zoom-in duration-700" style={{ animationDelay: '0.5s' }}>
+        <div className="scroll-reveal-scale relative overflow-hidden bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-xl sm:rounded-2xl p-6 sm:p-10 md:p-12 border border-blue-500/30 text-center">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-purple-500/0 animate-pulse" />
           <div className="relative">
             <h2 className="text-4xl sm:text-4xl font-bold text-white mb-7 sm:mb-4 leading-tight">
@@ -228,7 +247,7 @@ export default function FAQPage() {
         </div>
 
         {/* Still Have Questions */}
-        <div className="mt-16 text-center animate-in fade-in duration-700" style={{ animationDelay: '0.6s' }}>
+        <div className="scroll-reveal mt-16 text-center">
           <p className="text-gray-400 mb-4">Still have questions?</p>
           <Link
             href="/contact"
