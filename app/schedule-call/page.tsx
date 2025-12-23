@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Clock, Video, CheckCircle, Sparkles, Phone, User, Mail, Loader2, PartyPopper } from 'lucide-react';
-import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
 
 // Generate next 5 days only
@@ -171,6 +170,24 @@ export default function ScheduleCallPage() {
     setMounted(true);
     // Default to first available date
     setSelectedDate(dates[0]);
+    
+    // Scroll reveal observer
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    document.querySelectorAll('.scroll-reveal, .scroll-reveal-left, .scroll-reveal-right, .scroll-reveal-scale').forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
   }, []);
 
   // Fetch availability when date changes
@@ -189,20 +206,23 @@ export default function ScheduleCallPage() {
         const endDate = new Date(selectedDate);
         endDate.setHours(23, 59, 59, 999);
         
+        console.log('Fetching availability for:', startDate.toISOString(), 'to', endDate.toISOString());
+        
         const response = await fetch(
           `/api/schedule-call/availability?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
         );
         
         const data = await response.json();
+        console.log('Availability API response:', data);
         
         if (data.success && data.slots) {
-          // Extract all available slot times
-          // Cal.com returns slots in format: { "2024-01-15": ["2024-01-15T12:00:00Z", ...] }
-          // or as an array of slot objects
+          // Slots should already be parsed as an array of ISO strings from our API
           let slots: string[] = [];
           
-          if (typeof data.slots === 'object' && !Array.isArray(data.slots)) {
-            // Format: { "date": [slots] }
+          if (Array.isArray(data.slots)) {
+            slots = data.slots;
+          } else if (typeof data.slots === 'object') {
+            // Fallback: If it's still an object with date keys
             Object.values(data.slots).forEach((dateSlots: any) => {
               if (Array.isArray(dateSlots)) {
                 dateSlots.forEach((slot: any) => {
@@ -214,19 +234,12 @@ export default function ScheduleCallPage() {
                 });
               }
             });
-          } else if (Array.isArray(data.slots)) {
-            // Format: [{ time: "..." }, ...]
-            data.slots.forEach((slot: any) => {
-              if (typeof slot === 'string') {
-                slots.push(slot);
-              } else if (slot.time) {
-                slots.push(slot.time);
-              }
-            });
           }
           
+          console.log('Parsed slots:', slots);
           setAvailableSlots(slots);
         } else {
+          console.log('No slots found or API error:', data);
           setAvailableSlots([]);
         }
       } catch (err) {
@@ -289,14 +302,14 @@ export default function ScheduleCallPage() {
   if (step === 'success') {
     return (
       <div className="min-h-screen bg-[#0B1437] relative overflow-hidden flex items-center justify-center">
-        {/* Background Effects - Moved up to avoid Safari toolbar bleed */}
+        {/* Background Effects */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-green-600/10 rounded-full blur-[120px]" />
-          <div className="absolute top-[40%] right-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px]" />
+          <div className="absolute bottom-[10%] right-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px]" />
         </div>
         
         {/* Solid background at bottom for Safari safe area */}
-        <div className="fixed bottom-0 left-0 right-0 h-24 bg-[#0B1437] pointer-events-none" />
+        <div className="fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#0B1437] to-transparent pointer-events-none z-[1]" />
         
         <div className="relative z-10 text-center px-4 max-w-lg mx-auto">
           <div className="mb-6 inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full animate-bounce">
@@ -338,15 +351,15 @@ export default function ScheduleCallPage() {
 
   return (
     <div className="min-h-screen bg-[#0B1437] relative">
-      {/* Background Effects - Moved up to avoid Safari toolbar bleed */}
+      {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[120px]" />
-        <div className="absolute top-[40%] right-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px]" />
-        <div className="absolute top-[30%] left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-pink-600/5 rounded-full blur-[80px]" />
+        <div className="absolute bottom-[10%] right-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-pink-600/5 rounded-full blur-[80px]" />
       </div>
       
       {/* Solid background at bottom for Safari safe area */}
-      <div className="fixed bottom-0 left-0 right-0 h-24 bg-[#0B1437] pointer-events-none" />
+      <div className="fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#0B1437] to-transparent pointer-events-none z-[1]" />
 
       {/* Navigation */}
       <nav className="relative z-10 p-6">
@@ -366,25 +379,57 @@ export default function ScheduleCallPage() {
         <div className="flex flex-col lg:hidden">
           {/* 1. Header */}
           <div className="space-y-4 text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full">
+            <div 
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full"
+              style={{ 
+                animation: 'unblur 0.8s ease-out forwards',
+                animationDelay: '100ms',
+                opacity: 0,
+                filter: 'blur(10px)'
+              }}
+            >
               <Sparkles className="w-4 h-4 text-purple-400" />
               <span className="text-sm font-medium text-purple-300">Free Consultation</span>
             </div>
             
-            <h1 className="text-3xl font-black text-white leading-tight">
+            <h1 
+              className="text-3xl font-black text-white leading-tight"
+              style={{ 
+                animation: 'unblur 0.8s ease-out forwards',
+                animationDelay: '200ms',
+                opacity: 0,
+                filter: 'blur(10px)'
+              }}
+            >
               Let's Talk About{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">
                 Growing Your Business
               </span>
             </h1>
             
-            <p className="text-base text-gray-400 leading-relaxed px-2">
+            <p 
+              className="text-base text-gray-400 leading-relaxed px-2"
+              style={{ 
+                animation: 'unblur 0.8s ease-out forwards',
+                animationDelay: '350ms',
+                opacity: 0,
+                filter: 'blur(10px)'
+              }}
+            >
               Not sure if Sterling AI is right for you? Book a free 15-minute call and I'll personally show you how our AI dialer can help you book more appointments and close more deals.
             </p>
           </div>
 
           {/* 2. Calendar (Mobile) */}
-          <div className="mb-10">
+          <div 
+            className="mb-10"
+            style={{ 
+              animation: 'unblur 0.8s ease-out forwards',
+              animationDelay: '500ms',
+              opacity: 0,
+              filter: 'blur(10px)'
+            }}
+          >
             <div 
               className="bg-[#111a3a]/90 backdrop-blur-xl rounded-3xl border border-purple-500/20 overflow-hidden"
               style={{
@@ -637,7 +682,7 @@ export default function ScheduleCallPage() {
           </div>
 
           {/* 3. What to Expect (Mobile) */}
-          <div className="space-y-4">
+          <div className="space-y-4 scroll-reveal">
             <h3 className="text-lg font-bold text-white">What to Expect:</h3>
             <div className="space-y-3">
               {[
@@ -665,24 +710,56 @@ export default function ScheduleCallPage() {
           {/* Left Side - Info */}
           <div className="space-y-8">
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full">
+              <div 
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full"
+                style={{ 
+                  animation: 'unblur-left 0.8s ease-out forwards',
+                  animationDelay: '100ms',
+                  opacity: 0,
+                  filter: 'blur(10px)'
+                }}
+              >
                 <Sparkles className="w-4 h-4 text-purple-400" />
                 <span className="text-sm font-medium text-purple-300">Free Consultation</span>
               </div>
               
-              <h1 className="text-5xl font-black text-white leading-tight">
+              <h1 
+                className="text-5xl font-black text-white leading-tight"
+                style={{ 
+                  animation: 'unblur-left 0.8s ease-out forwards',
+                  animationDelay: '250ms',
+                  opacity: 0,
+                  filter: 'blur(10px)'
+                }}
+              >
                 Let's Talk About{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">
                   Growing Your Business
                 </span>
               </h1>
               
-              <p className="text-lg text-gray-400 leading-relaxed">
+              <p 
+                className="text-lg text-gray-400 leading-relaxed"
+                style={{ 
+                  animation: 'unblur-left 0.8s ease-out forwards',
+                  animationDelay: '400ms',
+                  opacity: 0,
+                  filter: 'blur(10px)'
+                }}
+              >
                 Not sure if Sterling AI is right for you? Book a free 15-minute call and I'll personally show you how our AI dialer can help you book more appointments and close more deals.
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div 
+              className="space-y-4"
+              style={{ 
+                animation: 'unblur-left 0.8s ease-out forwards',
+                animationDelay: '550ms',
+                opacity: 0,
+                filter: 'blur(10px)'
+              }}
+            >
               <h3 className="text-lg font-bold text-white">What to Expect:</h3>
               <div className="space-y-3">
                 {[
@@ -706,7 +783,15 @@ export default function ScheduleCallPage() {
           </div>
 
           {/* Right Side - Calendar or Form */}
-          <div className="sticky top-8 mt-16 ml-8">
+          <div 
+            className="sticky top-8 mt-16 ml-8"
+            style={{ 
+              animation: 'unblur-right 0.9s ease-out forwards',
+              animationDelay: '400ms',
+              opacity: 0,
+              filter: 'blur(10px)'
+            }}
+          >
             <div 
               className="bg-[#111a3a]/90 backdrop-blur-xl rounded-3xl border border-purple-500/20 overflow-hidden"
               style={{
@@ -975,7 +1060,7 @@ export default function ScheduleCallPage() {
 
       </div>
       
-      <PublicFooter />
+      {/* Mobile Footer Only */}
       <MobileFooter />
     </div>
   );

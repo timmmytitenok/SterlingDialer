@@ -212,8 +212,8 @@ export default function ContactPage() {
           {/* Contact Options - 3 Column Grid */}
           <div className="scroll-reveal max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Email Card */}
-            <a 
-              href="mailto:SterlingDialer@gmail.com"
+                  <a
+                    href="mailto:SterlingDialer@gmail.com"
               className="group bg-[#1A2647]/80 rounded-xl p-5 border border-gray-800 hover:border-blue-500/50 transition-all duration-300 hover:scale-[1.02] text-center"
             >
               <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center mx-auto mb-3 border border-blue-500/30 group-hover:scale-110 transition-transform">
@@ -221,7 +221,7 @@ export default function ContactPage() {
               </div>
               <h3 className="text-base font-semibold text-white mb-1">Email Us</h3>
               <p className="text-blue-400 text-sm font-medium">SterlingDialer@gmail.com</p>
-            </a>
+                  </a>
 
             {/* Schedule Call Card */}
             <Link 

@@ -2262,15 +2262,15 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-emerald-400" />
                     <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Call History (Last 7 Days)</p>
-                  </div>
+            </div>
                   <span className="text-xs text-gray-500">{leadCallHistory.length} calls</span>
-                </div>
+          </div>
                 
                 {loadingCallHistory ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
                     <span className="ml-2 text-sm text-gray-400">Loading call history...</span>
-                  </div>
+        </div>
                 ) : leadCallHistory.length === 0 ? (
                   <div className="text-center py-6 text-gray-500">
                     <PhoneOff className="w-8 h-8 mx-auto mb-2 opacity-50" />

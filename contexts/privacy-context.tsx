@@ -42,7 +42,7 @@ export function PrivacyProvider({ children }: { children: ReactNode }) {
   // Save to localStorage when changed (only after hydration)
   useEffect(() => {
     if (isHydrated) {
-      localStorage.setItem('admin_blur_sensitive', blurSensitive ? 'true' : 'false');
+    localStorage.setItem('admin_blur_sensitive', blurSensitive ? 'true' : 'false');
     }
   }, [blurSensitive, isHydrated]);
 

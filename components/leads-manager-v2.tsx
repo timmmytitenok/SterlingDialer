@@ -626,16 +626,16 @@ export function LeadsManagerV2({ userId }: LeadsManagerV2Props) {
                     <Phone className="w-4 h-4 text-cyan-400" />
                     <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Contact Information</p>
                   </div>
-                  <div className="space-y-3">
+                <div className="space-y-3">
                     <div className="flex items-center gap-3 p-3 bg-[#0a0f1e]/60 rounded-xl border border-gray-700/30">
                       <div className="p-2 bg-cyan-500/10 rounded-lg">
                         <Phone className="w-4 h-4 text-cyan-400" />
                       </div>
-                      <div>
+                    <div>
                         <p className="text-[10px] text-gray-500 uppercase tracking-wider">Phone Number</p>
-                        <p className="text-white font-semibold">{formatPhone(selectedLead.phone)}</p>
-                      </div>
+                      <p className="text-white font-semibold">{formatPhone(selectedLead.phone)}</p>
                     </div>
+                  </div>
 
                     <div className="flex items-center gap-3 p-3 bg-[#0a0f1e]/60 rounded-xl border border-gray-700/30">
                       <div className="p-2 bg-emerald-500/10 rounded-lg">
@@ -687,7 +687,7 @@ export function LeadsManagerV2({ userId }: LeadsManagerV2Props) {
                       <p className="text-white font-bold text-xl">{selectedLead.state || 'N/A'}</p>
                     </div>
                   </div>
-                </div>
+                      </div>
 
                 {/* Mortgage Protection Data (if available) */}
                 {((selectedLead as any).street_address || (selectedLead as any).address) && (
@@ -705,31 +705,31 @@ export function LeadsManagerV2({ userId }: LeadsManagerV2Props) {
                         <p className="text-white font-semibold uppercase">{(selectedLead as any).street_address || (selectedLead as any).address || 'N/A'}</p>
                       </div>
                     </div>
-                  </div>
-                )}
+                    </div>
+                  )}
 
                 {/* Lead Location Section */}
                 <div className="p-4 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 rounded-2xl border border-blue-500/20">
                   <div className="flex items-center gap-2 mb-3">
                     <FileSpreadsheet className="w-4 h-4 text-blue-400" />
                     <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Lead Location</p>
-                  </div>
+                    </div>
                   <div className="p-3 bg-[#0a0f1e]/60 rounded-xl border border-gray-700/30">
                     <p className="text-white font-semibold mb-1">
-                      {getSheetName(selectedLead.google_sheet_id)}
+                        {getSheetName(selectedLead.google_sheet_id)}
                     </p>
                     {(selectedLead as any).tab_name && (
                       <p className="text-xs text-gray-400 mb-1">
                         Tab: <span className="text-blue-400">{(selectedLead as any).tab_name}</span>
                       </p>
                     )}
-                    {selectedLead.sheet_row_number && (
+                      {selectedLead.sheet_row_number && (
                       <p className="text-xs text-gray-400">
-                        Row: <span className="text-blue-400 font-mono">{selectedLead.sheet_row_number}</span>
-                      </p>
-                    )}
+                          Row: <span className="text-blue-400 font-mono">{selectedLead.sheet_row_number}</span>
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
 
                 {/* Call History Section - Last 7 Days */}
                 <div className="p-4 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 rounded-2xl border border-emerald-500/20">
