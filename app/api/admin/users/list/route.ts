@@ -2,6 +2,10 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isAdminMode } from '@/lib/admin-check';
 
+// Force dynamic - never cache this endpoint
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /**
  * GET /api/admin/users/list
  * Comprehensive user list with all important metrics
@@ -30,8 +34,10 @@ export async function GET() {
       supabase.from('profiles').select('*'),
       supabase.from('subscriptions').select('*'),
       supabase.from('call_balance').select('*'),
-      supabase.from('user_retell_config').select('*')
+      supabase.from('user_retell_config').select('user_id, retell_agent_id, phone_number, is_active')
     ]);
+    
+    console.log(`📊 Admin users list: Found ${retellConfigs.data?.length || 0} retell configs`);
 
     // Combine all data
     const users = await Promise.all((authData.users || []).map(async (authUser: any) => {
@@ -100,11 +106,17 @@ export async function GET() {
     // Sort by created_at descending (newest first)
     users.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       users,
       total: users.length,
     });
+    
+    // Prevent caching
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    response.headers.set('Pragma', 'no-cache');
+    
+    return response;
 
   } catch (error: any) {
     console.error('❌ Fatal error in /api/admin/users/list:', error);
