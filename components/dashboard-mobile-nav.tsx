@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, DollarSign, Phone, ChevronRight, LogOut, Rocket } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { BlurredUserName, BlurredUserEmail } from '@/contexts/privacy-context';
 
 interface DashboardMobileNavProps {
   user: User;
@@ -200,8 +201,12 @@ export function DashboardMobileNav({ user, profile }: DashboardMobileNavProps) {
                 {displayName.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate text-white">{displayName}</p>
-                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                <p className="text-sm font-semibold truncate text-white">
+                  <BlurredUserName displayName={displayName} />
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  <BlurredUserEmail email={user.email || ''} />
+                </p>
               </div>
             </div>
           </div>

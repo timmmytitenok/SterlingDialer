@@ -323,23 +323,16 @@ export async function GET(req: Request) {
       '7619c63f-fcc3-4ff3-83ac-33595b5640a5', // Sterling Demo
     ];
     
-    // GLOBAL AGENT SYSTEM: Check for required fields (phone, cal key, cal event id, agent name)
-    // No longer need individual agent IDs
     const { data: retellConfigs, error: retellError } = await supabase
       .from('user_retell_config')
-      .select('user_id, phone_number, phone_number_fe, phone_number_mp, cal_ai_api_key, cal_event_id, agent_name');
+      .select('user_id, retell_agent_id, phone_number')
+      .not('retell_agent_id', 'is', null)
+      .not('phone_number', 'is', null);
     
     if (retellError) throw retellError;
     
-    // Filter out admin accounts and count only fully configured users
-    const activeUsers = retellConfigs?.filter((r: any) => {
-      if (ADMIN_USER_IDS.includes(r.user_id)) return false;
-      const hasPhone = !!(r.phone_number_fe || r.phone_number_mp || r.phone_number);
-      const hasCalKey = !!r.cal_ai_api_key;
-      const hasCalEventId = !!r.cal_event_id;
-      const hasAgentName = !!r.agent_name;
-      return hasPhone && hasCalKey && hasCalEventId && hasAgentName;
-    }).length || 0;
+    // Filter out admin accounts from active users count
+    const activeUsers = retellConfigs?.filter((r: any) => !ADMIN_USER_IDS.includes(r.user_id)).length || 0;
 
     // Pro access users (active pro subscriptions ONLY - exclude VIP)
     const proUsers = allSubscriptions?.filter((s: any) => 

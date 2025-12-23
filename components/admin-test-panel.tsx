@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Phone, Settings, X, Loader2, Calendar, Clock, User, ChevronDown, Eye, EyeOff, Shield, ShieldOff } from 'lucide-react';
-import { usePrivacy } from '@/contexts/privacy-context';
+import { Phone, Settings, X, Loader2, Calendar, Clock, User, ChevronDown, Eye, EyeOff, Shield, ShieldOff, UserX } from 'lucide-react';
+import { usePrivacy, UserInfoBlurMode } from '@/contexts/privacy-context';
 
 interface AdminTestPanelProps {
   userId: string;
@@ -51,7 +51,7 @@ export function AdminTestPanel({
   const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('AM');
 
   // Privacy blur toggle
-  const { blurSensitive, setBlurSensitive } = usePrivacy();
+  const { blurSensitive, setBlurSensitive, userInfoBlur, setUserInfoBlur } = usePrivacy();
 
   // Fetch bypass restrictions setting on mount
   useEffect(() => {
@@ -400,6 +400,55 @@ export function AdminTestPanel({
                       blurSensitive ? 'left-6' : 'left-1'
                     }`} />
                   </button>
+                </div>
+
+                {/* User Info Blur Control */}
+                <div className="p-3 bg-white/[0.02] hover:bg-white/[0.04] rounded-xl border border-white/5 transition-all">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                      userInfoBlur !== 'none' 
+                        ? 'bg-rose-500/20 text-rose-400' 
+                        : 'bg-gray-800/50 text-gray-500'
+                    }`}>
+                      <UserX className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">Blur User Info</p>
+                      <p className="text-[11px] text-gray-500">Hide name & email in sidebar</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 bg-gray-900/50 p-1 rounded-lg">
+                    <button
+                      onClick={() => setUserInfoBlur('none')}
+                      className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                        userInfoBlur === 'none'
+                          ? 'bg-gray-700 text-white shadow-sm'
+                          : 'text-gray-500 hover:text-gray-300'
+                      }`}
+                    >
+                      Off
+                    </button>
+                    <button
+                      onClick={() => setUserInfoBlur('last_name')}
+                      className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                        userInfoBlur === 'last_name'
+                          ? 'bg-rose-600 text-white shadow-sm shadow-rose-500/30'
+                          : 'text-gray-500 hover:text-gray-300'
+                      }`}
+                    >
+                      Last Name
+                    </button>
+                    <button
+                      onClick={() => setUserInfoBlur('full')}
+                      className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                        userInfoBlur === 'full'
+                          ? 'bg-rose-600 text-white shadow-sm shadow-rose-500/30'
+                          : 'text-gray-500 hover:text-gray-300'
+                      }`}
+                    >
+                      Full
+                    </button>
+                  </div>
                 </div>
               </div>
 

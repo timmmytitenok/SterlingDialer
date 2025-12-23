@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { BlurredUserName } from '@/contexts/privacy-context';
 
 interface DashboardGreetingProps {
   displayName: string;
@@ -32,14 +33,14 @@ export function DashboardGreeting({ displayName }: DashboardGreetingProps) {
   if (!mounted) {
     return (
       <h1 className="hidden md:block text-4xl font-bold text-white bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-        Welcome, {displayName}!
+        Welcome, <BlurredUserName displayName={displayName} />!
       </h1>
     );
   }
 
   return (
     <h1 className="hidden md:block text-4xl font-bold text-white bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-      {greeting}, {displayName}!
+      {greeting}, <BlurredUserName displayName={displayName} />!
     </h1>
   );
 }

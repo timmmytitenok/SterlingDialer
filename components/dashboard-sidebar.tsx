@@ -4,6 +4,7 @@ import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Settings, Sparkles, CalendarDays, Phone, Users, Wallet, Rocket, MessageSquare, Headphones } from 'lucide-react';
+import { BlurredUserName, BlurredUserEmail } from '@/contexts/privacy-context';
 
 interface DashboardSidebarProps {
   user: User;
@@ -127,8 +128,12 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
             {displayName.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{displayName}</p>
-            <p className="text-xs text-gray-400 truncate">{user.email}</p>
+            <p className="text-sm font-medium truncate">
+              <BlurredUserName displayName={displayName} />
+            </p>
+            <p className="text-xs text-gray-400 truncate">
+              <BlurredUserEmail email={user.email || ''} />
+            </p>
           </div>
         </div>
       </div>
