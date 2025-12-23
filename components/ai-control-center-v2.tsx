@@ -92,7 +92,7 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
 
   // Check launch requirements
   const hasSpendLimit = dailySpendLimit > 0;
-  const hasBalance = autoRefillEnabled || callBalance >= 5;
+  const hasBalance = autoRefillEnabled || callBalance >= 1; // Auto-refill kicks in at $1
   const hasLeads = leadCount > 0;
   
   // All requirements met

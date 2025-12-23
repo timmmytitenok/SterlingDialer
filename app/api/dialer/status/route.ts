@@ -141,7 +141,7 @@ export async function GET() {
       .single();
 
     const callBalanceCents = Math.round((callBalance?.balance || 0) * 100);
-    const lowBalance = callBalanceCents < 500; // < $5
+    const lowBalance = callBalanceCents < 100; // < $1 - only pause if truly depleted (auto-refill kicks in at $1)
 
     // Determine status from ai_control_settings
     let status = aiSettings?.status || 'stopped';

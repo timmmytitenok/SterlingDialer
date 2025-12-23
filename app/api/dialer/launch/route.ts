@@ -45,7 +45,9 @@ export async function POST(request: Request) {
       .eq('user_id', user.id)
       .single();
 
-    const hasBalance = (callBalance?.auto_refill_enabled) || (callBalance?.balance || 0) >= 5;
+    // Only block launch if balance is completely depleted (< $1) AND no auto-refill
+    // Auto-refill will kick in at $1 anyway
+    const hasBalance = (callBalance?.auto_refill_enabled) || (callBalance?.balance || 0) >= 1;
     
     if (!hasBalance) {
       return NextResponse.json(
