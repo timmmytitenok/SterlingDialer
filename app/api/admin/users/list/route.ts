@@ -47,35 +47,41 @@ export async function GET() {
       const retellConfig = retellConfigs.data?.find((r: any) => r.user_id === authUser.id);
 
       // 4 STATUSES:
-      // 1. useless - Account created but NO subscription (hasn't started trial)
-      // 2. needs_onboarding - Has subscription but Step 1 NOT completed
-      // 3. needs_ai_config - Step 1 completed but AI not unlocked (ai_setup_status !== 'ready')
-      // 4. active - AI unlocked by admin (ai_setup_status === 'ready' or 'completed')
+      // 1. useless - Account created but NO subscription (hasn't started free trial)
+      // 2. needs_onboarding - Has subscription/trial but Step 1 NOT completed
+      // 3. needs_ai_config - Step 1 completed but AI dialer is BLOCKED
+      // 4. active - AI dialer is UNBLOCKED (ai_setup_status === 'ready' or 'completed')
       
-      // Check if user has ANY subscription (active or trialing)
-      const hasSubscription = subscription && (subscription.status === 'active' || subscription.status === 'trialing');
+      // Check if user has started their free trial/subscription
+      // Multiple ways to detect this:
+      const hasSubRecord = subscription && (subscription.status === 'active' || subscription.status === 'trialing');
+      const hasStripeCustomer = !!profile?.stripe_customer_id;
+      const profileHasSub = profile?.has_active_subscription === true || 
+                           profile?.subscription_status === 'active' || 
+                           profile?.subscription_status === 'trialing' ||
+                           (profile?.subscription_tier && profile?.subscription_tier !== 'none' && profile?.subscription_tier !== 'free');
+      const hasSubscription = hasSubRecord || hasStripeCustomer || profileHasSub;
       
-      // Check if Step 1 is complete - multiple ways to detect this
+      // Check if Step 1 (Quick Setup form) is complete
       const hasCompletedStep1 = profile?.onboarding_step_1_form === true || 
-                                profile?.onboarding_completed === true ||
-                                profile?.onboarding_all_complete === true;
+                                profile?.onboarding_completed === true;
       
-      // Check if AI is unlocked - ai_setup_status must be 'ready' or 'completed'
-      const aiUnlocked = profile?.ai_setup_status === 'ready' || profile?.ai_setup_status === 'completed';
+      // Check if AI dialer is UNBLOCKED (ai_setup_status === 'ready' or 'completed')
+      const aiUnblocked = profile?.ai_setup_status === 'ready' || profile?.ai_setup_status === 'completed';
       
       let setupStatus = 'useless'; // Default: no subscription
       
       if (!hasSubscription) {
-        // No subscription at all = useless
+        // No subscription/trial started = useless
         setupStatus = 'useless';
       } else if (!hasCompletedStep1) {
-        // Has subscription but hasn't done Step 1 form
+        // Has subscription but Step 1 NOT done
         setupStatus = 'needs_onboarding';
-      } else if (!aiUnlocked) {
-        // Did Step 1, waiting for admin to unlock AI
+      } else if (!aiUnblocked) {
+        // Step 1 done but AI dialer BLOCKED
         setupStatus = 'needs_ai_config';
       } else {
-        // AI is unlocked and ready
+        // AI dialer UNBLOCKED = ACTIVE
         setupStatus = 'active';
       }
 
