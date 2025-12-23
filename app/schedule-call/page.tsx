@@ -682,7 +682,15 @@ export default function ScheduleCallPage() {
           </div>
 
           {/* 3. What to Expect (Mobile) */}
-          <div className="space-y-4 scroll-reveal">
+          <div 
+            className="space-y-4"
+            style={{ 
+              animation: 'unblur 0.8s ease-out forwards',
+              animationDelay: '700ms',
+              opacity: 0,
+              filter: 'blur(10px)'
+            }}
+          >
             <h3 className="text-lg font-bold text-white">What to Expect:</h3>
             <div className="space-y-3">
               {[
