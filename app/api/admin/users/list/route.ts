@@ -46,19 +46,26 @@ export async function GET() {
       const balance = callBalances.data?.find((b: any) => b.user_id === authUser.id);
       const retellConfig = retellConfigs.data?.find((r: any) => r.user_id === authUser.id);
 
-      // Determine setup status - Check profiles.ai_setup_status for authoritative status
-      // ai_setup_status values: 'ready', 'completed', 'pending_setup', 'maintenance', or null
-      // Also check user_retell_config as fallback
-      let setupStatus = 'account_created';
-      const aiSetupStatus = profile?.ai_setup_status;
-      const hasAIConfigured = aiSetupStatus === 'ready' || aiSetupStatus === 'completed' || 
-                              (retellConfig && retellConfig.retell_agent_id && retellConfig.phone_number);
-      const hasCompletedStep1 = profile?.onboarding_step_1_form === true || profile?.onboarding_completed === true;
+      // 4 STATUSES:
+      // 1. useless - Account created but NO subscription (hasn't started trial)
+      // 2. needs_onboarding - Has subscription but Step 1 NOT completed
+      // 3. needs_ai_config - Step 1 completed but AI not unlocked (ai_setup_status !== 'ready')
+      // 4. active - AI unlocked by admin (ai_setup_status === 'ready' or 'completed')
       
-      if (hasAIConfigured) {
+      const hasSubscription = subscription && (subscription.status === 'active' || subscription.status === 'trialing');
+      const hasCompletedStep1 = profile?.onboarding_step_1_form === true;
+      const aiUnlocked = profile?.ai_setup_status === 'ready' || profile?.ai_setup_status === 'completed';
+      
+      let setupStatus = 'useless'; // Default: no subscription
+      
+      if (!hasSubscription) {
+        setupStatus = 'useless';
+      } else if (!hasCompletedStep1) {
+        setupStatus = 'needs_onboarding';
+      } else if (!aiUnlocked) {
+        setupStatus = 'needs_ai_config';
+      } else {
         setupStatus = 'active';
-      } else if (hasCompletedStep1) {
-        setupStatus = 'onboarding_complete';
       }
 
       // Determine account type

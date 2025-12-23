@@ -20,7 +20,7 @@ interface User {
   is_vip: boolean;
 }
 
-type FilterType = 'all' | 'needs_onboarding' | 'needs_ai_setup' | 'active' | 'dead';
+type FilterType = 'all' | 'useless' | 'needs_onboarding' | 'needs_ai_setup' | 'active' | 'dead';
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -136,16 +136,20 @@ export default function AdminUsersPage() {
       // Admin accounts should not appear in filtered lists (except 'all')
       const isAdmin = user.id === TIMMY_ID_FILTER || user.id === DEMO_ID_FILTER;
       
+      if (filter === 'useless') {
+        // No subscription yet - exclude admins
+        return !isAdmin && user.setup_status === 'useless';
+      }
       if (filter === 'needs_onboarding') {
-        // Step 1 (form) not complete - exclude admins
-        return !isAdmin && user.setup_status === 'account_created';
+        // Has subscription but Step 1 not complete - exclude admins
+        return !isAdmin && user.setup_status === 'needs_onboarding';
       }
       if (filter === 'needs_ai_setup') {
-        // Step 1 (form) complete but AI not configured - exclude admins
-        return !isAdmin && user.setup_status === 'onboarding_complete';
+        // Step 1 complete but AI not unlocked - exclude admins
+        return !isAdmin && user.setup_status === 'needs_ai_config';
       }
       if (filter === 'active') {
-        // AI configured and active - exclude admins
+        // AI unlocked and ready - exclude admins
         return !isAdmin && user.setup_status === 'active';
       }
       if (filter === 'dead') {
@@ -183,9 +187,10 @@ export default function AdminUsersPage() {
   // Filter out admin accounts from stats
   const regularUsers = allUsers.filter(u => u.id !== TIMMY_ID && u.id !== DEMO_ID);
   
-  const needsOnboarding = regularUsers.filter(u => u.setup_status === 'account_created').length; // Step 1 (form) not complete
-  const needsAISetup = regularUsers.filter(u => u.setup_status === 'onboarding_complete').length; // Step 1 (form) complete but AI not configured
-  const activeAccounts = regularUsers.filter(u => u.setup_status === 'active').length; // AI is configured
+  const uselessAccounts = regularUsers.filter(u => u.setup_status === 'useless').length; // No subscription
+  const needsOnboarding = regularUsers.filter(u => u.setup_status === 'needs_onboarding').length; // Has subscription but Step 1 not done
+  const needsAISetup = regularUsers.filter(u => u.setup_status === 'needs_ai_config').length; // Step 1 done but AI not unlocked
+  const activeAccounts = regularUsers.filter(u => u.setup_status === 'active').length; // AI unlocked
   const deadAccounts = regularUsers.filter(u => {
     const lastSignIn = u.last_sign_in_at ? new Date(u.last_sign_in_at) : new Date(u.created_at);
     return lastSignIn < thirtyOneDaysAgo;
@@ -217,14 +222,15 @@ export default function AdminUsersPage() {
       );
     }
 
-    // Status badges
+    // Status badges - 4 statuses
     const statusConfig: Record<string, { label: string; color: string }> = {
-      account_created: { label: 'Needs Onboarding', color: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
-      onboarding_complete: { label: 'Needs AI Config', color: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
+      useless: { label: 'Useless', color: 'bg-gray-500/10 text-gray-400 border-gray-500/30' },
+      needs_onboarding: { label: 'Needs Onboarding', color: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
+      needs_ai_config: { label: 'Needs AI Config', color: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
       active: { label: 'ACTIVE', color: 'bg-green-500/10 text-green-400 border-green-500/30' },
     };
 
-    const config = statusConfig[user.setup_status] || statusConfig.account_created;
+    const config = statusConfig[user.setup_status] || statusConfig.useless;
     
     return (
       <span className={`inline-flex items-center px-3 py-1 rounded-full border text-xs font-bold ${config.color}`}>
@@ -314,7 +320,26 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Filter Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          {/* Useless - No Subscription */}
+          <button
+            onClick={() => applyFilter('useless')}
+            className={`p-6 bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl border-2 transition-all duration-200 text-left ${
+              activeFilter === 'useless'
+                ? 'border-gray-500/50 shadow-xl shadow-gray-500/20 scale-105'
+                : 'border-gray-700/30 hover:border-gray-500/30 hover:scale-102'
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-3 bg-gray-500/10 rounded-xl border border-gray-500/30">
+                <UserX className="w-6 h-6 text-gray-400" />
+              </div>
+              <div className="text-xs font-bold text-gray-400 uppercase">Useless</div>
+            </div>
+            <div className="text-4xl font-black text-gray-400 mb-1">{uselessAccounts}</div>
+            <div className="text-xs text-gray-500">no subscription</div>
+          </button>
+
           {/* Needs Onboarding */}
           <button
             onClick={() => applyFilter('needs_onboarding')}
@@ -331,7 +356,7 @@ export default function AdminUsersPage() {
               <div className="text-xs font-bold text-gray-400 uppercase">Needs Onboarding</div>
             </div>
             <div className="text-4xl font-black text-amber-400 mb-1">{needsOnboarding}</div>
-            <div className="text-xs text-gray-400">incomplete onboardings</div>
+            <div className="text-xs text-gray-400">step 1 not done</div>
           </button>
 
           {/* Needs AI Setup */}
@@ -347,10 +372,10 @@ export default function AdminUsersPage() {
               <div className="p-3 bg-purple-500/10 rounded-xl border border-purple-500/30">
                 <Settings className="w-6 h-6 text-purple-400" />
               </div>
-              <div className="text-xs font-bold text-gray-400 uppercase">Needs AI Configured</div>
+              <div className="text-xs font-bold text-gray-400 uppercase">Needs AI Config</div>
             </div>
             <div className="text-4xl font-black text-purple-400 mb-1">{needsAISetup}</div>
-            <div className="text-xs text-gray-400">incomplete ai setups</div>
+            <div className="text-xs text-gray-400">waiting for you to unlock</div>
           </button>
 
           {/* Active Accounts */}
@@ -366,10 +391,10 @@ export default function AdminUsersPage() {
               <div className="p-3 bg-green-500/10 rounded-xl border border-green-500/30">
                 <UserCheck className="w-6 h-6 text-green-400" />
               </div>
-              <div className="text-xs font-bold text-gray-400 uppercase">Active Accounts</div>
+              <div className="text-xs font-bold text-gray-400 uppercase">Active</div>
             </div>
             <div className="text-4xl font-black text-green-400 mb-1">{activeAccounts}</div>
-            <div className="text-xs text-gray-400">ai configured & ready</div>
+            <div className="text-xs text-gray-400">AI unlocked & ready</div>
           </button>
 
           {/* Dead Accounts */}
@@ -398,6 +423,7 @@ export default function AdminUsersPage() {
             <div className="flex items-center gap-2">
               <span className="text-blue-400 font-semibold">
                 Showing {users.length} {
+                  activeFilter === 'useless' ? 'useless accounts (no subscription)' :
                   activeFilter === 'needs_onboarding' ? 'users needing onboarding' : 
                   activeFilter === 'needs_ai_setup' ? 'users needing AI configuration' : 
                   activeFilter === 'active' ? 'active accounts' :
