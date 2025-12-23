@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate');
 
     console.log('Availability request:', { startDate, endDate, eventTypeId: EVENT_TYPE_ID });
+    console.log('Using API Key:', CAL_API_KEY ? `${CAL_API_KEY.substring(0, 15)}...` : 'NOT SET');
 
     if (!startDate || !endDate) {
       return NextResponse.json(
@@ -22,21 +23,34 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Cal.com API v2 - Get available slots
-    // Format dates properly - Cal.com expects ISO format
-    const url = `https://api.cal.com/v2/slots/available?startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}&eventTypeId=${EVENT_TYPE_ID}`;
+    // Try Cal.com API v1 first (uses apiKey as query param)
+    const urlV1 = `https://api.cal.com/v1/slots?apiKey=${CAL_API_KEY}&eventTypeId=${EVENT_TYPE_ID}&startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}`;
     
-    console.log('Calling Cal.com API:', url);
+    console.log('Calling Cal.com API v1');
     
-    const response = await fetch(url, {
+    let response = await fetch(urlV1, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'cal-api-version': '2024-08-13',
-        'Authorization': `Bearer ${CAL_API_KEY}`,
       },
-      cache: 'no-store', // Don't cache availability
+      cache: 'no-store',
     });
+    
+    // If v1 fails, try v2 with Bearer token
+    if (!response.ok && response.status === 401) {
+      console.log('V1 failed, trying V2 API...');
+      const urlV2 = `https://api.cal.com/v2/slots/available?startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}&eventTypeId=${EVENT_TYPE_ID}`;
+      
+      response = await fetch(urlV2, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'cal-api-version': '2024-08-13',
+          'Authorization': `Bearer ${CAL_API_KEY}`,
+        },
+        cache: 'no-store',
+      });
+    }
 
     const data = await response.json();
     console.log('Cal.com response status:', response.status);
