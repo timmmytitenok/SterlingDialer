@@ -5,6 +5,8 @@ import { useParams, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Clock, Video, CheckCircle, Sparkles, Phone, User, Mail, Loader2, PartyPopper, UserCircle, Star } from 'lucide-react';
 import { getSalesperson, DEFAULT_TIME_SLOTS, SalespersonConfig } from '@/lib/salesperson-config';
+import { PublicFooter } from '@/components/public-footer';
+import { MobileFooter } from '@/components/mobile-footer';
 
 // Generate next 5 days
 const generateDates = () => {
@@ -855,6 +857,9 @@ export default function SalespersonSchedulePage() {
           </div>
         </div>
       </div>
+      
+      <PublicFooter />
+      <MobileFooter />
     </div>
   );
 }

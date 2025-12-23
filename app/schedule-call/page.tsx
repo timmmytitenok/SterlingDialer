@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Clock, Video, CheckCircle, Sparkles, Phone, User, Mail, Loader2, PartyPopper } from 'lucide-react';
+import { PublicFooter } from '@/components/public-footer';
+import { MobileFooter } from '@/components/mobile-footer';
 
 // Generate next 5 days only
 const generateDates = () => {
@@ -972,6 +974,9 @@ export default function ScheduleCallPage() {
         </div>
 
       </div>
+      
+      <PublicFooter />
+      <MobileFooter />
     </div>
   );
 }
