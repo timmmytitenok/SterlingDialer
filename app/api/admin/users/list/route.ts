@@ -31,13 +31,13 @@ export async function GET() {
 
     // Fetch all related data
     const [profiles, subscriptions, callBalances, retellConfigs] = await Promise.all([
-      supabase.from('profiles').select('*'),
+      supabase.from('profiles').select('user_id, full_name, phone_number, ai_setup_status, onboarding_step_1_form, onboarding_completed, is_vip'),
       supabase.from('subscriptions').select('*'),
       supabase.from('call_balance').select('*'),
       supabase.from('user_retell_config').select('user_id, retell_agent_id, phone_number, is_active')
     ]);
     
-    console.log(`📊 Admin users list: Found ${retellConfigs.data?.length || 0} retell configs`);
+    console.log(`📊 Admin users list: Found ${profiles.data?.length || 0} profiles, ${retellConfigs.data?.length || 0} retell configs`);
 
     // Combine all data
     const users = await Promise.all((authData.users || []).map(async (authUser: any) => {
@@ -46,13 +46,14 @@ export async function GET() {
       const balance = callBalances.data?.find((b: any) => b.user_id === authUser.id);
       const retellConfig = retellConfigs.data?.find((r: any) => r.user_id === authUser.id);
 
-      // Determine setup status - Check if AI is actually configured
-      // Step 1 = Form completion (onboarding_step_1_form)
-      // Needs Onboarding = Step 1 NOT complete
-      // Needs AI Setup = Step 1 complete BUT AI not configured
+      // Determine setup status - Check profiles.ai_setup_status for authoritative status
+      // ai_setup_status values: 'ready', 'completed', 'pending_setup', 'maintenance', or null
+      // Also check user_retell_config as fallback
       let setupStatus = 'account_created';
-      const hasAIConfigured = retellConfig && retellConfig.retell_agent_id && retellConfig.phone_number;
-      const hasCompletedStep1 = profile?.onboarding_step_1_form === true;
+      const aiSetupStatus = profile?.ai_setup_status;
+      const hasAIConfigured = aiSetupStatus === 'ready' || aiSetupStatus === 'completed' || 
+                              (retellConfig && retellConfig.retell_agent_id && retellConfig.phone_number);
+      const hasCompletedStep1 = profile?.onboarding_step_1_form === true || profile?.onboarding_completed === true;
       
       if (hasAIConfigured) {
         setupStatus = 'active';

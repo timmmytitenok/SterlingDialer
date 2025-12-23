@@ -22,6 +22,7 @@ const PrivacyContext = createContext<PrivacyContextType>({
 export function PrivacyProvider({ children }: { children: ReactNode }) {
   const [blurSensitive, setBlurSensitive] = useState(false);
   const [userInfoBlur, setUserInfoBlur] = useState<UserInfoBlurMode>('none');
+  const [isHydrated, setIsHydrated] = useState(false);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -34,16 +35,22 @@ export function PrivacyProvider({ children }: { children: ReactNode }) {
     if (storedUserBlur && ['none', 'last_name', 'full'].includes(storedUserBlur)) {
       setUserInfoBlur(storedUserBlur);
     }
+    
+    setIsHydrated(true);
   }, []);
 
-  // Save to localStorage when changed
+  // Save to localStorage when changed (only after hydration)
   useEffect(() => {
-    localStorage.setItem('admin_blur_sensitive', blurSensitive ? 'true' : 'false');
-  }, [blurSensitive]);
+    if (isHydrated) {
+      localStorage.setItem('admin_blur_sensitive', blurSensitive ? 'true' : 'false');
+    }
+  }, [blurSensitive, isHydrated]);
 
   useEffect(() => {
-    localStorage.setItem('admin_user_info_blur', userInfoBlur);
-  }, [userInfoBlur]);
+    if (isHydrated) {
+      localStorage.setItem('admin_user_info_blur', userInfoBlur);
+    }
+  }, [userInfoBlur, isHydrated]);
 
   return (
     <PrivacyContext.Provider value={{ blurSensitive, setBlurSensitive, userInfoBlur, setUserInfoBlur }}>
@@ -122,7 +129,8 @@ export function getBlurredDisplayName(displayName: string, mode: UserInfoBlurMod
   shouldBlur: boolean;
   blurredPart?: string;
 } {
-  if (mode === 'none') {
+  // Default to no blur if mode is not explicitly set to blur
+  if (!mode || mode === 'none') {
     return { text: displayName, shouldBlur: false };
   }
   
@@ -131,20 +139,25 @@ export function getBlurredDisplayName(displayName: string, mode: UserInfoBlurMod
   }
   
   // mode === 'last_name' - blur only the last name
-  const parts = displayName.trim().split(' ');
-  if (parts.length <= 1) {
-    // Only one word, blur it as it could be their name
-    return { text: displayName, shouldBlur: true };
+  if (mode === 'last_name') {
+    const parts = displayName.trim().split(' ');
+    if (parts.length <= 1) {
+      // Only one word, blur it as it could be their name
+      return { text: displayName, shouldBlur: true };
+    }
+    
+    // Keep first name visible, blur the rest
+    const firstName = parts[0];
+    const lastName = parts.slice(1).join(' ');
+    return { 
+      text: firstName, 
+      shouldBlur: false, 
+      blurredPart: lastName 
+    };
   }
   
-  // Keep first name visible, blur the rest
-  const firstName = parts[0];
-  const lastName = parts.slice(1).join(' ');
-  return { 
-    text: firstName, 
-    shouldBlur: false, 
-    blurredPart: lastName 
-  };
+  // Default fallback - no blur
+  return { text: displayName, shouldBlur: false };
 }
 
 // Helper component for user display name with blur options
@@ -156,9 +169,9 @@ export function BlurredUserName({
   className?: string;
 }) {
   const { userInfoBlur } = usePrivacy();
-  const result = getBlurredDisplayName(displayName, userInfoBlur);
   
-  if (userInfoBlur === 'none') {
+  // Default to no blur if not explicitly set
+  if (!userInfoBlur || userInfoBlur === 'none') {
     return <span className={className}>{displayName}</span>;
   }
   
@@ -174,29 +187,36 @@ export function BlurredUserName({
   }
   
   // Last name blur mode
-  if (result.blurredPart) {
-    return (
-      <span className={className}>
-        {result.text}{' '}
-        <span 
-          className="select-none"
-          style={{ filter: 'blur(8px)', userSelect: 'none' }}
-        >
-          {result.blurredPart}
+  if (userInfoBlur === 'last_name') {
+    const result = getBlurredDisplayName(displayName, userInfoBlur);
+    
+    if (result.blurredPart) {
+      return (
+        <span className={className}>
+          {result.text}{' '}
+          <span 
+            className="select-none"
+            style={{ filter: 'blur(8px)', userSelect: 'none' }}
+          >
+            {result.blurredPart}
+          </span>
         </span>
+      );
+    }
+    
+    // Single name in last_name mode - blur it
+    return (
+      <span 
+        className={`${className} select-none`}
+        style={{ filter: 'blur(8px)', userSelect: 'none' }}
+      >
+        {displayName}
       </span>
     );
   }
   
-  // Single name - blur it
-  return (
-    <span 
-      className={`${className} select-none`}
-      style={{ filter: 'blur(8px)', userSelect: 'none' }}
-    >
-      {displayName}
-    </span>
-  );
+  // Default fallback - no blur
+  return <span className={className}>{displayName}</span>;
 }
 
 // Helper component for user email with blur
