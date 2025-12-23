@@ -29,15 +29,15 @@ export async function GET() {
       throw authError;
     }
 
-    // Fetch all related data
+    // Fetch all related data - get ALL profile fields
     const [profiles, subscriptions, callBalances, retellConfigs] = await Promise.all([
-      supabase.from('profiles').select('user_id, full_name, phone_number, ai_setup_status, onboarding_step_1_form, onboarding_completed, is_vip'),
+      supabase.from('profiles').select('*'),
       supabase.from('subscriptions').select('*'),
       supabase.from('call_balance').select('*'),
       supabase.from('user_retell_config').select('user_id, retell_agent_id, phone_number, is_active')
     ]);
     
-    console.log(`📊 Admin users list: Found ${profiles.data?.length || 0} profiles, ${retellConfigs.data?.length || 0} retell configs`);
+    console.log(`📊 Admin users list: Found ${profiles.data?.length || 0} profiles, ${subscriptions.data?.length || 0} subscriptions`);
 
     // Combine all data
     const users = await Promise.all((authData.users || []).map(async (authUser: any) => {
@@ -52,19 +52,30 @@ export async function GET() {
       // 3. needs_ai_config - Step 1 completed but AI not unlocked (ai_setup_status !== 'ready')
       // 4. active - AI unlocked by admin (ai_setup_status === 'ready' or 'completed')
       
+      // Check if user has ANY subscription (active or trialing)
       const hasSubscription = subscription && (subscription.status === 'active' || subscription.status === 'trialing');
-      const hasCompletedStep1 = profile?.onboarding_step_1_form === true;
+      
+      // Check if Step 1 is complete - multiple ways to detect this
+      const hasCompletedStep1 = profile?.onboarding_step_1_form === true || 
+                                profile?.onboarding_completed === true ||
+                                profile?.onboarding_all_complete === true;
+      
+      // Check if AI is unlocked - ai_setup_status must be 'ready' or 'completed'
       const aiUnlocked = profile?.ai_setup_status === 'ready' || profile?.ai_setup_status === 'completed';
       
       let setupStatus = 'useless'; // Default: no subscription
       
       if (!hasSubscription) {
+        // No subscription at all = useless
         setupStatus = 'useless';
       } else if (!hasCompletedStep1) {
+        // Has subscription but hasn't done Step 1 form
         setupStatus = 'needs_onboarding';
       } else if (!aiUnlocked) {
+        // Did Step 1, waiting for admin to unlock AI
         setupStatus = 'needs_ai_config';
       } else {
+        // AI is unlocked and ready
         setupStatus = 'active';
       }
 
