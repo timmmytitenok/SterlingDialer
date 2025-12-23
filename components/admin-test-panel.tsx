@@ -279,15 +279,16 @@ export function AdminTestPanel({
 
       {/* Admin Panel */}
       <div 
-        className={`fixed bottom-24 right-6 z-50 bg-gradient-to-br from-[#121c3d] via-[#0d1529] to-[#0a1020] rounded-2xl shadow-2xl border border-purple-500/40 overflow-hidden transition-all duration-500 ease-out origin-bottom-right ${
+        className={`fixed bottom-6 right-24 z-50 bg-gradient-to-br from-[#121c3d] via-[#0d1529] to-[#0a1020] rounded-2xl shadow-2xl border border-purple-500/40 overflow-hidden transition-all duration-500 ease-out origin-bottom-right ${
           isOpen 
-            ? 'opacity-100 scale-100 translate-y-0' 
-            : 'opacity-0 scale-75 translate-y-4 pointer-events-none'
+            ? 'opacity-100 scale-100 translate-x-0' 
+            : 'opacity-0 scale-75 translate-x-4 pointer-events-none'
         } ${
           isMinimized ? 'w-80 h-16' : 'w-[420px]'
         }`}
         style={{
-          transitionTimingFunction: isOpen ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : 'cubic-bezier(0.4, 0, 0.2, 1)'
+          transitionTimingFunction: isOpen ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : 'cubic-bezier(0.4, 0, 0.2, 1)',
+          maxHeight: 'calc(100vh - 48px)'
         }}
       >
           {/* Decorative glow */}
@@ -325,8 +326,8 @@ export function AdminTestPanel({
 
           {/* Content */}
           {!isMinimized && (
-            <div className={`p-5 space-y-5 transition-all duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
-              style={{ animationDelay: '100ms' }}
+            <div className={`p-5 space-y-5 transition-all duration-300 overflow-y-auto ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+              style={{ animationDelay: '100ms', maxHeight: 'calc(100vh - 150px)' }}
             >
               {/* User Badge */}
               <div className="flex items-center justify-center gap-3 py-3 px-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/20 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '50ms' }}>
