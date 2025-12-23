@@ -63,8 +63,9 @@ export const config = {
      * - api/retell/live-transfer (Retell webhook for transfers - no auth needed)
      * - api/retell/check-availability (Retell webhook for calendar availability - no auth needed)
      * - api/debug/check-config (Debug endpoint - no auth needed)
+     * - api/schedule-call (Public scheduling endpoints - no auth needed)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|fil|webp)$|api/appointments/cal-webhook|api/ai-control/complete|api/ai-control/next-call|api/retell/call-result|api/retell/book-appointment|api/retell/live-transfer|api/retell/check-availability|api/stripe/webhook|api/referral/validate-simple|api/referral/credit|api/debug/instant-subscribe|api/debug/check-config|api/admin/complete-pending-referrals|api/admin/master-login|api/demo/login|api/demo/refresh-data).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|fil|webp)$|api/appointments/cal-webhook|api/ai-control/complete|api/ai-control/next-call|api/retell/call-result|api/retell/book-appointment|api/retell/live-transfer|api/retell/check-availability|api/stripe/webhook|api/referral/validate-simple|api/referral/credit|api/debug/instant-subscribe|api/debug/check-config|api/admin/complete-pending-referrals|api/admin/master-login|api/demo/login|api/demo/refresh-data|api/schedule-call).*)',
   ],
 };
 
