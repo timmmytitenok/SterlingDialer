@@ -153,7 +153,7 @@ export default function ScheduleCallPage() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ display: string; hour: number; minute: number } | null>(null);
-  const [step, setStep] = useState<'calendar' | 'form' | 'success'>('calendar');
+  const [step, setStep] = useState<'calendar' | 'form' | 'booking' | 'success'>('calendar');
   const [isBooking, setIsBooking] = useState(false);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
@@ -265,6 +265,7 @@ export default function ScheduleCallPage() {
     
     setIsBooking(true);
     setError(null);
+    setStep('booking'); // Show loading screen
     
     try {
       const startTime = getISODateTime(selectedDate, selectedSlot);
@@ -286,17 +287,78 @@ export default function ScheduleCallPage() {
         throw new Error(data.error || 'Failed to book appointment');
       }
       
-      // Success!
+      // Add a small delay for better UX, then show success with animation
+      await new Promise(resolve => setTimeout(resolve, 1500));
       setStep('success');
       
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
+      setStep('form'); // Go back to form on error
     } finally {
       setIsBooking(false);
     }
   };
 
   if (!mounted) return null;
+
+  // Booking Loading State
+  if (step === 'booking') {
+    return (
+      <div className="min-h-screen bg-[#0B1437] relative overflow-hidden flex items-center justify-center">
+        {/* Background Effects */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[120px] animate-pulse" />
+          <div className="absolute bottom-[10%] right-1/4 w-[600px] h-[600px] bg-pink-600/10 rounded-full blur-[100px] animate-pulse" />
+        </div>
+        
+        <div className="relative z-10 text-center px-4 max-w-lg mx-auto">
+          {/* Animated Loading Circle */}
+          <div className="mb-8 relative">
+            <div className="w-24 h-24 mx-auto relative">
+              {/* Outer spinning ring */}
+              <div className="absolute inset-0 rounded-full border-4 border-purple-500/20" />
+              <div 
+                className="absolute inset-0 rounded-full border-4 border-transparent border-t-purple-500 border-r-pink-500 animate-spin"
+                style={{ animationDuration: '1s' }}
+              />
+              {/* Inner pulsing circle */}
+              <div className="absolute inset-3 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 animate-pulse flex items-center justify-center">
+                <Calendar className="w-8 h-8 text-purple-400" />
+              </div>
+            </div>
+          </div>
+          
+          <h2 
+            className="text-2xl font-bold text-white mb-3"
+            style={{
+              animation: 'unblur 0.5s ease-out forwards',
+            }}
+          >
+            Securing Your Spot...
+          </h2>
+          
+          <p 
+            className="text-gray-400 mb-6"
+            style={{
+              animation: 'unblur 0.5s ease-out forwards',
+              animationDelay: '200ms',
+              opacity: 0,
+              filter: 'blur(10px)'
+            }}
+          >
+            Just a moment while we book your consultation
+          </p>
+          
+          {/* Animated dots */}
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="w-2 h-2 rounded-full bg-pink-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Success State
   if (step === 'success') {
@@ -312,19 +374,50 @@ export default function ScheduleCallPage() {
         <div className="fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#0B1437] to-transparent pointer-events-none z-[1]" />
         
         <div className="relative z-10 text-center px-4 max-w-lg mx-auto">
-          <div className="mb-6 inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full animate-bounce">
-            <PartyPopper className="w-10 h-10 text-white" />
+          {/* Animated checkmark */}
+          <div 
+            className="mb-6 inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full"
+            style={{
+              animation: 'unblur-scale 0.6s ease-out forwards',
+            }}
+          >
+            <CheckCircle className="w-12 h-12 text-white" />
           </div>
           
-          <h1 className="text-4xl font-black text-white mb-4">
+          <h1 
+            className="text-4xl font-black text-white mb-4"
+            style={{
+              animation: 'unblur 0.6s ease-out forwards',
+              animationDelay: '200ms',
+              opacity: 0,
+              filter: 'blur(10px)'
+            }}
+          >
             You're All Set! 🎉
           </h1>
           
-          <p className="text-lg text-gray-400 mb-2">
+          <p 
+            className="text-lg text-gray-400 mb-2"
+            style={{
+              animation: 'unblur 0.6s ease-out forwards',
+              animationDelay: '350ms',
+              opacity: 0,
+              filter: 'blur(10px)'
+            }}
+          >
             Your consultation is booked for:
           </p>
           
-          <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-green-500/30 mb-6">
+          <div 
+            className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-green-500/30 mb-6"
+            style={{
+              animation: 'unblur-scale 0.6s ease-out forwards',
+              animationDelay: '500ms',
+              opacity: 0,
+              filter: 'blur(10px)',
+              transform: 'scale(0.9)'
+            }}
+          >
             <p className="text-xl font-bold text-white">
               {selectedDate?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
@@ -333,13 +426,27 @@ export default function ScheduleCallPage() {
             </p>
           </div>
           
-          <p className="text-gray-400 mb-8">
+          <p 
+            className="text-gray-400 mb-8"
+            style={{
+              animation: 'unblur 0.6s ease-out forwards',
+              animationDelay: '650ms',
+              opacity: 0,
+              filter: 'blur(10px)'
+            }}
+          >
             Check your email ({email}) for confirmation and meeting details.
           </p>
           
           <Link
             href="/"
             className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-white font-semibold transition-all"
+            style={{
+              animation: 'unblur 0.6s ease-out forwards',
+              animationDelay: '800ms',
+              opacity: 0,
+              filter: 'blur(10px)'
+            }}
           >
             <ArrowLeft className="w-5 h-5" />
             Back to Home
