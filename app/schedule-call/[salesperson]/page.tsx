@@ -192,10 +192,13 @@ export default function SalespersonSchedulePage() {
   if (step === 'success') {
     return (
       <div className="min-h-screen bg-[#0B1437] relative overflow-hidden flex items-center justify-center">
-        <div className="fixed inset-0 pointer-events-none">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-green-600/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px]" />
+          <div className="absolute top-[40%] right-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px]" />
         </div>
+        
+        {/* Solid background at bottom for Safari safe area */}
+        <div className="fixed bottom-0 left-0 right-0 h-24 bg-[#0B1437] pointer-events-none" />
         
         <div className="relative z-10 text-center px-4 max-w-lg mx-auto">
           <div className="mb-6 inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full animate-bounce">
@@ -237,12 +240,15 @@ export default function SalespersonSchedulePage() {
 
   return (
     <div className="min-h-screen bg-[#0B1437] relative">
-      {/* Background Effects - Blue/Cyan theme for salespeople */}
-      <div className="fixed inset-0 pointer-events-none">
+      {/* Background Effects - Moved up to avoid Safari toolbar bleed */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-teal-600/5 rounded-full blur-[80px]" />
+        <div className="absolute top-[40%] right-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px]" />
+        <div className="absolute top-[30%] left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-teal-600/5 rounded-full blur-[80px]" />
       </div>
+      
+      {/* Solid background at bottom for Safari safe area */}
+      <div className="fixed bottom-0 left-0 right-0 h-24 bg-[#0B1437] pointer-events-none" />
 
       {/* Navigation */}
       <nav className="relative z-10 p-6">
