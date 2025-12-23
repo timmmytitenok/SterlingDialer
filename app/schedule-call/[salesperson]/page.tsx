@@ -288,31 +288,23 @@ export default function SalespersonSchedulePage() {
           {/* 1. Header with Salesperson Info */}
           <div className="space-y-4 text-center mb-10">
             {/* Salesperson Avatar */}
+            {/* Badge */}
             <div 
-              className="inline-flex items-center justify-center"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-full"
               style={{ 
-                animation: 'unblur-scale 0.8s ease-out forwards',
+                animation: 'unblur 0.8s ease-out forwards',
                 animationDelay: '100ms',
                 opacity: 0,
                 filter: 'blur(10px)'
               }}
             >
-              <div className="relative">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center ring-4 ring-blue-500/30">
-                  {config?.image ? (
-                    <img src={config.image} alt={config.name} className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    <UserCircle className="w-12 h-12 text-white" />
-                  )}
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-[#0B1437]">
-                  <CheckCircle className="w-4 h-4 text-white" />
-                </div>
-              </div>
+              <Sparkles className="w-4 h-4 text-blue-400" />
+              <span className="text-sm font-medium text-blue-300">Free Consultation</span>
             </div>
             
-            <div 
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-full"
+            {/* Main Title */}
+            <h1 
+              className="text-4xl font-black text-white leading-tight"
               style={{ 
                 animation: 'unblur 0.8s ease-out forwards',
                 animationDelay: '200ms',
@@ -320,12 +312,15 @@ export default function SalespersonSchedulePage() {
                 filter: 'blur(10px)'
               }}
             >
-              <Star className="w-4 h-4 text-blue-400" />
-              <span className="text-sm font-medium text-blue-300">{config?.title}</span>
-            </div>
+              Schedule a{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400">
+                Call
+              </span>
+            </h1>
             
-            <h1 
-              className="text-3xl font-black text-white leading-tight"
+            {/* Description */}
+            <p 
+              className="text-base text-gray-400 leading-relaxed"
               style={{ 
                 animation: 'unblur 0.8s ease-out forwards',
                 animationDelay: '300ms',
@@ -333,23 +328,37 @@ export default function SalespersonSchedulePage() {
                 filter: 'blur(10px)'
               }}
             >
-              Schedule a Call with{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400">
-                {config?.name}
-              </span>
-            </h1>
+              Book a free 15-minute call with {config?.name}.
+            </p>
             
-            <p 
-              className="text-base text-gray-400 leading-relaxed px-2"
+            {/* Salesperson Card - Right above booking UI */}
+            <div 
+              className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 mt-2"
               style={{ 
                 animation: 'unblur 0.8s ease-out forwards',
-                animationDelay: '450ms',
+                animationDelay: '400ms',
                 opacity: 0,
                 filter: 'blur(10px)'
               }}
             >
-              {config?.description}
-            </p>
+              <div className="relative flex-shrink-0">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center ring-2 ring-blue-500/30">
+                  {config?.image ? (
+                    <img src={config.image} alt={config.name} className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    <UserCircle className="w-8 h-8 text-white" />
+                  )}
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-[#0B1437]">
+                  <CheckCircle className="w-3 h-3 text-white" />
+                </div>
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Your consultant</p>
+                <h3 className="text-xl font-bold text-white leading-tight">{config?.name}</h3>
+                <p className="text-xs text-blue-400">{config?.title}</p>
+              </div>
+            </div>
           </div>
 
           {/* 2. Calendar (Mobile) */}

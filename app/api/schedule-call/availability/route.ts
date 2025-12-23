@@ -6,6 +6,8 @@ export const revalidate = 0;
 
 const CAL_API_KEY = process.env.CAL_API_KEY || 'cal_live_b1fba7b98510e5ab31c20ff7bfe38475';
 const EVENT_TYPE_ID = 4236738;
+const CAL_USERNAME = 'timmy-titenok-2ihn8s';
+const CAL_EVENT_SLUG = 'consultation';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +16,6 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate');
 
     console.log('Availability request:', { startDate, endDate, eventTypeId: EVENT_TYPE_ID });
-    console.log('Using API Key:', CAL_API_KEY ? `${CAL_API_KEY.substring(0, 15)}...` : 'NOT SET');
 
     if (!startDate || !endDate) {
       return NextResponse.json(
@@ -23,53 +24,114 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Try Cal.com API v1 first (uses apiKey as query param)
-    const urlV1 = `https://api.cal.com/v1/slots?apiKey=${CAL_API_KEY}&eventTypeId=${EVENT_TYPE_ID}&startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}`;
-    
-    console.log('Calling Cal.com API v1');
-    
-    let response = await fetch(urlV1, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    });
-    
-    // If v1 fails, try v2 with Bearer token
-    if (!response.ok && response.status === 401) {
-      console.log('V1 failed, trying V2 API...');
-      const urlV2 = `https://api.cal.com/v2/slots/available?startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}&eventTypeId=${EVENT_TYPE_ID}`;
+    let data: any = null;
+    let success = false;
+
+    // Method 1: Try Cal.com PUBLIC slots API (no auth needed for public event types)
+    try {
+      const publicUrl = `https://cal.com/api/trpc/public/slots.getSchedule?input=${encodeURIComponent(JSON.stringify({
+        json: {
+          isTeamEvent: false,
+          usernameList: [CAL_USERNAME],
+          eventTypeSlug: CAL_EVENT_SLUG,
+          startTime: startDate,
+          endTime: endDate,
+          timeZone: 'America/New_York',
+        }
+      }))}`;
       
-      response = await fetch(urlV2, {
+      console.log('Trying Cal.com public API...');
+      
+      const response = await fetch(publicUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'cal-api-version': '2024-08-13',
-          'Authorization': `Bearer ${CAL_API_KEY}`,
         },
         cache: 'no-store',
       });
+      
+      if (response.ok) {
+        data = await response.json();
+        console.log('Public API success:', JSON.stringify(data, null, 2));
+        success = true;
+      } else {
+        console.log('Public API failed with status:', response.status);
+      }
+    } catch (err) {
+      console.log('Public API error:', err);
     }
 
-    const data = await response.json();
-    console.log('Cal.com response status:', response.status);
-    console.log('Cal.com response data:', JSON.stringify(data, null, 2));
+    // Method 2: Try the simple public slots endpoint
+    if (!success) {
+      try {
+        const simpleUrl = `https://cal.com/api/slots?eventTypeId=${EVENT_TYPE_ID}&startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}`;
+        
+        console.log('Trying simple public slots API...');
+        
+        const response = await fetch(simpleUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+        });
+        
+        if (response.ok) {
+          data = await response.json();
+          console.log('Simple API success:', JSON.stringify(data, null, 2));
+          success = true;
+        } else {
+          console.log('Simple API failed with status:', response.status);
+        }
+      } catch (err) {
+        console.log('Simple API error:', err);
+      }
+    }
 
-    if (!response.ok) {
-      console.error('Cal.com availability error:', data);
-      return NextResponse.json(
-        { error: data.message || 'Failed to fetch availability', details: data },
-        { status: response.status }
-      );
+    // Method 3: Try v1 API with key
+    if (!success) {
+      try {
+        const urlV1 = `https://api.cal.com/v1/slots?apiKey=${CAL_API_KEY}&eventTypeId=${EVENT_TYPE_ID}&startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}`;
+        
+        console.log('Trying Cal.com v1 API...');
+        
+        const response = await fetch(urlV1, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+        });
+        
+        data = await response.json();
+        console.log('V1 API response:', response.status, JSON.stringify(data, null, 2));
+        success = response.ok;
+      } catch (err) {
+        console.log('V1 API error:', err);
+      }
+    }
+
+    if (!success || !data) {
+      return NextResponse.json({
+        success: false,
+        error: 'Could not fetch availability from Cal.com',
+        slots: [],
+      });
     }
 
     // Parse slots from Cal.com response
-    // Cal.com v2 returns: { status: "success", data: { slots: { "2024-01-15": [{ time: "..." }] } } }
+    // Public API returns: { result: { data: { json: { slots: { "2024-01-15": [{ time: "..." }] } } } } }
+    // V1 API returns: { slots: { "2024-01-15": [{ time: "..." }] } }
     let slots: string[] = [];
     
-    const slotsData = data.data?.slots || data.slots || {};
-    console.log('Slots data:', slotsData);
+    // Try different response formats
+    const slotsData = 
+      data?.result?.data?.json?.slots || 
+      data?.data?.slots || 
+      data?.slots || 
+      {};
+    
+    console.log('Slots data extracted:', slotsData);
     
     // If it's an object with date keys
     if (typeof slotsData === 'object' && !Array.isArray(slotsData)) {
@@ -85,7 +147,6 @@ export async function GET(request: NextRequest) {
         }
       });
     } else if (Array.isArray(slotsData)) {
-      // If it's already an array
       slotsData.forEach((slot: any) => {
         if (typeof slot === 'string') {
           slots.push(slot);
@@ -95,12 +156,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log('Parsed slots:', slots);
+    console.log('Final parsed slots:', slots);
 
     return NextResponse.json({
       success: true,
       slots: slots,
-      raw: data, // Include raw data for debugging
+      raw: data,
     });
 
   } catch (error) {
@@ -111,4 +172,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
