@@ -20,7 +20,14 @@ export async function POST(request: Request) {
 
     // Parse request body
     const body = await request.json();
-    const { userId, agentId, phoneNumber, phoneNumberFE, phoneNumberMP, agentName, agentPronoun, calApiKey, calAiApiKey, calEventId, costPerMinute, timezone, confirmationEmail } = body;
+    const { 
+      userId, agentId, phoneNumber, phoneNumberFE, phoneNumberMP, 
+      agentName, agentPronoun, calApiKey, calAiApiKey, calEventId, 
+      costPerMinute, timezone, confirmationEmail,
+      // New per-user Retell agent fields
+      retellAgent1Id, retellAgent1Phone, retellAgent1Name, retellAgent1Type,
+      retellAgent2Id, retellAgent2Phone, retellAgent2Name, retellAgent2Type
+    } = body;
     // Support both old and new field names
     const calAiKey = calAiApiKey || calApiKey;
     // Support both legacy single phone and new dual phone numbers
@@ -67,6 +74,16 @@ export async function POST(request: Request) {
     if (calEventId !== undefined) updateFields.cal_event_id = calEventId || null;
     if (timezone !== undefined) updateFields.timezone = timezone || 'America/New_York';
     if (confirmationEmail !== undefined) updateFields.confirmation_email = confirmationEmail || null;
+    
+    // Per-user Retell AI Agent fields
+    if (retellAgent1Id !== undefined) updateFields.retell_agent_1_id = retellAgent1Id || null;
+    if (retellAgent1Phone !== undefined) updateFields.retell_agent_1_phone = retellAgent1Phone || null;
+    if (retellAgent1Name !== undefined) updateFields.retell_agent_1_name = retellAgent1Name || null;
+    if (retellAgent1Type !== undefined) updateFields.retell_agent_1_type = retellAgent1Type || 'final_expense';
+    if (retellAgent2Id !== undefined) updateFields.retell_agent_2_id = retellAgent2Id || null;
+    if (retellAgent2Phone !== undefined) updateFields.retell_agent_2_phone = retellAgent2Phone || null;
+    if (retellAgent2Name !== undefined) updateFields.retell_agent_2_name = retellAgent2Name || null;
+    if (retellAgent2Type !== undefined) updateFields.retell_agent_2_type = retellAgent2Type || 'final_expense';
 
     // Check if AI is fully configured - set is_active to true
     // Required: at least one phone number, cal api key, cal event id, agent name
@@ -129,6 +146,15 @@ export async function POST(request: Request) {
           confirmation_email: confirmationEmail || null,
           retell_api_key: 'SET_BY_ADMIN',
           is_active: true,
+          // Per-user Retell agents
+          retell_agent_1_id: retellAgent1Id || null,
+          retell_agent_1_phone: retellAgent1Phone || null,
+          retell_agent_1_name: retellAgent1Name || null,
+          retell_agent_1_type: retellAgent1Type || 'final_expense',
+          retell_agent_2_id: retellAgent2Id || null,
+          retell_agent_2_phone: retellAgent2Phone || null,
+          retell_agent_2_name: retellAgent2Name || null,
+          retell_agent_2_type: retellAgent2Type || 'final_expense',
         });
 
       if (insertError) {

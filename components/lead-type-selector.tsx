@@ -1,11 +1,11 @@
 'use client';
 
-import { X, ChevronRight, Shield, Home } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 
 // Lead type values that will be stored and sent to Retell
-// NULL/default = 1
-// Final Expense = 2
-// Mortgage Protection = 4
+// 2 = Agent 1 (first configured agent)
+// 4 = Agent 2 (second configured agent)
 export type LeadTypeValue = 2 | 4;
 
 export interface LeadTypeResult {
@@ -15,30 +15,102 @@ export interface LeadTypeResult {
   label: string;
 }
 
+interface AgentConfig {
+  id: string | null;
+  phone: string | null;
+  name: string;
+  type: 'final_expense' | 'mortgage_protection';
+  isConfigured: boolean;
+}
+
 interface LeadTypeSelectorProps {
   onSelect: (result: LeadTypeResult) => void;
   onCancel: () => void;
 }
 
+// Emoji options for agents
+const agentEmojis = ['🤖', '📞', '💼', '🎯', '⭐', '🔥', '💚', '💙', '🏠', '🛡️', '📊', '💪'];
+
+// Get a consistent emoji based on agent name
+const getAgentEmoji = (name: string, index: number): string => {
+  // Use name hash to pick consistent emoji
+  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return agentEmojis[(hash + index) % agentEmojis.length];
+};
+
 export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [agent1, setAgent1] = useState<AgentConfig>({ id: null, phone: null, name: 'Agent 1', type: 'final_expense', isConfigured: false });
+  const [agent2, setAgent2] = useState<AgentConfig>({ id: null, phone: null, name: 'Agent 2', type: 'final_expense', isConfigured: false });
 
-  const handleFinalExpense = () => {
+  useEffect(() => {
+    const fetchAgentConfig = async () => {
+      try {
+        const response = await fetch('/api/user/agent-config');
+        if (!response.ok) throw new Error('Failed to fetch agent config');
+        
+        const data = await response.json();
+        setAgent1(data.agents.agent1);
+        setAgent2(data.agents.agent2);
+      } catch (err: any) {
+        console.error('Error fetching agent config:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAgentConfig();
+  }, []);
+
+  const handleAgent1Select = () => {
     onSelect({
-      leadType: 2,
-      scriptType: 'final_expense',
+      leadType: 2, // Agent 1 uses lead_type 2
+      scriptType: 'final_expense', // For backwards compatibility
       isVeteran: false,
-      label: 'Final Expense',
+      label: agent1.name,
     });
   };
 
-  const handleMortgageProtection = () => {
+  const handleAgent2Select = () => {
     onSelect({
-      leadType: 4,
-      scriptType: 'mortgage_protection',
+      leadType: 4, // Agent 2 uses lead_type 4
+      scriptType: 'mortgage_protection', // For backwards compatibility
       isVeteran: false,
-      label: 'Mortgage Protection',
+      label: agent2.name,
     });
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div className="bg-gradient-to-br from-[#1A2647] to-[#0F172A] rounded-2xl p-8 border border-blue-500/30">
+          <Loader2 className="w-8 h-8 text-blue-400 animate-spin mx-auto mb-4" />
+          <p className="text-gray-400">Loading your AI agents...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div className="bg-gradient-to-br from-[#1A2647] to-[#0F172A] rounded-2xl p-8 border border-red-500/30 max-w-md">
+          <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-4" />
+          <p className="text-red-400 text-center mb-4">{error}</p>
+          <button onClick={onCancel} className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg">
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if any agents are configured
+  const hasAnyAgent = agent1.isConfigured || agent2.isConfigured;
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -56,12 +128,12 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
           {/* Header */}
           <div className="p-6 border-b border-gray-800/50 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                <Shield className="w-7 h-7 text-white" />
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30 text-3xl">
+                🤖
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">Select Lead Type</h2>
-                <p className="text-gray-400 text-sm">Choose the type of leads you're uploading</p>
+                <h2 className="text-2xl font-bold text-white">Select AI Agent</h2>
+                <p className="text-gray-400 text-sm">Choose which script to use for these leads</p>
               </div>
             </div>
             <button
@@ -78,45 +150,88 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
             <div className="p-4 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border border-blue-500/30 rounded-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl" />
               <div className="relative">
-                <p className="text-blue-300 font-semibold mb-1">Why does this matter?</p>
+                <p className="text-blue-300 font-semibold mb-1">AI Script Selection</p>
                 <p className="text-gray-300 text-sm">
-                  This determines which AI script is used when calling these leads. Different lead types require different conversation approaches.
+                  Select which AI agent will call these leads. Each agent has its own script and phone number.
                 </p>
               </div>
             </div>
 
-            {/* Final Expense Button */}
+            {!hasAnyAgent && (
+              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                <p className="text-amber-400 font-semibold mb-1">⚠️ No Agents Configured</p>
+                <p className="text-gray-300 text-sm">
+                  Contact your admin to set up AI agents for your account.
+                </p>
+              </div>
+            )}
+
+            {/* Agent 1 Button */}
             <button
-              onClick={handleFinalExpense}
-              className="w-full p-5 bg-gradient-to-br from-green-500/10 to-emerald-600/5 hover:from-green-500/20 hover:to-emerald-600/15 rounded-xl border-2 border-green-500/30 hover:border-green-500/60 transition-all duration-300 group text-left flex items-center gap-4"
+              onClick={handleAgent1Select}
+              disabled={!agent1.isConfigured}
+              className={`w-full p-5 rounded-xl border-2 transition-all duration-300 group text-left flex items-center gap-4 ${
+                agent1.isConfigured
+                  ? 'bg-gradient-to-br from-green-500/10 to-emerald-600/5 hover:from-green-500/20 hover:to-emerald-600/15 border-green-500/30 hover:border-green-500/60'
+                  : 'bg-gray-800/30 border-gray-700/30 opacity-50 cursor-not-allowed'
+              }`}
             >
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-3xl shadow-lg group-hover:scale-110 transition-transform">
-                💚
+              <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-3xl shadow-lg transition-transform ${
+                agent1.isConfigured 
+                  ? 'bg-gradient-to-br from-green-500 to-emerald-600 group-hover:scale-110' 
+                  : 'bg-gray-700'
+              }`}>
+                {agent1.type === 'mortgage_protection' ? '🏠' : '💚'}
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-white group-hover:text-green-400 transition-colors">
-                  Final Expense
+                <h3 className={`text-xl font-bold transition-colors ${
+                  agent1.isConfigured ? 'text-white group-hover:text-green-400' : 'text-gray-500'
+                }`}>
+                  {agent1.name}
                 </h3>
-                <p className="text-gray-400 text-sm">Life insurance for seniors</p>
+                <p className="text-gray-400 text-sm">
+                  {agent1.isConfigured 
+                    ? agent1.type === 'mortgage_protection' ? '🏠 Mortgage Protection' : '💚 Final Expense'
+                    : 'Not configured'}
+                </p>
               </div>
-              <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-green-400 group-hover:translate-x-1 transition-all" />
+              {agent1.isConfigured && (
+                <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-green-400 group-hover:translate-x-1 transition-all" />
+              )}
             </button>
 
-            {/* Mortgage Protection Button */}
+            {/* Agent 2 Button */}
             <button
-              onClick={handleMortgageProtection}
-              className="w-full p-5 bg-gradient-to-br from-blue-500/10 to-indigo-600/5 hover:from-blue-500/20 hover:to-indigo-600/15 rounded-xl border-2 border-blue-500/30 hover:border-blue-500/60 transition-all duration-300 group text-left flex items-center gap-4"
+              onClick={handleAgent2Select}
+              disabled={!agent2.isConfigured}
+              className={`w-full p-5 rounded-xl border-2 transition-all duration-300 group text-left flex items-center gap-4 ${
+                agent2.isConfigured
+                  ? 'bg-gradient-to-br from-blue-500/10 to-indigo-600/5 hover:from-blue-500/20 hover:to-indigo-600/15 border-blue-500/30 hover:border-blue-500/60'
+                  : 'bg-gray-800/30 border-gray-700/30 opacity-50 cursor-not-allowed'
+              }`}
             >
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                <Home className="w-7 h-7 text-white" />
+              <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-3xl shadow-lg transition-transform ${
+                agent2.isConfigured 
+                  ? 'bg-gradient-to-br from-blue-500 to-indigo-600 group-hover:scale-110' 
+                  : 'bg-gray-700'
+              }`}>
+                {agent2.type === 'mortgage_protection' ? '🏠' : '💚'}
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
-                  Mortgage Protection
+                <h3 className={`text-xl font-bold transition-colors ${
+                  agent2.isConfigured ? 'text-white group-hover:text-blue-400' : 'text-gray-500'
+                }`}>
+                  {agent2.name}
                 </h3>
-                <p className="text-gray-400 text-sm">Insurance for homeowners</p>
+                <p className="text-gray-400 text-sm">
+                  {agent2.isConfigured 
+                    ? agent2.type === 'mortgage_protection' ? '🏠 Mortgage Protection' : '💚 Final Expense'
+                    : 'Not configured'}
+                </p>
               </div>
-              <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+              {agent2.isConfigured && (
+                <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+              )}
             </button>
           </div>
 
@@ -134,4 +249,3 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
     </div>
   );
 }
-

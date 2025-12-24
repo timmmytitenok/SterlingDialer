@@ -95,21 +95,35 @@ export async function GET(
     
     // Get user's cost per minute (default $0.40, your expense is $0.15)
     const userCostPerMinute = profile.data?.cost_per_minute || 0.40;
-    const yourExpensePerMinute = 0.15;
-    const profitPerMinute = userCostPerMinute - yourExpensePerMinute;
+    const AI_COST_PER_MINUTE = 0.15; // Your actual cost
+    const STRIPE_FEE_PERCENT = 0.03; // 3% Stripe fee
     
     // Count refills - calculate profit based on user's specific rate
+    // Formula: Profit = Revenue - (Minutes × AI Cost) - Stripe Fee
     (revenueData.data || []).forEach((t: any) => {
       if (t.stripe_payment_intent_id && t.amount > 0) {
         refillCount++;
-        // Calculate profit: refill amount divided by user's rate = minutes, minutes * profit margin = profit
         const refillAmount = t.amount;
+        
+        // Calculate minutes purchased at user's rate
         const minutesPurchased = refillAmount / userCostPerMinute;
-        const thisRefillProfit = minutesPurchased * profitPerMinute;
+        
+        // AI expense = minutes × $0.15/min
+        const aiExpense = minutesPurchased * AI_COST_PER_MINUTE;
+        
+        // Stripe fee = 3% of revenue
+        const stripeFee = refillAmount * STRIPE_FEE_PERCENT;
+        
+        // Profit = Revenue - AI Expense - Stripe Fee
+        const thisRefillProfit = refillAmount - aiExpense - stripeFee;
         refillProfit += thisRefillProfit;
-        console.log(`  ✅ Refill found - Amount: $${refillAmount}, Minutes: ${minutesPurchased.toFixed(2)}, User rate: $${userCostPerMinute}/min, Profit: $${thisRefillProfit.toFixed(2)}`);
+        
+        console.log(`  ✅ Refill found - Amount: $${refillAmount}, Minutes: ${minutesPurchased.toFixed(2)}, User rate: $${userCostPerMinute}/min, AI cost: $${aiExpense.toFixed(2)}, Stripe: $${stripeFee.toFixed(2)}, Profit: $${thisRefillProfit.toFixed(2)}`);
       }
     });
+    
+    // Round to 2 decimal places
+    refillProfit = Math.round(refillProfit * 100) / 100;
     
     // Check if they have an ACTIVE subscription (not trialing - they haven't paid yet!)
     // IMPORTANT: VIP users don't generate subscription profit (lifetime free access)
@@ -306,6 +320,16 @@ export async function GET(
       ai_is_active: retellConfig.data?.is_active ?? false,
       ai_maintenance_mode: profile.data?.ai_maintenance_mode ?? false,
       
+      // Per-user Retell AI Agents
+      retell_agent_1_id: retellConfig.data?.retell_agent_1_id ?? null,
+      retell_agent_1_phone: retellConfig.data?.retell_agent_1_phone ?? null,
+      retell_agent_1_name: retellConfig.data?.retell_agent_1_name ?? null,
+      retell_agent_1_type: retellConfig.data?.retell_agent_1_type ?? 'final_expense',
+      retell_agent_2_id: retellConfig.data?.retell_agent_2_id ?? null,
+      retell_agent_2_phone: retellConfig.data?.retell_agent_2_phone ?? null,
+      retell_agent_2_name: retellConfig.data?.retell_agent_2_name ?? null,
+      retell_agent_2_type: retellConfig.data?.retell_agent_2_type ?? 'final_expense',
+      
       // Subscription Status - safely handle missing data
       // Default to true if user has active trial/subscription status, false otherwise
       has_active_subscription: profile.data?.has_active_subscription ?? 
@@ -349,6 +373,9 @@ export async function GET(
       onboarding_step_3_sheet: profile.data?.onboarding_step_3_sheet ?? false,
       onboarding_step_4_schedule: profile.data?.onboarding_step_4_schedule ?? false,
       onboarding_all_complete: profile.data?.onboarding_all_complete ?? false,
+      
+      // Dead User Status
+      is_dead: profile.data?.is_dead ?? false,
     };
 
     console.log('✅ Successfully compiled user data');

@@ -58,7 +58,7 @@ const isSlotAvailable = (date: Date, slot: { hour: number; minute: number }, day
 // Skeleton loading component
 const CalendarSkeleton = () => (
   <div className="animate-pulse">
-    <div className="bg-gradient-to-r from-blue-600/50 via-cyan-600/50 to-teal-600/50 p-5">
+    <div className="bg-gradient-to-r from-purple-600/50 via-cyan-600/50 to-teal-600/50 p-5">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-white/20 rounded-xl" />
         <div className="space-y-2">
@@ -103,6 +103,8 @@ export default function SalespersonSchedulePage() {
   const [step, setStep] = useState<'calendar' | 'form' | 'booking' | 'success'>('calendar');
   const [isBooking, setIsBooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
   
   // Form fields
   const [name, setName] = useState('');
@@ -111,6 +113,79 @@ export default function SalespersonSchedulePage() {
   
   const dates = generateDates();
   const timeSlots = config?.timeSlots || DEFAULT_TIME_SLOTS;
+
+  // Fetch real availability from Cal.com
+  const fetchAvailability = async (salesperson: SalespersonConfig) => {
+    // Only check if salesperson is active and has event type ID
+    // The API key is checked server-side (not available on client)
+    if (!salesperson.isActive || !salesperson.calEventTypeId) {
+      console.log('⚠️ Cal.com not configured (no event type ID), using simulated availability');
+      return;
+    }
+    
+    setLoadingAvailability(true);
+    try {
+      const startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
+      
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 5);
+      endDate.setHours(23, 59, 59, 999);
+      
+      console.log(`📡 Fetching availability for ${salesperson.name}...`);
+      
+      const response = await fetch(
+        `/api/schedule-call/${salesperson.slug}/availability?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+      );
+      
+      const data = await response.json();
+      console.log('📋 Availability response:', data);
+      
+      if (data.success && data.slots) {
+        console.log(`✅ Loaded ${data.slots.length} available slots for ${salesperson.name}`);
+        setAvailableSlots(data.slots);
+      } else {
+        console.log('⚠️ Failed to load availability:', data.error);
+      }
+    } catch (err) {
+      console.error('❌ Error fetching availability:', err);
+    } finally {
+      setLoadingAvailability(false);
+    }
+  };
+
+  // Check if a slot is available (uses real Cal.com data if available)
+  const checkSlotAvailable = (date: Date, slot: { hour: number; minute: number }, dayIndex: number): boolean => {
+    // If we have real availability data, use it
+    if (availableSlots.length > 0) {
+      const slotDate = new Date(date);
+      slotDate.setHours(slot.hour, slot.minute, 0, 0);
+      
+      // Check if this slot exists in available slots from Cal.com
+      const isReallyAvailable = availableSlots.some(availableSlot => {
+        const availableDate = new Date(availableSlot);
+        return availableDate.getHours() === slot.hour && 
+               availableDate.getMinutes() === slot.minute &&
+               availableDate.toDateString() === date.toDateString();
+      });
+      
+      // If not available in Cal.com, definitely not available
+      if (!isReallyAvailable) return false;
+      
+      // Apply fake "busy" blocking on first 2 days (10%) to look busy
+      if (dayIndex <= 1) {
+        const dateSeed = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+        const slotSeed = dateSeed + slot.hour * 100 + slot.minute;
+        const isFakeBlocked = seededRandom(slotSeed) < 0.10; // 10% fake blocking
+        if (isFakeBlocked) return false;
+      }
+      
+      return true;
+    }
+    
+    // Fallback to simulated availability (for unconfigured salespeople)
+    return isSlotAvailable(date, slot, dayIndex);
+  };
 
   useEffect(() => {
     const salesperson = getSalesperson(salespersonSlug);
@@ -123,10 +198,10 @@ export default function SalespersonSchedulePage() {
     setSelectedDate(dates[0]);
     setMounted(true);
     
-    // Simulate loading
-    setTimeout(() => {
+    // Fetch real availability from Cal.com
+    fetchAvailability(salesperson).then(() => {
       setInitialLoading(false);
-    }, 800);
+    });
     
     // Scroll reveal observer
     const observer = new IntersectionObserver(
@@ -161,26 +236,45 @@ export default function SalespersonSchedulePage() {
     setStep('booking'); // Show loading screen
     
     try {
-      // Check if Cal.com is configured
+      // Check if Cal.com is configured (API key is checked server-side)
       if (!config.isActive || !config.calEventTypeId) {
-        // Skeleton mode - simulate success
+        // Skeleton mode - simulate success (Cal.com not configured)
+        console.log('⚠️ Cal.com not configured for this salesperson, simulating success');
         await new Promise(resolve => setTimeout(resolve, 2000));
         setStep('success');
         return;
       }
       
-      // TODO: Implement actual Cal.com booking when configured
-      // const response = await fetch(`/api/schedule-call/${salespersonSlug}`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ name, email, phone, startTime }),
-      // });
+      // Build the start time in ISO format
+      const bookingDate = new Date(selectedDate);
+      bookingDate.setHours(selectedSlot.hour, selectedSlot.minute, 0, 0);
+      const startTime = bookingDate.toISOString();
       
-      // For now, simulate success
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log(`📅 Booking call with ${config.name} at ${startTime}`);
+      
+      // Call the salesperson-specific booking API
+      const response = await fetch(`/api/schedule-call/${salespersonSlug}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name, 
+          email, 
+          phone, 
+          startTime,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to book appointment');
+      }
+      
+      console.log('✅ Booking confirmed:', data);
       setStep('success');
       
     } catch (err: any) {
+      console.error('❌ Booking error:', err);
       setError(err.message || 'Something went wrong. Please try again.');
       setStep('form'); // Go back to form on error
     } finally {
@@ -215,8 +309,8 @@ export default function SalespersonSchedulePage() {
       <div className="min-h-screen bg-[#0B1437] relative overflow-hidden flex items-center justify-center">
         {/* Background Effects */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px] animate-pulse" />
-          <div className="absolute bottom-[10%] right-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px] animate-pulse" />
+          <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[120px] animate-pulse" />
+          <div className="absolute bottom-[10%] right-1/4 w-[600px] h-[600px] bg-pink-600/10 rounded-full blur-[100px] animate-pulse" />
         </div>
         
         <div className="relative z-10 text-center px-4 max-w-lg mx-auto">
@@ -224,14 +318,14 @@ export default function SalespersonSchedulePage() {
           <div className="mb-8 relative">
             <div className="w-24 h-24 mx-auto relative">
               {/* Outer spinning ring */}
-              <div className="absolute inset-0 rounded-full border-4 border-blue-500/20" />
+              <div className="absolute inset-0 rounded-full border-4 border-purple-500/20" />
               <div 
-                className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-cyan-500 animate-spin"
+                className="absolute inset-0 rounded-full border-4 border-transparent border-t-purple-500 border-r-pink-500 animate-spin"
                 style={{ animationDuration: '1s' }}
               />
               {/* Inner pulsing circle */}
-              <div className="absolute inset-3 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 animate-pulse flex items-center justify-center">
-                <Calendar className="w-8 h-8 text-blue-400" />
+              <div className="absolute inset-3 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 animate-pulse flex items-center justify-center">
+                <Calendar className="w-8 h-8 text-purple-400" />
               </div>
             </div>
           </div>
@@ -259,9 +353,9 @@ export default function SalespersonSchedulePage() {
           
           {/* Animated dots */}
           <div className="flex items-center justify-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-            <div className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-            <div className="w-2 h-2 rounded-full bg-teal-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="w-2 h-2 rounded-full bg-pink-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="w-2 h-2 rounded-full bg-pink-500 animate-bounce" style={{ animationDelay: '300ms' }} />
           </div>
         </div>
       </div>
@@ -274,7 +368,7 @@ export default function SalespersonSchedulePage() {
       <div className="min-h-screen bg-[#0B1437] relative overflow-hidden flex items-center justify-center">
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-green-600/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[10%] right-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px]" />
+          <div className="absolute bottom-[10%] right-1/4 w-[600px] h-[600px] bg-pink-600/10 rounded-full blur-[100px]" />
         </div>
         
         {/* Solid background at bottom for Safari safe area */}
@@ -367,9 +461,9 @@ export default function SalespersonSchedulePage() {
     <div className="min-h-screen bg-[#0B1437] relative">
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[10%] right-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-teal-600/5 rounded-full blur-[80px]" />
+        <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[10%] right-1/4 w-[600px] h-[600px] bg-pink-600/10 rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-pink-600/5 rounded-full blur-[80px]" />
       </div>
       
       {/* Solid background at bottom for Safari safe area */}
@@ -392,11 +486,11 @@ export default function SalespersonSchedulePage() {
         {/* MOBILE LAYOUT */}
         <div className="flex flex-col lg:hidden">
           {/* 1. Header with Salesperson Info */}
-          <div className="space-y-4 text-center mb-10">
+          <div className="text-center mb-10">
             {/* Salesperson Avatar */}
             {/* Badge */}
             <div 
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-full"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full mb-4"
               style={{ 
                 animation: 'unblur 0.8s ease-out forwards',
                 animationDelay: '100ms',
@@ -404,13 +498,13 @@ export default function SalespersonSchedulePage() {
                 filter: 'blur(10px)'
               }}
             >
-              <Sparkles className="w-4 h-4 text-blue-400" />
-              <span className="text-sm font-medium text-blue-300">Free Consultation</span>
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              <span className="text-sm font-medium text-purple-300">Free Consultation</span>
             </div>
             
             {/* Main Title */}
             <h1 
-              className="text-4xl font-black text-white leading-tight"
+              className="text-4xl font-black text-white leading-tight mb-2"
               style={{ 
                 animation: 'unblur 0.8s ease-out forwards',
                 animationDelay: '200ms',
@@ -419,14 +513,14 @@ export default function SalespersonSchedulePage() {
               }}
             >
               Schedule a{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">
                 Call
               </span>
             </h1>
             
             {/* Description */}
             <p 
-              className="text-base text-gray-400 leading-relaxed"
+              className="text-base text-gray-400 leading-relaxed mb-8"
               style={{ 
                 animation: 'unblur 0.8s ease-out forwards',
                 animationDelay: '300ms',
@@ -439,7 +533,7 @@ export default function SalespersonSchedulePage() {
             
             {/* Salesperson Card - Right above booking UI */}
             <div 
-              className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 mt-2"
+              className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10"
               style={{ 
                 animation: 'unblur 0.8s ease-out forwards',
                 animationDelay: '400ms',
@@ -448,12 +542,16 @@ export default function SalespersonSchedulePage() {
               }}
             >
               <div className="relative flex-shrink-0">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center ring-2 ring-blue-500/30">
-                  {config?.image ? (
-                    <img src={config.image} alt={config.name} className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    <UserCircle className="w-8 h-8 text-white" />
-                  )}
+                <div className="w-16 h-16 rounded-full p-[3px] bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-500 shadow-lg shadow-purple-500/30">
+                  <div className="w-full h-full rounded-full bg-[#0B1437] p-[2px]">
+                    {config?.image ? (
+                      <img src={config.image} alt={config.name} className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                        <UserCircle className="w-8 h-8 text-white" />
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-[#0B1437]">
                   <CheckCircle className="w-3 h-3 text-white" />
@@ -462,7 +560,7 @@ export default function SalespersonSchedulePage() {
               <div className="text-left">
                 <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Your consultant</p>
                 <h3 className="text-xl font-bold text-white leading-tight">{config?.name}</h3>
-                <p className="text-xs text-blue-400">{config?.title}</p>
+                <p className="text-xs text-purple-400">{config?.title}</p>
               </div>
             </div>
           </div>
@@ -478,7 +576,7 @@ export default function SalespersonSchedulePage() {
             }}
           >
             <div 
-              className="bg-[#111a3a]/90 backdrop-blur-xl rounded-3xl border border-blue-500/20 overflow-hidden"
+              className="bg-[#111a3a]/90 backdrop-blur-xl rounded-3xl border border-purple-500/20 overflow-hidden"
               style={{
                 boxShadow: '0 0 60px rgba(59, 130, 246, 0.15), 0 0 100px rgba(6, 182, 212, 0.1)'
               }}
@@ -488,7 +586,7 @@ export default function SalespersonSchedulePage() {
               ) : (
               <>
               {/* Header */}
-              <div className="bg-gradient-to-r from-blue-600/90 via-cyan-600/90 to-teal-600/90 p-5">
+              <div className="bg-gradient-to-r from-purple-600/90 via-cyan-600/90 to-teal-600/90 p-5">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-sm">
                     {step === 'calendar' ? (
@@ -530,7 +628,7 @@ export default function SalespersonSchedulePage() {
                           }}
                           className={`p-2 rounded-xl text-center transition-all ${
                             isSelected
-                              ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white scale-105'
+                              ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white scale-105'
                               : 'bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white'
                           }`}
                         >
@@ -556,7 +654,7 @@ export default function SalespersonSchedulePage() {
                         {timeSlots.map((slot) => {
                           const isSelected = selectedSlot?.display === slot.display;
                           const dayIndex = dates.findIndex(d => d.toDateString() === selectedDate.toDateString());
-                          const available = isSlotAvailable(selectedDate, slot, dayIndex);
+                          const available = checkSlotAvailable(selectedDate, slot, dayIndex);
                           
                           if (!available) {
                             return (
@@ -576,8 +674,8 @@ export default function SalespersonSchedulePage() {
                               onClick={() => setSelectedSlot(slot)}
                               className={`p-2.5 rounded-lg text-sm font-medium transition-all ${
                                 isSelected
-                                  ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
-                                  : 'bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 hover:border-blue-500/30'
+                                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                                  : 'bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 hover:border-purple-500/30'
                               }`}
                             >
                               {slot.display}
@@ -599,7 +697,7 @@ export default function SalespersonSchedulePage() {
                       
                       <button
                         onClick={handleContinueToForm}
-                        className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/30 flex items-center justify-center gap-2"
+                        className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/30 flex items-center justify-center gap-2"
                       >
                         Continue
                       </button>
@@ -622,7 +720,7 @@ export default function SalespersonSchedulePage() {
                     Change date/time
                   </button>
                   
-                  <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 text-center">
+                  <div className="p-3 bg-purple-500/10 rounded-xl border border-purple-500/20 text-center">
                     <p className="text-sm text-gray-400">Booking with {config?.name}:</p>
                     <p className="text-white font-semibold">
                       {selectedDate?.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at {selectedSlot?.display}
@@ -640,7 +738,7 @@ export default function SalespersonSchedulePage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="John Smith"
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                         required
                       />
                     </div>
@@ -655,7 +753,7 @@ export default function SalespersonSchedulePage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="john@example.com"
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                         required
                       />
                     </div>
@@ -670,7 +768,7 @@ export default function SalespersonSchedulePage() {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="(555) 123-4567"
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                       />
                     </div>
                   </div>
@@ -684,7 +782,7 @@ export default function SalespersonSchedulePage() {
                   <button
                     onClick={handleBooking}
                     disabled={isBooking || !name || !email}
-                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
                     {isBooking ? (
                       <>
@@ -724,8 +822,8 @@ export default function SalespersonSchedulePage() {
                 { icon: CheckCircle, text: 'No pressure, no obligation' },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3 text-gray-400">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                    <item.icon className="w-4 h-4 text-blue-400" />
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                    <item.icon className="w-4 h-4 text-purple-400" />
                   </div>
                   <span className="text-sm">{item.text}</span>
                 </div>
@@ -751,25 +849,29 @@ export default function SalespersonSchedulePage() {
                 }}
               >
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center ring-4 ring-blue-500/30">
-                    {config?.image ? (
-                      <img src={config.image} alt={config.name} className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      <UserCircle className="w-14 h-14 text-white" />
-                    )}
+                  <div className="w-28 h-28 rounded-full p-[4px] bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-500 shadow-xl shadow-purple-500/40">
+                    <div className="w-full h-full rounded-full bg-[#0B1437] p-[3px]">
+                      {config?.image ? (
+                        <img src={config.image} alt={config.name} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                          <UserCircle className="w-14 h-14 text-white" />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-[#0B1437]">
+                  <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center ring-3 ring-[#0B1437]">
                     <CheckCircle className="w-5 h-5 text-white" />
                   </div>
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-white">{config?.name}</h2>
-                  <p className="text-blue-400">{config?.title}</p>
+                  <p className="text-purple-400">{config?.title}</p>
                 </div>
               </div>
               
               <div 
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-full"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full"
                 style={{ 
                   animation: 'unblur-left 0.8s ease-out forwards',
                   animationDelay: '200ms',
@@ -777,8 +879,8 @@ export default function SalespersonSchedulePage() {
                   filter: 'blur(10px)'
                 }}
               >
-                <Star className="w-4 h-4 text-blue-400" />
-                <span className="text-sm font-medium text-blue-300">Free Consultation</span>
+                <Star className="w-4 h-4 text-purple-400" />
+                <span className="text-sm font-medium text-purple-300">Free Consultation</span>
               </div>
               
               <h1 
@@ -791,7 +893,7 @@ export default function SalespersonSchedulePage() {
                 }}
               >
                 Schedule Your{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-cyan-400 to-teal-400">
                   Call
                 </span>
               </h1>
@@ -828,8 +930,8 @@ export default function SalespersonSchedulePage() {
                   { icon: CheckCircle, text: 'No pressure, no obligation' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3 text-gray-400">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                      <item.icon className="w-5 h-5 text-blue-400" />
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                      <item.icon className="w-5 h-5 text-purple-400" />
                     </div>
                     <span>{item.text}</span>
                   </div>
@@ -849,7 +951,7 @@ export default function SalespersonSchedulePage() {
             }}
           >
             <div 
-              className="bg-[#111a3a]/90 backdrop-blur-xl rounded-3xl border border-blue-500/20 overflow-hidden"
+              className="bg-[#111a3a]/90 backdrop-blur-xl rounded-3xl border border-purple-500/20 overflow-hidden"
               style={{
                 boxShadow: '0 0 60px rgba(59, 130, 246, 0.15), 0 0 100px rgba(6, 182, 212, 0.1)'
               }}
@@ -859,7 +961,7 @@ export default function SalespersonSchedulePage() {
               ) : (
               <>
               {/* Header */}
-              <div className="bg-gradient-to-r from-blue-600/90 via-cyan-600/90 to-teal-600/90 p-5">
+              <div className="bg-gradient-to-r from-purple-600/90 via-cyan-600/90 to-teal-600/90 p-5">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-sm">
                     {step === 'calendar' ? (
@@ -901,7 +1003,7 @@ export default function SalespersonSchedulePage() {
                           }}
                           className={`p-2 rounded-xl text-center transition-all ${
                             isSelected
-                              ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white scale-105'
+                              ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white scale-105'
                               : 'bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white'
                           }`}
                         >
@@ -927,7 +1029,7 @@ export default function SalespersonSchedulePage() {
                         {timeSlots.map((slot) => {
                           const isSelected = selectedSlot?.display === slot.display;
                           const dayIndex = dates.findIndex(d => d.toDateString() === selectedDate.toDateString());
-                          const available = isSlotAvailable(selectedDate, slot, dayIndex);
+                          const available = checkSlotAvailable(selectedDate, slot, dayIndex);
                           
                           if (!available) {
                             return (
@@ -946,8 +1048,8 @@ export default function SalespersonSchedulePage() {
                               onClick={() => setSelectedSlot(slot)}
                               className={`p-2.5 rounded-lg text-sm font-medium transition-all ${
                                 isSelected
-                                  ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
-                                  : 'bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 hover:border-blue-500/30'
+                                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                                  : 'bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 hover:border-purple-500/30'
                               }`}
                             >
                               {slot.display}
@@ -969,7 +1071,7 @@ export default function SalespersonSchedulePage() {
                       
                       <button
                         onClick={handleContinueToForm}
-                        className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/30 flex items-center justify-center gap-2"
+                        className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/30 flex items-center justify-center gap-2"
                       >
                         Continue
                       </button>
@@ -992,7 +1094,7 @@ export default function SalespersonSchedulePage() {
                     Change date/time
                   </button>
                   
-                  <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 text-center">
+                  <div className="p-3 bg-purple-500/10 rounded-xl border border-purple-500/20 text-center">
                     <p className="text-sm text-gray-400">Booking with {config?.name}:</p>
                     <p className="text-white font-semibold">
                       {selectedDate?.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at {selectedSlot?.display}
@@ -1010,7 +1112,7 @@ export default function SalespersonSchedulePage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="John Smith"
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                         required
                       />
                     </div>
@@ -1025,7 +1127,7 @@ export default function SalespersonSchedulePage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="john@example.com"
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                         required
                       />
                     </div>
@@ -1040,7 +1142,7 @@ export default function SalespersonSchedulePage() {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="(555) 123-4567"
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                       />
                     </div>
                   </div>
@@ -1054,7 +1156,7 @@ export default function SalespersonSchedulePage() {
                   <button
                     onClick={handleBooking}
                     disabled={isBooking || !name || !email}
-                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
                     {isBooking ? (
                       <>

@@ -18,6 +18,7 @@ interface User {
   has_ai_config: boolean;
   call_balance: number;
   is_vip: boolean;
+  is_dead: boolean;
 }
 
 type FilterType = 'all' | 'useless' | 'needs_onboarding' | 'needs_ai_setup' | 'active' | 'dead';
@@ -127,8 +128,6 @@ export default function AdminUsersPage() {
       return;
     }
 
-    const now = new Date();
-    const thirtyOneDaysAgo = new Date(now.getTime() - 31 * 24 * 60 * 60 * 1000);
     const TIMMY_ID_FILTER = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
     const DEMO_ID_FILTER = '7619c63f-fcc3-4ff3-83ac-33595b5640a5';
 
@@ -153,10 +152,9 @@ export default function AdminUsersPage() {
         return !isAdmin && user.setup_status === 'active';
       }
       if (filter === 'dead') {
-        // Exclude admins from dead accounts
+        // Show users marked as dead (excludes admins)
         if (isAdmin) return false;
-        const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at) : new Date(user.created_at);
-        return lastSignIn < thirtyOneDaysAgo;
+        return user.is_dead === true;
       }
       return true;
     });
@@ -179,8 +177,6 @@ export default function AdminUsersPage() {
   };
 
   // Calculate stats (excluding admin accounts)
-  const now = new Date();
-  const thirtyOneDaysAgo = new Date(now.getTime() - 31 * 24 * 60 * 60 * 1000);
   const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
   const DEMO_ID = '7619c63f-fcc3-4ff3-83ac-33595b5640a5';
   
@@ -191,10 +187,7 @@ export default function AdminUsersPage() {
   const needsOnboarding = regularUsers.filter(u => u.setup_status === 'needs_onboarding').length; // Has subscription but Step 1 not done
   const needsAISetup = regularUsers.filter(u => u.setup_status === 'needs_ai_config').length; // Step 1 done but AI not unlocked
   const activeAccounts = regularUsers.filter(u => u.setup_status === 'active').length; // AI unlocked
-  const deadAccounts = regularUsers.filter(u => {
-    const lastSignIn = u.last_sign_in_at ? new Date(u.last_sign_in_at) : new Date(u.created_at);
-    return lastSignIn < thirtyOneDaysAgo;
-  }).length;
+  const deadAccounts = regularUsers.filter(u => u.is_dead === true).length;
 
   const getStatusBadge = (user: User) => {
     const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
@@ -209,15 +202,11 @@ export default function AdminUsersPage() {
       );
     }
     
-    // Check if dead (inactive 31+ days)
-    const now = new Date();
-    const thirtyOneDaysAgo = new Date(now.getTime() - 31 * 24 * 60 * 60 * 1000);
-    const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at) : new Date(user.created_at);
-    
-    if (lastSignIn < thirtyOneDaysAgo) {
+    // Check if manually marked as dead - THIS OVERRIDES EVERYTHING
+    if (user.is_dead) {
       return (
-        <span className="inline-flex items-center px-3 py-1 rounded-full border text-xs font-bold bg-red-500/10 text-red-400 border-red-500/30">
-          Dead
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-bold bg-red-500/20 text-red-400 border-red-500/50 animate-pulse">
+          💀 DEAD
         </span>
       );
     }
@@ -225,8 +214,8 @@ export default function AdminUsersPage() {
     // Status badges - 4 statuses
     const statusConfig: Record<string, { label: string; color: string }> = {
       useless: { label: 'Useless', color: 'bg-gray-500/10 text-gray-400 border-gray-500/30' },
-      needs_onboarding: { label: 'Needs Onboarding', color: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
-      needs_ai_config: { label: 'Needs AI Config', color: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
+      needs_onboarding: { label: 'Onboarding', color: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
+      needs_ai_config: { label: 'Activate', color: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
       active: { label: 'ACTIVE', color: 'bg-green-500/10 text-green-400 border-green-500/30' },
     };
 
@@ -353,7 +342,7 @@ export default function AdminUsersPage() {
               <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/30">
                 <UserX className="w-6 h-6 text-amber-400" />
               </div>
-              <div className="text-xs font-bold text-gray-400 uppercase">Needs Onboarding</div>
+              <div className="text-xs font-bold text-gray-400 uppercase">Onboarding</div>
             </div>
             <div className="text-4xl font-black text-amber-400 mb-1">{needsOnboarding}</div>
             <div className="text-xs text-gray-400">step 1 not done</div>
@@ -372,7 +361,7 @@ export default function AdminUsersPage() {
               <div className="p-3 bg-purple-500/10 rounded-xl border border-purple-500/30">
                 <Settings className="w-6 h-6 text-purple-400" />
               </div>
-              <div className="text-xs font-bold text-gray-400 uppercase">Needs AI Config</div>
+              <div className="text-xs font-bold text-gray-400 uppercase">Activate</div>
             </div>
             <div className="text-4xl font-black text-purple-400 mb-1">{needsAISetup}</div>
             <div className="text-xs text-gray-400">waiting for you to unlock</div>
@@ -397,7 +386,7 @@ export default function AdminUsersPage() {
             <div className="text-xs text-gray-400">AI unlocked & ready</div>
           </button>
 
-          {/* Dead Accounts */}
+          {/* Dead */}
           <button
             onClick={() => applyFilter('dead')}
             className={`p-6 bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl border-2 transition-all duration-200 text-left ${
@@ -410,10 +399,10 @@ export default function AdminUsersPage() {
               <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/30">
                 <Skull className="w-6 h-6 text-red-400" />
               </div>
-              <div className="text-xs font-bold text-gray-400 uppercase">Dead Accounts</div>
+              <div className="text-xs font-bold text-gray-400 uppercase">Dead</div>
             </div>
             <div className="text-4xl font-black text-red-400 mb-1">{deadAccounts}</div>
-            <div className="text-xs text-gray-400">inactive 31+ days</div>
+            <div className="text-xs text-gray-400">marked as dead</div>
           </button>
         </div>
 
@@ -424,10 +413,10 @@ export default function AdminUsersPage() {
               <span className="text-blue-400 font-semibold">
                 Showing {users.length} {
                   activeFilter === 'useless' ? 'useless accounts (no subscription)' :
-                  activeFilter === 'needs_onboarding' ? 'users needing onboarding' : 
-                  activeFilter === 'needs_ai_setup' ? 'users needing AI configuration' : 
+                  activeFilter === 'needs_onboarding' ? 'onboarding users' : 
+                  activeFilter === 'needs_ai_setup' ? 'users to activate' : 
                   activeFilter === 'active' ? 'active accounts' :
-                  'dead accounts'
+                  'dead users'
                 }
               </span>
             </div>

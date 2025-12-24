@@ -72,7 +72,7 @@ export async function GET() {
       .eq('user_id', user.id)
       .eq('is_qualified', true)
       .in('google_sheet_id', activeSheetIds.length > 0 ? activeSheetIds : ['none'])
-      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer']);
+      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'no_show']);
 
     console.log('📊 Callable leads (right status):', callableLeads);
 

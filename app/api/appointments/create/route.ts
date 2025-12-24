@@ -75,10 +75,52 @@ export async function POST(request: Request) {
       duration,
     });
 
+    // Try to find the lead by phone number to link the appointment
+    let linkedLeadId: string | null = null;
+    const phoneDigits = contactPhone.replace(/\D/g, '');
+    const last10 = phoneDigits.slice(-10);
+    
+    console.log('🔍 Looking for lead with phone:', contactPhone, '(last 10:', last10, ')');
+    
+    // Search for lead by phone number
+    const { data: matchingLead, error: leadError } = await supabase
+      .from('leads')
+      .select('id, name, phone, status')
+      .eq('user_id', user.id)
+      .or(`phone.ilike.%${last10}%,phone.ilike.%${phoneDigits}%`)
+      .limit(1)
+      .maybeSingle();
+    
+    if (leadError) {
+      console.error('⚠️ Error searching for lead:', leadError);
+    } else if (matchingLead) {
+      linkedLeadId = matchingLead.id;
+      console.log(`✅ Found matching lead: ${matchingLead.name} (ID: ${linkedLeadId})`);
+      
+      // Update the lead status to appointment_booked
+      const { error: updateError } = await supabase
+        .from('leads')
+        .update({ 
+          status: 'appointment_booked',
+          last_call_outcome: 'appointment_booked',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', linkedLeadId);
+      
+      if (updateError) {
+        console.error('⚠️ Failed to update lead status:', updateError);
+      } else {
+        console.log('✅ Lead status updated to appointment_booked');
+      }
+    } else {
+      console.log('⚠️ No matching lead found for phone:', contactPhone);
+    }
+
     // Create the appointment
     // Use prospect_* column names (as per schema-v6-appointments.sql)
     const appointmentData: any = {
       user_id: user.id,
+      lead_id: linkedLeadId, // Link to the lead if found
       scheduled_at: scheduledAt,
       status: 'scheduled',
       is_sold: false,

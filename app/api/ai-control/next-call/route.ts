@@ -27,62 +27,88 @@ const BLOCKED_VENDORS = [
 const VENDOR_PLACEHOLDER = '123456';
 
 // =====================================================
-// GLOBAL AGENT IDs - One agent per script type
-// Set these in your .env.local and Vercel environment
+// PER-USER AGENT SELECTION
+// Each user has their own Agent 1 and Agent 2 configured
+// lead_type 2 or 3 = Agent 1, lead_type 4 = Agent 2
 // =====================================================
-const GLOBAL_AGENT_FE = process.env.RETELL_AGENT_ID_FE || null;      // Final Expense
-const GLOBAL_AGENT_VET = process.env.RETELL_AGENT_ID_VET || null;    // Veterans Final Expense
-const GLOBAL_AGENT_MP = process.env.RETELL_AGENT_ID_MP || null;      // Mortgage Protection
+
+interface UserAgentConfig {
+  agent1_id: string | null;
+  agent1_phone: string | null;
+  agent1_name: string | null;
+  agent2_id: string | null;
+  agent2_phone: string | null;
+  agent2_name: string | null;
+}
 
 /**
- * Select the correct global agent based on lead_type
- * Falls back to user's custom agent if global not configured
- * If lead_type is null/1, defaults to Final Expense agent
+ * Select the correct per-user agent based on lead_type
+ * lead_type 2 or 3 = Agent 1
+ * lead_type 4 = Agent 2
+ * If lead_type is null/1, defaults to Agent 1
  */
-const selectAgentByLeadType = (leadType: number | null, userAgentId: string | null): { agentId: string | null; agentSource: string } => {
-  // lead_type: 1/null=Default (use FE), 2=Final Expense, 3=Veterans FE, 4=Mortgage Protection
+const selectAgentByLeadType = (
+  leadType: number | null, 
+  userConfig: UserAgentConfig
+): { agentId: string | null; phoneNumber: string | null; agentName: string | null; agentSource: string } => {
+  // lead_type: 1/null=Default (use Agent 1), 2=Agent 1, 3=Agent 1 (Veteran), 4=Agent 2
   
-  // Handle null, undefined, or 1 (default) - use Final Expense
+  // Handle null, undefined, or 1 (default) - use Agent 1
   const effectiveLeadType = leadType === null || leadType === undefined || leadType === 1 ? 2 : leadType;
   
   console.log(`🎯 Agent Selection - leadType: ${leadType} → effectiveLeadType: ${effectiveLeadType}`);
   
-  switch (effectiveLeadType) {
-    case 2:
-      if (GLOBAL_AGENT_FE) {
-        return { agentId: GLOBAL_AGENT_FE, agentSource: 'GLOBAL_FE' };
-      }
-      break;
-    case 3:
-      if (GLOBAL_AGENT_VET) {
-        return { agentId: GLOBAL_AGENT_VET, agentSource: 'GLOBAL_VET' };
-      }
-      // If no Veterans agent, fall back to FE
-      if (GLOBAL_AGENT_FE) {
-        console.log('⚠️ No Veterans agent, falling back to Final Expense agent');
-        return { agentId: GLOBAL_AGENT_FE, agentSource: 'GLOBAL_FE_FALLBACK' };
-      }
-      break;
-    case 4:
-      if (GLOBAL_AGENT_MP) {
-        return { agentId: GLOBAL_AGENT_MP, agentSource: 'GLOBAL_MP' };
-      }
-      // If no MP agent, fall back to FE
-      if (GLOBAL_AGENT_FE) {
-        console.log('⚠️ No Mortgage Protection agent, falling back to Final Expense agent');
-        return { agentId: GLOBAL_AGENT_FE, agentSource: 'GLOBAL_FE_FALLBACK' };
-      }
-      break;
+  // lead_type 2 or 3 = Agent 1
+  if (effectiveLeadType === 2 || effectiveLeadType === 3) {
+    if (userConfig.agent1_id && userConfig.agent1_phone) {
+      console.log(`✅ Using Agent 1: ${userConfig.agent1_name || 'Unnamed'}`);
+      return { 
+        agentId: userConfig.agent1_id, 
+        phoneNumber: userConfig.agent1_phone,
+        agentName: userConfig.agent1_name,
+        agentSource: 'USER_AGENT_1' 
+      };
+    }
+    console.log('⚠️ Agent 1 not fully configured, checking Agent 2 as fallback...');
+    // Fallback to Agent 2 if Agent 1 not configured
+    if (userConfig.agent2_id && userConfig.agent2_phone) {
+      console.log(`⚠️ Falling back to Agent 2: ${userConfig.agent2_name || 'Unnamed'}`);
+      return { 
+        agentId: userConfig.agent2_id, 
+        phoneNumber: userConfig.agent2_phone,
+        agentName: userConfig.agent2_name,
+        agentSource: 'USER_AGENT_2_FALLBACK' 
+      };
+    }
   }
   
-  // Final fallback: try FE agent, then user's custom agent
-  if (GLOBAL_AGENT_FE) {
-    console.log('⚠️ Using Final Expense agent as final fallback');
-    return { agentId: GLOBAL_AGENT_FE, agentSource: 'GLOBAL_FE_FALLBACK' };
+  // lead_type 4 = Agent 2
+  if (effectiveLeadType === 4) {
+    if (userConfig.agent2_id && userConfig.agent2_phone) {
+      console.log(`✅ Using Agent 2: ${userConfig.agent2_name || 'Unnamed'}`);
+      return { 
+        agentId: userConfig.agent2_id, 
+        phoneNumber: userConfig.agent2_phone,
+        agentName: userConfig.agent2_name,
+        agentSource: 'USER_AGENT_2' 
+      };
+    }
+    console.log('⚠️ Agent 2 not fully configured, checking Agent 1 as fallback...');
+    // Fallback to Agent 1 if Agent 2 not configured
+    if (userConfig.agent1_id && userConfig.agent1_phone) {
+      console.log(`⚠️ Falling back to Agent 1: ${userConfig.agent1_name || 'Unnamed'}`);
+      return { 
+        agentId: userConfig.agent1_id, 
+        phoneNumber: userConfig.agent1_phone,
+        agentName: userConfig.agent1_name,
+        agentSource: 'USER_AGENT_1_FALLBACK' 
+      };
+    }
   }
   
-  // Last resort: user's configured agent (legacy support)
-  return { agentId: userAgentId, agentSource: 'USER_CUSTOM' };
+  // No agents configured
+  console.log('❌ No agents configured for this user!');
+  return { agentId: null, phoneNumber: null, agentName: null, agentSource: 'NONE' };
 };
 
 /**
@@ -472,7 +498,7 @@ export async function POST(request: Request) {
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .in('google_sheet_id', activeSheetIds)
-      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment', 'needs_review']);
+      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment', 'needs_review', 'no_show']);
     console.log(`📊 DEBUG - Leads with callable STATUS in active sheets: ${callableStatusLeads || 0}`);
     
     // Now the actual count - qualified + right status + active sheet
@@ -482,7 +508,7 @@ export async function POST(request: Request) {
       .eq('user_id', userId)
       .eq('is_qualified', true)
       .in('google_sheet_id', activeSheetIds)
-      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment', 'needs_review']);
+      .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment', 'needs_review', 'no_show']);
     
     console.log(`📊 FINAL - Callable leads (qualified + right status + active sheet): ${totalLeadsCount || 0}`);
     
@@ -535,7 +561,7 @@ export async function POST(request: Request) {
     
     // STEP 2: Get next callable lead
     // SIMPLIFIED LOGIC:
-    // - Callable statuses: new, callback_later, unclassified, no_answer, potential_appointment
+    // - Callable statuses: new, callback_later, unclassified, no_answer, potential_appointment, no_show
     // - Total attempts < 20 (not dead yet)
     // - Not called already today (respects call_attempts_today)
     // NOTE: potential_appointment = time discussed but Cal.ai webhook not confirmed yet
@@ -544,7 +570,7 @@ export async function POST(request: Request) {
     console.log('🔍 Searching for next callable lead...');
     console.log(`   Today's date: ${todayStr}`);
     console.log(`   Criteria:`);
-    console.log(`   - Status: new, callback_later, unclassified, no_answer, potential_appointment`);
+    console.log(`   - Status: new, callback_later, unclassified, no_answer, potential_appointment, no_show`);
     console.log(`   - Total attempts < 20`);
     console.log(`   - Not called today`);
     console.log(`   - From active sheets`);
@@ -559,7 +585,7 @@ export async function POST(request: Request) {
         .eq('user_id', userId)
         .eq('is_qualified', true)
         .in('google_sheet_id', activeSheetIds)
-        .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment', 'needs_review']);
+        .in('status', ['new', 'callback_later', 'unclassified', 'no_answer', 'potential_appointment', 'needs_review', 'no_show']);
       
       // Exclude leads that hit 20 attempts (marked as dead)
       // Use total_calls_made if it exists, otherwise check status != 'dead_lead'
@@ -727,12 +753,19 @@ export async function POST(request: Request) {
       found: !!retellConfig, 
       error: configError,
       config: retellConfig ? {
-        has_agent_id: !!retellConfig.retell_agent_id,
-        has_phone: !!retellConfig.phone_number,
-        agent_name: retellConfig.agent_name,
-        agent_pronoun: retellConfig.agent_pronoun || 'She',
+        agent_1: {
+          id: retellConfig.retell_agent_1_id ? 'SET' : null,
+          phone: retellConfig.retell_agent_1_phone || null,
+          name: retellConfig.retell_agent_1_name || 'Agent 1',
+        },
+        agent_2: {
+          id: retellConfig.retell_agent_2_id ? 'SET' : null,
+          phone: retellConfig.retell_agent_2_phone || null,
+          name: retellConfig.retell_agent_2_name || 'Agent 2',
+        },
+        voice_name: retellConfig.agent_name,
+        voice_pronoun: retellConfig.agent_pronoun || 'She',
         cal_event_id: retellConfig.cal_event_id,
-        script_type: retellConfig.script_type || 'final_expense'
       } : null
     });
     
@@ -744,12 +777,6 @@ export async function POST(request: Request) {
       console.log(`   ⚠️ MORTGAGE PROTECTION MODE - lead_vendor and street_address SHOULD be sent!`);
     }
     
-    // Log global agent configuration
-    console.log('🌐 Global Agent Configuration:');
-    console.log(`   RETELL_AGENT_ID_FE: ${GLOBAL_AGENT_FE ? 'SET (' + GLOBAL_AGENT_FE.substring(0, 15) + '...)' : '❌ NOT SET'}`);
-    console.log(`   RETELL_AGENT_ID_VET: ${GLOBAL_AGENT_VET ? 'SET (' + GLOBAL_AGENT_VET.substring(0, 15) + '...)' : '❌ NOT SET'}`);
-    console.log(`   RETELL_AGENT_ID_MP: ${GLOBAL_AGENT_MP ? 'SET (' + GLOBAL_AGENT_MP.substring(0, 15) + '...)' : '❌ NOT SET'}`);
-
     if (configError || !retellConfig) {
       console.error('❌ No Retell config found for user');
       return NextResponse.json({ 
@@ -757,79 +784,52 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Select the correct agent based on lead_type (uses global agents if configured)
-    const { agentId: selectedAgentId, agentSource } = selectAgentByLeadType(
+    // Build user agent config from retell settings
+    const userAgentConfig: UserAgentConfig = {
+      agent1_id: retellConfig.retell_agent_1_id || null,
+      agent1_phone: retellConfig.retell_agent_1_phone || null,
+      agent1_name: retellConfig.retell_agent_1_name || 'Agent 1',
+      agent2_id: retellConfig.retell_agent_2_id || null,
+      agent2_phone: retellConfig.retell_agent_2_phone || null,
+      agent2_name: retellConfig.retell_agent_2_name || 'Agent 2',
+    };
+    
+    console.log('📋 Per-User Agent Config:');
+    console.log(`   Agent 1: ${userAgentConfig.agent1_name} - ID: ${userAgentConfig.agent1_id ? 'SET' : '❌'}, Phone: ${userAgentConfig.agent1_phone ? 'SET' : '❌'}`);
+    console.log(`   Agent 2: ${userAgentConfig.agent2_name} - ID: ${userAgentConfig.agent2_id ? 'SET' : '❌'}, Phone: ${userAgentConfig.agent2_phone ? 'SET' : '❌'}`);
+
+    // Select the correct agent based on lead_type (uses per-user agents)
+    const { agentId: selectedAgentId, phoneNumber: selectedPhoneNumber, agentName, agentSource } = selectAgentByLeadType(
       nextLead.lead_type,
-      retellConfig.retell_agent_id
+      userAgentConfig
     );
     
     console.log(`🤖 Agent Selection:`);
     console.log(`   Lead Type: ${nextLead.lead_type}`);
-    console.log(`   User's Custom Agent ID: ${retellConfig.retell_agent_id || '❌ NOT SET'}`);
-    console.log(`   Selected Agent: ${selectedAgentId ? selectedAgentId.substring(0, 20) + '...' : '❌ NONE - THIS IS THE PROBLEM!'}`);
+    console.log(`   Selected Agent: ${agentName || 'None'}`);
+    console.log(`   Agent ID: ${selectedAgentId ? selectedAgentId.substring(0, 20) + '...' : '❌ NONE'}`);
+    console.log(`   Phone: ${selectedPhoneNumber || '❌ NONE'}`);
     console.log(`   Agent Source: ${agentSource}`);
-    
-    // If no agent selected, give clear error
+
+    // Validate we have an agent to use
     if (!selectedAgentId) {
       console.error('');
       console.error('🚨🚨🚨 NO AGENT CONFIGURED! 🚨🚨🚨');
       console.error('');
-      console.error('To fix this, do ONE of these:');
+      console.error('To fix this:');
+      console.error('   1. Go to Admin → User Management');
+      console.error(`   2. Find user ${userId}`);
+      console.error('   3. Configure Agent 1 or Agent 2 with ID and Phone Number');
       console.error('');
-      console.error('Option 1: Set GLOBAL agent in Vercel environment:');
-      console.error('   - RETELL_AGENT_ID_FE for Final Expense (lead_type 2)');
-      console.error('   - RETELL_AGENT_ID_VET for Veterans (lead_type 3)');
-      console.error('   - RETELL_AGENT_ID_MP for Mortgage Protection (lead_type 4)');
-      console.error('');
-      console.error('Option 2: Set USER agent in Admin → User Management:');
-      console.error(`   - Go to user ${userId} settings`);
-      console.error('   - Add their Retell Agent ID');
-      console.error('');
-    }
-
-    // Validate we have an agent to use
-    if (!selectedAgentId) {
-      console.error('❌ No agent available for this lead_type');
-      console.error(`   Lead Type: ${nextLead.lead_type}`);
-      console.error(`   Global FE: ${GLOBAL_AGENT_FE ? 'SET' : 'NOT SET'}`);
-      console.error(`   Global VET: ${GLOBAL_AGENT_VET ? 'SET' : 'NOT SET'}`);
-      console.error(`   Global MP: ${GLOBAL_AGENT_MP ? 'SET' : 'NOT SET'}`);
-      console.error(`   User Agent: ${retellConfig.retell_agent_id ? 'SET' : 'NOT SET'}`);
       return NextResponse.json({ 
-        error: `No Retell agent configured for lead_type ${nextLead.lead_type}. Set RETELL_AGENT_ID_FE, RETELL_AGENT_ID_VET, or RETELL_AGENT_ID_MP in environment.` 
+        error: `No AI agent configured for this lead type. Ask your admin to configure Agent 1 or Agent 2 in User Management.` 
       }, { status: 400 });
     }
 
-    // Select the correct phone number based on lead_type
-    // lead_type 2 or 3 = Final Expense (use phone_number_fe)
-    // lead_type 4 = Mortgage Protection (use phone_number_mp)
-    const phoneNumberFE = retellConfig.phone_number_fe || retellConfig.phone_number;
-    const phoneNumberMP = retellConfig.phone_number_mp;
-    
-    let selectedPhoneNumber: string | null = null;
-    let phoneSource = '';
-    
-    if (nextLead.lead_type === 4) {
-      // Mortgage Protection - use MP phone
-      selectedPhoneNumber = phoneNumberMP || phoneNumberFE; // Fallback to FE if MP not set
-      phoneSource = phoneNumberMP ? 'Mortgage Protection' : 'Final Expense (fallback)';
-    } else {
-      // Final Expense (lead_type 2, 3, or default) - use FE phone
-      selectedPhoneNumber = phoneNumberFE;
-      phoneSource = 'Final Expense';
-    }
-    
-    console.log(`📞 Phone Number Selection:`);
-    console.log(`   Lead Type: ${nextLead.lead_type}`);
-    console.log(`   Phone FE: ${phoneNumberFE || '(not set)'}`);
-    console.log(`   Phone MP: ${phoneNumberMP || '(not set)'}`);
-    console.log(`   Selected: ${selectedPhoneNumber || '(none)'} (${phoneSource})`);
-
     if (!selectedPhoneNumber) {
-      console.error('❌ Missing phone number for this lead type');
-      const phoneType = nextLead.lead_type === 4 ? 'Mortgage Protection' : 'Final Expense';
+      console.error('❌ Missing phone number for selected agent');
       return NextResponse.json({ 
-        error: `No ${phoneType} phone number configured. Go to Admin → Manage Users to set your phone numbers.` 
+        error: `No phone number configured for ${agentName || 'selected agent'}. Ask your admin to set up the phone number.` 
       }, { status: 400 });
     }
     

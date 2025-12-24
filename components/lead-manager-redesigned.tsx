@@ -78,6 +78,7 @@ const LEAD_STATUS_OPTIONS = [
   { value: 'callback_later', label: 'Callback', className: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
   { value: 'live_transfer', label: 'Live Transfer', className: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
   { value: 'appointment_booked', label: 'Appointment', className: 'bg-green-500/20 text-green-400 border-green-500/30' },
+  { value: 'no_show', label: 'No Show', className: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
   { value: 'dead_lead', label: 'Dead', className: 'bg-black/40 text-gray-300 border-gray-700' },
 ];
 import { ColumnMapperRedesigned } from './column-mapper-redesigned';
@@ -173,16 +174,33 @@ type Lead = {
   street_address?: string;
 };
 
-// Helper to get lead type label
-// 1 = NULL/default, 2 = Final Expense, 3 = Final Expense (Veteran), 4 = Mortgage Protection
-const getLeadTypeLabel = (leadType?: number): { label: string; icon: string; color: string } => {
+// Agent config type for custom agent names
+interface AgentConfig {
+  agent1: { name: string; isConfigured: boolean };
+  agent2: { name: string; isConfigured: boolean };
+}
+
+// Emoji options for agents - consistent with lead-type-selector
+const agentEmojis = ['🤖', '📞', '💼', '🎯', '⭐', '🔥', '💚', '💙', '🏠', '🛡️', '📊', '💪'];
+
+const getAgentEmoji = (name: string, index: number): string => {
+  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return agentEmojis[(hash + index) % agentEmojis.length];
+};
+
+// Helper to get lead type label - now supports custom agent names
+// 1 = NULL/default, 2 = Agent 1, 3 = Agent 1 (Veteran), 4 = Agent 2
+const getLeadTypeLabel = (leadType?: number, agentConfig?: AgentConfig): { label: string; icon: string; color: string } => {
+  const agent1Name = agentConfig?.agent1?.name || 'Agent 1';
+  const agent2Name = agentConfig?.agent2?.name || 'Agent 2';
+  
   switch (leadType) {
     case 2:
-      return { label: 'Final Expense', icon: '💚', color: 'green' };
+      return { label: agent1Name, icon: getAgentEmoji(agent1Name, 0), color: 'green' };
     case 3:
-      return { label: 'Final Expense (Veteran)', icon: '🎖️', color: 'amber' };
+      return { label: `${agent1Name} (Veteran)`, icon: '🎖️', color: 'amber' };
     case 4:
-      return { label: 'Mortgage Protection', icon: '🏠', color: 'blue' };
+      return { label: agent2Name, icon: getAgentEmoji(agent2Name, 1), color: 'blue' };
     case 1:
     default:
       return { label: 'Unknown', icon: '❓', color: 'gray' };
@@ -344,6 +362,9 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
   // Script type for Mortgage Protection support
   const [scriptType, setScriptType] = useState<'final_expense' | 'mortgage_protection'>('final_expense');
   
+  // Agent config for custom agent names
+  const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
+  
   // Status editing state
   const [statusUpdates, setStatusUpdates] = useState<Record<string, string>>({});
   const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
@@ -472,6 +493,20 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       
       if (retellConfig?.script_type) {
         setScriptType(retellConfig.script_type as 'final_expense' | 'mortgage_protection');
+      }
+      
+      // STEP 4: Load agent config for custom agent names
+      try {
+        const agentResponse = await fetch('/api/user/agent-config');
+        if (agentResponse.ok) {
+          const agentData = await agentResponse.json();
+          setAgentConfig({
+            agent1: agentData.agents.agent1,
+            agent2: agentData.agents.agent2,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load agent config:', err);
       }
     };
     
@@ -617,7 +652,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       .eq('user_id', userId)
       .eq('is_qualified', true)
       .in('google_sheet_id', activeSheetIds)
-      .in('status', ['no_answer', 'callback_later', 'new', 'unclassified']);
+      .in('status', ['no_answer', 'callback_later', 'new', 'unclassified', 'no_show']);
 
     const { count: deadCount } = await supabase
       .from('leads')
@@ -1048,7 +1083,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
 
       // Apply status filter
       if (filter === 'potential') {
-        query = query.in('status', ['no_answer', 'callback_later', 'new', 'unclassified']);
+        query = query.in('status', ['no_answer', 'callback_later', 'new', 'unclassified', 'no_show']);
       } else if (filter === 'dead') {
         query = query.in('status', ['not_interested', 'dead_lead']);
       } else if (filter !== 'all') {
@@ -1104,6 +1139,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
       live_transfer: { label: 'Live Transfer', colors: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
       potential_appointment: { label: 'Potential Appt', colors: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 animate-pulse' },
       appointment_booked: { label: 'Appointment', colors: 'bg-green-500/20 text-green-400 border-green-500/30' },
+      no_show: { label: 'No Show', colors: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
       dead_lead: { label: 'Dead', colors: 'bg-black/40 text-gray-300 border-gray-700' },
     };
 
@@ -1644,6 +1680,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                         <option value="new">New Leads</option>
                         <option value="no_answer">No Answer</option>
                         <option value="callback_later">Callback</option>
+                        <option value="no_show">No Show</option>
                         <option value="appointment_booked">Confirmed Appointments</option>
                         <option value="live_transfer">Live Transfers</option>
                         <option value="dead">Dead Leads</option>
@@ -2172,7 +2209,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
 
               {/* 3. Lead Type Card */}
               {(() => {
-                const leadTypeInfo = getLeadTypeLabel(selectedLead.lead_type);
+                const leadTypeInfo = getLeadTypeLabel(selectedLead.lead_type, agentConfig || undefined);
                 const colorClasses = {
                   green: 'from-green-500/5 to-emerald-500/5 border-green-500/20',
                   amber: 'from-amber-500/5 to-orange-500/5 border-amber-500/20',

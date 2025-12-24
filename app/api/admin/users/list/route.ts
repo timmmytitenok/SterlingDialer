@@ -131,6 +131,7 @@ export async function GET() {
         has_ai_config: retellConfig ? true : false,
         call_balance: balance?.balance || 0,
         is_vip: isVIP, // Add VIP flag for filtering
+        is_dead: profile?.is_dead || false, // Dead user flag
       };
     }));
 

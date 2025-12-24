@@ -89,7 +89,7 @@ export async function GET(req: Request) {
     console.log('💰 Fetching refill transactions (Stripe payments only)...');
     const { data: refillTransactions, error: refillError } = await supabase
       .from('balance_transactions')
-      .select('amount, created_at, type, stripe_payment_intent_id')
+      .select('amount, created_at, type, stripe_payment_intent_id, user_id')
       .not('stripe_payment_intent_id', 'is', null) // Must have Stripe payment ID (real customer payments)
       .gte('amount', 0); // Only positive amounts (credits, not deductions)
 
@@ -100,11 +100,30 @@ export async function GET(req: Request) {
     console.log(`✅ Found ${refillTransactions?.length || 0} real Stripe refill transactions`);
     console.log(`   (Admin adjustments excluded from revenue)`);
     
+    // Get all unique user IDs from refills to fetch their cost_per_minute
+    const refillUserIds = [...new Set(refillTransactions?.map((t: any) => t.user_id).filter(Boolean) || [])];
+    
+    // Fetch cost_per_minute for all users with refills
+    const { data: userProfiles } = await supabase
+      .from('profiles')
+      .select('user_id, cost_per_minute')
+      .in('user_id', refillUserIds.length > 0 ? refillUserIds : ['none']);
+    
+    const userCostMap = new Map<string, number>();
+    userProfiles?.forEach((p: any) => {
+      userCostMap.set(p.user_id, p.cost_per_minute || 0.40);
+    });
+    
+    // AI cost per minute (your expense)
+    const AI_COST_PER_MINUTE = 0.15;
+    const STRIPE_FEE_PERCENT = 0.03; // 3%
+    
     // DEBUG: Log all transactions
     if (refillTransactions && refillTransactions.length > 0) {
       console.log('📋 REFILL TRANSACTIONS DETAILS:');
       refillTransactions.forEach((t: any, i: number) => {
-        console.log(`   ${i + 1}. Amount: $${t.amount}, Type: ${t.type}, Date: ${t.created_at}, PI: ${t.stripe_payment_intent_id?.substring(0, 20)}...`);
+        const userRate = userCostMap.get(t.user_id) || 0.40;
+        console.log(`   ${i + 1}. Amount: $${t.amount}, User Rate: $${userRate}/min, Type: ${t.type}, Date: ${t.created_at}`);
       });
     } else {
       console.log('⚠️ NO REFILL TRANSACTIONS FOUND IN DATABASE!');
@@ -513,12 +532,38 @@ export async function GET(req: Request) {
     // 10. PROFIT CALCULATIONS
     // ============================================
     
-    // Call minutes: $25 refill breakdown
-    // - AI Cost: $12.50 (50% goes to AI provider)
-    // - Stripe Fee: $0.75 (3%)
-    // - Profit: $11.75
-    const minutesProfit = totalRefills * 11.75;
-    const minutesExpense = totalRefills * 12.50; // $12.50 AI cost per $25 refill
+    // Calculate minutes profit dynamically based on each user's cost per minute
+    // Formula: Profit = Revenue - (Minutes × AI Cost) - Stripe Fee
+    // Minutes = Revenue / User Rate
+    // AI Cost = Minutes × $0.15/min
+    // Stripe Fee = Revenue × 3%
+    
+    let minutesProfit = 0;
+    let minutesExpense = 0;
+    
+    refillTransactions?.forEach((t: any) => {
+      const refillAmount = t.amount || 0;
+      const userRate = userCostMap.get(t.user_id) || 0.40; // Default $0.40/min if not found
+      
+      // Calculate minutes purchased at user's rate
+      const minutesPurchased = refillAmount / userRate;
+      
+      // AI expense = minutes × $0.15/min
+      const aiExpense = minutesPurchased * AI_COST_PER_MINUTE;
+      
+      // Stripe fee = 3% of revenue
+      const stripeFee = refillAmount * STRIPE_FEE_PERCENT;
+      
+      // Profit = Revenue - AI Expense - Stripe Fee
+      const profit = refillAmount - aiExpense - stripeFee;
+      
+      minutesExpense += aiExpense;
+      minutesProfit += profit;
+    });
+    
+    // Round to 2 decimal places
+    minutesProfit = Math.round(minutesProfit * 100) / 100;
+    minutesExpense = Math.round(minutesExpense * 100) / 100;
     
     // Subscription profit:
     // - Not referred: $499 revenue - $15 Stripe fee = $484 profit
@@ -529,7 +574,7 @@ export async function GET(req: Request) {
     
     // Stripe fees breakdown
     const subscriptionStripeFees = totalSubMonths * 15; // $15 Stripe fee per $499 subscription (3%)
-    const refillStripeFees = totalRefills * 0.75; // $0.75 Stripe fee per $25 refill (3%)
+    const refillStripeFees = minutesRevenue * STRIPE_FEE_PERCENT; // 3% of total refill revenue
     const totalStripeFees = subscriptionStripeFees + refillStripeFees;
     
     // Expenses: Stripe fees + commissions paid + custom expenses

@@ -14,16 +14,16 @@ export interface SalespersonConfig {
 }
 
 export const salespeople: Record<string, SalespersonConfig> = {
-  labron: {
-    slug: 'labron',
-    name: 'LaBron',
+  wardy: {
+    slug: 'wardy',
+    name: 'Wardy',
     title: 'Senior Sales Consultant',
-    description: 'Schedule a free consultation with LaBron to learn how Sterling AI can transform your insurance business.',
-    image: undefined, // Add image path like '/images/team/labron.jpg'
-    calEventTypeId: undefined, // Add Cal.com event type ID when available
-    calApiKey: undefined, // Add Cal.com API key when available (or use process.env.LABRON_CAL_API_KEY)
-    isActive: false, // Set to true once Cal.com is configured
-    // Custom time slots for LaBron (optional - if undefined, uses default 12-5pm)
+    description: 'Schedule a free consultation with Wardy to learn how Sterling AI can transform your insurance business.',
+    image: '/team/wardy.png',
+    calEventTypeId: '4241182',
+    calApiKey: process.env.WARDY_CAL_API_KEY || 'cal_live_b1a3def14790850edca137de6660e62f', // Fallback for local dev
+    isActive: true,
+    // Custom time slots (optional - if undefined, uses default 12-5pm)
     timeSlots: undefined,
   },
   
