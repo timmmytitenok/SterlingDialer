@@ -52,7 +52,7 @@ export async function GET(request: Request) {
       noShowAppointments: noShowAppointments || [],
       noShowLeads: noShowLeads || [],
       recentAppointments: allAppointments || [],
-      recentLeads: allLeads?.map(l => ({
+      recentLeads: allLeads?.map((l: { id: string; name: string; phone: string | null; status: string }) => ({
         id: l.id,
         name: l.name,
         phone: l.phone?.slice(-4), // Only show last 4 digits for privacy
