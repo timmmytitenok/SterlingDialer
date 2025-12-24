@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
+import { X, ChevronRight, Loader2, AlertCircle, Lock } from 'lucide-react';
 
 // Lead type values that will be stored and sent to Retell
 // 2 = Agent 1 (first configured agent)
@@ -170,18 +170,27 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
             <button
               onClick={handleAgent1Select}
               disabled={!agent1.isConfigured}
-              className={`w-full p-5 rounded-xl border-2 transition-all duration-300 group text-left flex items-center gap-4 ${
+              className={`w-full p-5 rounded-xl border-2 transition-all duration-300 group text-left flex items-center gap-4 relative overflow-hidden ${
                 agent1.isConfigured
                   ? 'bg-gradient-to-br from-green-500/10 to-emerald-600/5 hover:from-green-500/20 hover:to-emerald-600/15 border-green-500/30 hover:border-green-500/60'
-                  : 'bg-gray-800/30 border-gray-700/30 opacity-50 cursor-not-allowed'
+                  : 'bg-gray-900/50 border-gray-700/50 cursor-not-allowed'
               }`}
             >
+              {/* Blocked overlay for unconfigured agents */}
+              {!agent1.isConfigured && (
+                <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-[1px] flex items-center justify-center z-10">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/90 rounded-lg border border-gray-600/50">
+                    <Lock className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-400 text-sm font-medium">Not Configured</span>
+                  </div>
+                </div>
+              )}
               <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-3xl shadow-lg transition-transform ${
                 agent1.isConfigured 
                   ? 'bg-gradient-to-br from-green-500 to-emerald-600 group-hover:scale-110' 
-                  : 'bg-gray-700'
+                  : 'bg-gray-700/50'
               }`}>
-                {agent1.type === 'mortgage_protection' ? '🏠' : '💚'}
+                {agent1.isConfigured ? (agent1.type === 'mortgage_protection' ? '🏠' : '💚') : '🔒'}
               </div>
               <div className="flex-1">
                 <h3 className={`text-xl font-bold transition-colors ${
@@ -189,10 +198,10 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
                 }`}>
                   {agent1.name}
                 </h3>
-                <p className="text-gray-400 text-sm">
+                <p className="text-gray-500 text-sm">
                   {agent1.isConfigured 
                     ? agent1.type === 'mortgage_protection' ? '🏠 Mortgage Protection' : '💚 Final Expense'
-                    : 'Not configured'}
+                    : 'Contact admin to configure'}
                 </p>
               </div>
               {agent1.isConfigured && (
@@ -204,18 +213,27 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
             <button
               onClick={handleAgent2Select}
               disabled={!agent2.isConfigured}
-              className={`w-full p-5 rounded-xl border-2 transition-all duration-300 group text-left flex items-center gap-4 ${
+              className={`w-full p-5 rounded-xl border-2 transition-all duration-300 group text-left flex items-center gap-4 relative overflow-hidden ${
                 agent2.isConfigured
                   ? 'bg-gradient-to-br from-blue-500/10 to-indigo-600/5 hover:from-blue-500/20 hover:to-indigo-600/15 border-blue-500/30 hover:border-blue-500/60'
-                  : 'bg-gray-800/30 border-gray-700/30 opacity-50 cursor-not-allowed'
+                  : 'bg-gray-900/50 border-gray-700/50 cursor-not-allowed'
               }`}
             >
+              {/* Blocked overlay for unconfigured agents */}
+              {!agent2.isConfigured && (
+                <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-[1px] flex items-center justify-center z-10">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/90 rounded-lg border border-gray-600/50">
+                    <Lock className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-400 text-sm font-medium">Not Configured</span>
+                  </div>
+                </div>
+              )}
               <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-3xl shadow-lg transition-transform ${
                 agent2.isConfigured 
                   ? 'bg-gradient-to-br from-blue-500 to-indigo-600 group-hover:scale-110' 
-                  : 'bg-gray-700'
+                  : 'bg-gray-700/50'
               }`}>
-                {agent2.type === 'mortgage_protection' ? '🏠' : '💚'}
+                {agent2.isConfigured ? (agent2.type === 'mortgage_protection' ? '🏠' : '💚') : '🔒'}
               </div>
               <div className="flex-1">
                 <h3 className={`text-xl font-bold transition-colors ${
@@ -223,10 +241,10 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
                 }`}>
                   {agent2.name}
                 </h3>
-                <p className="text-gray-400 text-sm">
+                <p className="text-gray-500 text-sm">
                   {agent2.isConfigured 
                     ? agent2.type === 'mortgage_protection' ? '🏠 Mortgage Protection' : '💚 Final Expense'
-                    : 'Not configured'}
+                    : 'Contact admin to configure'}
                 </p>
               </div>
               {agent2.isConfigured && (

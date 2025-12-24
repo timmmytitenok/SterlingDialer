@@ -40,21 +40,34 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch config' }, { status: 500 });
     }
 
+    // Check if agent is fully configured (ALL fields must be present: id, phone, and name)
+    const isAgent1Configured = !!(
+      config?.retell_agent_1_id && 
+      config?.retell_agent_1_phone && 
+      config?.retell_agent_1_name
+    );
+    const isAgent2Configured = !!(
+      config?.retell_agent_2_id && 
+      config?.retell_agent_2_phone && 
+      config?.retell_agent_2_name
+    );
+
     // Build agent configuration response
+    // If not configured, show "Script #1" or "Script #2" as default name
     const agents = {
       agent1: {
         id: config?.retell_agent_1_id || null,
         phone: config?.retell_agent_1_phone || null,
-        name: config?.retell_agent_1_name || 'Agent 1',
+        name: isAgent1Configured ? config.retell_agent_1_name : 'Script #1',
         type: config?.retell_agent_1_type || 'final_expense',
-        isConfigured: !!(config?.retell_agent_1_id && config?.retell_agent_1_phone),
+        isConfigured: isAgent1Configured,
       },
       agent2: {
         id: config?.retell_agent_2_id || null,
         phone: config?.retell_agent_2_phone || null,
-        name: config?.retell_agent_2_name || 'Agent 2',
+        name: isAgent2Configured ? config.retell_agent_2_name : 'Script #2',
         type: config?.retell_agent_2_type || 'final_expense',
-        isConfigured: !!(config?.retell_agent_2_id && config?.retell_agent_2_phone),
+        isConfigured: isAgent2Configured,
       },
       voiceName: config?.agent_name || 'Sarah',
       voicePronoun: config?.agent_pronoun || 'She',

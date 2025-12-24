@@ -12,6 +12,8 @@ export async function POST(request: Request) {
       firstName,
       lastName,
       email,
+      phoneNumber,
+      timezone,
       agencyName,
       nicheDescription,
       calApiKey,
@@ -195,6 +197,14 @@ export async function POST(request: Request) {
               <div class="info-row">
                 <div class="info-label">Contact Email:</div>
                 <div class="info-value">${email}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">Phone Number:</div>
+                <div class="info-value"><strong>${phoneNumber || 'Not provided'}</strong></div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">Timezone:</div>
+                <div class="info-value"><strong>${timezone || 'Not provided'}</strong></div>
               </div>
               <div class="info-row">
                 <div class="info-label">Account Email:</div>
