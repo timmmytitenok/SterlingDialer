@@ -1437,12 +1437,39 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'No API key' }, { status: 500 });
         }
         
+        // Determine which agent to use based on lead_type (same logic as next-call)
+        const leadType = lead.lead_type || 1;
+        let agentId: string | null = null;
+        let fromNumber: string | null = null;
+        
+        if (leadType === 2 && retellConfig.retell_agent_2_id && retellConfig.retell_agent_2_phone) {
+          agentId = retellConfig.retell_agent_2_id;
+          fromNumber = retellConfig.retell_agent_2_phone;
+        } else if (retellConfig.retell_agent_1_id && retellConfig.retell_agent_1_phone) {
+          agentId = retellConfig.retell_agent_1_id;
+          fromNumber = retellConfig.retell_agent_1_phone;
+        } else {
+          // Fallback to legacy fields
+          agentId = retellConfig.retell_agent_id;
+          fromNumber = retellConfig.phone_number;
+        }
+        
+        if (!agentId || !fromNumber) {
+          console.error('❌ No agent configured for double dial!');
+          console.error(`   retell_agent_1_id: ${retellConfig.retell_agent_1_id}`);
+          console.error(`   retell_agent_2_id: ${retellConfig.retell_agent_2_id}`);
+          console.error(`   lead_type: ${leadType}`);
+          return NextResponse.json({ error: 'No agent configured' }, { status: 400 });
+        }
+        
+        console.log(`📞 Double dial using agent: ${agentId} from ${fromNumber}`);
+        
         // Make the call directly
         // CRITICAL: All dynamic variables MUST be strings for Retell API!
         const doublDialPayload = {
-          agent_id: retellConfig.retell_agent_id,
+          agent_id: agentId,
           to_number: lead.phone,
-          from_number: retellConfig.phone_number,
+          from_number: fromNumber,
           metadata: {
             user_id: userId,
             lead_id: leadId,
