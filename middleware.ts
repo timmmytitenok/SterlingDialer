@@ -50,6 +50,7 @@ export const config = {
      * - api/appointments/cal-webhook (Cal.ai webhook - no auth needed)
      * - api/ai-control/complete (N8N completion callback - no auth needed)
      * - api/ai-control/next-call (Internal server-to-server call - no auth needed)
+     * - api/ai-control/cron-start (Vercel cron job - has own CRON_SECRET auth)
      * - api/retell/call-result (Retell webhook - no auth needed)
      * - api/stripe/webhook (Stripe webhook - no auth needed)
      * - api/referral/validate-simple (Referral validation - called during signup)
@@ -65,7 +66,7 @@ export const config = {
      * - api/debug/check-config (Debug endpoint - no auth needed)
      * - api/schedule-call (Public scheduling endpoints - no auth needed)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|fil|webp)$|api/appointments/cal-webhook|api/ai-control/complete|api/ai-control/next-call|api/retell/call-result|api/retell/book-appointment|api/retell/live-transfer|api/retell/check-availability|api/stripe/webhook|api/referral/validate-simple|api/referral/credit|api/debug/instant-subscribe|api/debug/check-config|api/admin/complete-pending-referrals|api/admin/master-login|api/demo/login|api/demo/refresh-data|api/schedule-call).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|fil|webp)$|api/appointments/cal-webhook|api/ai-control/complete|api/ai-control/next-call|api/ai-control/cron-start|api/retell/call-result|api/retell/book-appointment|api/retell/live-transfer|api/retell/check-availability|api/stripe/webhook|api/referral/validate-simple|api/referral/credit|api/debug/instant-subscribe|api/debug/check-config|api/admin/complete-pending-referrals|api/admin/master-login|api/demo/login|api/demo/refresh-data|api/schedule-call).*)',
   ],
 };
 
