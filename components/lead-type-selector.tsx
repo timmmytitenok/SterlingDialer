@@ -205,7 +205,7 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
                 </p>
               </div>
               {agent1.isConfigured && (
-                <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-green-400 group-hover:translate-x-1 transition-all" />
+              <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-green-400 group-hover:translate-x-1 transition-all" />
               )}
             </button>
 
@@ -248,7 +248,7 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
                 </p>
               </div>
               {agent2.isConfigured && (
-                <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+              <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
               )}
             </button>
           </div>

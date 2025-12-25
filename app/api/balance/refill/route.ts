@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { calculateAIExpense } from '@/lib/ai-cost-calculator';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -16,9 +16,12 @@ export async function POST(req: Request) {
     
     console.log('💰 Balance refill requested:', { amount, isFirstRefill, fixedAmount: refillAmount });
 
-    const supabase = await createClient();
+    // Use regular client for auth check
+    const supabaseAuth = await createClient();
+    // Use service role client for database operations (bypasses RLS)
+    const supabase = createServiceRoleClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabaseAuth.auth.getUser();
     
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

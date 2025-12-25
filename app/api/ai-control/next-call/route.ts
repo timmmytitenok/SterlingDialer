@@ -68,7 +68,7 @@ const selectAgentByLeadType = (
         agentName: userConfig.agent1_name,
         agentSource: 'USER_AGENT_1' 
       };
-    }
+      }
     console.log('⚠️ Agent 1 not fully configured, checking Agent 2 as fallback...');
     // Fallback to Agent 2 if Agent 1 not configured
     if (userConfig.agent2_id && userConfig.agent2_phone) {
@@ -79,7 +79,7 @@ const selectAgentByLeadType = (
         agentName: userConfig.agent2_name,
         agentSource: 'USER_AGENT_2_FALLBACK' 
       };
-    }
+      }
   }
   
   // lead_type 4 = Agent 2
@@ -92,7 +92,7 @@ const selectAgentByLeadType = (
         agentName: userConfig.agent2_name,
         agentSource: 'USER_AGENT_2' 
       };
-    }
+      }
     console.log('⚠️ Agent 2 not fully configured, checking Agent 1 as fallback...');
     // Fallback to Agent 1 if Agent 2 not configured
     if (userConfig.agent1_id && userConfig.agent1_phone) {
@@ -776,7 +776,7 @@ export async function POST(request: Request) {
     if (scriptType === 'mortgage_protection') {
       console.log(`   ⚠️ MORTGAGE PROTECTION MODE - lead_vendor and street_address SHOULD be sent!`);
     }
-    
+
     if (configError || !retellConfig) {
       console.error('❌ No Retell config found for user');
       return NextResponse.json({ 
@@ -810,7 +810,7 @@ export async function POST(request: Request) {
     console.log(`   Agent ID: ${selectedAgentId ? selectedAgentId.substring(0, 20) + '...' : '❌ NONE'}`);
     console.log(`   Phone: ${selectedPhoneNumber || '❌ NONE'}`);
     console.log(`   Agent Source: ${agentSource}`);
-
+    
     // Validate we have an agent to use
     if (!selectedAgentId) {
       console.error('');

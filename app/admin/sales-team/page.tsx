@@ -30,6 +30,9 @@ interface SalesPerson {
   updated_at: string;
 }
 
+// Admin email - Timmy is always #000 at the top
+const TIMMY_EMAIL = 'timothytitenokspam@gmail.com';
+
 export default function SalesTeamPage() {
   const router = useRouter();
   const [salesTeam, setSalesTeam] = useState<SalesPerson[]>([]);
@@ -66,10 +69,14 @@ export default function SalesTeamPage() {
       const data = await response.json();
       const team = data.salesTeam || [];
       
-      // Sort by creation date (newest first)
-      const sortedTeam = team.sort((a: SalesPerson, b: SalesPerson) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
+      // Sort: Timmy always first (#000), then by creation date (oldest first for numbering)
+      const sortedTeam = team.sort((a: SalesPerson, b: SalesPerson) => {
+        // Timmy always first
+        if (a.email === TIMMY_EMAIL) return -1;
+        if (b.email === TIMMY_EMAIL) return 1;
+        // Everyone else sorted by creation date (oldest first so numbering is consistent)
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      });
       
       setSalesTeam(sortedTeam);
       
@@ -94,12 +101,18 @@ export default function SalesTeamPage() {
     }
   };
 
-  // Get permanent number for sales person based on creation order
-  const getSalesNumber = (salesId: string): string => {
-    const sortedByCreation = [...salesTeam].sort((a, b) => 
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
-    const position = sortedByCreation.findIndex(s => s.id === salesId);
+  // Get permanent number for sales person - Timmy is #000, everyone else starts at #001
+  const getSalesNumber = (person: SalesPerson): string => {
+    // Timmy is always #000
+    if (person.email === TIMMY_EMAIL) return '000';
+    
+    // Get all non-Timmy users sorted by creation date (oldest first)
+    const nonAdminUsers = salesTeam
+      .filter(s => s.email !== TIMMY_EMAIL)
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    
+    const position = nonAdminUsers.findIndex(s => s.id === person.id);
+    // Start numbering from 001
     const number = position >= 0 ? position + 1 : 0;
     return number > 0 ? String(number).padStart(3, '0') : '???';
   };
@@ -121,6 +134,15 @@ export default function SalesTeamPage() {
   };
 
   const getStatusBadge = (person: SalesPerson) => {
+    // Timmy is always Admin
+    if (person.email === TIMMY_EMAIL) {
+      return (
+        <span className="inline-flex items-center px-3 py-1 rounded-full border text-xs font-bold bg-purple-500/10 text-purple-400 border-purple-500/30 shadow-lg shadow-purple-500/20">
+          👑 Admin
+        </span>
+      );
+    }
+
     // Check if inactive for 7+ days (no activity)
     const lastActive = new Date(person.updated_at || person.created_at);
     const sevenDaysAgo = new Date();
@@ -317,7 +339,7 @@ export default function SalesTeamPage() {
                     >
                       <td className="px-4 py-4 text-center">
                         <span className="text-lg font-mono font-bold text-gray-500 group-hover:text-green-400 transition-colors">
-                          #{getSalesNumber(person.id)}
+                          #{getSalesNumber(person)}
                         </span>
                       </td>
                       <td className="px-6 py-4">

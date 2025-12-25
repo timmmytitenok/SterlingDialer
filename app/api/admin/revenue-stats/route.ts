@@ -1,6 +1,12 @@
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isAdminMode } from '@/lib/admin-check';
+import Stripe from 'stripe';
+
+// Initialize Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-10-29.clover' as any,
+});
 
 // Disable caching for this route
 export const dynamic = 'force-dynamic';
@@ -83,22 +89,61 @@ export async function GET(req: Request) {
     console.log(`   Commissions paid: $${commissionsPaid}`);
 
     // ============================================
-    // 2. CALL MINUTES REVENUE (REFILLS)
+    // 2. CALL MINUTES REVENUE (REFILLS) - DIRECT FROM STRIPE
     // ============================================
     
-    console.log('💰 Fetching refill transactions (Stripe payments only)...');
-    const { data: refillTransactions, error: refillError } = await supabase
-      .from('balance_transactions')
-      .select('amount, created_at, type, stripe_payment_intent_id, user_id')
-      .not('stripe_payment_intent_id', 'is', null) // Must have Stripe payment ID (real customer payments)
-      .gte('amount', 0); // Only positive amounts (credits, not deductions)
-
-    if (refillError) {
-      console.error('❌ Error fetching refill transactions:', refillError);
-      throw refillError;
+    console.log('💰 Fetching balance refills DIRECTLY from Stripe...');
+    
+    // Calculate date range - get payments from the last year
+    const oneYearAgo = Math.floor(Date.now() / 1000) - (365 * 24 * 60 * 60);
+    
+    // Fetch all successful PaymentIntents from Stripe
+    let allStripeRefills: any[] = [];
+    let hasMore = true;
+    let startingAfter: string | undefined = undefined;
+    
+    while (hasMore) {
+      const params: any = {
+        limit: 100,
+        created: { gte: oneYearAgo },
+      };
+      if (startingAfter) {
+        params.starting_after = startingAfter;
+      }
+      
+      const paymentIntents = await stripe.paymentIntents.list(params);
+      
+      // Filter for balance refills (they have type: 'balance_refill' in metadata)
+      const refills = paymentIntents.data.filter(
+        (pi) => pi.metadata?.type === 'balance_refill' && pi.status === 'succeeded'
+      );
+      
+      allStripeRefills = [...allStripeRefills, ...refills];
+      
+      hasMore = paymentIntents.has_more;
+      if (paymentIntents.data.length > 0) {
+        startingAfter = paymentIntents.data[paymentIntents.data.length - 1].id;
+      } else {
+        hasMore = false;
+      }
     }
-    console.log(`✅ Found ${refillTransactions?.length || 0} real Stripe refill transactions`);
-    console.log(`   (Admin adjustments excluded from revenue)`);
+    
+    console.log(`✅ Found ${allStripeRefills.length} balance refill payments DIRECTLY from Stripe!`);
+    
+    // Transform Stripe data to match our expected format
+    const refillTransactions = allStripeRefills.map((pi) => ({
+      amount: pi.amount / 100, // Convert cents to dollars
+      created_at: new Date(pi.created * 1000).toISOString(),
+      type: pi.metadata?.is_first_refill === 'true' ? 'first_refill' : 'credit',
+      stripe_payment_intent_id: pi.id,
+      user_id: pi.metadata?.user_id || null,
+    }));
+    
+    // Log recent refills for debugging
+    console.log('🔍 Recent Stripe refills:');
+    refillTransactions.slice(0, 10).forEach((t: any, i: number) => {
+      console.log(`   ${i + 1}. Amount: $${t.amount}, User: ${t.user_id?.substring(0, 8)}..., Date: ${t.created_at}`);
+    });
     
     // Get all unique user IDs from refills to fetch their cost_per_minute
     const refillUserIds = [...new Set(refillTransactions?.map((t: any) => t.user_id).filter(Boolean) || [])];
@@ -120,13 +165,13 @@ export async function GET(req: Request) {
     
     // DEBUG: Log all transactions
     if (refillTransactions && refillTransactions.length > 0) {
-      console.log('📋 REFILL TRANSACTIONS DETAILS:');
+      console.log('📋 STRIPE REFILL TRANSACTIONS DETAILS:');
       refillTransactions.forEach((t: any, i: number) => {
         const userRate = userCostMap.get(t.user_id) || 0.40;
         console.log(`   ${i + 1}. Amount: $${t.amount}, User Rate: $${userRate}/min, Type: ${t.type}, Date: ${t.created_at}`);
       });
     } else {
-      console.log('⚠️ NO REFILL TRANSACTIONS FOUND IN DATABASE!');
+      console.log('⚠️ NO BALANCE REFILL PAYMENTS FOUND IN STRIPE!');
     }
 
     const minutesRevenue = refillTransactions?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
@@ -587,16 +632,35 @@ export async function GET(req: Request) {
     // (Auto-tracking was removed, so new entries are legitimate manual additions)
     const totalMinutesRevenue = minutesRevenue + customBalanceRefillRevenue;
     
+    // Calculate profit for manual Balance Refill entries
+    // Formula: profit_margin = 1 - (AI_cost / user_rate) = 1 - (0.15 / 0.40) = 62.5%
+    // For manual entries without user_id, we use the default $0.40/min rate
+    const DEFAULT_USER_RATE = 0.40;
+    const CUSTOM_REFILL_PROFIT_MARGIN = 1 - (AI_COST_PER_MINUTE / DEFAULT_USER_RATE); // 62.5%
+    const customBalanceRefillProfit = customBalanceRefillRevenue * CUSTOM_REFILL_PROFIT_MARGIN;
+    const customBalanceRefillExpense = customBalanceRefillRevenue * (AI_COST_PER_MINUTE / DEFAULT_USER_RATE); // 37.5%
+    
+    console.log(`💵 Custom Balance Refill profit calculation:`);
+    console.log(`   Revenue: $${customBalanceRefillRevenue}`);
+    console.log(`   Profit margin: ${(CUSTOM_REFILL_PROFIT_MARGIN * 100).toFixed(1)}%`);
+    console.log(`   Profit: $${customBalanceRefillProfit.toFixed(2)}`);
+    console.log(`   Expense (AI cost): $${customBalanceRefillExpense.toFixed(2)}`);
+    
     const totalRevenue = totalSubscriptionRevenue + totalMinutesRevenue + otherCustomRevenue; // All revenue sources
-    const totalProfit = minutesProfit + subscriptionProfit + totalCustomRevenue - totalCustomExpenses; // Add custom revenue, subtract custom expenses
-    const totalExpenses = minutesExpense + refillStripeFees + subscriptionExpense + totalCustomExpenses; // AI costs + Stripe fees + commissions + custom
+    
+    // Total profit = Stripe minutes profit + custom balance refill profit + subscription profit + other custom revenue - custom expenses
+    const totalProfit = minutesProfit + customBalanceRefillProfit + subscriptionProfit + otherCustomRevenue - totalCustomExpenses;
+    
+    // Total expenses = AI costs (Stripe + manual) + Stripe fees + commissions + custom expenses
+    const totalExpenses = minutesExpense + customBalanceRefillExpense + refillStripeFees + subscriptionExpense + totalCustomExpenses;
     
     console.log(`💰 Profit breakdown:`);
-    console.log(`   Minutes profit: $${minutesProfit.toFixed(2)} (${totalRefills} refills)`);
+    console.log(`   Stripe minutes profit: $${minutesProfit.toFixed(2)} (${totalRefills} Stripe refills)`);
+    console.log(`   Custom balance refill profit: $${customBalanceRefillProfit.toFixed(2)} (${customBalanceRefillCount} manual refills @ 62.5% margin)`);
     console.log(`   Direct subs profit: $${directSubProfit.toFixed(2)} (${directMonths} months × $484)`);
     console.log(`   Referred subs profit: $${referredSubProfit.toFixed(2)} (${referredMonths} months × $384)`);
     console.log(`   Total subscription profit: $${subscriptionProfit.toFixed(2)}`);
-    console.log(`   Custom revenue: $${totalCustomRevenue.toFixed(2)}`);
+    console.log(`   Other custom revenue: $${otherCustomRevenue.toFixed(2)}`);
     console.log(`   Custom expenses: $${totalCustomExpenses.toFixed(2)}`);
 
     // ============================================

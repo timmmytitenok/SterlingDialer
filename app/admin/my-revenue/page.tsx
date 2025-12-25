@@ -141,6 +141,7 @@ interface SimpleUser {
   number: string;
   name: string;
   phone: string;
+  isAdmin?: boolean;
 }
 
 export default function AdminRevenuePage() {
@@ -203,39 +204,40 @@ export default function AdminRevenuePage() {
       const data = await response.json();
       
       const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';
-      const GAGE_ID = '92899ba3-15fa-47bf-84c4-7cc1ea9101dc';
+      const DEMO_ID = '7619c63f-fcc3-4ff3-83ac-33595b5640a5'; // Sterling Demo
       
-      // First sort by created_at (oldest first) for numbering
-      const sortedByCreation = (data.users || [])
+      // Get non-admin users sorted by creation date (oldest first for numbering)
+      const nonAdminUsers = (data.users || [])
+        .filter((u: any) => u.id !== TIMMY_ID && u.id !== DEMO_ID)
         .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
       
-      // Assign numbers: Timmy=#001, Gage=#002, others based on creation order starting from #003
-      const getUserNumber = (userId: string, creationIndex: number) => {
-        if (userId === TIMMY_ID) return '#001';
-        if (userId === GAGE_ID) return '#002';
-        // For others, offset by the special users
-        let numberOffset = 1; // Start at 1
-        if (sortedByCreation.some((u: any) => u.id === TIMMY_ID)) numberOffset++;
-        if (sortedByCreation.some((u: any) => u.id === GAGE_ID)) numberOffset++;
-        // Find this user's position among non-special users
-        const nonSpecialUsers = sortedByCreation.filter((u: any) => u.id !== TIMMY_ID && u.id !== GAGE_ID);
-        const positionAmongNonSpecial = nonSpecialUsers.findIndex((u: any) => u.id === userId);
-        return `#${String(positionAmongNonSpecial + numberOffset + 1).padStart(3, '0')}`;
+      // Assign numbers: Timmy=#000, Sterling Demo=#000, everyone else starts at #001
+      const getUserNumber = (userId: string) => {
+        if (userId === TIMMY_ID || userId === DEMO_ID) return '#000';
+        // Find this user's position among non-admin users (oldest = #001)
+        const position = nonAdminUsers.findIndex((u: any) => u.id === userId);
+        return `#${String(position + 1).padStart(3, '0')}`;
       };
       
-      // Map users with numbers
-      const usersWithNumbers = sortedByCreation.map((user: any, index: number) => ({
+      // Map all users with numbers
+      const allUsers = data.users || [];
+      const usersWithNumbers = allUsers.map((user: any) => ({
         id: user.id,
         created_at: user.created_at,
-        number: getUserNumber(user.id, index),
+        number: getUserNumber(user.id),
         name: user.full_name || user.email?.split('@')[0] || 'Unknown',
         phone: user.phone || 'No phone',
+        isAdmin: user.id === TIMMY_ID || user.id === DEMO_ID,
       }));
       
-      // Sort for display: Timmy first, then newest users first
+      // Sort for display: Timmy first, then Sterling Demo, then everyone else by newest first
       const sortedForDisplay = usersWithNumbers.sort((a: any, b: any) => {
+        // Timmy always first
         if (a.id === TIMMY_ID) return -1;
         if (b.id === TIMMY_ID) return 1;
+        // Sterling Demo second
+        if (a.id === DEMO_ID) return -1;
+        if (b.id === DEMO_ID) return 1;
         // Everyone else sorted by newest first
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
@@ -519,14 +521,31 @@ export default function AdminRevenuePage() {
                 {simpleUsers.map((user) => (
                   <div
                     key={user.id}
-                    className="bg-gradient-to-r from-[#1A2647]/80 to-[#0F1629]/80 rounded-xl p-4 border border-gray-700/50"
+                    className={`bg-gradient-to-r rounded-xl p-4 border ${
+                      user.isAdmin 
+                        ? 'from-purple-900/30 to-[#0F1629]/80 border-purple-500/50' 
+                        : 'from-[#1A2647]/80 to-[#0F1629]/80 border-gray-700/50'
+                    }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30 flex-shrink-0">
-                        <span className="text-xs font-bold text-blue-400">{user.number}</span>
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        user.isAdmin 
+                          ? 'bg-purple-500/20 border border-purple-500/30' 
+                          : 'bg-blue-500/20 border border-blue-500/30'
+                      }`}>
+                        <span className={`text-xs font-bold ${user.isAdmin ? 'text-purple-400' : 'text-blue-400'}`}>
+                          {user.number}
+                        </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-white font-semibold truncate">{user.name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-semibold truncate">{user.name}</span>
+                          {user.isAdmin && (
+                            <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-500/30 rounded-full text-[10px] font-bold text-purple-400">
+                              👑 Admin
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-gray-500 flex items-center gap-1">
                           <Phone className="w-3 h-3" />
                           {user.phone}

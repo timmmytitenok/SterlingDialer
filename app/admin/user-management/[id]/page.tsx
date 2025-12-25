@@ -331,23 +331,23 @@ export default function AdminUserDetailPage() {
                       : 'bg-purple-500/30 opacity-50 group-hover/badge:opacity-75'
                   }`}></div>
                   <span className={`relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 font-bold text-sm tracking-wide transition-all hover:scale-105 ${
-                    user.account_type?.includes('VIP') || user.subscription_tier === 'vip'
-                      ? 'bg-gradient-to-r from-yellow-500/20 via-amber-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/50 shadow-lg shadow-yellow-500/20'
-                      : user.account_type === 'Pro Access' || user.subscription_tier === 'pro' || user.account_type === 'Free Trial' || user.subscription_tier === 'trial'
-                      ? 'bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-blue-500/20 text-blue-400 border-blue-500/50 shadow-lg shadow-blue-500/20'
-                      : 'bg-purple-500/10 text-purple-400 border-purple-500/30'
-                  }`}>
-                    {user.account_type?.includes('VIP') || user.subscription_tier === 'vip' ? (
-                      <span className="text-lg">👑</span>
-                    ) : user.account_type === 'Pro Access' || user.subscription_tier === 'pro' ? (
-                      <span className="text-lg">⚡</span>
-                    ) : user.account_type === 'Free Trial' || user.subscription_tier === 'trial' ? (
-                      <span className="text-lg">🆓</span>
-                    ) : (
-                      <CreditCard className="w-4 h-4" />
-                    )}
-                    {user.account_type}
-                  </span>
+                user.account_type?.includes('VIP') || user.subscription_tier === 'vip'
+                  ? 'bg-gradient-to-r from-yellow-500/20 via-amber-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/50 shadow-lg shadow-yellow-500/20'
+                  : user.account_type === 'Pro Access' || user.subscription_tier === 'pro' || user.account_type === 'Free Trial' || user.subscription_tier === 'trial'
+                  ? 'bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-blue-500/20 text-blue-400 border-blue-500/50 shadow-lg shadow-blue-500/20'
+                  : 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+              }`}>
+                {user.account_type?.includes('VIP') || user.subscription_tier === 'vip' ? (
+                  <span className="text-lg">👑</span>
+                ) : user.account_type === 'Pro Access' || user.subscription_tier === 'pro' ? (
+                  <span className="text-lg">⚡</span>
+                ) : user.account_type === 'Free Trial' || user.subscription_tier === 'trial' ? (
+                  <span className="text-lg">🆓</span>
+                ) : (
+                  <CreditCard className="w-4 h-4" />
+                )}
+                {user.account_type}
+              </span>
                 </div>
               )}
 
@@ -734,7 +734,7 @@ export default function AdminUserDetailPage() {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           
           {/* LEFT COLUMN: Retell AI Agents */}
-          <div className="group/section relative">
+        <div className="group/section relative">
             <div className="absolute -inset-0.5 bg-gradient-to-br from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-2xl blur-lg opacity-50 group-hover/section:opacity-75 transition-opacity duration-500"></div>
             <div className="relative h-full bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border border-violet-500/30 shadow-2xl">
               
@@ -743,12 +743,12 @@ export default function AdminUserDetailPage() {
                 <div className="p-2.5 bg-violet-500/10 rounded-xl border border-violet-500/30">
                   <Zap className="w-5 h-5 text-violet-400" />
                 </div>
-                <div>
+            <div>
                   <h3 className="text-lg font-bold text-white">Retell AI Agents</h3>
                   <p className="text-xs text-gray-400">Assign specific agents to this user</p>
                 </div>
-              </div>
-
+            </div>
+            
               {/* Agent 1 Card */}
               <div className="bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-xl p-4 border border-green-500/20 mb-4">
                 <div className="flex items-center gap-2 mb-3">
@@ -801,8 +801,8 @@ export default function AdminUserDetailPage() {
                       />
                     </div>
                   </div>
-                </div>
-              </div>
+            </div>
+          </div>
 
               {/* Agent 2 Card */}
               <div className="bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-xl p-4 border border-blue-500/20">
@@ -821,7 +821,7 @@ export default function AdminUserDetailPage() {
                         placeholder="e.g. Mortgage Protection Agent"
                         className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-blue-500/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none text-sm placeholder:text-gray-500"
                       />
-                    </div>
+              </div>
                     <div>
                       <label className="text-xs text-gray-400 block mb-1">Lead Type</label>
                       <select
@@ -837,27 +837,27 @@ export default function AdminUserDetailPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-gray-400 block mb-1">Agent ID</label>
-                      <input
-                        type="text"
+              <input
+                type="text"
                         value={retellAgent2Id}
                         onChange={(e) => setRetellAgent2Id(e.target.value)}
                         placeholder="agent_xxx..."
                         className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-blue-500/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
-                      />
-                    </div>
+              />
+            </div>
                     <div>
                       <label className="text-xs text-gray-400 block mb-1">Phone Number</label>
-                      <input
-                        type="text"
+              <input
+                type="text"
                         value={retellAgent2Phone}
                         onChange={(e) => setRetellAgent2Phone(e.target.value)}
                         placeholder="+1555..."
                         className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-blue-500/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
-                      />
+              />
                     </div>
-                  </div>
                 </div>
               </div>
+            </div>
 
               {/* Dialer Status */}
               <div className="mt-4 pt-4 border-t border-gray-700/50">
@@ -884,32 +884,32 @@ export default function AdminUserDetailPage() {
               <div className="absolute -inset-0.5 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl blur-lg opacity-50 group-hover/section:opacity-75 transition-opacity duration-500"></div>
               <div className="relative bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border border-purple-500/30 shadow-2xl">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                     <span className="text-white text-sm">🎙️</span>
-                  </div>
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Voice</h4>
                 </div>
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Voice</h4>
+              </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs text-gray-400 block mb-1">AI Agent's Name</label>
-                    <input
-                      type="text"
-                      value={agentName}
-                      onChange={(e) => setAgentName(e.target.value)}
-                      placeholder="Sarah"
+                  <input
+                    type="text"
+                    value={agentName}
+                    onChange={(e) => setAgentName(e.target.value)}
+                    placeholder="Sarah"
                       className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-purple-500/30 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none text-sm placeholder:text-gray-500"
-                    />
-                  </div>
+                  />
+                </div>
                   <div>
                     <label className="text-xs text-gray-400 block mb-1">Pronoun</label>
-                    <select
-                      value={agentPronoun}
-                      onChange={(e) => setAgentPronoun(e.target.value)}
+                  <select
+                    value={agentPronoun}
+                    onChange={(e) => setAgentPronoun(e.target.value)}
                       className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-purple-500/30 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none text-sm cursor-pointer"
-                    >
-                      <option value="She">She</option>
-                      <option value="He">He</option>
-                    </select>
+                  >
+                    <option value="She">She</option>
+                    <option value="He">He</option>
+                  </select>
                   </div>
                 </div>
               </div>
@@ -920,61 +920,61 @@ export default function AdminUserDetailPage() {
               <div className="absolute -inset-0.5 bg-gradient-to-br from-sky-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-50 group-hover/section:opacity-75 transition-opacity duration-500"></div>
               <div className="relative bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border border-sky-500/30 shadow-2xl">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-cyan-500 flex items-center justify-center">
-                    <span className="text-white text-sm">📅</span>
-                  </div>
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Calendar</h4>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-cyan-500 flex items-center justify-center">
+                  <span className="text-white text-sm">📅</span>
                 </div>
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Calendar</h4>
+              </div>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="text-xs text-gray-400 block mb-1">Cal.ai API Key</label>
-                    <input
-                      type="text"
-                      value={calApiKey}
-                      onChange={(e) => setCalApiKey(e.target.value)}
+              <input
+                type="text"
+                value={calApiKey}
+                onChange={(e) => setCalApiKey(e.target.value)}
                       placeholder="cal_live_xxx..."
                       className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-sky-500/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
-                    />
-                  </div>
+                  />
+                </div>
                   <div>
                     <label className="text-xs text-gray-400 block mb-1">Event ID</label>
-                    <input
-                      type="text"
-                      value={calEventId}
-                      onChange={(e) => setCalEventId(e.target.value)}
-                      placeholder="3685354"
+                  <input
+                    type="text"
+                    value={calEventId}
+                    onChange={(e) => setCalEventId(e.target.value)}
+                    placeholder="3685354"
                       className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-sky-500/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
-                    />
-                  </div>
+                  />
                 </div>
+              </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs text-gray-400 block mb-1">Timezone</label>
-                    <select
-                      value={timezone}
-                      onChange={(e) => setTimezone(e.target.value)}
+                  <select
+                    value={timezone}
+                    onChange={(e) => setTimezone(e.target.value)}
                       className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-sky-500/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none text-sm cursor-pointer"
-                    >
+                  >
                       <option value="America/New_York">Eastern</option>
                       <option value="America/Chicago">Central</option>
                       <option value="America/Denver">Mountain</option>
                       <option value="America/Los_Angeles">Pacific</option>
                       <option value="America/Phoenix">Arizona</option>
-                    </select>
-                  </div>
+                  </select>
+                </div>
                   <div>
                     <label className="text-xs text-gray-400 block mb-1">Confirmation Email</label>
-                    <input
-                      type="email"
-                      value={confirmationEmail}
-                      onChange={(e) => setConfirmationEmail(e.target.value)}
-                      placeholder="agent@example.com"
+                  <input
+                    type="email"
+                    value={confirmationEmail}
+                    onChange={(e) => setConfirmationEmail(e.target.value)}
+                    placeholder="agent@example.com"
                       className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-orange-500/30 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 focus:outline-none text-sm placeholder:text-gray-500"
-                    />
+                  />
                   </div>
                 </div>
-              </div>
             </div>
+          </div>
 
             {/* Billing */}
             <div className="group/section relative">
@@ -1008,32 +1008,32 @@ export default function AdminUserDetailPage() {
         </div>
 
         {/* Hidden fields */}
-        <input type="hidden" value={agentId} />
+            <input type="hidden" value={agentId} />
         <input type="hidden" value={phoneNumberFE} />
         <input type="hidden" value={phoneNumberMP} />
 
-        {/* Action Buttons Row */}
+          {/* Action Buttons Row */}
         <div className="flex flex-col sm:flex-row gap-4 mt-6">
-          {/* Save AI Config Button */}
-          <button
-            onClick={async () => {
-              setSaving(true);
-              try {
-                const response = await fetch('/api/admin/users/update-retell', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    userId: user.id,
-                    agentId: agentId.trim() || null,
-                    phoneNumberFE: phoneNumberFE.trim() || null,
-                    phoneNumberMP: phoneNumberMP.trim() || null,
-                    calApiKey: calApiKey.trim() || null,
-                    calEventId: calEventId.trim() || null,
-                    agentName: agentName.trim() || null,
+            {/* Save AI Config Button */}
+            <button
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  const response = await fetch('/api/admin/users/update-retell', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: user.id,
+                      agentId: agentId.trim() || null,
+                        phoneNumberFE: phoneNumberFE.trim() || null,
+                        phoneNumberMP: phoneNumberMP.trim() || null,
+                      calApiKey: calApiKey.trim() || null,
+                        calEventId: calEventId.trim() || null,
+                        agentName: agentName.trim() || null,
                     agentPronoun: agentPronoun || 'She',
-                    costPerMinute: parseFloat(costPerMinute) || 0.40,
-                    timezone: timezone || 'America/New_York',
-                    confirmationEmail: confirmationEmail.trim() || null,
+                        costPerMinute: parseFloat(costPerMinute) || 0.40,
+                        timezone: timezone || 'America/New_York',
+                        confirmationEmail: confirmationEmail.trim() || null,
                     // New agent fields
                     retellAgent1Id: retellAgent1Id.trim() || null,
                     retellAgent1Phone: retellAgent1Phone.trim() || null,
@@ -1043,30 +1043,30 @@ export default function AdminUserDetailPage() {
                     retellAgent2Phone: retellAgent2Phone.trim() || null,
                     retellAgent2Name: retellAgent2Name.trim() || null,
                     retellAgent2Type: retellAgent2Type,
-                  }),
-                });
+                    }),
+                  });
 
-                if (!response.ok) throw new Error('Failed to save');
+                  if (!response.ok) throw new Error('Failed to save');
 
-                const notification = document.createElement('div');
-                notification.className = 'fixed top-8 right-8 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl shadow-green-500/20 z-50 flex items-center gap-3 border border-green-500/30';
-                notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI configuration saved!</span>';
-                document.body.appendChild(notification);
-                setTimeout(() => notification.remove(), 3000);
+                  const notification = document.createElement('div');
+                    notification.className = 'fixed top-8 right-8 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl shadow-green-500/20 z-50 flex items-center gap-3 border border-green-500/30';
+                  notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI configuration saved!</span>';
+                  document.body.appendChild(notification);
+                  setTimeout(() => notification.remove(), 3000);
 
-                loadUser();
-              } catch (err: any) {
-                alert(`Error: ${err.message}`);
-              } finally {
-                setSaving(false);
-              }
-            }}
-            disabled={saving}
+                  loadUser();
+                } catch (err: any) {
+                  alert(`Error: ${err.message}`);
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving}
             className="group/btn relative flex-1 overflow-hidden rounded-xl"
-          >
+            >
             <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-xl"></div>
             <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
-            <div className="relative flex items-center justify-center gap-2 px-6 py-4 text-white font-bold">
+                <div className="relative flex items-center justify-center gap-2 px-6 py-4 text-white font-bold">
               {saving ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -1078,66 +1078,66 @@ export default function AdminUserDetailPage() {
                   Save Configuration
                 </>
               )}
-            </div>
-          </button>
+                </div>
+            </button>
 
-          {/* Dialer Access Toggle Button */}
-          <button
-            onClick={async () => {
-              const newMode = !user.ai_maintenance_mode;
-              
-              if (!confirm(`${newMode ? 'BLOCK' : 'UNBLOCK'} AI Dialer access for this user?\n\n${newMode ? 'User will see "AI Agent Setup in Progress" page and cannot use dialer.' : 'User can access and use the AI Dialer!'}`)) return;
-              
-              setSaving(true);
-              try {
-                const response = await fetch('/api/admin/users/toggle-maintenance', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    userId: user.id,
-                    maintenanceMode: newMode,
-                  }),
-                });
+            {/* Dialer Access Toggle Button */}
+            <button
+              onClick={async () => {
+                const newMode = !user.ai_maintenance_mode;
+                
+                if (!confirm(`${newMode ? 'BLOCK' : 'UNBLOCK'} AI Dialer access for this user?\n\n${newMode ? 'User will see "AI Agent Setup in Progress" page and cannot use dialer.' : 'User can access and use the AI Dialer!'}`)) return;
+                
+                setSaving(true);
+                try {
+                  const response = await fetch('/api/admin/users/toggle-maintenance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: user.id,
+                      maintenanceMode: newMode,
+                    }),
+                  });
 
-                if (!response.ok) throw new Error('Failed to toggle');
+                  if (!response.ok) throw new Error('Failed to toggle');
 
-                const notification = document.createElement('div');
-                notification.className = 'fixed top-8 right-8 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl shadow-green-500/20 z-50 flex items-center gap-3 border border-green-500/30';
-                notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI Dialer ' + (newMode ? 'BLOCKED' : 'UNBLOCKED') + '!</span>';
-                document.body.appendChild(notification);
-                setTimeout(() => notification.remove(), 3000);
+                  const notification = document.createElement('div');
+                    notification.className = 'fixed top-8 right-8 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl shadow-green-500/20 z-50 flex items-center gap-3 border border-green-500/30';
+                  notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI Dialer ' + (newMode ? 'BLOCKED' : 'UNBLOCKED') + '!</span>';
+                  document.body.appendChild(notification);
+                  setTimeout(() => notification.remove(), 3000);
 
-                loadUser();
-              } catch (err: any) {
-                alert(`Error: ${err.message}`);
-              } finally {
-                setSaving(false);
-              }
-            }}
-            disabled={saving}
-            className={`group/btn relative px-6 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border-2 overflow-hidden ${
-              user.ai_maintenance_mode
-                ? 'border-green-500/50 text-green-400'
-                : 'border-red-500/50 text-red-400'
-            } disabled:opacity-50`}
-          >
-            <div className={`absolute inset-0 opacity-10 group-hover/btn:opacity-20 transition-opacity ${
-              user.ai_maintenance_mode ? 'bg-green-500' : 'bg-red-500'
-            }`}></div>
-            {saving ? (
-              <Loader2 className="w-5 h-5 animate-spin relative z-10" />
-            ) : user.ai_maintenance_mode ? (
-              <>
-                <Activity className="w-5 h-5 relative z-10" />
-                <span className="relative z-10">Unblock Dialer</span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="w-5 h-5 relative z-10" />
-                <span className="relative z-10">Block Dialer</span>
-              </>
-            )}
-          </button>
+                  loadUser();
+                } catch (err: any) {
+                  alert(`Error: ${err.message}`);
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving}
+                className={`group/btn relative px-6 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border-2 overflow-hidden ${
+                user.ai_maintenance_mode
+                    ? 'border-green-500/50 text-green-400'
+                    : 'border-red-500/50 text-red-400'
+              } disabled:opacity-50`}
+            >
+                <div className={`absolute inset-0 opacity-10 group-hover/btn:opacity-20 transition-opacity ${
+                  user.ai_maintenance_mode ? 'bg-green-500' : 'bg-red-500'
+                }`}></div>
+              {saving ? (
+                  <Loader2 className="w-5 h-5 animate-spin relative z-10" />
+              ) : user.ai_maintenance_mode ? (
+                <>
+                    <Activity className="w-5 h-5 relative z-10" />
+                    <span className="relative z-10">Unblock Dialer</span>
+                </>
+              ) : (
+                <>
+                    <AlertCircle className="w-5 h-5 relative z-10" />
+                    <span className="relative z-10">Block Dialer</span>
+                </>
+              )}
+            </button>
         </div>
         {/* End AI Agent Configuration */}
 

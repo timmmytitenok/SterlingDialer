@@ -1030,7 +1030,7 @@ export default function SchedulingPage() {
 
         </div>
 
-        {/* Appointment Booking Section */}
+        {/* Appointment Booking Section - Coming Soon */}
         <div className="mb-8 space-y-4">
           {/* Section Header */}
           <div className="flex items-center gap-3">
@@ -1043,6 +1043,88 @@ export default function SchedulingPage() {
             </div>
           </div>
         </div>
+
+        {/* Coming Soon Skeleton Grid */}
+        <div className="relative">
+          {/* Coming Soon Badge - Dead Center over the cards */}
+          <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-8 py-3 rounded-2xl shadow-2xl shadow-orange-500/40 flex items-center gap-3 text-lg font-bold">
+              <Sparkles className="w-5 h-5" />
+              Coming Soon
+              <Sparkles className="w-5 h-5" />
+            </div>
+          </div>
+          
+          {/* Skeleton Cards Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 opacity-20 pointer-events-none select-none">
+            
+            {/* Left Skeleton Card */}
+            <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6 shadow-xl">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gray-700/50" />
+                <div className="space-y-2">
+                  <div className="h-5 w-40 bg-gray-700/50 rounded" />
+                  <div className="h-3 w-56 bg-gray-800/50 rounded" />
+                </div>
+              </div>
+              <div className="space-y-3">
+                {[...Array(7)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-800/30 border border-gray-700/30">
+                    <div className="w-10 h-10 rounded-lg bg-gray-700/50" />
+                    <div className="h-4 w-20 bg-gray-700/50 rounded" />
+                    <div className="flex-1" />
+                    <div className="h-8 w-24 bg-gray-700/50 rounded-lg" />
+                    <div className="h-4 w-4 bg-gray-700/50 rounded" />
+                    <div className="h-8 w-24 bg-gray-700/50 rounded-lg" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Skeleton Card */}
+            <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6 shadow-xl">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gray-700/50" />
+                <div className="space-y-2">
+                  <div className="h-5 w-36 bg-gray-700/50 rounded" />
+                  <div className="h-3 w-48 bg-gray-800/50 rounded" />
+                </div>
+              </div>
+              {/* Skeleton Calendar */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="h-5 w-32 bg-gray-700/50 rounded" />
+                  <div className="flex gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-gray-700/50" />
+                    <div className="w-8 h-8 rounded-lg bg-gray-700/50" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {[...Array(7)].map((_, i) => (
+                    <div key={i} className="h-4 bg-gray-700/50 rounded text-center" />
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {[...Array(35)].map((_, i) => (
+                    <div key={i} className="aspect-square rounded-lg bg-gray-800/30 border border-gray-700/30" />
+                  ))}
+                </div>
+              </div>
+              {/* Skeleton Legend */}
+              <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-gray-700/30">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-gray-700/50" />
+                    <div className="h-3 w-16 bg-gray-700/50 rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Hidden Real Content - preserving for when feature is ready */}
+        <div className="hidden">
 
         {/* Appointment Settings Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1250,6 +1332,7 @@ export default function SchedulingPage() {
             </div>
           </div>
         </div>
+          </div>{/* End Hidden Real Content */}
 
         {/* How To Guide */}
         <div className="mt-8 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl border border-blue-500/20 p-6">
@@ -1290,24 +1373,25 @@ export default function SchedulingPage() {
               </ul>
             </div>
             
-            {/* Appointment Booking Section */}
-            <div className="space-y-3">
+            {/* Appointment Booking Section - Coming Soon */}
+            <div className="space-y-3 opacity-40">
               <h4 className="font-semibold text-green-400 flex items-center gap-2">
                 <CalendarCheck className="w-4 h-4" />
                 Appointment Booking
+                <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">Coming Soon</span>
               </h4>
-              <ul className="space-y-2 text-gray-400">
+              <ul className="space-y-2 text-gray-500">
                 <li className="flex items-start gap-2">
-                  <span className="text-green-400 mt-0.5">•</span>
-                  <span><strong className="text-white">Weekly Availability</strong> sets your default booking days and hours</span>
+                  <span className="text-green-400/50 mt-0.5">•</span>
+                  <span><strong className="text-gray-400">Weekly Availability</strong> sets your default booking days and hours</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-green-400 mt-0.5">•</span>
-                  <span><strong className="text-white">Each day</strong> can have different start/end times</span>
+                  <span className="text-green-400/50 mt-0.5">•</span>
+                  <span><strong className="text-gray-400">Each day</strong> can have different start/end times</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-green-400 mt-0.5">•</span>
-                  <span><strong className="text-white">Date Overrides</strong> block (red) or allow (blue) specific dates</span>
+                  <span className="text-green-400/50 mt-0.5">•</span>
+                  <span><strong className="text-gray-400">Date Overrides</strong> block (red) or allow (blue) specific dates</span>
                 </li>
               </ul>
             </div>
