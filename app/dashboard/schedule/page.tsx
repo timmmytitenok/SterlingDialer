@@ -698,9 +698,9 @@ export default function SchedulingPage() {
               <Settings2 className="w-9 h-9 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-white bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                Scheduling & Availability
-              </h1>
+                <h1 className="text-4xl font-bold text-white bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                  Scheduling & Availability
+                </h1>
               <p className="text-gray-400 mt-1">Control when your AI books appointments and makes calls</p>
             </div>
           </div>

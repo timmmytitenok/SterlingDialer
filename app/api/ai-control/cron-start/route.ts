@@ -128,17 +128,19 @@ export async function GET(request: Request) {
         console.log(`   Skip dates: ${JSON.stringify(dialer_skip_dates)}`);
         console.log(`   Extra dates: ${JSON.stringify(dialer_extra_dates)}`);
 
-        // ===== CHECK IF IT'S 9 AM IN USER'S TIMEZONE =====
-        const is9AM = userHour === 9;
+        // ===== CHECK IF IT'S THE RIGHT HOUR IN USER'S TIMEZONE =====
+        // TEMPORARY: Changed to 3 AM for testing (will revert to 9 AM after test)
+        const targetHour = 3; // TESTING: 3 AM EST - REVERT TO 9 AFTER TEST!
+        const isTargetHour = userHour === targetHour;
         
-        if (!is9AM && !testMode) {
-          console.log(`   ⏭️  Not 9 AM in user's timezone (currently ${userHour}:00), skipping`);
-          results.push({ user_id, success: false, reason: `Not 9 AM (currently ${userHour}:00)` });
+        if (!isTargetHour && !testMode) {
+          console.log(`   ⏭️  Not ${targetHour} AM in user's timezone (currently ${userHour}:00), skipping`);
+          results.push({ user_id, success: false, reason: `Not ${targetHour} AM (currently ${userHour}:00)` });
           continue;
         }
 
-        if (testMode && !is9AM) {
-          console.log(`   🧪 TEST MODE: Ignoring 9 AM check (currently ${userHour}:00)`);
+        if (testMode && !isTargetHour) {
+          console.log(`   🧪 TEST MODE: Ignoring hour check (currently ${userHour}:00)`);
         }
 
         // ===== CHECK IF TODAY IS AN ACTIVE DIALING DAY =====
@@ -189,7 +191,7 @@ export async function GET(request: Request) {
         // ===== CHECK IF ALREADY RUNNING =====
         const { data: aiSettings } = await supabase
           .from('ai_control_settings')
-          .select('status, is_running')
+          .select('status, is_running, today_spend')
           .eq('user_id', user_id)
           .maybeSingle();
 

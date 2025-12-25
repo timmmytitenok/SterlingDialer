@@ -581,8 +581,8 @@ export default function OnboardingFormPage() {
                   loading || !isSection1Complete || !isSection2Complete
                     ? 'bg-white/5 text-gray-500 cursor-not-allowed'
                     : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-[0.98]'
-                }`}
-              >
+              }`}
+            >
                 {/* Shimmer effect */}
                 {!loading && isSection1Complete && isSection2Complete && (
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
