@@ -1,10 +1,19 @@
 import { NextResponse } from 'next/server';
 
 /**
- * Vercel Cron Job Endpoint - Auto-Start AI
- * This endpoint is called by Vercel Cron daily to check if any users have scheduled AI starts
- * It uses the NEW direct Retell call system (not N8N!)
+ * Vercel Cron Job Endpoint - Auto-Start AI Dialer
+ * 
+ * This endpoint is called by Vercel Cron every hour to check which users should have their AI started.
+ * It uses the NEW user_retell_config table with:
+ * - auto_dialer_enabled (boolean)
+ * - dialer_days (array of day numbers: 0=Sun, 1=Mon, etc.)
+ * - dialer_skip_dates (specific dates to skip, e.g., ["2025-01-15"])
+ * - dialer_extra_dates (extra dates to add, e.g., ["2025-01-18"])
+ * - dialer_daily_budget (number in dollars)
  */
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // 5 minutes max
+
 export async function GET(request: Request) {
   try {
     // Check for test mode (allows manual triggering from admin)
@@ -29,7 +38,7 @@ export async function GET(request: Request) {
       }
     }
 
-    console.log('🕐 CRON JOB STARTING - Checking for scheduled AI starts...');
+    console.log('🕐 AUTO-DIALER CRON JOB STARTING...');
     console.log('📅 Current UTC time:', new Date().toISOString());
 
     // Use service role to bypass RLS
@@ -39,22 +48,17 @@ export async function GET(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Get current day of week in different timezones
-    const now = new Date();
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    
-    // Get all users with auto-scheduling enabled from dialer_settings
-    // If testUserId is provided, only get that specific user
+    // Get all users with auto_dialer_enabled from user_retell_config (NEW TABLE)
     let query = supabase
-      .from('dialer_settings')
-      .select('user_id, auto_start_enabled, auto_start_days, auto_start_time, daily_budget_cents');
+      .from('user_retell_config')
+      .select('user_id, dialer_days, dialer_skip_dates, dialer_extra_dates, dialer_daily_budget, retell_agent_1_id, retell_agent_1_phone, retell_agent_2_id, retell_agent_2_phone');
     
     if (testUserId) {
-      // Test mode: get specific user regardless of auto_start_enabled
+      // Test mode: get specific user regardless of auto_dialer_enabled
       query = query.eq('user_id', testUserId);
     } else {
-      // Normal mode: only get users with auto_start_enabled
-      query = query.eq('auto_start_enabled', true);
+      // Normal mode: only get users with auto_dialer_enabled
+      query = query.eq('auto_dialer_enabled', true);
     }
     
     const { data: scheduledUsers, error } = await query;
@@ -64,103 +68,138 @@ export async function GET(request: Request) {
       throw error;
     }
 
-    console.log(`🔍 Found ${scheduledUsers?.length || 0} users with auto-schedule enabled`);
+    console.log(`🔍 Found ${scheduledUsers?.length || 0} users with auto-dialer enabled`);
 
     if (!scheduledUsers || scheduledUsers.length === 0) {
       return NextResponse.json({ 
         success: true, 
-        message: 'No users have scheduling enabled',
+        message: 'No users have auto-dialer enabled',
         usersChecked: 0
       });
     }
 
-    const results = [];
+    const results: any[] = [];
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
-    for (const userSettings of scheduledUsers) {
-      const { user_id, auto_start_days, daily_budget_cents } = userSettings;
+    for (const config of scheduledUsers) {
+      const { 
+        user_id, 
+        dialer_days = [1, 2, 3, 4, 5], // Default Mon-Fri
+        dialer_skip_dates = [], 
+        dialer_extra_dates = [],
+        dialer_daily_budget = 25,
+        retell_agent_1_id,
+        retell_agent_1_phone,
+        retell_agent_2_id,
+        retell_agent_2_phone
+      } = config;
 
       try {
-        // Get user's timezone from ai_control_settings or profile
+        console.log(`\n👤 Processing user ${user_id}...`);
+
+        // Get user's timezone from profiles
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('timezone, balance_cents, ai_maintenance_mode, has_active_subscription, is_vip')
+          .eq('user_id', user_id)
+          .single();
+
+        const userTimezone = profile?.timezone || 'America/New_York';
+        
+        // Get current time in user's timezone
+        const now = new Date();
+        const userTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
+        const userHour = userTime.getHours();
+        const userDayOfWeek = userTime.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        
+        // Format today's date as YYYY-MM-DD in user's timezone
+        const userYear = userTime.getFullYear();
+        const userMonth = String(userTime.getMonth() + 1).padStart(2, '0');
+        const userDay = String(userTime.getDate()).padStart(2, '0');
+        const todayStr = `${userYear}-${userMonth}-${userDay}`;
+
+        console.log(`   Timezone: ${userTimezone}`);
+        console.log(`   User local time: ${userTime.toLocaleString()}`);
+        console.log(`   User hour: ${userHour}`);
+        console.log(`   Day of week: ${userDayOfWeek} (0=Sun, 1=Mon...)`);
+        console.log(`   Today's date: ${todayStr}`);
+        console.log(`   Dialer days: ${JSON.stringify(dialer_days)}`);
+        console.log(`   Skip dates: ${JSON.stringify(dialer_skip_dates)}`);
+        console.log(`   Extra dates: ${JSON.stringify(dialer_extra_dates)}`);
+
+        // ===== CHECK IF IT'S 9 AM IN USER'S TIMEZONE =====
+        const is9AM = userHour === 9;
+        
+        if (!is9AM && !testMode) {
+          console.log(`   ⏭️  Not 9 AM in user's timezone (currently ${userHour}:00), skipping`);
+          results.push({ user_id, success: false, reason: `Not 9 AM (currently ${userHour}:00)` });
+          continue;
+        }
+
+        if (testMode && !is9AM) {
+          console.log(`   🧪 TEST MODE: Ignoring 9 AM check (currently ${userHour}:00)`);
+        }
+
+        // ===== CHECK IF TODAY IS AN ACTIVE DIALING DAY =====
+        const isWeeklyActive = dialer_days.includes(userDayOfWeek);
+        const isSkipped = dialer_skip_dates.includes(todayStr);
+        const isExtra = dialer_extra_dates.includes(todayStr);
+
+        // Logic: Active if (weekly active AND not skipped) OR (extra day)
+        const shouldDialToday = (isWeeklyActive && !isSkipped) || isExtra;
+
+        console.log(`   Weekly active: ${isWeeklyActive}`);
+        console.log(`   Is skipped: ${isSkipped}`);
+        console.log(`   Is extra: ${isExtra}`);
+        console.log(`   Should dial today: ${shouldDialToday}`);
+
+        if (!shouldDialToday && !testMode) {
+          console.log(`   ⏭️  Not an active dialing day, skipping`);
+          results.push({ user_id, success: false, reason: 'Not an active dialing day' });
+          continue;
+        }
+
+        if (testMode && !shouldDialToday) {
+          console.log(`   🧪 TEST MODE: Ignoring day check`);
+        }
+
+        // ===== CHECK USER STATUS =====
+        if (profile?.ai_maintenance_mode) {
+          console.log(`   ⚠️  AI in maintenance mode, skipping`);
+          results.push({ user_id, success: false, reason: 'AI in maintenance mode' });
+          continue;
+        }
+
+        const balanceDollars = (profile?.balance_cents || 0) / 100;
+        if (balanceDollars < 1 && !profile?.is_vip) {
+          console.log(`   ⚠️  Insufficient balance ($${balanceDollars}), skipping`);
+          results.push({ user_id, success: false, reason: 'Insufficient balance' });
+          continue;
+        }
+
+        // ===== CHECK IF RETELL CONFIG EXISTS =====
+        const hasAgent = (retell_agent_1_id && retell_agent_1_phone) || (retell_agent_2_id && retell_agent_2_phone);
+        if (!hasAgent) {
+          console.log(`   ⚠️  No Retell agent configured, skipping`);
+          results.push({ user_id, success: false, reason: 'No Retell agent configured' });
+          continue;
+        }
+
+        // ===== CHECK IF ALREADY RUNNING =====
         const { data: aiSettings } = await supabase
           .from('ai_control_settings')
-          .select('user_timezone, status')
+          .select('status, is_running')
           .eq('user_id', user_id)
           .maybeSingle();
 
-      // Skip if already running
-        if (aiSettings?.status === 'running') {
-        console.log(`⏭️  User ${user_id} AI already running, skipping`);
+        if (aiSettings?.status === 'running' || aiSettings?.is_running) {
+          console.log(`   ⏭️  AI already running, skipping`);
           results.push({ user_id, success: false, reason: 'Already running' });
-        continue;
-      }
-
-        const userTimezone = aiSettings?.user_timezone || 'America/New_York';
-        
-        // Get current day and hour in user's timezone
-        const dayFormatter = new Intl.DateTimeFormat('en-US', {
-          timeZone: userTimezone,
-          weekday: 'long'
-        });
-        const hourFormatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: userTimezone,
-          hour: 'numeric',
-          hour12: false
-        });
-        
-        const currentDayName = dayFormatter.format(now);
-        const currentHour = parseInt(hourFormatter.format(now));
-
-        // Check if it's 9 AM in user's timezone
-        const is9AM = currentHour === 9;
-        
-        // Check if today is in their scheduled days
-        const isScheduledDay = auto_start_days?.includes(currentDayName);
-
-        console.log(`👤 User ${user_id}:`);
-        console.log(`   Timezone: ${userTimezone}`);
-        console.log(`   Today: ${currentDayName}`);
-        console.log(`   Current hour: ${currentHour} (is 9 AM: ${is9AM})`);
-        console.log(`   Scheduled days: ${JSON.stringify(auto_start_days)}`);
-        console.log(`   Should start: ${isScheduledDay && is9AM}`);
-        console.log(`   Budget: $${(daily_budget_cents || 0) / 100}`);
-
-        // Skip if it's not 9 AM in user's timezone (unless test mode)
-        if (!is9AM && !testMode) {
-          console.log(`   ⏭️  Not 9 AM in user's timezone (${currentHour}:00), skipping`);
-          results.push({ user_id, success: false, reason: `Not 9 AM (currently ${currentHour}:00 in ${userTimezone})` });
           continue;
         }
 
-        if (!isScheduledDay && !testMode) {
-          console.log(`   ⏭️  Not a scheduled day, skipping`);
-          results.push({ user_id, success: false, reason: `Not scheduled for ${currentDayName}` });
-          continue;
-        }
-        
-        if (testMode && !is9AM) {
-          console.log(`   🧪 TEST MODE: Ignoring 9 AM check (currently ${currentHour}:00)`);
-        }
-        
-        if (testMode && !isScheduledDay) {
-          console.log(`   🧪 TEST MODE: Ignoring day check (would skip ${currentDayName})`);
-        }
-
-        // Check if user has Retell config (required for calling)
-        const { data: retellConfig } = await supabase
-          .from('user_retell_config')
-          .select('retell_agent_id, phone_number')
-          .eq('user_id', user_id)
-          .maybeSingle();
-
-        if (!retellConfig?.retell_agent_id || !retellConfig?.phone_number) {
-          console.log(`   ⚠️  No Retell config found, skipping`);
-          results.push({ user_id, success: false, reason: 'No Retell config' });
-          continue;
-        }
-
-        // Check if user has callable leads
+        // ===== CHECK IF USER HAS CALLABLE LEADS =====
         const { data: userSheets } = await supabase
           .from('user_google_sheets')
           .select('id')
@@ -175,7 +214,6 @@ export async function GET(request: Request) {
 
         const sheetIds = userSheets.map(s => s.id);
         
-        // Use the SAME query logic as next-call route for consistency!
         const { count: callableLeads } = await supabase
           .from('leads')
           .select('*', { count: 'exact', head: true })
@@ -186,57 +224,47 @@ export async function GET(request: Request) {
           .neq('status', 'dead_lead')
           .or('total_calls_made.is.null,total_calls_made.lt.20');
 
-        console.log(`   📊 Callable leads query result: ${callableLeads}`);
+        console.log(`   📊 Callable leads: ${callableLeads}`);
 
         if (!callableLeads || callableLeads === 0) {
-          console.log(`   ⚠️  No callable leads found, skipping`);
+          console.log(`   ⚠️  No callable leads, skipping`);
           results.push({ user_id, success: false, reason: 'No callable leads' });
           continue;
         }
 
-        console.log(`   ✅ Found ${callableLeads} callable leads`);
-        
-        // Store the callable lead count for later verification
-        const expectedLeadCount = callableLeads;
+        // ===== 🚀 START THE AI DIALER! =====
+        console.log(`\n🚀 STARTING AI DIALER for user ${user_id}`);
+        console.log(`   Budget: $${dialer_daily_budget}/day`);
+        console.log(`   Leads available: ${callableLeads}`);
 
-        // ========================================================================
-        // START THE AI - Update settings and trigger first call
-        // ========================================================================
-        console.log(`🚀 Starting AI for user ${user_id}`);
-
-        // Calculate budget in dollars
-        const budgetDollars = (daily_budget_cents || 1500) / 100; // Default $15
+        const budgetCents = Math.round(dialer_daily_budget * 100);
 
         // Get current today_spend for session-based budgeting
-        const { data: currentAISettings } = await supabase
-          .from('ai_control_settings')
-          .select('today_spend')
-          .eq('user_id', user_id)
-          .maybeSingle();
-        
-        const currentTodaySpend = currentAISettings?.today_spend || 0;
+        const currentTodaySpend = aiSettings?.today_spend || 0;
 
         // Update AI control settings to running with budget mode
-        // IMPORTANT: Set session_start_spend for session-based budget tracking!
         const { error: updateError } = await supabase
           .from('ai_control_settings')
           .upsert({
             user_id: user_id,
             status: 'running',
+            is_running: true,
             queue_length: 0,
             calls_made_today: 0,
             execution_mode: 'leads', // Always 'leads' to pass DB constraint
             target_lead_count: 9999, // High number for budget mode
-            budget_limit_cents: daily_budget_cents || 1500, // Use their budget
-            session_start_spend: currentTodaySpend, // Track session start for budget mode
+            budget_limit_cents: budgetCents,
+            session_start_spend: currentTodaySpend,
             auto_transfer_calls: true,
             last_call_status: 'scheduled_start',
+            started_at: new Date().toISOString(),
+            started_by: 'auto_scheduler',
           }, {
             onConflict: 'user_id'
           });
 
         if (updateError) {
-          console.error(`❌ Error updating AI settings for user ${user_id}:`, updateError);
+          console.error(`   ❌ Error updating AI settings:`, updateError);
           results.push({ user_id, success: false, error: updateError.message });
           continue;
         }
@@ -249,13 +277,12 @@ export async function GET(request: Request) {
             started_at: new Date().toISOString(),
             status: 'running',
             execution_mode: 'budget',
-            target_value: budgetDollars,
+            target_value: dialer_daily_budget,
             is_scheduled: true,
           });
 
-        // Trigger the first call via next-call endpoint
-        // Use RETRY LOGIC in case of transient failures!
-        console.log(`📞 Triggering first call for user ${user_id}...`);
+        // ===== TRIGGER THE FIRST CALL WITH RETRIES =====
+        console.log(`   📞 Triggering first call...`);
         
         let callSuccess = false;
         let callResult: any = null;
@@ -267,30 +294,27 @@ export async function GET(request: Request) {
           
           try {
             const callResponse = await fetch(`${baseUrl}/api/ai-control/next-call`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ userId: user_id }),
             });
 
             callResult = await callResponse.json();
             
-            // Check if it was successful OR if it stopped due to no leads (which means leads query worked)
             if (callResponse.ok && callResult.success) {
               callSuccess = true;
-              console.log(`   ✅ Call triggered successfully on attempt ${attempt}`);
+              console.log(`   ✅ Call triggered successfully!`);
               break;
             } else if (callResult.done && callResult.reason === 'no_callable_leads') {
-              // This means the query ran fine but no leads - this is a valid state, not a failure
-              console.log(`   ⚠️  No callable leads returned (but query worked)`);
+              console.log(`   ⚠️  No callable leads at call time`);
               lastError = 'No callable leads at time of call';
               break;
             } else {
               lastError = callResult.error || callResult.reason || 'Unknown error';
               console.log(`   ⚠️  Attempt ${attempt} failed: ${lastError}`);
               
-              // Wait before retry (exponential backoff)
               if (attempt < maxRetries) {
-                const waitMs = attempt * 2000; // 2s, 4s, 6s
+                const waitMs = attempt * 2000;
                 console.log(`   ⏳ Waiting ${waitMs}ms before retry...`);
                 await new Promise(resolve => setTimeout(resolve, waitMs));
               }
@@ -301,28 +325,27 @@ export async function GET(request: Request) {
             
             if (attempt < maxRetries) {
               const waitMs = attempt * 2000;
-              console.log(`   ⏳ Waiting ${waitMs}ms before retry...`);
               await new Promise(resolve => setTimeout(resolve, waitMs));
             }
           }
         }
         
         if (callSuccess) {
-          console.log(`✅ Successfully started AI for user ${user_id}:`, callResult);
+          console.log(`✅ Successfully started AI for user ${user_id}`);
           results.push({ 
             user_id, 
             success: true, 
             message: 'AI started successfully',
-            budget: `$${budgetDollars}`,
-            callableLeads: expectedLeadCount
+            budget: `$${dialer_daily_budget}`,
+            callableLeads
           });
         } else {
-          console.error(`❌ Failed to trigger call for user ${user_id} after ${maxRetries} attempts: ${lastError}`);
+          console.error(`❌ Failed to trigger call after ${maxRetries} attempts: ${lastError}`);
           
           // Revert status if call failed
           await supabase
             .from('ai_control_settings')
-            .update({ status: 'stopped', last_call_status: 'scheduled_start_failed' })
+            .update({ status: 'stopped', is_running: false, last_call_status: 'scheduled_start_failed' })
             .eq('user_id', user_id);
           
           results.push({ user_id, success: false, error: lastError || 'Failed to start call after retries' });
@@ -338,9 +361,8 @@ export async function GET(request: Request) {
     const successCount = results.filter(r => r.success).length;
     const failCount = results.filter(r => !r.success).length;
 
-    console.log('');
-    console.log('========================================');
-    console.log('🏁 CRON JOB COMPLETE');
+    console.log('\n========================================');
+    console.log('🏁 AUTO-DIALER CRON JOB COMPLETE');
     console.log(`   Total users checked: ${scheduledUsers.length}`);
     console.log(`   Successfully started: ${successCount}`);
     console.log(`   Failed/Skipped: ${failCount}`);
@@ -364,3 +386,4 @@ export async function GET(request: Request) {
     );
   }
 }
+

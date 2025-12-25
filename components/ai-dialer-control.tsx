@@ -414,11 +414,11 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
             </div>
           </div>
           
-          {/* Settings Icon */}
+          {/* Settings Icon - Links to Schedule & Availability */}
           <Link
-            href="/dashboard/settings/dialer-automation"
+            href="/dashboard/schedule"
             className="group flex items-center justify-center w-12 h-12 rounded-xl bg-gray-800/50 hover:bg-gray-800 border-2 border-gray-700 hover:border-blue-500/50 transition-all duration-200 hover:scale-110 hover:shadow-lg hover:shadow-blue-500/30"
-            title="Dialer Settings"
+            title="Schedule & Availability"
           >
             <Settings className="w-6 h-6 text-gray-400 group-hover:text-blue-400 group-hover:rotate-90 transition-all duration-300" />
           </Link>

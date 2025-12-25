@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, DollarSign, Phone, ChevronRight, LogOut, Rocket } from 'lucide-react';
+import { LayoutDashboard, DollarSign, Phone, ChevronRight, LogOut, Rocket, Clock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { BlurredUserName, BlurredUserEmail } from '@/contexts/privacy-context';
 
@@ -25,6 +25,7 @@ export function DashboardMobileNav({ user, profile }: DashboardMobileNavProps) {
   const allNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Quick Setup', href: '/dashboard/onboarding', icon: Rocket },
+    { name: 'Schedule', href: '/dashboard/schedule', icon: Clock },
     { name: 'Billing & Balance', href: '/dashboard/settings/billing', icon: DollarSign },
   ];
 

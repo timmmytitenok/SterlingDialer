@@ -921,6 +921,73 @@ export async function POST(request: Request) {
       console.log(`   - street_address: "${finalStreetAddress}"`);
     }
     
+    // ========================================================================
+    // SCHEDULING & AVAILABILITY - Fetch user's calendar/booking preferences
+    // ========================================================================
+    const blockedDates: string[] = retellConfig.blocked_dates || [];
+    const bookingDays: number[] = retellConfig.booking_days || [1, 2, 3, 4, 5]; // Default Mon-Fri
+    const minBookingDays: number = retellConfig.min_booking_days ?? 1; // Default next day
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Day names for formatting
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const shortDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    // Format available days for Retell (e.g., "Monday, Tuesday, Wednesday, Thursday, Friday")
+    const availableDaysFormatted = bookingDays
+      .sort()
+      .map(d => dayNames[d])
+      .join(', ') || 'no days available';
+    
+    // Calculate earliest booking date based on min_booking_days
+    const earliestBookingDate = new Date(today);
+    earliestBookingDate.setDate(earliestBookingDate.getDate() + minBookingDays);
+    const earliestBookingFormatted = earliestBookingDate.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    // Human-friendly buffer description
+    const bufferDescriptions: Record<number, string> = {
+      0: 'today or later',
+      1: 'tomorrow or later',
+      2: 'at least 2 days from now',
+      3: 'at least 3 days from now',
+      7: 'at least 1 week from now',
+    };
+    const bufferDescription = bufferDescriptions[minBookingDays] || `at least ${minBookingDays} days from now`;
+    
+    // Filter to only future blocked dates and format them nicely for Retell
+    const futureBlockedDates = blockedDates
+      .filter(dateStr => {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        return date >= today;
+      })
+      .sort()
+      .slice(0, 30); // Limit to 30 dates to avoid token overflow
+    
+    // Format blocked dates for Retell - human readable
+    const blockedDatesFormatted = futureBlockedDates
+      .map(dateStr => {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+      })
+      .join(', ') || 'none';
+    
+    console.log(`📅 Scheduling Settings:`);
+    console.log(`   Available days: ${availableDaysFormatted}`);
+    console.log(`   Minimum booking buffer: ${minBookingDays} days (${bufferDescription})`);
+    console.log(`   Earliest booking: ${earliestBookingFormatted}`);
+    console.log(`   Blocked dates: ${futureBlockedDates.length} specific dates`);
+    if (futureBlockedDates.length > 0) {
+      console.log(`   Blocked: ${blockedDatesFormatted}`);
+    }
+    
     const dynamicVariables: Record<string, string> = {
       // User-specific agent identity (each user has their own name/pronoun)
       agent_name: userAgentName,
@@ -954,6 +1021,32 @@ export async function POST(request: Request) {
       street_address: finalStreetAddress,
       // mp_opener: "1" = missing data (generic opener), "2" = both have data (full opener)
       mp_opener: mpOpener,
+      
+      // ========================================================================
+      // SCHEDULING & AVAILABILITY VARIABLES
+      // ========================================================================
+      
+      // Which days of the week can appointments be booked
+      // Example: "Monday, Tuesday, Wednesday, Thursday, Friday"
+      available_days: availableDaysFormatted,
+      
+      // Minimum booking buffer - how far in advance appointments must be
+      // Value: "0", "1", "2", "3", "7" etc.
+      min_booking_days: String(minBookingDays),
+      
+      // Human-friendly description of booking buffer
+      // Example: "tomorrow or later", "at least 3 days from now"
+      booking_buffer: bufferDescription,
+      
+      // Earliest date an appointment can be booked
+      // Example: "Friday, December 27"
+      earliest_booking: earliestBookingFormatted,
+      
+      // Specific blocked dates (vacations, holidays, etc.)
+      // Example: "Tuesday January 7, Friday January 10, Monday January 20"
+      // If no dates blocked, value is "none"
+      blocked_dates: blockedDatesFormatted,
+      blocked_dates_count: String(futureBlockedDates.length),
     };
     
     // VERIFY all values are strings

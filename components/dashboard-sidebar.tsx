@@ -3,7 +3,7 @@
 import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Settings, Sparkles, CalendarDays, Phone, Users, Wallet, Rocket, MessageSquare, Headphones } from 'lucide-react';
+import { LayoutDashboard, Settings, Sparkles, CalendarDays, Phone, Users, Wallet, Rocket, MessageSquare, Headphones, Clock } from 'lucide-react';
 import { BlurredUserName, BlurredUserEmail } from '@/contexts/privacy-context';
 
 interface DashboardSidebarProps {
@@ -79,7 +79,20 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
           <div className="border-t border-gray-800"></div>
         </div>
 
-        {/* Minutes & Balance Button */}
+        {/* Schedule & Availability Button */}
+        <Link
+          href="/dashboard/schedule"
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+            pathname === '/dashboard/schedule'
+              ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+              : 'text-gray-400 hover:bg-gray-800/50 hover:text-white hover:scale-[1.02] hover:translate-x-1'
+          }`}
+        >
+          <Clock className="w-5 h-5" />
+          <span className="font-medium">Schedule</span>
+        </Link>
+
+        {/* Balance Button */}
         <Link
           href="/dashboard/settings/balance"
           className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -89,7 +102,7 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
           }`}
         >
           <Wallet className="w-5 h-5" />
-          <span className="font-medium">Minutes & Balance</span>
+          <span className="font-medium">Balance</span>
         </Link>
 
         {/* Support Button */}

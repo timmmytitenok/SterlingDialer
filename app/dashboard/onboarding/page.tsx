@@ -127,7 +127,7 @@ export default function OnboardingStepsPage() {
       description: 'Choose calling hours and daily budget for automated dialing.',
       icon: Settings,
       completed: profile?.onboarding_step_4_schedule,
-      action: () => router.push('/dashboard/settings/dialer-automation'),
+      action: () => router.push('/dashboard/schedule'),
       buttonText: 'Configure Dialer',
     },
   ];

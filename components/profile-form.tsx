@@ -28,12 +28,12 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
     try {
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          user_id: user.id,
+        .update({
           full_name: fullName,
           phone_number: phoneNumber,
           updated_at: new Date().toISOString(),
-        });
+        })
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
