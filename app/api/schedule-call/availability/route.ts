@@ -14,8 +14,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    // Accept user's timezone - default to Timmy's timezone (EST)
+    const userTimezone = searchParams.get('timeZone') || 'America/New_York';
 
-    console.log('Availability request:', { startDate, endDate, eventTypeId: EVENT_TYPE_ID });
+    console.log('Availability request:', { startDate, endDate, eventTypeId: EVENT_TYPE_ID, userTimezone });
 
     if (!startDate || !endDate) {
       return NextResponse.json(
@@ -36,7 +38,7 @@ export async function GET(request: NextRequest) {
           eventTypeSlug: CAL_EVENT_SLUG,
           startTime: startDate,
           endTime: endDate,
-          timeZone: 'America/New_York',
+          timeZone: userTimezone, // Use user's timezone so slots are returned in their local time
         }
       }))}`;
       
@@ -64,7 +66,7 @@ export async function GET(request: NextRequest) {
     // Method 2: Try the simple public slots endpoint
     if (!success) {
       try {
-        const simpleUrl = `https://cal.com/api/slots?eventTypeId=${EVENT_TYPE_ID}&startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}`;
+        const simpleUrl = `https://cal.com/api/slots?eventTypeId=${EVENT_TYPE_ID}&startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}&timeZone=${encodeURIComponent(userTimezone)}`;
         
         console.log('Trying simple public slots API...');
         
@@ -91,7 +93,7 @@ export async function GET(request: NextRequest) {
     // Method 3: Try v1 API with key
     if (!success) {
       try {
-        const urlV1 = `https://api.cal.com/v1/slots?apiKey=${CAL_API_KEY}&eventTypeId=${EVENT_TYPE_ID}&startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}`;
+        const urlV1 = `https://api.cal.com/v1/slots?apiKey=${CAL_API_KEY}&eventTypeId=${EVENT_TYPE_ID}&startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}&timeZone=${encodeURIComponent(userTimezone)}`;
         
         console.log('Trying Cal.com v1 API...');
         
@@ -156,11 +158,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log('Final parsed slots:', slots);
+    console.log('Final parsed slots:', slots, 'in timezone:', userTimezone);
 
     return NextResponse.json({
       success: true,
       slots: slots,
+      timezone: userTimezone,
       raw: data,
     });
 

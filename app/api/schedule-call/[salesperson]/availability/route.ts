@@ -54,8 +54,10 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    // Accept user's timezone - default to salesperson's timezone if not provided
+    const userTimezone = searchParams.get('timeZone') || config.timezone || 'America/New_York';
 
-    console.log(`📅 Availability request for ${config.name}:`, { startDate, endDate, eventTypeId: config.calEventTypeId });
+    console.log(`📅 Availability request for ${config.name}:`, { startDate, endDate, eventTypeId: config.calEventTypeId, userTimezone });
 
     if (!startDate || !endDate) {
       return NextResponse.json(
@@ -71,7 +73,7 @@ export async function GET(
 
     // Method 1: Try the simple public slots endpoint
     try {
-      const simpleUrl = `https://cal.com/api/slots?eventTypeId=${eventTypeId}&startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}`;
+      const simpleUrl = `https://cal.com/api/slots?eventTypeId=${eventTypeId}&startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}&timeZone=${encodeURIComponent(userTimezone)}`;
       
       console.log(`Trying simple public slots API for ${config.name}...`);
       
@@ -97,7 +99,7 @@ export async function GET(
     // Method 2: Try v1 API with key
     if (!success) {
       try {
-        const urlV1 = `https://api.cal.com/v1/slots?apiKey=${calApiKey}&eventTypeId=${eventTypeId}&startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}`;
+        const urlV1 = `https://api.cal.com/v1/slots?apiKey=${calApiKey}&eventTypeId=${eventTypeId}&startTime=${encodeURIComponent(startDate)}&endTime=${encodeURIComponent(endDate)}&timeZone=${encodeURIComponent(userTimezone)}`;
         
         console.log(`Trying Cal.com v1 API for ${config.name}...`);
         
@@ -158,12 +160,14 @@ export async function GET(
       });
     }
 
-    console.log(`✅ Found ${slots.length} available slots for ${config.name}`);
+    console.log(`✅ Found ${slots.length} available slots for ${config.name} in timezone ${userTimezone}`);
 
     return NextResponse.json({
       success: true,
       slots: slots,
+      timezone: userTimezone,
       salesperson: config.name,
+      salespersonTimezone: config.timezone,
     });
 
   } catch (error) {

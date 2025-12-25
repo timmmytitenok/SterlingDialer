@@ -45,6 +45,21 @@ const getMonthName = (date: Date) => {
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 };
 
+// Get readable timezone abbreviation (e.g., "EST", "PST")
+const getTimezoneAbbr = (timezone: string) => {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'short',
+    });
+    const parts = formatter.formatToParts(new Date());
+    const tzPart = parts.find(p => p.type === 'timeZoneName');
+    return tzPart?.value || timezone;
+  } catch {
+    return timezone;
+  }
+};
+
 // Convert date + time slot to ISO string for Cal.com API
 const getISODateTime = (date: Date, slot: { hour: number; minute: number }) => {
   const newDate = new Date(date);
@@ -159,6 +174,9 @@ export default function ScheduleCallPage() {
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   
+  // User's timezone - auto-detected
+  const [userTimezone, setUserTimezone] = useState<string>('America/New_York');
+  
   // Form fields
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -170,6 +188,11 @@ export default function ScheduleCallPage() {
     setMounted(true);
     // Default to first available date
     setSelectedDate(dates[0]);
+    
+    // Auto-detect user's timezone
+    const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    setUserTimezone(detectedTimezone);
+    console.log('🌍 Detected user timezone:', detectedTimezone);
     
     // Scroll reveal observer
     const observer = new IntersectionObserver(
@@ -206,10 +229,11 @@ export default function ScheduleCallPage() {
         const endDate = new Date(selectedDate);
         endDate.setHours(23, 59, 59, 999);
         
-        console.log('Fetching availability for:', startDate.toISOString(), 'to', endDate.toISOString());
+        console.log('Fetching availability for:', startDate.toISOString(), 'to', endDate.toISOString(), 'in timezone:', userTimezone);
         
+        // Pass user's timezone so Cal.com returns slots in their local time
         const response = await fetch(
-          `/api/schedule-call/availability?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+          `/api/schedule-call/availability?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}&timeZone=${encodeURIComponent(userTimezone)}`
         );
         
         const data = await response.json();
@@ -252,7 +276,7 @@ export default function ScheduleCallPage() {
     };
     
     fetchAvailability();
-  }, [selectedDate]);
+  }, [selectedDate, userTimezone]);
 
   const handleContinueToForm = () => {
     if (selectedDate && selectedSlot) {
@@ -278,6 +302,7 @@ export default function ScheduleCallPage() {
           email,
           phone,
           startTime,
+          timeZone: userTimezone, // Pass user's timezone for correct calendar booking
         }),
       });
       
@@ -610,7 +635,10 @@ export default function ScheduleCallPage() {
                     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
                       <h4 className="text-sm font-medium text-gray-400 flex items-center gap-2">
                         <Clock className="w-4 h-4" />
-                        Available Times (12 PM - 5 PM EST)
+                        Available Times
+                        <span className="text-xs text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">
+                          {getTimezoneAbbr(userTimezone)}
+                        </span>
                       </h4>
                       
                       {isLoadingSlots ? (
@@ -983,7 +1011,10 @@ export default function ScheduleCallPage() {
                     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
                       <h4 className="text-sm font-medium text-gray-400 flex items-center gap-2">
                         <Clock className="w-4 h-4" />
-                        Available Times (12 PM - 5 PM EST)
+                        Available Times
+                        <span className="text-xs text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">
+                          {getTimezoneAbbr(userTimezone)}
+                        </span>
                       </h4>
                       
                       {isLoadingSlots ? (

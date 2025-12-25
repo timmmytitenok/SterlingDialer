@@ -11,6 +11,7 @@ export interface SalespersonConfig {
   calApiKey?: string; // Cal.com API key (add when available, or use env variable)
   isActive: boolean; // Set to true when Cal.com is configured
   timeSlots?: { display: string; hour: number; minute: number }[]; // Custom time slots
+  timezone: string; // Salesperson's timezone (e.g., 'America/New_York', 'America/Los_Angeles')
 }
 
 export const salespeople: Record<string, SalespersonConfig> = {
@@ -23,6 +24,7 @@ export const salespeople: Record<string, SalespersonConfig> = {
     calEventTypeId: '4241182',
     calApiKey: process.env.WARDY_CAL_API_KEY || 'cal_live_b1a3def14790850edca137de6660e62f', // Fallback for local dev
     isActive: true,
+    timezone: 'America/Los_Angeles', // PST - Wardy is in California
     // Custom time slots (optional - if undefined, uses default 12-5pm)
     timeSlots: undefined,
   },

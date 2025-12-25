@@ -9,9 +9,12 @@ const EVENT_TYPE_ID = 4236738;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, phone, startTime } = body;
+    const { name, email, phone, startTime, timeZone } = body;
+    
+    // Use user's timezone - default to EST if not provided
+    const userTimezone = timeZone || 'America/New_York';
 
-    console.log('Booking request:', { name, email, startTime });
+    console.log('Booking request:', { name, email, startTime, userTimezone });
 
     if (!name || !email || !startTime) {
       return NextResponse.json(
@@ -36,7 +39,7 @@ export async function POST(request: NextRequest) {
           email: email,
           notes: phone ? `Phone: ${phone}` : '',
         },
-        timeZone: 'America/New_York',
+        timeZone: userTimezone, // Use the user's timezone
         language: 'en',
         metadata: {
           phone: phone || '',
@@ -63,7 +66,7 @@ export async function POST(request: NextRequest) {
           attendee: {
             name: name,
             email: email,
-            timeZone: 'America/New_York',
+            timeZone: userTimezone, // Use the user's timezone
             language: 'en',
           },
           metadata: {

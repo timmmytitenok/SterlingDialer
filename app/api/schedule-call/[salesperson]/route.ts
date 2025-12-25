@@ -45,9 +45,12 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { name, email, phone, startTime } = body;
+    const { name, email, phone, startTime, timeZone } = body;
+    
+    // Use user's timezone - default to salesperson's timezone if not provided
+    const userTimezone = timeZone || config.timezone || 'America/New_York';
 
-    console.log(`📅 Booking request for ${config.name}:`, { name, email, startTime });
+    console.log(`📅 Booking request for ${config.name}:`, { name, email, startTime, userTimezone });
 
     if (!name || !email || !startTime) {
       return NextResponse.json(
@@ -76,7 +79,7 @@ export async function POST(
           email: email,
           notes: phone ? `Phone: ${phone}` : '',
         },
-        timeZone: 'America/New_York',
+        timeZone: userTimezone, // Use the user's timezone
         language: 'en',
         metadata: {
           phone: phone || '',
@@ -104,7 +107,7 @@ export async function POST(
           attendee: {
             name: name,
             email: email,
-            timeZone: 'America/New_York',
+            timeZone: userTimezone, // Use the user's timezone
             language: 'en',
           },
           metadata: {

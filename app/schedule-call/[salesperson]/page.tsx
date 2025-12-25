@@ -32,6 +32,21 @@ const getMonthName = (date: Date) => {
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 };
 
+// Get readable timezone abbreviation (e.g., "EST", "PST")
+const getTimezoneAbbr = (timezone: string) => {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'short',
+    });
+    const parts = formatter.formatToParts(new Date());
+    const tzPart = parts.find(p => p.type === 'timeZoneName');
+    return tzPart?.value || timezone;
+  } catch {
+    return timezone;
+  }
+};
+
 // Seeded random for consistent "busy" slots
 const seededRandom = (seed: number) => {
   const x = Math.sin(seed) * 10000;
@@ -106,6 +121,9 @@ export default function SalespersonSchedulePage() {
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loadingAvailability, setLoadingAvailability] = useState(false);
   
+  // User's timezone - auto-detected
+  const [userTimezone, setUserTimezone] = useState<string>('America/New_York');
+  
   // Form fields
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -115,7 +133,7 @@ export default function SalespersonSchedulePage() {
   const timeSlots = config?.timeSlots || DEFAULT_TIME_SLOTS;
 
   // Fetch real availability from Cal.com
-  const fetchAvailability = async (salesperson: SalespersonConfig) => {
+  const fetchAvailability = async (salesperson: SalespersonConfig, timezone: string) => {
     // Only check if salesperson is active and has event type ID
     // The API key is checked server-side (not available on client)
     if (!salesperson.isActive || !salesperson.calEventTypeId) {
@@ -132,10 +150,11 @@ export default function SalespersonSchedulePage() {
       endDate.setDate(endDate.getDate() + 5);
       endDate.setHours(23, 59, 59, 999);
       
-      console.log(`📡 Fetching availability for ${salesperson.name}...`);
+      console.log(`📡 Fetching availability for ${salesperson.name} in timezone ${timezone}...`);
       
+      // Pass user's timezone so Cal.com returns slots in their local time
       const response = await fetch(
-        `/api/schedule-call/${salesperson.slug}/availability?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+        `/api/schedule-call/${salesperson.slug}/availability?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}&timeZone=${encodeURIComponent(timezone)}`
       );
       
       const data = await response.json();
@@ -198,8 +217,14 @@ export default function SalespersonSchedulePage() {
     setSelectedDate(dates[0]);
     setMounted(true);
     
-    // Fetch real availability from Cal.com
-    fetchAvailability(salesperson).then(() => {
+    // Auto-detect user's timezone
+    const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    setUserTimezone(detectedTimezone);
+    console.log('🌍 Detected user timezone:', detectedTimezone);
+    console.log('👤 Salesperson timezone:', salesperson.timezone);
+    
+    // Fetch real availability from Cal.com (with user's timezone)
+    fetchAvailability(salesperson, detectedTimezone).then(() => {
       setInitialLoading(false);
     });
     
@@ -250,9 +275,9 @@ export default function SalespersonSchedulePage() {
       bookingDate.setHours(selectedSlot.hour, selectedSlot.minute, 0, 0);
       const startTime = bookingDate.toISOString();
       
-      console.log(`📅 Booking call with ${config.name} at ${startTime}`);
+      console.log(`📅 Booking call with ${config.name} at ${startTime} (user timezone: ${userTimezone})`);
       
-      // Call the salesperson-specific booking API
+      // Call the salesperson-specific booking API with user's timezone
       const response = await fetch(`/api/schedule-call/${salespersonSlug}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -261,6 +286,7 @@ export default function SalespersonSchedulePage() {
           email, 
           phone, 
           startTime,
+          timeZone: userTimezone, // Pass user's timezone for correct calendar booking
         }),
       });
       
@@ -648,6 +674,9 @@ export default function SalespersonSchedulePage() {
                       <h4 className="text-sm font-medium text-gray-400 flex items-center gap-2">
                         <Clock className="w-4 h-4" />
                         Available Times
+                        <span className="text-xs text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">
+                          {getTimezoneAbbr(userTimezone)}
+                        </span>
                       </h4>
                       
                       <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto pr-1">
@@ -1023,6 +1052,9 @@ export default function SalespersonSchedulePage() {
                       <h4 className="text-sm font-medium text-gray-400 flex items-center gap-2">
                         <Clock className="w-4 h-4" />
                         Available Times
+                        <span className="text-xs text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">
+                          {getTimezoneAbbr(userTimezone)}
+                        </span>
                       </h4>
                       
                       <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto pr-1">
