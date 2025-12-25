@@ -200,11 +200,11 @@ export async function GET(request: Request) {
         // ===== CHECK IF ALREADY RUNNING =====
         const { data: aiSettings } = await supabase
           .from('ai_control_settings')
-          .select('status, is_running, today_spend')
+          .select('status, today_spend')
           .eq('user_id', user_id)
           .maybeSingle();
 
-        if (aiSettings?.status === 'running' || aiSettings?.is_running) {
+        if (aiSettings?.status === 'running') {
           console.log(`   ⏭️  AI already running, skipping`);
           results.push({ user_id, success: false, reason: 'Already running' });
           continue;
@@ -259,7 +259,6 @@ export async function GET(request: Request) {
           .upsert({
             user_id: user_id,
             status: 'running',
-            is_running: true,
             queue_length: 0,
             calls_made_today: 0,
             execution_mode: 'leads', // Always 'leads' to pass DB constraint
@@ -268,8 +267,6 @@ export async function GET(request: Request) {
             session_start_spend: currentTodaySpend,
             auto_transfer_calls: true,
             last_call_status: 'scheduled_start',
-            started_at: new Date().toISOString(),
-            started_by: 'auto_scheduler',
           }, {
             onConflict: 'user_id'
           });
@@ -356,7 +353,7 @@ export async function GET(request: Request) {
           // Revert status if call failed
           await supabase
             .from('ai_control_settings')
-            .update({ status: 'stopped', is_running: false, last_call_status: 'scheduled_start_failed' })
+            .update({ status: 'stopped', last_call_status: 'scheduled_start_failed' })
             .eq('user_id', user_id);
           
           results.push({ user_id, success: false, error: lastError || 'Failed to start call after retries' });
