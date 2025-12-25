@@ -98,10 +98,17 @@ export async function GET(request: Request) {
       try {
         console.log(`\n👤 Processing user ${user_id}...`);
 
-        // Get user's timezone from profiles
+        // Get user's timezone and status from profiles
         const { data: profile } = await supabase
           .from('profiles')
-          .select('timezone, balance_cents, ai_maintenance_mode, has_active_subscription, is_vip')
+          .select('timezone, ai_maintenance_mode, has_active_subscription, is_vip')
+          .eq('user_id', user_id)
+          .single();
+
+        // Get user's balance from call_balance table (separate table!)
+        const { data: callBalance } = await supabase
+          .from('call_balance')
+          .select('balance')
           .eq('user_id', user_id)
           .single();
 
@@ -173,12 +180,14 @@ export async function GET(request: Request) {
           continue;
         }
 
-        const balanceDollars = (profile?.balance_cents || 0) / 100;
+        const balanceDollars = callBalance?.balance || 0;
         if (balanceDollars < 1 && !profile?.is_vip) {
           console.log(`   ⚠️  Insufficient balance ($${balanceDollars}), skipping`);
           results.push({ user_id, success: false, reason: 'Insufficient balance' });
           continue;
         }
+        
+        console.log(`   💰 Balance: $${balanceDollars}`);
 
         // ===== CHECK IF RETELL CONFIG EXISTS =====
         const hasAgent = (retell_agent_1_id && retell_agent_1_phone) || (retell_agent_2_id && retell_agent_2_phone);
