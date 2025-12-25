@@ -720,28 +720,28 @@ export default function AdminRevenuePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
           <AdminStatCard
             title="Subscription Revenue"
-            value={loading ? '...' : `$${allTimeSubscriptionRevenue.toLocaleString()}`}
+            value={loading ? '...' : `$${allTimeSubscriptionRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             subtitle={`${totalMonthlySubscriptions + customSubscriptionCount} subscriptions billed`}
             icon={CreditCard}
             className="border-blue-500/30"
           />
           <AdminStatCard
             title="Call Minutes Revenue"
-            value={loading ? '...' : `$${allTimeMinutesRevenue.toLocaleString()}`}
+            value={loading ? '...' : `$${allTimeMinutesRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             subtitle={`${minuteRefills + customBalanceRefillCount} refills billed`}
             icon={DollarSign}
             className="border-emerald-500/30"
           />
           <AdminStatCard
             title="Total Expenses"
-            value={loading ? '...' : `$${allTimeExpenses.toLocaleString()}`}
+            value={loading ? '...' : `$${allTimeExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             subtitle="AI costs, fees & payouts"
             icon={TrendingUp}
             className="border-red-500/30"
           />
           <AdminStatCard
             title="Net Profit"
-            value={loading ? '...' : `$${allTimeProfit.toLocaleString()}`}
+            value={loading ? '...' : `$${allTimeProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             subtitle={`${((allTimeProfit / allTimeTotal) * 100 || 0).toFixed(1)}% margin`}
             icon={TrendingUp}
             className="border-purple-500/30 bg-gradient-to-br from-purple-900/20 to-purple-600/10"

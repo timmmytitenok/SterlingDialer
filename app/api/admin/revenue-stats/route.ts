@@ -648,20 +648,21 @@ export async function GET(req: Request) {
     
     const totalRevenue = totalSubscriptionRevenue + totalMinutesRevenue + otherCustomRevenue; // All revenue sources
     
-    // Total profit = Stripe minutes profit + custom balance refill profit + subscription profit + other custom revenue - custom expenses
-    const totalProfit = minutesProfit + customBalanceRefillProfit + subscriptionProfit + otherCustomRevenue - totalCustomExpenses;
+    // Minutes profit = Stripe minutes profit + custom balance refill profit (62.5% margin)
+    const totalMinutesProfit = minutesProfit + customBalanceRefillProfit;
     
-    // Total expenses = AI costs (Stripe + manual) + Stripe fees + commissions + custom expenses
-    const totalExpenses = minutesExpense + customBalanceRefillExpense + refillStripeFees + subscriptionExpense + totalCustomExpenses;
+    // Minutes expense = AI costs only (37.5% of revenue)
+    const totalMinutesExpense = minutesExpense + customBalanceRefillExpense;
     
-    console.log(`💰 Profit breakdown:`);
+    // For the cards: show ONLY minutes-related profit and expense (keeps 62.5% margin)
+    const totalProfit = totalMinutesProfit;
+    const totalExpenses = totalMinutesExpense;
+    
+    console.log(`💰 Profit breakdown (62.5% margin on balance refills):`);
     console.log(`   Stripe minutes profit: $${minutesProfit.toFixed(2)} (${totalRefills} Stripe refills)`);
-    console.log(`   Custom balance refill profit: $${customBalanceRefillProfit.toFixed(2)} (${customBalanceRefillCount} manual refills @ 62.5% margin)`);
-    console.log(`   Direct subs profit: $${directSubProfit.toFixed(2)} (${directMonths} months × $484)`);
-    console.log(`   Referred subs profit: $${referredSubProfit.toFixed(2)} (${referredMonths} months × $384)`);
-    console.log(`   Total subscription profit: $${subscriptionProfit.toFixed(2)}`);
-    console.log(`   Other custom revenue: $${otherCustomRevenue.toFixed(2)}`);
-    console.log(`   Custom expenses: $${totalCustomExpenses.toFixed(2)}`);
+    console.log(`   Custom balance refill profit: $${customBalanceRefillProfit.toFixed(2)} (${customBalanceRefillCount} manual refills)`);
+    console.log(`   Total Minutes Profit: $${totalMinutesProfit.toFixed(2)}`);
+    console.log(`   Total Minutes Expense (AI cost): $${totalMinutesExpense.toFixed(2)}`);
 
     // ============================================
     // 11. RETURN DATA
