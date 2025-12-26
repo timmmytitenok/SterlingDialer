@@ -330,11 +330,12 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
   const noBudgetSet = status && status.dailyBudgetCents === 0;
   const color = getStatusColor();
   
-  // Auto-schedule logic - explicitly check for true (not just truthy)
-  const autoScheduleEnabled = dialerSettings?.auto_start_enabled === true;
+  // Auto-schedule logic - DISABLED: Old auto-start feature replaced by new cron-based scheduler
+  // The new scheduler uses auto_dialer_enabled in user_retell_config instead
+  const autoScheduleEnabled = false; // Always false - old feature disabled
   const autoStartTime = dialerSettings?.auto_start_time || '09:00';
   
-  console.log('🎛️ Auto-schedule status:', { autoScheduleEnabled, rawValue: dialerSettings?.auto_start_enabled });
+  // console.log('🎛️ Auto-schedule status:', { autoScheduleEnabled, rawValue: dialerSettings?.auto_start_enabled });
   
   // Determine button state - also hide button when outside calling hours
   const isButtonDisabled = (autoScheduleEnabled && !isPausedBudget && !isRunning) || isOutsideHours;
