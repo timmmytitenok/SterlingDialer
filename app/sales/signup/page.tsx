@@ -104,7 +104,7 @@ export default function SalesSignupPage() {
         <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
           <div className="flex items-center gap-1.5 mb-1">
             <DollarSign className="w-3.5 h-3.5 text-green-400" />
-            <span className="text-green-400 font-bold text-xs">Earn 35% Commission on Every Sale</span>
+            <span className="text-green-400 font-bold text-xs">Earn 50% First Month + 30% Recurring</span>
           </div>
           <p className="text-gray-300 text-xs">
             Get your unique referral link and start earning today.
@@ -224,7 +224,7 @@ export default function SalesSignupPage() {
               </div>
               <div className="flex items-center gap-1.5 text-xs text-gray-300">
                 <CheckCircle className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
-                <span>35% commission on every sale</span>
+                <span>50% first month + 30% recurring</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-gray-300">
                 <CheckCircle className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />

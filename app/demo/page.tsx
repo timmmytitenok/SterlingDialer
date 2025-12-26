@@ -498,11 +498,11 @@ export default function DemoPage() {
                     </div>
                     <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-800">
                       <span className="text-xs sm:text-sm text-gray-400">~300 calls per day</span>
-                      <span className="text-sm sm:text-base text-white font-semibold">~$18/day</span>
+                      <span className="text-sm sm:text-base text-white font-semibold">~$12/day</span>
             </div>
                     <div className="flex justify-between items-center py-1.5 sm:py-2">
                       <span className="text-xs sm:text-sm text-gray-400 font-semibold">Total Monthly</span>
-                      <span className="text-lg sm:text-xl text-white font-bold">~$1040</span>
+                      <span className="text-lg sm:text-xl text-white font-bold">~$679</span>
                   </div>
                   </div>
                 </div>
@@ -516,7 +516,7 @@ export default function DemoPage() {
                   <div className="space-y-2 sm:space-y-3">
                     <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-green-500/20">
                       <span className="text-xs sm:text-sm text-gray-300">Avg. Policy Value</span>
-                      <span className="text-sm sm:text-base text-white font-semibold">$1,200/yr</span>
+                      <span className="text-sm sm:text-base text-white font-semibold">$1,000/yr</span>
                     </div>
                     <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-green-500/20">
                       <span className="text-xs sm:text-sm text-gray-300">Break Even</span>

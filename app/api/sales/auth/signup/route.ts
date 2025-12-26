@@ -79,7 +79,7 @@ export async function POST(req: Request) {
         password_hash,
         referral_code: referralCode,
         commission_type: 'recurring', // Default to recurring
-        commission_rate: 0.35,
+        commission_rate: 0.30, // 50% first month, 30% recurring (this stores the recurring rate)
         status: 'active',
       })
       .select()

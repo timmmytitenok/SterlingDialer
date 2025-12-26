@@ -139,11 +139,11 @@ export async function GET(
       // Check if user was referred
       const wasReferred = !!profile.data?.referred_by;
       if (wasReferred) {
-        subscriptionProfit = 384; // $384 profit if referred (because $100 goes to referrer)
-        console.log(`  💰 ACTIVE subscription (REFERRED) - Profit: $384`);
+        subscriptionProfit = 253.93; // $379 - $11.37 Stripe fee - $113.70 commission (30%) = $253.93
+        console.log(`  💰 ACTIVE subscription (REFERRED) - Profit: $253.93`);
       } else {
-        subscriptionProfit = 484; // $484 profit if NOT referred
-        console.log(`  💰 ACTIVE subscription (NOT REFERRED) - Profit: $484`);
+        subscriptionProfit = 367.63; // $379 - $11.37 Stripe fee = $367.63 profit
+        console.log(`  💰 ACTIVE subscription (NOT REFERRED) - Profit: $367.63`);
       }
     } else if (subscription.data && subscription.data.tier === 'vip') {
       console.log(`  👑 VIP USER - No subscription spending (lifetime free access)`);
@@ -299,7 +299,7 @@ export async function GET(
       stripe_customer_id: profile.data?.stripe_customer_id,
       
       // Revenue & Profit (Sterling AI's profit from this user)
-      subscription_profit: subscriptionProfit, // $484 if not referred, $384 if referred
+      subscription_profit: subscriptionProfit, // $367.63 if not referred, $253.93 if referred (30% commission)
       refill_count: refillCount, // Number of refills
       refill_profit: refillProfit, // $14.25 per refill (costs already factored in)
       profit: profit, // subscription_profit + refill_profit

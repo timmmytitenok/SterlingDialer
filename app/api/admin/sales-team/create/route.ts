@@ -61,7 +61,7 @@ export async function POST(req: Request) {
         phone: phone || null,
         referral_code: referralCode,
         commission_type: commission_type || 'recurring',
-        commission_rate: 0.35,
+        commission_rate: 0.30, // 50% first month, 30% recurring (this stores the recurring rate)
         status: 'active',
       })
       .select()

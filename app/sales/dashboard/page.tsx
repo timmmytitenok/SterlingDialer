@@ -288,8 +288,8 @@ export default function SalesDashboardPage() {
   // Monthly recurring revenue (from active converted users)
   const getMonthlyRecurring = () => {
     const activeCustomers = referrals.filter(r => r.status === 'converted').length;
-    // Assuming $379 subscription * 35% commission
-    return activeCustomers * 379 * (salesPerson?.commission_rate || 0.35);
+    // $379 subscription * 30% recurring commission
+    return activeCustomers * 379 * 0.30;
   };
 
   // Active customers (converted and still active)

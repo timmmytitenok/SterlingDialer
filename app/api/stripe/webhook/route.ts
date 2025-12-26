@@ -944,12 +944,18 @@ export async function POST(req: Request) {
         if (salesReferral && salesReferral.sales_team) {
           const salesPerson = salesReferral.sales_team;
           const currentMonth = new Date().toISOString().substring(0, 7); // '2025-01'
-          const commissionRate = salesPerson.commission_rate || 0.35;
+          
+          // 🎯 COMMISSION RATES: 50% first month, 30% recurring
+          const isFirstPayment = salesReferral.status === 'trial';
+          const firstMonthRate = 0.50; // 50% for first month
+          const recurringRate = 0.30;  // 30% for recurring months
+          const commissionRate = isFirstPayment ? firstMonthRate : recurringRate;
           const commissionAmount = amountPaid * commissionRate;
 
           console.log('🎯 SALES TEAM REFERRAL FOUND!');
           console.log(`   Sales Person: ${salesPerson.full_name}`);
           console.log(`   Referral Commission Type: ${salesReferral.commission_type || 'recurring'} (per-user setting)`);
+          console.log(`   Is First Payment: ${isFirstPayment ? 'YES (50%)' : 'NO (30%)'}`);
           console.log(`   Amount Paid: $${amountPaid}`);
           console.log(`   Commission Rate: ${commissionRate * 100}%`);
           console.log(`   Commission Amount: $${commissionAmount.toFixed(2)}`);
@@ -997,7 +1003,7 @@ export async function POST(req: Request) {
                     commission_type: 'one_time',
                     status: 'pending',
                     month_year: currentMonth,
-                    description: `One-time commission for ${salesReferral.user_name || salesReferral.user_email}`,
+                    description: `First month commission (50%) for ${salesReferral.user_name || salesReferral.user_email}`,
                   });
 
                 if (commError) {
@@ -1029,7 +1035,7 @@ export async function POST(req: Request) {
                     commission_type: 'recurring',
                     status: 'pending',
                     month_year: currentMonth,
-                    description: `Monthly commission for ${salesReferral.user_name || salesReferral.user_email} (${currentMonth})`,
+                    description: `${isFirstPayment ? 'First month (50%)' : 'Recurring (30%)'} commission for ${salesReferral.user_name || salesReferral.user_email} (${currentMonth})`,
                   });
 
                 if (commError) {

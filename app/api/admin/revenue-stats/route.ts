@@ -80,7 +80,9 @@ export async function GET(req: Request) {
 
     // Revenue from Stripe subscriptions
     const stripeSubscriptionRevenue = totalSubMonths * 379; // $379 per month (revenue is same for both)
-    const commissionsPaid = referredMonths * 100; // $100 commission per referred month
+    // Commission structure: 50% first month ($189.50), 30% recurring ($113.70)
+    // For revenue tracking, we use 30% recurring as the average since most months are recurring
+    const commissionsPaid = referredMonths * 113.70; // 30% of $379 = $113.70 per recurring month
     
     console.log(`💰 Subscription breakdown:`);
     console.log(`   Total months: ${totalSubMonths}`);
@@ -611,10 +613,10 @@ export async function GET(req: Request) {
     minutesExpense = Math.round(minutesExpense * 100) / 100;
     
     // Subscription profit:
-    // - Not referred: $379 revenue - $11 Stripe fee = $368 profit
-    // - Referred: $379 revenue - $100 commission - $11 Stripe fee = $268 profit
-    const directSubProfit = directMonths * 484; // $484 profit per direct month
-    const referredSubProfit = referredMonths * 384; // $384 profit per referred month
+    // - Not referred: $379 revenue - $11.37 Stripe fee = $367.63 profit
+    // - Referred: $379 revenue - $113.70 commission (30%) - $11.37 Stripe fee = $253.93 profit
+    const directSubProfit = directMonths * 367.63; // $367.63 profit per direct month
+    const referredSubProfit = referredMonths * 253.93; // $253.93 profit per referred month (after 30% commission)
     const subscriptionProfit = directSubProfit + referredSubProfit;
     
     // Stripe fees breakdown

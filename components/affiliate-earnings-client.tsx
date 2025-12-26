@@ -212,7 +212,7 @@ export function AffiliateEarningsClient({
                   <span className="text-2xl">💵</span> How much can I earn?
                 </h3>
                 <p className="text-gray-400 text-sm">
-                  You earn $37.90 per customer per month. Refer 10 customers = <span className="text-green-400 font-bold">$379/month</span> recurring income!
+                  Earn <span className="text-green-400 font-bold">50% ($189.50)</span> on first month, then <span className="text-green-400 font-bold">30% ($113.70)</span> recurring! Refer 10 customers = <span className="text-green-400 font-bold">$1,137/month</span> recurring income!
                 </p>
               </div>
             </div>

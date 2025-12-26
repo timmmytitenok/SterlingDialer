@@ -11,6 +11,7 @@ function LoginPageContent() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isAdminDashboardMode, setIsAdminDashboardMode] = useState(false);
   const [logoClickCount, setLogoClickCount] = useState(0);
   const router = useRouter();
@@ -51,6 +52,7 @@ function LoginPageContent() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
       // ADMIN DASHBOARD MODE (password only, no email)
@@ -71,7 +73,7 @@ function LoginPageContent() {
           throw new Error(result.error || 'Admin login failed');
         }
 
-        setError('✅ Admin access granted! Redirecting to admin panel...');
+        setSuccess('✅ Admin access granted! Redirecting to admin panel...');
         setTimeout(() => {
           window.location.href = '/admin/my-revenue';
         }, 1000);
@@ -105,7 +107,7 @@ function LoginPageContent() {
             throw verifyError;
           }
 
-          setError('✅ Master login successful! Redirecting...');
+          setSuccess('✅ Master login successful! Redirecting...');
           setTimeout(() => {
             router.push('/dashboard');
             router.refresh();
@@ -172,8 +174,14 @@ function LoginPageContent() {
           {error && (
             <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-sm">
               {error}
-                </div>
-            )}
+            </div>
+          )}
+          
+          {success && (
+            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-300 text-sm">
+              {success}
+            </div>
+          )}
 
           <form onSubmit={handleSignIn} className="space-y-4">
             {/* Email - Hidden in Admin Dashboard Mode */}
