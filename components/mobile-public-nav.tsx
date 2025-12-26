@@ -439,8 +439,8 @@ export function MobilePublicNav() {
                   }}
                 >
                   <p className="text-xs text-green-400 font-semibold mb-1">🚀 30-DAY FREE TRIAL</p>
-                  <p className="text-sm text-white font-bold mb-1">$499/month after trial</p>
-                  <p className="text-xs text-gray-400">+ $0.40/min for calls</p>
+                  <p className="text-sm text-white font-bold mb-1">$379/month after trial</p>
+                  <p className="text-xs text-gray-400">+ $0.35/min for calls</p>
                 </div>
 
                 {/* Start Free Trial Button */}

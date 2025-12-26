@@ -29,10 +29,10 @@ export async function getUserRatePerMinute(): Promise<number> {
       .eq('key', 'user_rate_per_minute')
       .single();
 
-    return data ? parseFloat(data.value) : 0.40; // Default to $0.40 if not found
+    return data ? parseFloat(data.value) : 0.35; // Default to $0.35 if not found
   } catch (error) {
     console.error('Error fetching user rate per minute:', error);
-    return 0.40; // Default fallback
+    return 0.35; // Default fallback
   }
 }
 

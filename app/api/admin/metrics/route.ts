@@ -100,7 +100,7 @@ export async function GET() {
       .eq('status', 'active');
 
     const tierPrices: Record<string, number> = {
-      starter: 499,
+      starter: 379,
       pro: 899,
       elite: 1499,
     };
@@ -140,7 +140,7 @@ export async function GET() {
 
     // Calculate YOUR daily profit from subscriptions
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const starterDailyProfit = (starterUsers * 499) / daysInMonth;
+    const starterDailyProfit = (starterUsers * 379) / daysInMonth;
     const proDailyProfit = (proUsers * 899) / daysInMonth;
     const eliteDailyProfit = (eliteUsers * 1499) / daysInMonth;
     const totalSubscriptionProfit = starterDailyProfit + proDailyProfit + eliteDailyProfit;
@@ -174,7 +174,7 @@ export async function GET() {
     console.log(`🏦 Total Call Balances (Reserved Funds): $${totalCallBalances.toFixed(2)}`);
 
     // Calculate ALL TIME REVENUE (subscriptions + minutes profit)
-    const monthlyRevenue = (starterUsers * 499) + (proUsers * 899) + (eliteUsers * 1499);
+    const monthlyRevenue = (starterUsers * 379) + (proUsers * 899) + (eliteUsers * 1499);
     const allTimeSubscriptionRevenue = monthlyRevenue; // Total monthly revenue
     const allTimeRevenue = allTimeSubscriptionRevenue + totalMinutesProfit;
     

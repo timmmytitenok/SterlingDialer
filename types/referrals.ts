@@ -23,7 +23,7 @@ export interface ReferredUser {
   signedUpAt: string;
   subscriptionMonths: number; // How many months they've been subscribed
   status: 'active' | 'canceled';
-  monthlyValue: number; // $499
+  monthlyValue: number; // $379
   commissionPerMonth: number; // $100
   totalCommissionGenerated: number;
 }

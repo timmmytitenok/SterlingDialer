@@ -46,7 +46,7 @@ export default function FAQPage() {
     },
     {
       question: "How much does it cost per call?",
-      answer: "Calls cost $0.40 per minute for everyone. Not all calls get picked up, but on average it takes about 2-3 minutes of conversation to book an appointment. With the $499/month subscription, you get full platform access and unlimited calling capacity."
+      answer: "Calls cost $0.35 per minute for everyone. Not all calls get picked up, but on average it takes about 2-3 minutes of conversation to book an appointment. With the $379/month subscription, you get full platform access and unlimited calling capacity."
     },
     {
       question: "Do I need to provide my own leads?",
@@ -58,15 +58,15 @@ export default function FAQPage() {
     },
     {
       question: "How does the free trial work?",
-      answer: "Start with a 7-day free trial! You get full access to all features - unlimited AI agents, unlimited leads, and all premium features. You only pay $0.40 per minute for the calls you make. After 7 days, it's $499/month. Cancel anytime with no questions asked."
+      answer: "Start with a 7-day free trial! You get full access to all features - unlimited AI agents, unlimited leads, and all premium features. You only pay $0.35 per minute for the calls you make. After 7 days, it's $379/month. Cancel anytime with no questions asked."
     },
     {
       question: "What if I run out of calling credits?",
-      answer: "Sterling AI uses a prepaid system with auto-refill to keep your AI running. Calls cost $0.40 per minute. We auto-refill $25 to your balance when it drops below $1, so your AI never stops working. You can manage your balance and payment methods in your dashboard."
+      answer: "Sterling AI uses a prepaid system with auto-refill to keep your AI running. Calls cost $0.35 per minute. We auto-refill $25 to your balance when it drops below $1, so your AI never stops working. You can manage your balance and payment methods in your dashboard."
     },
     {
       question: "What features are included with SterlingAI Pro Access?",
-      answer: "Everything! For $499/month, you get unlimited AI calling agents, unlimited leads per day, live call transfers, Cal.ai appointment booking, Google Sheets integration, call recordings & transcripts, performance dashboard, priority support, and 24/7 AI operation. One simple plan with all features unlocked."
+      answer: "Everything! For $379/month, you get unlimited AI calling agents, unlimited leads per day, live call transfers, Cal.ai appointment booking, Google Sheets integration, call recordings & transcripts, performance dashboard, priority support, and 24/7 AI operation. One simple plan with all features unlocked."
     },
     {
       question: "Still chasing new leads when you haven't worked the old ones?",
@@ -221,7 +221,7 @@ export default function FAQPage() {
               Ready to Revive Your Old Leads?
             </h2>
             <p className="text-sm sm:text-base text-gray-300 mb-7 sm:mb-7 max-w-2xl mx-auto leading-relaxed">
-              $499/month. Unlimited leads. Appointments booked automatically.
+              $379/month. Unlimited leads. Appointments booked automatically.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
               <Link

@@ -43,7 +43,7 @@ export async function GET(req: Request) {
     console.log(`✅ Found ${allSubscriptions?.length || 0} subscriptions`);
 
     // Calculate subscription revenue
-    // PRO = $499/month, VIP = lifetime (no recurring charges)
+    // PRO = $379/month, VIP = lifetime (no recurring charges)
     // Only count 'active' or 'trialing' subscriptions that have been billed
     const activeSubscriptions = allSubscriptions?.filter((s: any) => 
       s.status === 'active' && s.subscription_tier === 'pro' && s.stripe_subscription_id
@@ -79,7 +79,7 @@ export async function GET(req: Request) {
     }
 
     // Revenue from Stripe subscriptions
-    const stripeSubscriptionRevenue = totalSubMonths * 499; // $499 per month (revenue is same for both)
+    const stripeSubscriptionRevenue = totalSubMonths * 379; // $379 per month (revenue is same for both)
     const commissionsPaid = referredMonths * 100; // $100 commission per referred month
     
     console.log(`💰 Subscription breakdown:`);
@@ -156,7 +156,7 @@ export async function GET(req: Request) {
     
     const userCostMap = new Map<string, number>();
     userProfiles?.forEach((p: any) => {
-      userCostMap.set(p.user_id, p.cost_per_minute || 0.40);
+      userCostMap.set(p.user_id, p.cost_per_minute || 0.35);
     });
     
     // AI cost per minute (your expense)
@@ -167,7 +167,7 @@ export async function GET(req: Request) {
     if (refillTransactions && refillTransactions.length > 0) {
       console.log('📋 STRIPE REFILL TRANSACTIONS DETAILS:');
       refillTransactions.forEach((t: any, i: number) => {
-        const userRate = userCostMap.get(t.user_id) || 0.40;
+        const userRate = userCostMap.get(t.user_id) || 0.35;
         console.log(`   ${i + 1}. Amount: $${t.amount}, User Rate: $${userRate}/min, Type: ${t.type}, Date: ${t.created_at}`);
       });
     } else {
@@ -196,7 +196,7 @@ export async function GET(req: Request) {
     const todaySubs = activeSubscriptions.filter((s: any) => {
       const sDate = new Date(s.created_at);
       return sDate >= today;
-    }).length * 499;
+    }).length * 379;
 
     // Last 7 days
     const last7DaysRefills = refillTransactions?.filter((t: any) => {
@@ -207,7 +207,7 @@ export async function GET(req: Request) {
     const last7DaysSubs = activeSubscriptions.filter((s: any) => {
       const sDate = new Date(s.created_at);
       return sDate >= last7Days;
-    }).length * 499;
+    }).length * 379;
 
     // Last 30 days
     const last30DaysRefills = refillTransactions?.filter((t: any) => {
@@ -218,7 +218,7 @@ export async function GET(req: Request) {
     const last30DaysSubs = activeSubscriptions.filter((s: any) => {
       const sDate = new Date(s.created_at);
       return sDate >= last30Days;
-    }).length * 499;
+    }).length * 379;
 
     // ============================================
     // 4. FETCH CUSTOM REVENUE ITEMS EARLY (needed for charts)
@@ -257,7 +257,7 @@ export async function GET(req: Request) {
       const daySubs = activeSubscriptions.filter((s: any) => {
         const sDate = new Date(s.created_at);
         return sDate >= dateStart && sDate < dateEnd;
-      }).length * 499;
+      }).length * 379;
 
       // Custom revenue (Balance Refill category) - manual entries
       const dayCustomRefills = customRevenueForCharts.filter((item: any) => {
@@ -301,7 +301,7 @@ export async function GET(req: Request) {
       const daySubs = activeSubscriptions.filter((s: any) => {
         const sDate = new Date(s.created_at);
         return sDate >= dateStart && sDate < dateEnd;
-      }).length * 499;
+      }).length * 379;
 
       // Custom revenue (Balance Refill category) - manual entries
       const dayCustomRefills = customRevenueForCharts.filter((item: any) => {
@@ -344,7 +344,7 @@ export async function GET(req: Request) {
       const monthSubs = activeSubscriptions.filter((s: any) => {
         const sDate = new Date(s.created_at);
         return sDate >= monthStart && sDate < monthEnd;
-      }).length * 499;
+      }).length * 379;
 
       // Custom revenue for this month (Balance Refill category) - manual entries
       const monthCustomRefills = customRevenueForCharts.filter((item: any) => {
@@ -544,7 +544,7 @@ export async function GET(req: Request) {
     
     // Count manual uploads (each entry represents quantity, so we need to count how many $25 chunks)
     const customBalanceRefillCount = Math.round(customBalanceRefillRevenue / 25); // Each refill is $25
-    const customSubscriptionCount = Math.round(customSubscriptionRevenue / 499); // Each subscription is $499
+    const customSubscriptionCount = Math.round(customSubscriptionRevenue / 379); // Each subscription is $379
 
     const totalCustomRevenue = customSubscriptionRevenue + customBalanceRefillRevenue + otherCustomRevenue;
     const totalCustomExpenses = customExpenseItems.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
@@ -588,7 +588,7 @@ export async function GET(req: Request) {
     
     refillTransactions?.forEach((t: any) => {
       const refillAmount = t.amount || 0;
-      const userRate = userCostMap.get(t.user_id) || 0.40; // Default $0.40/min if not found
+      const userRate = userCostMap.get(t.user_id) || 0.35; // Default $0.35/min if not found
       
       // Calculate minutes purchased at user's rate
       const minutesPurchased = refillAmount / userRate;
@@ -611,14 +611,14 @@ export async function GET(req: Request) {
     minutesExpense = Math.round(minutesExpense * 100) / 100;
     
     // Subscription profit:
-    // - Not referred: $499 revenue - $15 Stripe fee = $484 profit
-    // - Referred: $499 revenue - $100 commission - $15 Stripe fee = $384 profit
+    // - Not referred: $379 revenue - $11 Stripe fee = $368 profit
+    // - Referred: $379 revenue - $100 commission - $11 Stripe fee = $268 profit
     const directSubProfit = directMonths * 484; // $484 profit per direct month
     const referredSubProfit = referredMonths * 384; // $384 profit per referred month
     const subscriptionProfit = directSubProfit + referredSubProfit;
     
     // Stripe fees breakdown
-    const subscriptionStripeFees = totalSubMonths * 15; // $15 Stripe fee per $499 subscription (3%)
+    const subscriptionStripeFees = totalSubMonths * 11; // $11 Stripe fee per $379 subscription (3%)
     const refillStripeFees = minutesRevenue * STRIPE_FEE_PERCENT; // 3% of total refill revenue
     const totalStripeFees = subscriptionStripeFees + refillStripeFees;
     
@@ -633,9 +633,9 @@ export async function GET(req: Request) {
     const totalMinutesRevenue = minutesRevenue + customBalanceRefillRevenue;
     
     // Calculate profit for manual Balance Refill entries
-    // Formula: profit_margin = 1 - (AI_cost / user_rate) = 1 - (0.15 / 0.40) = 62.5%
-    // For manual entries without user_id, we use the default $0.40/min rate
-    const DEFAULT_USER_RATE = 0.40;
+    // Formula: profit_margin = 1 - (AI_cost / user_rate) = 1 - (0.15 / 0.35) = 57.14%
+    // For manual entries without user_id, we use the default $0.35/min rate
+    const DEFAULT_USER_RATE = 0.35;
     const CUSTOM_REFILL_PROFIT_MARGIN = 1 - (AI_COST_PER_MINUTE / DEFAULT_USER_RATE); // 62.5%
     const customBalanceRefillProfit = customBalanceRefillRevenue * CUSTOM_REFILL_PROFIT_MARGIN;
     const customBalanceRefillExpense = customBalanceRefillRevenue * (AI_COST_PER_MINUTE / DEFAULT_USER_RATE); // 37.5%

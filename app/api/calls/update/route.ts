@@ -134,7 +134,7 @@ export async function POST(request: Request) {
           .eq('user_id', userId)
           .single();
         
-        const costPerMinute = userProfile?.cost_per_minute || 0.40; // Default to $0.40 if not set
+        const costPerMinute = userProfile?.cost_per_minute || 0.35; // Default to $0.35 if not set
         console.log(`💰 User's cost per minute: $${costPerMinute}`);
         
         // DIRECT DEDUCTION - Don't use fetch, do it here directly
@@ -201,7 +201,7 @@ export async function POST(request: Request) {
         .eq('user_id', userId)
         .single();
       
-      const costPerMinute = userProfile?.cost_per_minute || 0.40; // Default to $0.40 if not set
+      const costPerMinute = userProfile?.cost_per_minute || 0.35; // Default to $0.35 if not set
       const callCost = duration ? (duration / 60) * costPerMinute : 0; // Calculate actual call cost using user's rate
       
       console.log(`📊 Updating AI costs for ${today}: +$${callCost.toFixed(4)} (at $${costPerMinute}/min)`);
@@ -280,7 +280,7 @@ export async function POST(request: Request) {
         let monthlyPrice = 0;
         switch (subscription.subscription_tier) {
           case 'starter':
-            monthlyPrice = 499;
+            monthlyPrice = 379;
             break;
           case 'pro':
             monthlyPrice = 899;

@@ -87,10 +87,10 @@ export default function TrialActivatePage() {
 
           <div className="mt-4 sm:mt-6 text-center">
             <div className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-1 sm:mb-2">
-              $499<span className="text-lg sm:text-xl md:text-2xl font-normal text-white/60"> / month</span>
+              $379<span className="text-lg sm:text-xl md:text-2xl font-normal text-white/60"> / month</span>
             </div>
             <div className="mt-2 sm:mt-3 text-sm sm:text-base md:text-lg text-emerald-400 font-semibold">
-              + $0.40 per minute for calls
+              + $0.35 per minute for calls
             </div>
           </div>
 
@@ -118,9 +118,9 @@ export default function TrialActivatePage() {
             <div className="flex items-start gap-2 sm:gap-3">
               <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-white font-bold text-xs sm:text-sm mb-1">Free for 7 days, then $499/month</p>
+                <p className="text-white font-bold text-xs sm:text-sm mb-1">Free for 7 days, then $379/month</p>
                 <p className="text-gray-300 text-[10px] sm:text-xs leading-relaxed">
-                  Your card will be automatically charged $499 when your trial ends. Cancel anytime before Day 7 to avoid charges.
+                  Your card will be automatically charged $379 when your trial ends. Cancel anytime before Day 7 to avoid charges.
                 </p>
               </div>
             </div>

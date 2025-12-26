@@ -9,7 +9,7 @@ export const PRICING_CONFIG = {
   // Standard Subscription Tiers
   starter: {
     name: 'Starter',
-    monthlyPrice: 499,
+    monthlyPrice: 379,
     costPerMinute: 0.30,
     freeMinutes: 600,
     maxDailyCalls: 600,

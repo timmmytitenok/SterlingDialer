@@ -19,7 +19,7 @@ INSERT INTO app_settings (key, value, description)
 VALUES (
   'ai_cost_per_minute',
   '0.15',
-  'Cost per minute for AI calls (what you pay Retell). User rate is $0.40/min, so profit = $0.40 - this value per minute.'
+  'Cost per minute for AI calls (what you pay Retell). User rate is $0.35/min, so profit = $0.35 - this value per minute.'
 )
 ON CONFLICT (key) DO NOTHING;
 
@@ -27,8 +27,8 @@ ON CONFLICT (key) DO NOTHING;
 INSERT INTO app_settings (key, value, description)
 VALUES (
   'user_rate_per_minute',
-  '0.40',
-  'Rate charged to users per minute of AI calls ($0.40/min)'
+  '0.35',
+  'Rate charged to users per minute of AI calls ($0.35/min)'
 )
 ON CONFLICT (key) DO NOTHING;
 

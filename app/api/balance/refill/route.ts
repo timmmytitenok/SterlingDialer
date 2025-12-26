@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       .single();
 
     let customerId = profile?.stripe_customer_id;
-    const costPerMinute = profile?.cost_per_minute || 0.40;
+    const costPerMinute = profile?.cost_per_minute || 0.35;
 
     if (!customerId) {
       const customer = await stripe.customers.create({

@@ -107,11 +107,11 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
               SterlingAI Pro Access
             </h2>
             <div className="flex items-baseline justify-center gap-2 mb-3">
-              <span className="text-6xl font-bold text-blue-400">$499</span>
+              <span className="text-6xl font-bold text-blue-400">$379</span>
               <span className="text-2xl text-gray-400">/month</span>
             </div>
             <p className="text-gray-300 text-lg">
-              Full access + pay-as-you-go minutes ($0.40/min)
+              Full access + pay-as-you-go minutes ($0.35/min)
             </p>
           </div>
 
@@ -140,7 +140,7 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
             </p>
             <div className="flex items-center justify-between">
               <span className="text-gray-400">Per-minute rate:</span>
-              <span className="text-2xl font-bold text-blue-400">$0.40/min</span>
+              <span className="text-2xl font-bold text-blue-400">$0.35/min</span>
             </div>
             <p className="text-xs text-gray-500 mt-2">
               Auto-refill $25 when balance drops below $1
@@ -160,7 +160,7 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
             ) : (
               <span className="flex items-center justify-center gap-3">
                 <Sparkles className="w-7 h-7" />
-                Subscribe Now - $499/month
+                Subscribe Now - $379/month
                 <ArrowRight className="w-7 h-7" />
               </span>
             )}

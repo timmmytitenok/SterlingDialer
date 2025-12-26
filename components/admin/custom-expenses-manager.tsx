@@ -25,7 +25,7 @@ type RevenueCategory = 'Subscription' | 'Balance Refill';
 
 // Price per unit for each revenue category
 const REVENUE_PRICES: Record<RevenueCategory, number> = {
-  'Subscription': 499,
+  'Subscription': 379,
   'Balance Refill': 25,
 };
 
@@ -426,7 +426,7 @@ export function CustomExpensesManager({ onExpenseChange, isOpen: externalIsOpen,
                     }`}
                   >
                     <CreditCard className="w-3.5 h-3.5" />
-                    Subscription ($499)
+                    Subscription ($379)
                   </button>
                   <button
                     onClick={() => handleRevenueTabChange('Balance Refill')}

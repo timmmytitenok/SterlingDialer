@@ -15,7 +15,7 @@ export function SimpleProSelector({ currentTier, hideFreeTrial = false }: Simple
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      console.log('💎 Subscribing to SterlingAI Pro Access ($499/month)...');
+      console.log('💎 Subscribing to SterlingAI Pro Access ($379/month)...');
       
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
@@ -112,7 +112,7 @@ export function SimpleProSelector({ currentTier, hideFreeTrial = false }: Simple
               SterlingAI Pro Access
             </h2>
             <div className="flex items-baseline justify-center gap-2 mb-3">
-              <span className="text-6xl font-bold text-blue-400">$499</span>
+              <span className="text-6xl font-bold text-blue-400">$379</span>
               <span className="text-2xl text-gray-400">/month</span>
             </div>
             <p className="text-gray-300 text-lg">
@@ -150,7 +150,7 @@ export function SimpleProSelector({ currentTier, hideFreeTrial = false }: Simple
             </p>
             <div className="flex items-center justify-between">
               <span className="text-gray-400">Per-minute rate:</span>
-              <span className="text-2xl font-bold text-blue-400">$0.40/min</span>
+              <span className="text-2xl font-bold text-blue-400">$0.35/min</span>
             </div>
             <p className="text-xs text-gray-500 mt-2">
               Auto-refill $25 when balance drops below $1

@@ -41,6 +41,9 @@ interface UserDetail {
   total_calls: number;
   total_appointments: number;
   profit: number;
+  total_spent: number;
+  subscription_spent: number;
+  refill_spent: number;
   last_ai_activity: string | null;
   ai_is_running: boolean;
   total_leads: number;
@@ -90,7 +93,7 @@ export default function AdminUserDetailPage() {
   const [calEventId, setCalEventId] = useState('');
   const [agentName, setAgentName] = useState('');
   const [agentPronoun, setAgentPronoun] = useState('She');
-  const [costPerMinute, setCostPerMinute] = useState('0.40');
+  const [costPerMinute, setCostPerMinute] = useState('0.35');
   const [timezone, setTimezone] = useState('America/New_York');
   const [confirmationEmail, setConfirmationEmail] = useState('');
   const [scriptType, setScriptType] = useState<'final_expense' | 'mortgage_protection'>('final_expense');
@@ -449,7 +452,7 @@ export default function AdminUserDetailPage() {
             </div>
           </div>
 
-          {/* Total Profit */}
+          {/* Total Spent */}
           <div className="group/card relative cursor-pointer h-full">
             <div className="absolute -inset-0.5 bg-green-500/25 rounded-2xl blur-md opacity-60 group-hover/card:opacity-100 group-hover/card:blur-lg transition-all duration-300"></div>
             <div className="relative h-full bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border-2 border-green-500/50 shadow-xl transition-all duration-300 group-hover/card:scale-[1.02] flex flex-col">
@@ -457,11 +460,11 @@ export default function AdminUserDetailPage() {
                 <div className="p-3 bg-green-500/15 rounded-xl border border-green-500/40 group-hover/card:bg-green-500/25 group-hover/card:border-green-400/60 transition-all shadow-lg shadow-green-500/0 group-hover/card:shadow-green-500/30">
                 <DollarSign className="w-6 h-6 text-green-400" />
                     </div>
-              <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">Profit</div>
+              <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">Total Spent</div>
                     </div>
               <div className="flex-1 flex flex-col justify-center">
-                <div className="text-4xl font-black text-green-400 mb-1 group-hover/card:text-green-300 transition-colors">${user.profit?.toFixed(2) || '0.00'}</div>
-                <div className="text-xs text-gray-500">From user</div>
+                <div className="text-4xl font-black text-green-400 mb-1 group-hover/card:text-green-300 transition-colors">${user.total_spent?.toFixed(2) || '0.00'}</div>
+                <div className="text-xs text-gray-500">Subscription + Refills</div>
               </div>
             </div>
                 </div>
@@ -994,7 +997,7 @@ export default function AdminUserDetailPage() {
                       type="number"
                       value={costPerMinute}
                       onChange={(e) => setCostPerMinute(e.target.value)}
-                      placeholder="0.40"
+                      placeholder="0.35"
                       step="0.01"
                       min="0"
                       className="w-full pl-8 pr-3 py-3 bg-[#0B1437]/80 text-white rounded-lg border border-emerald-500/30 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:outline-none font-mono text-lg placeholder:text-gray-500"
@@ -1031,7 +1034,7 @@ export default function AdminUserDetailPage() {
                         calEventId: calEventId.trim() || null,
                         agentName: agentName.trim() || null,
                     agentPronoun: agentPronoun || 'She',
-                        costPerMinute: parseFloat(costPerMinute) || 0.40,
+                        costPerMinute: parseFloat(costPerMinute) || 0.35,
                         timezone: timezone || 'America/New_York',
                         confirmationEmail: confirmationEmail.trim() || null,
                     // New agent fields

@@ -494,7 +494,7 @@ export default function DemoPage() {
                   <div className="space-y-2 sm:space-y-3">
                     <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-800">
                       <span className="text-xs sm:text-sm text-gray-400">Sterling AI Monthly</span>
-                      <span className="text-sm sm:text-base text-white font-semibold">$499</span>
+                      <span className="text-sm sm:text-base text-white font-semibold">$379</span>
                     </div>
                     <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-800">
                       <span className="text-xs sm:text-sm text-gray-400">~300 calls per day</span>

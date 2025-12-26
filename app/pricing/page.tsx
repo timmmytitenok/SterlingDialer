@@ -107,10 +107,10 @@ export default function PricingPage() {
                 {/* Price - Mobile optimized */}
                 <div className="mt-4 sm:mt-5 md:mt-6 text-center animate-fade-in">
                   <div className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-1 sm:mb-2">
-                    $499<span className="text-base sm:text-lg md:text-2xl font-normal text-white/60"> / month</span>
+                    $379<span className="text-base sm:text-lg md:text-2xl font-normal text-white/60"> / month</span>
                   </div>
                   <div className="mt-2 text-sm sm:text-base md:text-lg text-emerald-400 font-semibold">
-                    + $0.40 per minute for calls
+                    + $0.35 per minute for calls
                   </div>
                 </div>
 
@@ -273,7 +273,7 @@ export default function PricingPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span>Calls 9am-6pm Mon-Sat</span>
+                    <span>Calls 9am-6pm daily</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
@@ -318,7 +318,7 @@ export default function PricingPage() {
             <div className="bg-gradient-to-br from-green-500/10 to-emerald-600/5 rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 lg:p-10 border border-green-500/20">
               <div className="text-center mb-5 sm:mb-6 md:mb-8">
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1.5 sm:mb-2">See Your ROI</h2>
-                <p className="text-xs sm:text-sm md:text-base text-gray-400 px-2">Conservative estimates with Sterling AI Pro ($499/month)</p>
+                <p className="text-xs sm:text-sm md:text-base text-gray-400 px-2">Conservative estimates with Sterling AI Pro ($379/month)</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
@@ -395,7 +395,7 @@ export default function PricingPage() {
               <div className="group bg-[#1A2647] rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-gray-800 hover:border-green-500/50 transition-all hover:scale-105 hover:shadow-xl hover:shadow-green-500/20">
                 <Clock className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 text-green-400 mb-3 sm:mb-4 group-hover:scale-110 transition-transform" />
                 <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">Always Working</h3>
-                <p className="text-gray-400 text-xs sm:text-sm">Calls 9am-6pm Mon-Sat, never takes a break or vacation</p>
+                <p className="text-gray-400 text-xs sm:text-sm">Calls 9am-6pm daily, never takes a break or vacation</p>
               </div>
             </div>
           </div>
@@ -410,14 +410,14 @@ export default function PricingPage() {
               <div className="bg-white/5 backdrop-blur-sm rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-white/10 hover:border-blue-500/30 transition-all">
                 <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">What's included with SterlingAI Pro Access?</h3>
                 <p className="text-xs sm:text-sm md:text-base text-gray-400">
-                  Everything! For $499/month, you get unlimited AI calling agents, unlimited leads per day, live call transfers, Cal.ai appointment booking, Google Sheets integration, call recordings & transcripts, performance dashboard, priority support, and 24/7 AI operation. One simple plan with all features unlocked.
+                  Everything! For $379/month, you get unlimited AI calling agents, unlimited leads per day, live call transfers, Cal.ai appointment booking, Google Sheets integration, call recordings & transcripts, performance dashboard, priority support, and 24/7 AI operation. One simple plan with all features unlocked.
                 </p>
               </div>
 
               <div className="bg-white/5 backdrop-blur-sm rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-white/10 hover:border-purple-500/30 transition-all">
                 <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">How does the 7-day free trial work?</h3>
                 <p className="text-xs sm:text-sm md:text-base text-gray-400">
-                  Start with a 7-day free trial! You get full access to all features - unlimited AI agents, unlimited leads, and all premium features. You only pay for the minutes you use during calls. After 7 days, it's $499/month. Cancel anytime with no questions asked.
+                  Start with a 7-day free trial! You get full access to all features - unlimited AI agents, unlimited leads, and all premium features. You only pay for the minutes you use during calls. After 7 days, it's $379/month. Cancel anytime with no questions asked.
                 </p>
               </div>
 

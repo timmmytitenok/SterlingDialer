@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, CreditCard, Wallet, TrendingUp, HeadphonesIcon, Clock } from 'lucide-react';
+import { User, CreditCard, Wallet, HeadphonesIcon, Clock } from 'lucide-react';
 
 export function SettingsLayoutClient({
   children,
@@ -20,7 +20,6 @@ export function SettingsLayoutClient({
     { name: 'Billing', href: '/dashboard/settings/billing', icon: CreditCard },
     { name: 'Balance', href: '/dashboard/settings/balance', icon: Wallet },
     { name: 'Schedule', href: '/dashboard/schedule', icon: Clock },
-    { name: 'Affiliate', href: '/dashboard/settings/affiliate', icon: TrendingUp }, // Always visible!
     { name: 'Support', href: '/dashboard/settings/support', icon: HeadphonesIcon },
   ];
 

@@ -63,7 +63,8 @@ export async function GET(
       appointmentsLast30Days,
       lastDialerSession,
       adminStats,
-      lastCall
+      lastCall,
+      aiControlSettings
     ] = await Promise.all([
       supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
       supabase.from('subscriptions').select('*').eq('user_id', userId).maybeSingle(),
@@ -79,7 +80,8 @@ export async function GET(
       supabase.from('appointments').select('id', { count: 'exact' }).eq('user_id', userId).gte('created_at', thirtyDaysAgoISO),
       supabase.from('dialer_sessions').select('started_at').eq('user_id', userId).not('started_at', 'is', null).order('started_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('revenue_tracking').select('*').eq('user_id', userId),
-      supabase.from('calls').select('created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle()
+      supabase.from('calls').select('created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('ai_control_settings').select('status').eq('user_id', userId).maybeSingle()
     ]);
 
     // Calculate revenue - safely handle missing data
@@ -92,9 +94,11 @@ export async function GET(
     let subscriptionProfit = 0;
     let refillProfit = 0;
     let refillCount = 0;
+    let totalRefillSpent = 0; // Track total refill spending
+    let subscriptionSpent = 0; // Track subscription spending
     
-    // Get user's cost per minute (default $0.40, your expense is $0.15)
-    const userCostPerMinute = profile.data?.cost_per_minute || 0.40;
+    // Get user's cost per minute (default $0.35, your expense is $0.15)
+    const userCostPerMinute = profile.data?.cost_per_minute || 0.35;
     const AI_COST_PER_MINUTE = 0.15; // Your actual cost
     const STRIPE_FEE_PERCENT = 0.03; // 3% Stripe fee
     
@@ -104,6 +108,7 @@ export async function GET(
       if (t.stripe_payment_intent_id && t.amount > 0) {
         refillCount++;
         const refillAmount = t.amount;
+        totalRefillSpent += refillAmount; // Track total spent
         
         // Calculate minutes purchased at user's rate
         const minutesPurchased = refillAmount / userCostPerMinute;
@@ -124,11 +129,13 @@ export async function GET(
     
     // Round to 2 decimal places
     refillProfit = Math.round(refillProfit * 100) / 100;
+    totalRefillSpent = Math.round(totalRefillSpent * 100) / 100;
     
     // Check if they have an ACTIVE subscription (not trialing - they haven't paid yet!)
     // IMPORTANT: VIP users don't generate subscription profit (lifetime free access)
     if (subscription.data && subscription.data.status === 'active' && subscription.data.tier !== 'vip') {
       // Only count profit if they're actively paying (not VIP)
+      subscriptionSpent = 379; // $379/month subscription cost
       // Check if user was referred
       const wasReferred = !!profile.data?.referred_by;
       if (wasReferred) {
@@ -139,12 +146,13 @@ export async function GET(
         console.log(`  💰 ACTIVE subscription (NOT REFERRED) - Profit: $484`);
       }
     } else if (subscription.data && subscription.data.tier === 'vip') {
-      console.log(`  👑 VIP USER - No subscription profit (lifetime free access)`);
+      console.log(`  👑 VIP USER - No subscription spending (lifetime free access)`);
     } else if (subscription.data && subscription.data.status === 'trialing') {
-      console.log(`  ⏳ User is on FREE TRIAL - No subscription profit yet (they haven't paid)`);
+      console.log(`  ⏳ User is on FREE TRIAL - No subscription spending yet`);
     }
     
     const totalRevenue = subscriptionProfit + refillProfit;
+    const totalSpent = subscriptionSpent + totalRefillSpent; // Total money user has spent
     
     console.log('💵 Revenue breakdown:', {
       subscriptionProfit,
@@ -296,6 +304,11 @@ export async function GET(
       refill_profit: refillProfit, // $14.25 per refill (costs already factored in)
       profit: profit, // subscription_profit + refill_profit
       
+      // Total Spent by User (subscriptions + call balance refills)
+      total_spent: totalSpent,
+      subscription_spent: subscriptionSpent, // $379 if active subscription
+      refill_spent: totalRefillSpent, // Total refill amount
+      
       // User's Revenue (their policy sales - for display only, not included in Sterling AI profit)
       user_policy_revenue: totalAdminRevenue,
       
@@ -318,6 +331,7 @@ export async function GET(
       confirmation_email: retellConfig.data?.confirmation_email ?? null,
       script_type: retellConfig.data?.script_type ?? 'final_expense',
       ai_is_active: retellConfig.data?.is_active ?? false,
+      ai_is_running: aiControlSettings.data?.status === 'running',
       ai_maintenance_mode: profile.data?.ai_maintenance_mode ?? false,
       
       // Per-user Retell AI Agents

@@ -270,7 +270,7 @@ export default async function DashboardPage() {
     
     // Updated pricing (November 2024)
     switch (subscription.subscription_tier) {
-      case 'starter': monthlyPrice = 499; break;
+      case 'starter': monthlyPrice = 379; break;
       case 'pro': monthlyPrice = 899; break;
       case 'elite': monthlyPrice = 1499; break;
     }
@@ -374,7 +374,7 @@ export default async function DashboardPage() {
         
         let monthlyPrice = 0;
         switch (subscription.subscription_tier) {
-          case 'starter': monthlyPrice = 499; break;
+          case 'starter': monthlyPrice = 379; break;
           case 'pro': monthlyPrice = 899; break;
           case 'elite': monthlyPrice = 1499; break;
         }

@@ -75,7 +75,7 @@ export async function GET() {
 
       // Create a map of user_id -> cost_per_minute
       (profiles || []).forEach((p: { user_id: string; cost_per_minute: number | null }) => {
-        userRates[p.user_id] = p.cost_per_minute || 0.40; // Default to $0.40 if not set
+        userRates[p.user_id] = p.cost_per_minute || 0.35; // Default to $0.35 if not set
       });
     }
 
@@ -113,8 +113,8 @@ export async function GET() {
       const skipDates = user.dialer_skip_dates || [];
       const extraDates = user.dialer_extra_dates || [];
       
-      // Get THIS user's specific rate (default $0.40)
-      const userRate = userRates[user.user_id] || 0.40;
+      // Get THIS user's specific rate (default $0.35)
+      const userRate = userRates[user.user_id] || 0.35;
       
       // Calculate profit margin for THIS user
       // dailyBudget is what they'll spend

@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId, // $499/month Pro Access
+          price: priceId, // $379/month Pro Access
           quantity: 1,
         },
       ],

@@ -369,40 +369,18 @@ export async function POST(request: Request) {
     console.log(`🕐 User's local time: ${userTimeString} (${currentHour}:${currentMinute.toString().padStart(2, '0')})`);
     console.log(`🕐 Current hour (24h): ${currentHour}`);
     
-    // Simple calling hours check: 9am-6pm (Mon-Sat, NO Sundays)
+    // Simple calling hours check: 9am-6pm (every day)
     const withinCallingHours = currentHour >= 9 && currentHour < 18;
-    
-    // Check if it's Sunday (blocked day)
-    const userDayOfWeek = new Date(now.toLocaleString('en-US', { timeZone: userTimezone })).getDay();
-    const isSunday = userDayOfWeek === 0;
     
     // Check if calling hours are disabled (for testing)
     const callingHoursDisabled = aiSettings.disable_calling_hours === true;
     
     console.log(`⚙️ disable_calling_hours setting: ${aiSettings.disable_calling_hours} (type: ${typeof aiSettings.disable_calling_hours})`);
     console.log(`⚙️ callingHoursDisabled: ${callingHoursDisabled}`);
-    console.log(`📅 Day of week: ${userDayOfWeek} (0=Sunday, isSunday: ${isSunday})`);
     
     if (callingHoursDisabled) {
       console.log('⚠️  CALLING HOURS CHECK DISABLED (testing mode)');
       console.log(`   Current time: ${userTimeString}`);
-    } else if (isSunday) {
-      // Sunday is completely blocked
-      console.log(`🛑 [EXIT-5] Sunday is blocked - no calls on Sundays!`);
-      
-      await supabase
-        .from('ai_control_settings')
-        .update({ status: 'stopped', last_call_status: 'sunday_blocked' })
-        .eq('user_id', userId);
-      
-      return NextResponse.json({
-        done: true,
-        reason: 'sunday_blocked',
-        message: `No calls on Sundays. AI will resume Monday at 9:00 AM.`,
-        userTime: userTimeString,
-        timezone: userTimezone,
-        exitPoint: 'EXIT-5-sunday-blocked'
-      });
     } else if (!withinCallingHours) {
       // Normal mode - enforce calling hours
       console.log(`🛑 [EXIT-6] Outside calling hours! Current time: ${currentHour}:${currentMinute.toString().padStart(2, '0')}`);
@@ -425,7 +403,7 @@ export async function POST(request: Request) {
     }
     console.log('✅ [CHECK-3] Calling hours OK - continuing...');
     
-    console.log(`✅ ${callingHoursDisabled ? 'Calling hours disabled - continuing anyway' : 'Within calling hours (9am-6pm, Mon-Sat)'}`);
+    console.log(`✅ ${callingHoursDisabled ? 'Calling hours disabled - continuing anyway' : 'Within calling hours (9am-6pm)'}`);
 
     // ========================================================================
     // SIMPLIFIED LEAD SELECTION - 20 ATTEMPT LIMIT

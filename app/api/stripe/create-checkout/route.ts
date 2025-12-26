@@ -14,9 +14,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Single tier now: SterlingAI Pro Access ($499/month)
+    // Single tier now: SterlingAI Pro Access ($379/month)
     const { tier } = await request.json();
-    console.log('💎 Subscribing to SterlingAI Pro Access ($499/month)');
+    console.log('💎 Subscribing to SterlingAI Pro Access ($379/month)');
 
     // Use single Pro price ID
     const priceId = process.env.STRIPE_PRICE_ID_PRO;

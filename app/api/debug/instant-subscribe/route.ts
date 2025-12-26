@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId, // $499/month Pro Access
+          price: priceId, // $379/month Pro Access
           quantity: 1,
         },
       ],
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     } as any);
 
     console.log('✅ DEBUG: Instant subscription session created (NO TRIAL)');
-    console.log('   Customer will be charged $499 immediately');
+    console.log('   Customer will be charged $379 immediately');
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {

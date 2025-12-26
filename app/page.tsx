@@ -511,12 +511,12 @@ export default function LandingPage() {
                 
                 {/* Mobile: Compact pricing */}
                 <p className="sm:hidden text-xs text-gray-400 mb-6 px-4">
-                  <span className="text-green-400 font-bold block mb-1">$499/month. Unlimited everything.</span>
+                  <span className="text-green-400 font-bold block mb-1">$379/month. Unlimited everything.</span>
                   <span>One policy pays for it all.</span>
                 </p>
                 {/* Desktop: Full pricing */}
                 <p className="hidden sm:block text-base md:text-1xl text-gray-400 mb-8 md:mb-8">
-                  <span className="text-green-400 font-bold">$499/month. Unlimited leads. Unlimited appointments.</span> What's one policy worth to you?
+                  <span className="text-green-400 font-bold">$379/month. Unlimited leads. Unlimited appointments.</span> What's one policy worth to you?
                 </p>
                 <Link
                   href="/signup"

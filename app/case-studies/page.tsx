@@ -260,7 +260,7 @@ export default function CaseStudiesPage() {
           </div>
           <p className="text-sm text-gray-400 mt-6">
             <Zap className="w-4 h-4 inline mr-1 text-green-400 animate-pulse" />
-            7 Days Free • Only Pay <span className="text-green-400 font-bold">$0.40/min</span> for Calls
+            7 Days Free • Only Pay <span className="text-green-400 font-bold">$0.35/min</span> for Calls
           </p>
         </div>
       </div>

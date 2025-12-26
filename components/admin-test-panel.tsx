@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Phone, Settings, X, Loader2, Calendar, Clock, User, ChevronDown, Eye, EyeOff, Shield, ShieldOff, UserX } from 'lucide-react';
 import { usePrivacy, UserInfoBlurMode } from '@/contexts/privacy-context';
 
@@ -52,6 +52,30 @@ export function AdminTestPanel({
 
   // Privacy blur toggle
   const { blurSensitive, setBlurSensitive, userInfoBlur, setUserInfoBlur } = usePrivacy();
+
+  // Refs for click-outside detection
+  const panelRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Close panel when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isOpen &&
+        panelRef.current &&
+        buttonRef.current &&
+        !panelRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   // Fetch bypass restrictions setting on mount
   useEffect(() => {
@@ -267,6 +291,7 @@ export function AdminTestPanel({
     <>
       {/* Floating Admin Badge - Always visible */}
       <button
+        ref={buttonRef}
         onClick={() => {
           setIsOpen(!isOpen);
           setIsMinimized(false);
@@ -279,6 +304,7 @@ export function AdminTestPanel({
 
       {/* Admin Panel */}
       <div 
+        ref={panelRef}
         className={`fixed bottom-6 right-24 z-50 bg-gradient-to-br from-[#121c3d] via-[#0d1529] to-[#0a1020] rounded-2xl shadow-2xl border border-purple-500/40 overflow-hidden transition-all duration-500 ease-out origin-bottom-right ${
           isOpen 
             ? 'opacity-100 scale-100 translate-x-0' 

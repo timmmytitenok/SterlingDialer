@@ -252,7 +252,7 @@ export async function POST(req: Request) {
                 subscription_tier: 'free_trial',
                 free_trial_started_at: new Date().toISOString(),
                 free_trial_ends_at: trialEnd.toISOString(),
-                cost_per_minute: 0.40,
+                cost_per_minute: 0.35,
                 stripe_customer_id: customerId,
                 has_active_subscription: true,
                 // DON'T set onboarding_all_complete - they need to do Quick Setup!
@@ -263,23 +263,23 @@ export async function POST(req: Request) {
               console.error('❌ Error granting trial access:', trialError);
             } else {
               console.log('✅ FREE TRIAL ACTIVATED - 7 days of access granted');
-              console.log('✅ Payment method on file - will charge $499 after 7 days');
+              console.log('✅ Payment method on file - will charge $379 after 7 days');
             }
             
             // Continue to regular subscription processing below
             // (The subscription record still needs to be created)
           }
 
-          // Single tier: SterlingAI Pro Access ($499/month)
+          // Single tier: SterlingAI Pro Access ($379/month)
           const tier = 'pro';
           const maxCalls = 999999; // Unlimited
           const hasChecker = true;
           const callerCount = 99; // Unlimited
-          const costPerMinute = 0.40; // Everyone pays $0.40/min
+          const costPerMinute = 0.35; // Everyone pays $0.35/min
 
           console.log('💎 SterlingAI Pro Access subscription');
           console.log('   - Tier: pro');
-          console.log('   - Cost per minute: $0.40');
+          console.log('   - Cost per minute: $0.35');
           console.log('   - Features: Unlimited');
 
           // Upsert subscription
@@ -573,8 +573,8 @@ export async function POST(req: Request) {
 
       console.log('🎯 Determined tier:', { tier, maxCalls, hasChecker, callerCount });
 
-      // Everyone pays $0.40/min - ONE SIMPLE PRICE
-      const costPerMinuteForSub = 0.40;
+      // Everyone pays $0.35/min - ONE SIMPLE PRICE
+      const costPerMinuteForSub = 0.35;
 
       // Upsert subscription
       const { error: upsertError } = await supabase
@@ -607,8 +607,8 @@ export async function POST(req: Request) {
 
       console.log(`✅ Subscription ${event.type === 'customer.subscription.created' ? 'created' : 'updated'} for user:`, userProfile2.user_id, `Tier: ${tier}`);
 
-      // Everyone pays $0.40/min - ONE SIMPLE PRICE
-      const costPerMinute = 0.30;
+      // Everyone pays $0.35/min - ONE SIMPLE PRICE
+      const costPerMinute = 0.35;
 
       console.log(`💰 Setting cost_per_minute to $${costPerMinute} for ${tier} tier`);
 
@@ -880,7 +880,7 @@ export async function POST(req: Request) {
             .insert({
               type: 'revenue',
               category: 'Subscription',
-              amount: amountPaid, // Usually $499
+              amount: amountPaid, // Usually $379
               description: `Auto-tracked: Subscription payment`,
               date: new Date().toISOString().split('T')[0],
             });

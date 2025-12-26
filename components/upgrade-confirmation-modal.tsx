@@ -10,7 +10,7 @@ interface UpgradeConfirmationModalProps {
 }
 
 const TIER_INFO = {
-  starter: { name: 'Starter', price: 499, color: 'blue' },
+  starter: { name: 'Starter', price: 379, color: 'blue' },
   pro: { name: 'Pro', price: 899, color: 'purple' },
   elite: { name: 'Elite', price: 1499, color: 'amber' },
 };

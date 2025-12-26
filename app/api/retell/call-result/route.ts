@@ -361,7 +361,7 @@ export async function POST(request: Request) {
       .eq('user_id', userId)
       .single();
 
-    const costPerMinute = userProfile?.cost_per_minute || 0.40; // Default to $0.40
+    const costPerMinute = userProfile?.cost_per_minute || 0.35; // Default to $0.35
     console.log(`💰 User cost per minute: $${costPerMinute} (tier: ${userProfile?.subscription_tier || 'unknown'})`);
 
     const userTimezone = aiSettings.user_timezone || 'America/New_York';
@@ -1303,7 +1303,7 @@ export async function POST(request: Request) {
               // Monthly prices
               let monthlyPrice = 0;
               switch (subscription.subscription_tier) {
-                case 'starter': monthlyPrice = 499; break;
+                case 'starter': monthlyPrice = 379; break;
                 case 'pro': monthlyPrice = 899; break;
                 case 'elite': monthlyPrice = 1499; break;
               }

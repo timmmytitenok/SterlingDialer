@@ -22,7 +22,7 @@ interface DashboardStatsGridProps {
   last30DaysStats: StatsData;
 }
 
-type Period = 'today' | 'all' | '7days';
+type Period = 'today' | 'yesterday' | 'all' | '7days' | '30days';
 
 // Counter animation component
 function AnimatedNumber({ value, prefix = '', suffix = '' }: { value: number | string; prefix?: string; suffix?: string }) {
@@ -90,8 +90,10 @@ export function DashboardStatsGrid({ todayStats, yesterdayStats, allTimeStats, l
   const getStats = () => {
     switch (period) {
       case 'today': return todayStats;
+      case 'yesterday': return yesterdayStats;
       case 'all': return allTimeStats;
       case '7days': return last7DaysStats;
+      case '30days': return last30DaysStats;
     }
   };
   
@@ -121,6 +123,17 @@ export function DashboardStatsGrid({ todayStats, yesterdayStats, allTimeStats, l
         >
           Today
         </button>
+        {/* Yesterday - Desktop only */}
+        <button
+          onClick={() => setPeriod('yesterday')}
+          className={`hidden md:block px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+            period === 'yesterday'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+              : 'bg-[#1A2647] text-gray-400 hover:text-white hover:bg-[#1A2647]/80 border border-gray-800'
+          }`}
+        >
+          Yesterday
+        </button>
         <button
           onClick={() => setPeriod('7days')}
           className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
@@ -130,6 +143,17 @@ export function DashboardStatsGrid({ todayStats, yesterdayStats, allTimeStats, l
           }`}
         >
           Last 7 Days
+        </button>
+        {/* Last 30 Days - Desktop only */}
+        <button
+          onClick={() => setPeriod('30days')}
+          className={`hidden md:block px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+            period === '30days'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+              : 'bg-[#1A2647] text-gray-400 hover:text-white hover:bg-[#1A2647]/80 border border-gray-800'
+          }`}
+        >
+          Last 30 Days
         </button>
       </div>
 

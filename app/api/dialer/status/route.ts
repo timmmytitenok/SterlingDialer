@@ -31,6 +31,13 @@ export async function GET() {
       .eq('user_id', user.id)
       .single();
 
+    // Get user's timezone from user_retell_config (set in admin user management)
+    const { data: retellConfig } = await supabase
+      .from('user_retell_config')
+      .select('timezone')
+      .eq('user_id', user.id)
+      .single();
+
     // Show 0 if no settings exist (user hasn't configured yet)
     const dailyBudgetCents = settings?.daily_budget_cents || 0;
 
@@ -152,12 +159,11 @@ export async function GET() {
       status = 'idle';
     }
 
-    // Check calling hours (9am - 6pm in user's timezone, Mon-Sat only)
-    const userTimezone = aiSettings?.user_timezone || 'America/New_York';
+    // Check calling hours (9am - 6pm in user's timezone, every day)
+    // Priority: user_retell_config.timezone (set in admin) > ai_control_settings.user_timezone > default
+    const userTimezone = retellConfig?.timezone || aiSettings?.user_timezone || 'America/New_York';
     const nowInUserTZ = new Date(new Date().toLocaleString('en-US', { timeZone: userTimezone }));
     const currentHour = nowInUserTZ.getHours();
-    const currentDay = nowInUserTZ.getDay(); // 0 = Sunday
-    const isSunday = currentDay === 0;
     const withinCallingHours = currentHour >= 9 && currentHour < 18;
     const callingHoursDisabled = aiSettings?.disable_calling_hours === true;
     
@@ -168,14 +174,12 @@ export async function GET() {
       hour12: true 
     });
 
-    // If Sunday or outside calling hours and not disabled, show that status
-    const outsideCallingHours = (!withinCallingHours || isSunday) && !callingHoursDisabled;
+    // If outside calling hours and not disabled, show that status
+    const outsideCallingHours = !withinCallingHours && !callingHoursDisabled;
     
     if (outsideCallingHours && status === 'idle') {
       status = 'outside-hours';
-      reason = isSunday 
-        ? `No calls on Sundays. Resumes Monday 9:00 AM` 
-        : `Calling hours: 9:00 AM - 6:00 PM ${userTimezone.replace('America/', '').replace('_', ' ')}`;
+      reason = `Calling hours: 9:00 AM - 6:00 PM ${userTimezone.replace('America/', '').replace('_', ' ')}`;
     }
 
     // Check if budget reached

@@ -212,7 +212,7 @@ export function AffiliateEarningsClient({
                   <span className="text-2xl">💵</span> How much can I earn?
                 </h3>
                 <p className="text-gray-400 text-sm">
-                  You earn $49.90 per customer per month. Refer 10 customers = <span className="text-green-400 font-bold">$499/month</span> recurring income!
+                  You earn $37.90 per customer per month. Refer 10 customers = <span className="text-green-400 font-bold">$379/month</span> recurring income!
                 </p>
               </div>
             </div>
@@ -514,7 +514,7 @@ export function AffiliateEarningsClient({
             <p>• Share your referral link with potential customers</p>
             <p>• They sign up and get a 7-day free trial</p>
             <p>• <strong className="text-yellow-400">When they make their first payment</strong> to become Pro Access, you start earning!</p>
-            <p>• You earn <strong className="text-green-400">$49.90/month (10% of $499)</strong> for <strong>EVERY month</strong> they stay subscribed</p>
+            <p>• You earn <strong className="text-green-400">$37.90/month (10% of $379)</strong> for <strong>EVERY month</strong> they stay subscribed</p>
             <p>• Commissions automatically recur monthly while they remain active</p>
             <p>• Payments are processed manually at the end of each month</p>
           </div>

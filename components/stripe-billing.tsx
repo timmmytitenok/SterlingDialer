@@ -128,9 +128,9 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
   const getTierInfo = () => {
     const tiers = {
       trial: { name: 'Free Trial', price: 0, color: 'green' },
-      pro: { name: 'Pro Access', price: 499, color: 'purple' },
+      pro: { name: 'Pro Access', price: 379, color: 'purple' },
       vip: { name: 'VIP Access (Lifetime)', price: 0, color: 'amber' },
-      starter: { name: 'Starter Plan', price: 499, color: 'blue' },
+      starter: { name: 'Starter Plan', price: 379, color: 'blue' },
       elite: { name: 'Elite Plan', price: 1499, color: 'amber' },
       free_trial: { name: 'Free Trial', price: 0, color: 'green' }, // legacy
       free_access: { name: 'VIP Access', price: 0, color: 'amber' }, // legacy
@@ -254,7 +254,7 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
           <p className="text-xl md:text-2xl font-bold text-blue-400 mb-1">
             {tierInfo.price > 0 ? `$${tierInfo.price}` : '$0'}<span className="text-sm md:text-base text-gray-400 font-normal">/month</span>
           </p>
-          <p className="text-xs md:text-sm text-gray-400 mb-3">+ $0.40 per minute for calls</p>
+          <p className="text-xs md:text-sm text-gray-400 mb-3">+ $0.35 per minute for calls</p>
           
           {/* Status Badge */}
           <div className={`inline-flex items-center gap-2 px-2.5 md:px-3 py-1.5 rounded-full ${
@@ -296,7 +296,7 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
             </p>
           ) : isOnTrial ? (
             <p className="text-xs text-gray-400 pl-6 md:pl-8 mt-2">
-              💳 Your card will be charged $499 on this date unless you cancel before then
+              💳 Your card will be charged $379 on this date unless you cancel before then
             </p>
           ) : null}
         </div>

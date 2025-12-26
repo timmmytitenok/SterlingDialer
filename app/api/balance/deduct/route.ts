@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       .eq('user_id', userId)
       .single();
     
-    const costPerMinute = userProfile?.cost_per_minute || 0.40; // Default to $0.40 if not set
+    const costPerMinute = userProfile?.cost_per_minute || 0.35; // Default to $0.35 if not set
     console.log(`💰 User's cost per minute: $${costPerMinute}`);
 
     // Calculate cost using user's specific rate
