@@ -232,8 +232,16 @@ export async function POST(request: Request) {
     }
     console.log('✅ [CHECK-1] AI status is running - continuing...');
 
-    // Get today's date in user's timezone
-    const userTimezone = aiSettings.user_timezone || 'America/New_York';
+    // Get user's timezone from user_retell_config (set in admin user management)
+    const { data: retellConfig } = await supabase
+      .from('user_retell_config')
+      .select('timezone')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    // Priority: user_retell_config.timezone (admin setting) > ai_control_settings.user_timezone > default
+    const userTimezone = retellConfig?.timezone || aiSettings.user_timezone || 'America/New_York';
+    console.log(`🌍 User timezone: ${userTimezone} (from ${retellConfig?.timezone ? 'user_retell_config' : aiSettings.user_timezone ? 'ai_control_settings' : 'default'})`);
     const todayStr = getTodayDateString(userTimezone);
 
     // Reset daily counters if it's a new day
