@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { getTodayDateString } from '@/lib/timezone-helpers';
 
 export async function POST(request: Request) {
   console.log('');
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
     // If appointment was previously sold, remove the revenue
     if (appointment.is_sold && appointment.monthly_payment) {
       const annualPremium = appointment.monthly_payment * 12;
-      const soldDate = appointment.sold_at ? new Date(appointment.sold_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      const soldDate = appointment.sold_at ? new Date(appointment.sold_at).toISOString().split('T')[0] : getTodayDateString('America/New_York');
 
       console.log(`🔄 Removing revenue: $${annualPremium} from ${soldDate}`);
 

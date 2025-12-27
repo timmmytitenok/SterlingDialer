@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isAdminMode } from '@/lib/admin-check';
+import { getTodayDateString } from '@/lib/timezone-helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
         category,
         amount: parseFloat(amount),
         description: description || null,
-        date: date || new Date().toISOString().split('T')[0],
+        date: date || getTodayDateString('America/New_York'), // EST timezone
       })
       .select()
       .single();

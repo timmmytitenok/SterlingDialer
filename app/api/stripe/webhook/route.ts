@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { calculateAIExpense } from '@/lib/ai-cost-calculator';
+import { getTodayDateString } from '@/lib/timezone-helpers';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-10-29.clover' as any,
@@ -882,7 +883,7 @@ export async function POST(req: Request) {
               category: 'Subscription',
               amount: amountPaid, // Usually $379
               description: `Auto-tracked: Subscription payment`,
-              date: new Date().toISOString().split('T')[0],
+              date: getTodayDateString('America/New_York'), // EST timezone - day resets at midnight EST
             });
 
           if (subRevenueError) {

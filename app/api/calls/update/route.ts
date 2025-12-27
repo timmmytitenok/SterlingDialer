@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { getTodayDateString } from '@/lib/timezone-helpers';
 
 export async function POST(request: Request) {
   try {
@@ -192,7 +193,8 @@ export async function POST(request: Request) {
 
     // UPDATE AI COSTS: Track daily AI costs in revenue_tracking
     try {
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      // Use EST timezone for date - day resets at midnight EST, not UTC!
+      const today = getTodayDateString('America/New_York'); // YYYY-MM-DD in EST
       
       // Get user's cost per minute from profile
       const { data: userProfile } = await supabase
