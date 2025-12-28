@@ -72,7 +72,7 @@ export async function GET(
       supabase.from('user_retell_config').select('*').eq('user_id', userId).maybeSingle(),
       supabase.from('dialer_settings').select('*').eq('user_id', userId).maybeSingle(),
       supabase.from('referrals').select('*').eq('referrer_id', userId),
-      supabase.from('calls').select('duration, created_at').eq('user_id', userId),
+      supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', userId), // Count only - no row limit!
       supabase.from('calls').select('call_id', { count: 'exact' }).eq('user_id', userId).gte('created_at', thirtyDaysAgoISO),
       supabase.from('balance_transactions').select('amount, type, created_at, stripe_payment_intent_id').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('leads').select('id', { count: 'exact' }).eq('user_id', userId),
@@ -161,13 +161,18 @@ export async function GET(
       totalRevenue,
     });
 
-    // Debug: Log calls data
+    // Debug: Log calls data (now using count query)
     console.log('🔍 calls query result:', {
-      count: (callStats.data || []).length,
-      hasData: !!callStats.data,
+      count: callStats.count || 0,
       error: callStats.error,
-      sampleCall: callStats.data?.[0],
     });
+    
+    // Fetch durations separately with high limit for minute calculations
+    const { data: callDurations } = await supabase
+      .from('calls')
+      .select('duration')
+      .eq('user_id', userId)
+      .limit(500000);
     
     // Calculate admin adjustments from revenue_tracking table
     const totalAdminCalls = (adminStats.data || []).reduce((sum: number, stat: any) => sum + (stat.total_calls || 0), 0);
@@ -180,10 +185,10 @@ export async function GET(
       userPolicySalesRevenue: totalAdminRevenue, // This is THEIR revenue, not yours
     });
     
-    // Calculate call stats - safely handle missing data + admin adjustments
-    const realCalls = (callStats.data || []).length;
+    // Calculate call stats - using count query for accurate totals (no 1000 row limit!)
+    const realCalls = callStats.count || 0;
     const totalCalls = realCalls + totalAdminCalls;
-    const totalMinutes = (callStats.data || []).reduce((sum: number, call: any) => sum + (call.duration || 0), 0);
+    const totalMinutes = (callDurations || []).reduce((sum: number, call: any) => sum + (call.duration || 0), 0);
     
     console.log(`📞 Call stats for user ${userId}:`, {
       realCalls: realCalls,
