@@ -24,8 +24,9 @@ export default function SalesLayout({
   const [isMobile, setIsMobile] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Don't apply layout to login/signup pages
+  // Don't apply layout to login/signup pages or presentation
   const isAuthPage = pathname === '/sales/login' || pathname === '/sales/signup';
+  const isPresentationPage = pathname === '/sales/presentation';
 
   // Check for mobile
   useEffect(() => {
@@ -42,6 +43,11 @@ export default function SalesLayout({
     if (isAuthPage) {
       setLoading(false);
       return;
+    }
+
+    // For presentation page, still check auth but don't show sidebar
+    if (isPresentationPage) {
+      // Check session without sidebar layout
     }
 
     // Check for admin impersonation first
@@ -98,6 +104,11 @@ export default function SalesLayout({
 
   // For auth pages, just render children without layout
   if (isAuthPage) {
+    return <>{children}</>;
+  }
+
+  // For presentation page, render fullscreen without sidebar (but still require auth)
+  if (isPresentationPage && salesPerson) {
     return <>{children}</>;
   }
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, LogOut, Sparkles, ExternalLink, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Sparkles, ExternalLink, Loader2, Presentation } from 'lucide-react';
 import { useState } from 'react';
 
 interface SalesSidebarProps {
@@ -90,7 +90,7 @@ export function SalesSidebar({ salesPerson }: SalesSidebarProps) {
         <button
           onClick={openDemoDashboard}
           disabled={loadingDemo}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 bg-gradient-to-r from-purple-600/20 to-blue-600/20 text-purple-400 border border-purple-500/30 hover:from-purple-600/30 hover:to-blue-600/30 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-gray-400 hover:bg-purple-600/20 hover:text-purple-400 hover:border hover:border-purple-500/30 hover:scale-[1.02] hover:translate-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loadingDemo ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -98,6 +98,16 @@ export function SalesSidebar({ salesPerson }: SalesSidebarProps) {
             <Sparkles className="w-5 h-5" />
           )}
           <span className="font-medium flex-1 text-left">Demo Dashboard</span>
+          <ExternalLink className="w-4 h-4 opacity-60" />
+        </button>
+
+        {/* Presentation - Opens Sales Presentation in new tab */}
+        <button
+          onClick={() => window.open('/sales/presentation', '_blank')}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-gray-400 hover:bg-amber-600/20 hover:text-amber-400 hover:border hover:border-amber-500/30 hover:scale-[1.02] hover:translate-x-1"
+        >
+          <Presentation className="w-5 h-5" />
+          <span className="font-medium flex-1 text-left">Presentation</span>
           <ExternalLink className="w-4 h-4 opacity-60" />
         </button>
       </nav>

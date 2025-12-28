@@ -63,45 +63,94 @@ export default async function DashboardPage() {
   console.log(`📅 Today starts at: ${startOfTodayISO} (midnight in ${userTimezone})`);
   console.log(`📅 Today's date: ${todayDateString}`);
 
-  // Fetch all calls data with fresh query
-  const { data: allCalls, error: allCallsError } = await supabase
+  // ============================================================================
+  // SCALABLE QUERIES - Using count queries to handle 200k+ calls efficiently
+  // ============================================================================
+
+  // Fetch all call counts using efficient count queries (no row limit issues!)
+  const [
+    // All-time counts
+    { count: totalCallsCount },
+    { count: connectedCallsCount },
+    { count: notInterestedAllCount },
+    { count: callbacksAllCount },
+    { count: transfersAllCount },
+    // Today counts
+    { count: todayCallsCount },
+    { count: todayConnectedCount },
+    { count: todayNotInterestedCount },
+    { count: todayCallbacksCount },
+    { count: todayTransfersCount },
+    // Yesterday counts
+    { count: yesterdayCallsCount },
+    { count: yesterdayConnectedCount },
+    { count: yesterdayNotInterestedCount },
+    { count: yesterdayCallbacksCount },
+    { count: yesterdayTransfersCount },
+    // 7 days counts
+    { count: last7DaysCallsCount },
+    { count: last7DaysConnectedCount },
+    { count: last7DaysNotInterestedCount },
+    { count: last7DaysCallbacksCount },
+    { count: last7DaysTransfersCount },
+    // 30 days counts
+    { count: last30DaysCallsCount },
+    { count: last30DaysConnectedCount },
+    { count: last30DaysNotInterestedCount },
+    { count: last30DaysCallbacksCount },
+    { count: last30DaysTransfersCount },
+  ] = await Promise.all([
+    // All-time counts
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).or('disposition.eq.answered,connected.eq.true'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('outcome', 'not_interested'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('outcome', 'callback_later'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('outcome', 'live_transfer'),
+    // Today counts
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOfTodayISO),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOfTodayISO).or('disposition.eq.answered,connected.eq.true'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOfTodayISO).eq('outcome', 'not_interested'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOfTodayISO).eq('outcome', 'callback_later'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOfTodayISO).eq('outcome', 'live_transfer'),
+    // Yesterday counts
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOfYesterdayISO).lt('created_at', startOfTodayISO),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOfYesterdayISO).lt('created_at', startOfTodayISO).or('disposition.eq.answered,connected.eq.true'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOfYesterdayISO).lt('created_at', startOfTodayISO).eq('outcome', 'not_interested'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOfYesterdayISO).lt('created_at', startOfTodayISO).eq('outcome', 'callback_later'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOfYesterdayISO).lt('created_at', startOfTodayISO).eq('outcome', 'live_transfer'),
+    // 7 days counts
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOf7DaysISO),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOf7DaysISO).or('disposition.eq.answered,connected.eq.true'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOf7DaysISO).eq('outcome', 'not_interested'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOf7DaysISO).eq('outcome', 'callback_later'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOf7DaysISO).eq('outcome', 'live_transfer'),
+    // 30 days counts
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOf30DaysISO),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOf30DaysISO).or('disposition.eq.answered,connected.eq.true'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOf30DaysISO).eq('outcome', 'not_interested'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOf30DaysISO).eq('outcome', 'callback_later'),
+    supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', startOf30DaysISO).eq('outcome', 'live_transfer'),
+  ]);
+
+  console.log(`📊 Dashboard: Total calls count: ${totalCallsCount || 0} (using efficient count queries)`);
+
+  // Fetch only cost data for total cost calculation (minimal columns, high limit)
+  const { data: callCosts } = await supabase
     .from('calls')
-    .select('*')
+    .select('cost')
     .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+    .limit(500000);
   
-  console.log(`📊 Dashboard: Found ${allCalls?.length || 0} total calls for user`);
-  if (allCallsError) console.error('❌ Error fetching calls:', allCallsError);
-  
-  // Debug: Calculate total costs from calls table directly
-  const totalCostFromCalls = allCalls?.reduce((sum, call) => sum + (call.cost || 0), 0) || 0;
+  const totalCostFromCalls = callCosts?.reduce((sum, call) => sum + (call.cost || 0), 0) || 0;
   console.log(`💰 Total cost from calls table: $${totalCostFromCalls.toFixed(2)}`);
 
-  const { data: todayCalls } = await supabase
+  // Fetch last 30 days of call data for chart (only needed columns, limited)
+  const { data: chartCallsData } = await supabase
     .from('calls')
-    .select('*')
+    .select('created_at, disposition, connected, outcome')
     .eq('user_id', user.id)
-    .gte('created_at', startOfTodayISO);
-
-  // Yesterday's calls (between yesterday start and today start)
-  const { data: yesterdayCalls } = await supabase
-    .from('calls')
-    .select('*')
-    .eq('user_id', user.id)
-    .gte('created_at', startOfYesterdayISO)
-    .lt('created_at', startOfTodayISO);
-
-  const { data: last7DaysCalls } = await supabase
-    .from('calls')
-    .select('*')
-    .eq('user_id', user.id)
-    .gte('created_at', startOf7DaysISO);
-
-  const { data: last30DaysCalls } = await supabase
-    .from('calls')
-    .select('*')
-    .eq('user_id', user.id)
-    .gte('created_at', startOf30DaysISO);
+    .gte('created_at', startOf30DaysISO)
+    .limit(500000);
 
   // Fetch ALL admin-adjusted stats from revenue_tracking table
   const { data: allAdminStats } = await supabase
@@ -131,17 +180,17 @@ export default async function DashboardPage() {
   const admin30DaysCalls = allAdminStats?.filter(stat => stat.date >= last30DaysDate).reduce((sum, stat) => sum + (stat.total_calls || 0), 0) || 0;
   
   // Calculate metrics (combine real calls + admin adjustments)
-  const totalCallsToday = todayCalls?.length || 0;
-  const totalCalls7Days = (last7DaysCalls?.length || 0) + admin7DaysCalls;
-  const totalCalls30Days = (last30DaysCalls?.length || 0) + admin30DaysCalls;
+  const totalCallsToday = todayCallsCount || 0;
+  const totalCalls7Days = (last7DaysCallsCount || 0) + admin7DaysCalls;
+  const totalCalls30Days = (last30DaysCallsCount || 0) + admin30DaysCalls;
   
   // Add admin-adjusted numbers to today's totals
   const adminDialsToday = adminStatsToday?.total_calls || 0;
   const finalTotalCallsToday = totalCallsToday + adminDialsToday;
 
   console.log(`📞 Today's calls: ${totalCallsToday} real + ${adminDialsToday} admin = ${finalTotalCallsToday} total`);
-  console.log(`📞 7 days calls: ${last7DaysCalls?.length || 0} real + ${admin7DaysCalls} admin = ${totalCalls7Days} total`);
-  console.log(`📞 30 days calls: ${last30DaysCalls?.length || 0} real + ${admin30DaysCalls} admin = ${totalCalls30Days} total`);
+  console.log(`📞 7 days calls: ${last7DaysCallsCount || 0} real + ${admin7DaysCalls} admin = ${totalCalls7Days} total`);
+  console.log(`📞 30 days calls: ${last30DaysCallsCount || 0} real + ${admin30DaysCalls} admin = ${totalCalls30Days} total`);
 
   // Fetch ACTUAL appointments from appointments table (Cal.ai bookings)
   // This only counts real Cal.ai appointments, not N8N call outcomes
@@ -186,22 +235,22 @@ export default async function DashboardPage() {
   });
   
   // Total calls = ALL calls (answered + not answered) + admin adjustments
-  const totalCalls = (allCalls?.length || 0) + totalAdminCalls;
+  const totalCalls = (totalCallsCount || 0) + totalAdminCalls;
   
   // Connected calls = ONLY answered calls (disposition = 'answered' OR connected = true)
-  const connectedCalls = allCalls?.filter(c => c.disposition === 'answered' || c.connected === true).length || 0;
+  const connectedCalls = connectedCallsCount || 0;
   
   // Not answered calls = calls that were dialed but not picked up
-  const notAnsweredCalls = allCalls?.filter(c => c.disposition !== 'answered' && !c.connected).length || 0;
+  const notAnsweredCalls = (totalCallsCount || 0) - (connectedCallsCount || 0);
   
   // Connection rate = answered / total
   const connectionRate = totalCalls > 0 ? ((connectedCalls / totalCalls) * 100).toFixed(1) : '0.0';
 
   // Outcomes - Track all 4 types (ONLY for answered calls) + admin adjustments
-  const notInterested = (allCalls?.filter(c => c.outcome === 'not_interested').length || 0) + totalAdminNotInterested;
+  const notInterested = (notInterestedAllCount || 0) + totalAdminNotInterested;
   const totalAppointments = (allAppointmentsData?.length || 0) + totalAdminAppointments; // Count from appointments table + admin
-  const callbacks = (allCalls?.filter(c => c.outcome === 'callback_later').length || 0) + totalAdminCallbacks;
-  const transfers = (allCalls?.filter(c => c.outcome === 'live_transfer').length || 0) + totalAdminTransfers;
+  const callbacks = (callbacksAllCount || 0) + totalAdminCallbacks;
+  const transfers = (transfersAllCount || 0) + totalAdminTransfers;
   
   console.log(`📈 Dashboard stats:`, {
     totalCalls,
@@ -232,22 +281,22 @@ export default async function DashboardPage() {
     return p.sold_at >= startOf30DaysISO;
   }).length || 0;
 
-  // Calculate connected calls for different periods
-  const connectedCalls7Days = last7DaysCalls?.filter(c => c.disposition === 'answered' || c.connected === true).length || 0;
-  const connectedCalls30Days = last30DaysCalls?.filter(c => c.disposition === 'answered' || c.connected === true).length || 0;
+  // Calculate connected calls for different periods (using count queries)
+  const connectedCalls7Days = last7DaysConnectedCount || 0;
+  const connectedCalls30Days = last30DaysConnectedCount || 0;
 
   const connectionRate7Days = totalCalls7Days > 0 ? ((connectedCalls7Days / totalCalls7Days) * 100).toFixed(1) : '0.0';
   const connectionRate30Days = totalCalls30Days > 0 ? ((connectedCalls30Days / totalCalls30Days) * 100).toFixed(1) : '0.0';
 
-  // Calculate outcomes for different periods
-  const notInterested7Days = last7DaysCalls?.filter(c => c.outcome === 'not_interested').length || 0;
-  const notInterested30Days = last30DaysCalls?.filter(c => c.outcome === 'not_interested').length || 0;
+  // Calculate outcomes for different periods (using count queries)
+  const notInterested7Days = last7DaysNotInterestedCount || 0;
+  const notInterested30Days = last30DaysNotInterestedCount || 0;
 
-  const callbacks7Days = last7DaysCalls?.filter(c => c.outcome === 'callback_later').length || 0;
-  const callbacks30Days = last30DaysCalls?.filter(c => c.outcome === 'callback_later').length || 0;
+  const callbacks7Days = last7DaysCallbacksCount || 0;
+  const callbacks30Days = last30DaysCallbacksCount || 0;
 
-  const transfers7Days = last7DaysCalls?.filter(c => c.outcome === 'live_transfer').length || 0;
-  const transfers30Days = last30DaysCalls?.filter(c => c.outcome === 'live_transfer').length || 0;
+  const transfers7Days = last7DaysTransfersCount || 0;
+  const transfers30Days = last30DaysTransfersCount || 0;
 
   // ENSURE TODAY'S REVENUE RECORD EXISTS with base cost (using user's timezone!)
   const today = todayDateString; // Use the date string in user's timezone, not UTC
@@ -443,7 +492,14 @@ export default async function DashboardPage() {
   }, 0) || 0;
   
   // FALLBACK: Also calculate costs from calls table directly
-  const costs30DaysFromCalls = last30DaysCalls?.reduce((sum, call) => sum + (call.cost || 0), 0) || 0;
+  // Note: chartCallsData doesn't include cost, so we need to fetch it separately for 30-day costs
+  const { data: last30DaysCosts } = await supabase
+    .from('calls')
+    .select('cost')
+    .eq('user_id', user.id)
+    .gte('created_at', startOf30DaysISO)
+    .limit(500000);
+  const costs30DaysFromCalls = last30DaysCosts?.reduce((sum, call) => sum + (call.cost || 0), 0) || 0;
   
   console.log(`💰 Costs from revenue_tracking: $${costs30DaysFromRevenue.toFixed(2)}`);
   console.log(`💰 Costs from calls table: $${costs30DaysFromCalls.toFixed(2)}`);
@@ -464,14 +520,14 @@ export default async function DashboardPage() {
     return r.date >= startOf30DaysISO.split('T')[0]; // Compare date strings
   }).reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;
 
-  // Calculate TODAY's specific stats (with admin adjustments)
-  const connectedCallsToday = todayCalls?.filter(c => c.disposition === 'answered' || c.connected === true).length || 0;
+  // Calculate TODAY's specific stats (with admin adjustments) - using count queries
+  const connectedCallsToday = todayConnectedCount || 0;
   const connectionRateToday = finalTotalCallsToday > 0 ? ((connectedCallsToday / finalTotalCallsToday) * 100).toFixed(1) : '0.0';
   
-  // Add admin-adjusted outcome stats
-  const notInterestedToday = (todayCalls?.filter(c => c.outcome === 'not_interested').length || 0) + (adminStatsToday?.not_interested || 0);
-  const callbacksToday = (todayCalls?.filter(c => c.outcome === 'callback_later').length || 0) + (adminStatsToday?.callbacks || 0);
-  const transfersToday = (todayCalls?.filter(c => c.outcome === 'live_transfer').length || 0) + (adminStatsToday?.live_transfers || 0);
+  // Add admin-adjusted outcome stats (using count queries)
+  const notInterestedToday = (todayNotInterestedCount || 0) + (adminStatsToday?.not_interested || 0);
+  const callbacksToday = (todayCallbacksCount || 0) + (adminStatsToday?.callbacks || 0);
+  const transfersToday = (todayTransfersCount || 0) + (adminStatsToday?.live_transfers || 0);
   const policiesSoldToday = (soldPolicies?.filter(p => {
     return p.sold_at >= startOfTodayISO;
   }).length || 0) + (adminStatsToday?.policies_sold || 0);
@@ -481,17 +537,17 @@ export default async function DashboardPage() {
     return r.date === today; // Compare date strings
   }).reduce((sum, r) => sum + (r.revenue || 0), 0) || 0;
 
-  // Calculate YESTERDAY's specific stats (with admin adjustments)
-  const totalCallsYesterdayReal = yesterdayCalls?.length || 0;
+  // Calculate YESTERDAY's specific stats (with admin adjustments) - using count queries
+  const totalCallsYesterdayReal = yesterdayCallsCount || 0;
   const adminDialsYesterday = adminStatsYesterday?.total_calls || 0;
   const finalTotalCallsYesterday = totalCallsYesterdayReal + adminDialsYesterday;
   
-  const connectedCallsYesterday = yesterdayCalls?.filter(c => c.disposition === 'answered' || c.connected === true).length || 0;
+  const connectedCallsYesterday = yesterdayConnectedCount || 0;
   const connectionRateYesterday = finalTotalCallsYesterday > 0 ? ((connectedCallsYesterday / finalTotalCallsYesterday) * 100).toFixed(1) : '0.0';
   
-  const notInterestedYesterday = (yesterdayCalls?.filter(c => c.outcome === 'not_interested').length || 0) + (adminStatsYesterday?.not_interested || 0);
-  const callbacksYesterday = (yesterdayCalls?.filter(c => c.outcome === 'callback_later').length || 0) + (adminStatsYesterday?.callbacks || 0);
-  const transfersYesterday = (yesterdayCalls?.filter(c => c.outcome === 'live_transfer').length || 0) + (adminStatsYesterday?.live_transfers || 0);
+  const notInterestedYesterday = (yesterdayNotInterestedCount || 0) + (adminStatsYesterday?.not_interested || 0);
+  const callbacksYesterday = (yesterdayCallbacksCount || 0) + (adminStatsYesterday?.callbacks || 0);
+  const transfersYesterday = (yesterdayTransfersCount || 0) + (adminStatsYesterday?.live_transfers || 0);
   const policiesSoldYesterday = (soldPolicies?.filter(p => {
     return p.sold_at >= startOfYesterdayISO && p.sold_at < startOfTodayISO;
   }).length || 0) + (adminStatsYesterday?.policies_sold || 0);
@@ -511,7 +567,8 @@ export default async function DashboardPage() {
     const dayStartISO = getDaysAgoInUserTimezone(userTimezone, i);
     const dayEndISO = i > 0 ? getDaysAgoInUserTimezone(userTimezone, i - 1) : new Date().toISOString();
     
-    const dayCalls = allCalls?.filter(call => 
+    // Use chartCallsData (limited columns, high limit) for chart calculations
+    const dayCalls = chartCallsData?.filter(call => 
       call.created_at >= dayStartISO && call.created_at < dayEndISO
     ) || [];
     
