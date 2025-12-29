@@ -74,7 +74,12 @@ export default function PricingPage() {
   // Animated counters
   const callsCounter = useCountUp(2400000, 2500);
   const appointmentsCounter = useCountUp(47000, 2000);
-  const [todayAppointments] = useState(() => Math.floor(Math.random() * 140) + 180);
+  const [todayAppointments, setTodayAppointments] = useState(247);
+  
+  useEffect(() => {
+    setTodayAppointments(Math.floor(Math.random() * 140) + 180);
+  }, []);
+  
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {

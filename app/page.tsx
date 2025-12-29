@@ -96,8 +96,12 @@ export default function LandingPage() {
   const appointmentsCounter = useCountUp(47000, 2000);
   const dialsCounter = useCountUp(720, 1500);
 
-  // Today's appointments counter (random number between 180-320)
-  const [todayAppointments] = useState(() => Math.floor(Math.random() * 140) + 180);
+  // Today's appointments counter (random number between 180-320, set on client only)
+  const [todayAppointments, setTodayAppointments] = useState(247);
+  
+  useEffect(() => {
+    setTodayAppointments(Math.floor(Math.random() * 140) + 180);
+  }, []);
 
   const toggleAudio = () => {
     if (audioRef.current) {
