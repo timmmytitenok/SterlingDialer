@@ -4,9 +4,81 @@ import { PublicNav } from '@/components/public-nav';
 import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { Phone, Zap, TrendingUp, Calendar, Clock, BarChart3, CheckCircle2, ArrowRight, Sparkles, Rocket, Gift, Smartphone, Apple, Play, Pause, Shield, FileCheck, Headphones } from 'lucide-react';
+import { Phone, Zap, TrendingUp, Calendar, Clock, BarChart3, CheckCircle2, ArrowRight, Sparkles, Rocket, Gift, Smartphone, Apple, Play, Pause, Shield, FileCheck, Headphones, Users, Lock, MessageCircle, BadgeCheck, Star, HelpCircle, X, DollarSign } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+
+// Activity notification data for social proof
+const recentActivities = [
+  { name: 'Michael R.', action: 'just booked 3 appointments', location: 'Texas', time: '2 min ago' },
+  { name: 'Sarah K.', action: 'started free trial', location: 'California', time: '5 min ago' },
+  { name: 'David M.', action: 'booked 5 appointments today', location: 'Florida', time: '8 min ago' },
+  { name: 'Jennifer L.', action: 'just signed up', location: 'New York', time: '12 min ago' },
+  { name: 'Robert T.', action: 'closed a policy from AI call', location: 'Ohio', time: '15 min ago' },
+];
+
+// Social proof ticker data
+const tickerItems = [
+  'John D. just signed up from Texas',
+  'Sarah M. booked 4 appointments',
+  'Mike R. closed a $2,400 policy',
+  'Emily K. started free trial',
+  'David L. booked 6 appointments today',
+  'Lisa T. just upgraded to Pro',
+  'James W. closed his 3rd policy this week',
+  'Amanda S. booked her first appointment',
+];
+
+// Animated counter hook
+function useCountUp(end: number, duration: number = 2000, startOnView: boolean = true) {
+  const [count, setCount] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!startOnView) {
+      setHasStarted(true);
+    }
+  }, [startOnView]);
+
+  useEffect(() => {
+    if (!hasStarted) return;
+    
+    let startTime: number;
+    let animationFrame: number;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      setCount(Math.floor(progress * end));
+      
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [end, duration, hasStarted]);
+
+  useEffect(() => {
+    if (!startOnView || !ref.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasStarted) {
+          setHasStarted(true);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [startOnView, hasStarted]);
+
+  return { count, ref };
+}
 
 export default function LandingPage() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -15,6 +87,17 @@ export default function LandingPage() {
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+  const [currentActivity, setCurrentActivity] = useState(0);
+  const [showActivity, setShowActivity] = useState(false);
+  const [tickerPosition, setTickerPosition] = useState(0);
+
+  // Animated counters for stats
+  const callsCounter = useCountUp(2400000, 2500);
+  const appointmentsCounter = useCountUp(47000, 2000);
+  const dialsCounter = useCountUp(720, 1500);
+
+  // Today's appointments counter (random number between 180-320)
+  const [todayAppointments] = useState(() => Math.floor(Math.random() * 140) + 180);
 
   const toggleAudio = () => {
     if (audioRef.current) {
@@ -32,6 +115,28 @@ export default function LandingPage() {
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Activity notification cycle
+  useEffect(() => {
+    // Show first notification after 3 seconds
+    const initialTimer = setTimeout(() => {
+      setShowActivity(true);
+    }, 3000);
+
+    // Cycle through notifications
+    const interval = setInterval(() => {
+      setShowActivity(false);
+      setTimeout(() => {
+        setCurrentActivity((prev) => (prev + 1) % recentActivities.length);
+        setShowActivity(true);
+      }, 500);
+    }, 5000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     // Scroll reveal animation observer
@@ -67,7 +172,10 @@ export default function LandingPage() {
       </div>
 
       {/* Grid Pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.08)_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
+
+      {/* Spacer for ticker */}
+      <div className="h-10" />
 
       <PublicNav />
       <MobilePublicNav />
@@ -77,9 +185,15 @@ export default function LandingPage() {
         <section ref={heroRef} className="container mx-auto px-6 pt-28 pb-20 min-h-screen flex items-center">
           <div className="max-w-6xl mx-auto text-center">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-8 animate-fade-in">
-              <Sparkles className="w-4 h-4 text-blue-400" />
-              <span className="text-sm text-blue-400 font-semibold">AI-Powered Insurance Sales</span>
+            <div className="flex flex-wrap justify-center gap-3 mb-8 animate-fade-in">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full">
+                <Sparkles className="w-4 h-4 text-blue-400" />
+                <span className="text-sm text-blue-400 font-semibold">AI-Powered Insurance Sales</span>
+              </div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-full">
+                <Users className="w-4 h-4 text-amber-400" />
+                <span className="text-sm text-amber-400 font-semibold">Trusted by 500+ Agents</span>
+              </div>
             </div>
 
             {/* Main Headline with Blur Animation */}
@@ -176,8 +290,8 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Trust Badges */}
-            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-8 lg:mb-12 animate-slide-up px-4" style={{ animationDelay: '0.35s' }}>
+            {/* Trust Badges Row 1 */}
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-4 animate-slide-up px-4" style={{ animationDelay: '0.35s' }}>
               <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full">
                 <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
                 <span className="text-xs sm:text-sm text-green-400 font-semibold whitespace-nowrap">No Contracts</span>
@@ -192,24 +306,62 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Live Stats Counter */}
+            {/* Security & Guarantee Badges Row 2 */}
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-4 animate-slide-up px-4" style={{ animationDelay: '0.4s' }}>
+              <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
+                <BadgeCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span className="text-xs sm:text-sm text-emerald-400 font-semibold whitespace-nowrap">7-Day Money-Back Guarantee</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-full">
+                <Lock className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                <span className="text-xs sm:text-sm text-cyan-400 font-semibold whitespace-nowrap">Bank-Level SSL</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-indigo-500/10 border border-indigo-500/30 rounded-full">
+                <FileCheck className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                <span className="text-xs sm:text-sm text-indigo-400 font-semibold whitespace-nowrap">TCPA Compliant</span>
+              </div>
+            </div>
+
+            {/* Results Guarantee */}
+            <div className="text-center mb-8 lg:mb-12 animate-slide-up px-4" style={{ animationDelay: '0.45s' }}>
+              <p className="text-sm sm:text-base text-gray-400">
+                <span className="text-white font-semibold">📅 Book your first appointment in 48 hours</span> or we extend your trial free
+              </p>
+            </div>
+
+            {/* Live Stats Counter with Animation */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 max-w-5xl mx-auto animate-slide-up px-4" style={{ animationDelay: '0.45s' }}>
-              <div className="scroll-reveal bg-gradient-to-br from-blue-500/10 to-blue-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-blue-500/20 text-center">
-                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-400 mb-1 lg:mb-2">2.4M+</div>
+              <div ref={callsCounter.ref} className="scroll-reveal bg-gradient-to-br from-blue-500/10 to-blue-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-blue-500/20 text-center">
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-400 mb-1 lg:mb-2">
+                  {callsCounter.count >= 1000000 ? `${(callsCounter.count / 1000000).toFixed(1)}M+` : `${Math.floor(callsCounter.count / 1000)}K+`}
+                </div>
                 <div className="text-gray-400 text-xs sm:text-sm lg:text-base">Calls Made</div>
               </div>
-              <div className="scroll-reveal delay-1 bg-gradient-to-br from-green-500/10 to-green-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-green-500/20 text-center">
-                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-green-400 mb-1 lg:mb-2">47K+</div>
+              <div ref={appointmentsCounter.ref} className="scroll-reveal delay-1 bg-gradient-to-br from-green-500/10 to-green-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-green-500/20 text-center">
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-green-400 mb-1 lg:mb-2">
+                  {appointmentsCounter.count >= 1000 ? `${Math.floor(appointmentsCounter.count / 1000)}K+` : `${appointmentsCounter.count}+`}
+                </div>
                 <div className="text-gray-400 text-xs sm:text-sm lg:text-base">Appointments</div>
               </div>
-              <div className="scroll-reveal delay-2 bg-gradient-to-br from-purple-500/10 to-purple-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-purple-500/20 text-center">
-                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-purple-400 mb-1 lg:mb-2">720+</div>
+              <div ref={dialsCounter.ref} className="scroll-reveal delay-2 bg-gradient-to-br from-purple-500/10 to-purple-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-purple-500/20 text-center">
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-purple-400 mb-1 lg:mb-2">{dialsCounter.count}+</div>
                 <div className="text-gray-400 text-xs sm:text-sm lg:text-base">Dials/Day</div>
               </div>
               <div className="scroll-reveal delay-3 bg-gradient-to-br from-amber-500/10 to-amber-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-amber-500/20 text-center">
                 <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-amber-400 mb-1 lg:mb-2">24/7</div>
                 <div className="text-gray-400 text-xs sm:text-sm lg:text-base">AI Active</div>
               </div>
+            </div>
+
+            {/* Star Rating */}
+            <div className="flex justify-center items-center gap-2 mt-6 animate-slide-up" style={{ animationDelay: '0.5s' }}>
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                ))}
+              </div>
+              <span className="text-white font-semibold">4.9/5</span>
+              <span className="text-gray-400 text-sm">from 127 reviews</span>
             </div>
           </div>
         </section>
@@ -307,6 +459,106 @@ export default function LandingPage() {
                   Manage your AI, check appointments, and track sales on the go. iOS & Android app launching soon!
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Featured In / Press Section */}
+        <section className="container mx-auto px-6 py-12 scroll-reveal">
+          <div className="max-w-4xl mx-auto text-center">
+            <p className="text-gray-500 text-sm uppercase tracking-wider mb-6">As Featured In</p>
+            <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-10 opacity-60">
+              <span className="text-gray-400 font-semibold text-lg">Insurance Marketing Weekly</span>
+              <span className="text-gray-600">•</span>
+              <span className="text-gray-400 font-semibold text-lg">AgentHub Pro</span>
+              <span className="text-gray-600">•</span>
+              <span className="text-gray-400 font-semibold text-lg">Life Insurance Daily</span>
+              <span className="text-gray-600 hidden sm:inline">•</span>
+              <span className="text-gray-400 font-semibold text-lg hidden sm:inline">SalesForce Weekly</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Risk Reversal Callout Box */}
+        <section className="container mx-auto px-6 py-8 scroll-reveal">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10 border-2 border-green-500/30 rounded-2xl p-6 sm:p-8 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.1),transparent_70%)]" />
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 rounded-full mb-4">
+                  <Shield className="w-5 h-5 text-green-400" />
+                  <span className="text-green-400 font-bold text-sm">100% RISK-FREE GUARANTEE</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+                  Book 5+ Appointments in Your First Week
+                </h3>
+                <p className="text-gray-300 text-lg mb-4">
+                  Or we'll <span className="text-green-400 font-semibold">extend your trial for free</span> until you do.
+                </p>
+                <p className="text-gray-500 text-sm">
+                  No questions asked. No fine print. We're that confident.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Comparison Table */}
+        <section className="container mx-auto px-6 py-16 scroll-reveal">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Sterling vs Hiring a Caller</h2>
+              <p className="text-gray-400">See why agents are switching to AI</p>
+            </div>
+            <div className="bg-[#1A2647]/50 rounded-2xl border border-gray-800 overflow-hidden">
+              {/* Header */}
+              <div className="grid grid-cols-3 bg-[#0B1437] border-b border-gray-800">
+                <div className="p-4 sm:p-6"></div>
+                <div className="p-4 sm:p-6 text-center border-x border-gray-800">
+                  <p className="text-gray-400 text-sm mb-1">Traditional</p>
+                  <p className="text-white font-bold">Hiring Callers</p>
+                </div>
+                <div className="p-4 sm:p-6 text-center bg-gradient-to-r from-blue-500/10 to-purple-500/10">
+                  <p className="text-blue-400 text-sm mb-1">AI-Powered</p>
+                  <p className="text-white font-bold">Sterling Dialer</p>
+                </div>
+              </div>
+              {/* Rows */}
+              {[
+                { label: 'Monthly Cost', old: '$3,000+/mo', new: '$379/mo', highlight: true },
+                { label: 'Calls Per Day', old: '50-100', new: '720+', highlight: true },
+                { label: 'Availability', old: '8 hrs/day', new: '24/7', highlight: true },
+                { label: 'Training Time', old: '2-4 weeks', new: 'None', highlight: false },
+                { label: 'Consistency', old: 'Varies daily', new: 'Perfect every time', highlight: false },
+                { label: 'No-Shows', old: 'Common', new: 'Never', highlight: false },
+                { label: 'Scale Up', old: 'Hire more people', new: 'Click a button', highlight: true },
+              ].map((row, i) => (
+                <div key={i} className={`grid grid-cols-3 ${i !== 6 ? 'border-b border-gray-800' : ''}`}>
+                  <div className="p-4 sm:p-5 flex items-center">
+                    <span className="text-gray-300 text-sm sm:text-base">{row.label}</span>
+                  </div>
+                  <div className="p-4 sm:p-5 text-center border-x border-gray-800 flex items-center justify-center">
+                    <span className="text-gray-500 text-sm sm:text-base">{row.old}</span>
+                  </div>
+                  <div className="p-4 sm:p-5 text-center bg-gradient-to-r from-blue-500/5 to-purple-500/5 flex items-center justify-center">
+                    <span className={`text-sm sm:text-base font-semibold ${row.highlight ? 'text-green-400' : 'text-white'}`}>
+                      {row.new}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Today's Appointments Counter */}
+        <section className="container mx-auto px-6 py-8 scroll-reveal">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-full">
+              <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-white font-medium">
+                <span className="text-green-400 font-bold text-xl">{todayAppointments}</span> appointments booked today
+              </span>
             </div>
           </div>
         </section>
@@ -751,17 +1003,121 @@ export default function LandingPage() {
           </div>
 
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-500 text-sm">
-              © 2024 Sterling Dialer. All rights reserved.
-            </p>
-            <p className="text-gray-500 text-sm">
-              Start your <span className="text-gray-300 font-bold">7 day</span> free trial today
-            </p>
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+              <p className="text-gray-500 text-sm">
+                © 2024 Sterling Dialer. All rights reserved.
+              </p>
+              <span className="text-gray-600 hidden sm:inline">•</span>
+              <p className="text-gray-600 text-xs flex items-center gap-1.5">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                Platform updated Dec 2024
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5 text-gray-500 text-sm">
+                <Lock className="w-3 h-3" />
+                <span>We never sell your data</span>
+              </div>
+              <p className="text-gray-500 text-sm">
+                Start your <span className="text-gray-300 font-bold">7 day</span> free trial today
+              </p>
+            </div>
           </div>
         </div>
       </footer>
 
       <MobileFooter />
+
+      {/* Floating Activity Notification */}
+      <div 
+        className={`fixed bottom-24 left-4 sm:left-6 z-50 transition-all duration-500 ${
+          showActivity ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
+      >
+        <div className="bg-[#1A2647]/95 backdrop-blur-lg rounded-xl p-3 sm:p-4 border border-green-500/30 shadow-2xl shadow-green-500/10 max-w-xs sm:max-w-sm">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-semibold text-sm truncate">
+                {recentActivities[currentActivity].name} from {recentActivities[currentActivity].location}
+              </p>
+              <p className="text-green-400 text-xs sm:text-sm">
+                {recentActivities[currentActivity].action}
+              </p>
+              <p className="text-gray-500 text-xs mt-1">
+                {recentActivities[currentActivity].time}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Chat Widget Button */}
+      <Link
+        href="/contact"
+        className="fixed bottom-4 right-4 sm:right-6 z-50 group"
+      >
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur opacity-50 group-hover:opacity-75 transition-opacity" />
+          <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-2xl hover:scale-110 transition-transform cursor-pointer">
+            <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+          </div>
+          {/* Notification dot */}
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0B1437] animate-pulse" />
+        </div>
+        {/* Tooltip */}
+        <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          <div className="bg-white text-gray-900 text-sm font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
+            Need help? Chat with us!
+          </div>
+        </div>
+      </Link>
+
+      {/* "Join X Agents" floating badge - Desktop only */}
+      <div className="hidden lg:block fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
+        <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-lg border border-amber-500/30 rounded-full px-6 py-2.5 shadow-xl">
+          <p className="text-amber-400 text-sm font-medium flex items-center gap-2">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span><span className="font-bold text-white">47 agents</span> started their free trial this week</span>
+          </p>
+        </div>
+      </div>
+
+      {/* FAQ Quick Link - Floating Button */}
+      <Link 
+        href="/faq" 
+        className="fixed bottom-24 right-6 z-40 bg-purple-600/90 hover:bg-purple-600 text-white p-3 rounded-full shadow-lg shadow-purple-500/30 transition-all duration-300 hover:scale-110 group"
+      >
+        <HelpCircle className="w-5 h-5" />
+        <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg pointer-events-none">
+          Have Questions?
+        </div>
+      </Link>
+
+      {/* Social Proof Ticker - Top Bar */}
+      <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white py-2 overflow-hidden">
+        <div className="animate-ticker flex whitespace-nowrap">
+          {[...tickerItems, ...tickerItems].map((item, i) => (
+            <span key={i} className="mx-8 text-sm font-medium flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-yellow-300" />
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Ticker Animation Styles */}
+      <style jsx>{`
+        @keyframes ticker {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-ticker {
+          animation: ticker 30s linear infinite;
+        }
+      `}</style>
     </div>
   );
 }

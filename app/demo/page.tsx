@@ -6,8 +6,17 @@ import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { Upload, Rocket, Calendar, Play, Pause, DollarSign, Phone, CheckCircle, ArrowRight, Headphones, Clock, Target, TrendingUp, CalendarCheck, Zap, Shield, CheckCircle2 } from 'lucide-react';
+import { Upload, Rocket, Calendar, Play, Pause, DollarSign, Phone, CheckCircle, ArrowRight, Headphones, Clock, Target, TrendingUp, CalendarCheck, Zap, Shield, CheckCircle2, Users, BadgeCheck, Lock, FileCheck, Sparkles, Star, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
+
+// Social proof ticker data
+const tickerItems = [
+  'John D. just signed up from Texas',
+  'Sarah M. booked 4 appointments',
+  'Mike R. closed a $2,400 policy',
+  'Emily K. started free trial',
+  'David L. booked 6 appointments today',
+];
 
 export default function DemoPage() {
   // Audio player state - now just 2 players
@@ -159,13 +168,28 @@ export default function DemoPage() {
       </div>
 
       {/* Grid Pattern - Same as Landing Page */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.08)_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
       
       {/* Smooth color transitions between sections - no sharp edges */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute w-full h-[600px] top-[20%] bg-gradient-to-b from-transparent via-blue-500/3 to-transparent" />
         <div className="absolute w-full h-[600px] top-[50%] bg-gradient-to-b from-transparent via-purple-500/3 to-transparent" />
       </div>
+
+      {/* Social Proof Ticker */}
+      <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white py-2 overflow-hidden">
+        <div className="animate-ticker flex whitespace-nowrap">
+          {[...tickerItems, ...tickerItems].map((item, i) => (
+            <span key={i} className="mx-8 text-sm font-medium flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-yellow-300" />
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Spacer for ticker */}
+      <div className="h-10" />
 
       <div className="relative z-10">
         {/* HERO SECTION - Mobile Optimized */}
@@ -198,8 +222,12 @@ export default function DemoPage() {
               Have old life insurance leads collecting dust? Let Sterling Dialer revive them into booked appointments — automatically.
             </p>
 
-            {/* Trust Badges */}
+            {/* Trust Badges Row 1 */}
             <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6 sm:mt-8 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '300ms' }}>
+              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-full">
+                <Users className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
+                <span className="text-[10px] sm:text-xs text-amber-400 font-semibold">Trusted by 500+ Agents</span>
+              </div>
               <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full">
                 <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
                 <span className="text-[10px] sm:text-xs text-green-400 font-semibold">No Contracts</span>
@@ -211,6 +239,22 @@ export default function DemoPage() {
               <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full">
                 <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
                 <span className="text-[10px] sm:text-xs text-purple-400 font-semibold">Cancel Anytime</span>
+              </div>
+            </div>
+
+            {/* Trust Badges Row 2 */}
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-3 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '350ms' }}>
+              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
+                <BadgeCheck className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
+                <span className="text-[10px] sm:text-xs text-emerald-400 font-semibold">7-Day Money-Back</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 rounded-full">
+                <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
+                <span className="text-[10px] sm:text-xs text-cyan-400 font-semibold">Bank-Level SSL</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/30 rounded-full">
+                <FileCheck className="w-3 h-3 sm:w-4 sm:h-4 text-indigo-400" />
+                <span className="text-[10px] sm:text-xs text-indigo-400 font-semibold">TCPA Compliant</span>
               </div>
             </div>
 
@@ -639,6 +683,49 @@ export default function DemoPage() {
 
       <PublicFooter />
       <MobileFooter />
+
+      {/* Floating Chat Widget */}
+      <Link href="/contact" className="fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 group">
+        <Headphones className="w-6 h-6" />
+        <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg pointer-events-none">
+          Need help? Chat with us!
+        </div>
+      </Link>
+
+      {/* FAQ Quick Link */}
+      <Link 
+        href="/faq" 
+        className="fixed bottom-24 right-6 z-40 bg-purple-600/90 hover:bg-purple-600 text-white p-3 rounded-full shadow-lg shadow-purple-500/30 transition-all duration-300 hover:scale-110 group"
+      >
+        <HelpCircle className="w-5 h-5" />
+        <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg pointer-events-none">
+          Have Questions?
+        </div>
+      </Link>
+
+      {/* Star Rating Badge */}
+      <div className="hidden lg:block fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
+        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-full px-6 py-2.5 shadow-xl flex items-center gap-3">
+          <div className="flex">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star key={star} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+            ))}
+          </div>
+          <span className="text-white font-semibold text-sm">4.9/5</span>
+          <span className="text-gray-400 text-sm">from 127 reviews</span>
+        </div>
+      </div>
+
+      {/* Ticker Animation Styles */}
+      <style jsx>{`
+        @keyframes ticker {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-ticker {
+          animation: ticker 30s linear infinite;
+        }
+      `}</style>
     </div>
   );
 }

@@ -6,9 +6,17 @@ import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { Mail, Phone, Clock, Send, CheckCircle, ArrowRight, Calendar, Shield, CheckCircle2, Zap } from 'lucide-react';
+import { Mail, Phone, Clock, Send, CheckCircle, ArrowRight, Calendar, Shield, CheckCircle2, Zap, Sparkles, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+
+// Social proof ticker data
+const tickerItems = [
+  'John D. just signed up from Texas',
+  'Sarah M. booked 4 appointments',
+  'Mike R. closed a $2,400 policy',
+  'Emily K. started free trial',
+];
 
 export default function ContactPage() {
   useEffect(() => {
@@ -77,9 +85,21 @@ export default function ContactPage() {
       </div>
 
       {/* Grid Pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.08)_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 py-32">
+      {/* Social Proof Ticker */}
+      <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white py-2 overflow-hidden">
+        <div className="animate-ticker flex whitespace-nowrap">
+          {[...tickerItems, ...tickerItems].map((item, i) => (
+            <span key={i} className="mx-8 text-sm font-medium flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-yellow-300" />
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="relative z-10 max-w-6xl mx-auto px-4 py-32 pt-20">
         {/* Header */}
         <div className="text-center mb-22 animate-in fade-in slide-in-from-bottom duration-700">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-6">
@@ -275,10 +295,30 @@ export default function ContactPage() {
         .animate-shimmer {
           animation: shimmer 2s infinite;
         }
+        @keyframes ticker {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-ticker {
+          animation: ticker 30s linear infinite;
+        }
       `}</style>
 
       <PublicFooter />
       <MobileFooter />
+
+      {/* Star Rating Badge */}
+      <div className="hidden lg:block fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
+        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-full px-6 py-2.5 shadow-xl flex items-center gap-3">
+          <div className="flex">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star key={star} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+            ))}
+          </div>
+          <span className="text-white font-semibold text-sm">4.9/5</span>
+          <span className="text-gray-400 text-sm">from 127 reviews</span>
+        </div>
+      </div>
     </div>
   );
 }

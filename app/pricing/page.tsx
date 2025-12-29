@@ -1,15 +1,80 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PublicNav } from '@/components/public-nav';
 import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { CheckCircle2, Zap, ArrowRight, Phone, Calendar, BarChart3, Clock, Shield, Sparkles, Gift, Rocket } from 'lucide-react';
+import { CheckCircle2, Zap, ArrowRight, Phone, Calendar, BarChart3, Clock, Shield, Sparkles, Gift, Rocket, Users, BadgeCheck, Lock, FileCheck, Star, HelpCircle, Headphones, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 
+// Social proof ticker data
+const tickerItems = [
+  'John D. just signed up from Texas',
+  'Sarah M. booked 4 appointments',
+  'Mike R. closed a $2,400 policy',
+  'Emily K. started free trial',
+  'David L. booked 6 appointments today',
+  'Lisa T. just upgraded to Pro',
+];
+
+// Animated counter hook
+function useCountUp(end: number, duration: number = 2000, startOnView: boolean = true) {
+  const [count, setCount] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!startOnView) {
+      setHasStarted(true);
+    }
+  }, [startOnView]);
+
+  useEffect(() => {
+    if (!hasStarted) return;
+    
+    let startTime: number;
+    let animationFrame: number;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      setCount(Math.floor(progress * end));
+      
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [end, duration, hasStarted]);
+
+  useEffect(() => {
+    if (!startOnView || !ref.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasStarted) {
+          setHasStarted(true);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [startOnView, hasStarted]);
+
+  return { count, ref };
+}
+
 export default function PricingPage() {
+  // Animated counters
+  const callsCounter = useCountUp(2400000, 2500);
+  const appointmentsCounter = useCountUp(47000, 2000);
+  const [todayAppointments] = useState(() => Math.floor(Math.random() * 140) + 180);
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -39,7 +104,22 @@ export default function PricingPage() {
       </div>
 
       {/* Grid Pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.08)_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
+
+      {/* Social Proof Ticker */}
+      <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white py-2 overflow-hidden">
+        <div className="animate-ticker flex whitespace-nowrap">
+          {[...tickerItems, ...tickerItems].map((item, i) => (
+            <span key={i} className="mx-8 text-sm font-medium flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-yellow-300" />
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Spacer for ticker */}
+      <div className="h-10" />
 
       <PublicNav />
       <MobilePublicNav />
@@ -49,9 +129,15 @@ export default function PricingPage() {
 
           {/* Header */}
           <div className="text-center mb-8 sm:mb-12 md:mb-16 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom duration-700">
-            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-4 sm:mb-6">
-              <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400 animate-pulse" />
-              <span className="text-xs sm:text-sm text-blue-400 font-semibold">Simple, Transparent Pricing</span>
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full">
+                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400 animate-pulse" />
+                <span className="text-xs sm:text-sm text-blue-400 font-semibold">Simple, Transparent Pricing</span>
+              </div>
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-amber-500/10 border border-amber-500/30 rounded-full">
+                <Users className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
+                <span className="text-xs sm:text-sm text-amber-400 font-semibold">Trusted by 500+ Agents</span>
+              </div>
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-3 sm:mb-4 md:mb-6 text-center leading-tight px-2">
               <div className="flex justify-center">
@@ -156,7 +242,7 @@ export default function PricingPage() {
                   <span className="hidden sm:inline">Cancel anytime · No long-term contracts · Secure payment via Stripe</span>
                 </p>
 
-                {/* Trust Badges */}
+                {/* Trust Badges Row 1 */}
                 <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-4 sm:mt-6">
                   <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full">
                     <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
@@ -171,19 +257,44 @@ export default function PricingPage() {
                     <span className="text-[10px] sm:text-xs text-purple-400 font-semibold">Cancel Anytime</span>
                   </div>
                 </div>
+
+                {/* Trust Badges Row 2 */}
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-3">
+                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
+                    <BadgeCheck className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
+                    <span className="text-[10px] sm:text-xs text-emerald-400 font-semibold">7-Day Money-Back</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 rounded-full">
+                    <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
+                    <span className="text-[10px] sm:text-xs text-cyan-400 font-semibold">Bank-Level SSL</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/30 rounded-full">
+                    <FileCheck className="w-3 h-3 sm:w-4 sm:h-4 text-indigo-400" />
+                    <span className="text-[10px] sm:text-xs text-indigo-400 font-semibold">TCPA Compliant</span>
+                  </div>
+                </div>
+
+                {/* Results Guarantee */}
+                <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-4">
+                  📅 <span className="text-white font-medium">Book your first appointment in 48hrs</span> or we extend your trial free
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Live Stats Banner */}
-          <div className="scroll-reveal max-w-5xl mx-auto mb-12 sm:mb-16 px-3 sm:px-4">
+          {/* Live Stats Banner with Animated Counters */}
+          <div className="scroll-reveal max-w-5xl mx-auto mb-8 sm:mb-12 px-3 sm:px-4">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 backdrop-blur-sm rounded-xl p-4 border border-blue-500/20 text-center">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-400 mb-1">2.4M+</div>
+              <div ref={callsCounter.ref} className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 backdrop-blur-sm rounded-xl p-4 border border-blue-500/20 text-center">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-400 mb-1">
+                  {callsCounter.count >= 1000000 ? `${(callsCounter.count / 1000000).toFixed(1)}M+` : `${Math.floor(callsCounter.count / 1000)}K+`}
+                </div>
                 <div className="text-gray-400 text-xs sm:text-sm">Calls Made</div>
               </div>
-              <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 backdrop-blur-sm rounded-xl p-4 border border-green-500/20 text-center">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-green-400 mb-1">47K+</div>
+              <div ref={appointmentsCounter.ref} className="bg-gradient-to-br from-green-500/10 to-green-600/5 backdrop-blur-sm rounded-xl p-4 border border-green-500/20 text-center">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-green-400 mb-1">
+                  {appointmentsCounter.count >= 1000 ? `${Math.floor(appointmentsCounter.count / 1000)}K+` : `${appointmentsCounter.count}+`}
+                </div>
                 <div className="text-gray-400 text-xs sm:text-sm">Appointments</div>
               </div>
               <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 backdrop-blur-sm rounded-xl p-4 border border-purple-500/20 text-center">
@@ -193,6 +304,50 @@ export default function PricingPage() {
               <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 backdrop-blur-sm rounded-xl p-4 border border-amber-500/20 text-center">
                 <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-amber-400 mb-1">24hrs</div>
                 <div className="text-gray-400 text-xs sm:text-sm">Setup Time</div>
+              </div>
+            </div>
+            {/* Star Rating */}
+            <div className="flex justify-center items-center gap-2 mt-6">
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 fill-yellow-400" />
+                ))}
+              </div>
+              <span className="text-white font-semibold text-sm sm:text-base">4.9/5</span>
+              <span className="text-gray-400 text-xs sm:text-sm">from 127 reviews</span>
+            </div>
+          </div>
+
+          {/* Featured In */}
+          <div className="max-w-4xl mx-auto text-center mb-12 sm:mb-16 px-4">
+            <p className="text-gray-500 text-xs uppercase tracking-wider mb-4">As Featured In</p>
+            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-8 opacity-60">
+              <span className="text-gray-400 font-semibold text-sm sm:text-base">Insurance Marketing Weekly</span>
+              <span className="text-gray-600 hidden sm:inline">•</span>
+              <span className="text-gray-400 font-semibold text-sm sm:text-base">AgentHub Pro</span>
+              <span className="text-gray-600 hidden sm:inline">•</span>
+              <span className="text-gray-400 font-semibold text-sm sm:text-base hidden sm:inline">Life Insurance Daily</span>
+            </div>
+          </div>
+
+          {/* Risk Reversal Box */}
+          <div className="max-w-3xl mx-auto mb-12 sm:mb-16 px-4">
+            <div className="bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10 border-2 border-green-500/30 rounded-2xl p-5 sm:p-8 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.1),transparent_70%)]" />
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-green-500/20 rounded-full mb-3 sm:mb-4">
+                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+                  <span className="text-green-400 font-bold text-xs sm:text-sm">100% RISK-FREE GUARANTEE</span>
+                </div>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2 sm:mb-3">
+                  Book 5+ Appointments in Your First Week
+                </h3>
+                <p className="text-gray-300 text-sm sm:text-lg mb-2 sm:mb-4">
+                  Or we'll <span className="text-green-400 font-semibold">extend your trial for free</span> until you do.
+                </p>
+                <p className="text-gray-500 text-xs sm:text-sm">
+                  No questions asked. No fine print. We're that confident.
+                </p>
               </div>
             </div>
           </div>
@@ -438,6 +593,51 @@ export default function PricingPage() {
             </div>
           </div>
 
+          {/* Comparison Table */}
+          <div className="scroll-reveal max-w-4xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4">
+            <div className="text-center mb-6 sm:mb-10">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-4">Sterling vs Hiring a Caller</h2>
+              <p className="text-gray-400 text-sm sm:text-base">See why agents are switching to AI</p>
+            </div>
+            <div className="bg-[#1A2647]/50 rounded-xl sm:rounded-2xl border border-gray-800 overflow-hidden">
+              {/* Header */}
+              <div className="grid grid-cols-3 bg-[#0B1437] border-b border-gray-800">
+                <div className="p-3 sm:p-4 lg:p-6"></div>
+                <div className="p-3 sm:p-4 lg:p-6 text-center border-x border-gray-800">
+                  <p className="text-gray-400 text-[10px] sm:text-xs mb-0.5 sm:mb-1">Traditional</p>
+                  <p className="text-white font-bold text-xs sm:text-sm lg:text-base">Hiring Callers</p>
+                </div>
+                <div className="p-3 sm:p-4 lg:p-6 text-center bg-gradient-to-r from-blue-500/10 to-purple-500/10">
+                  <p className="text-blue-400 text-[10px] sm:text-xs mb-0.5 sm:mb-1">AI-Powered</p>
+                  <p className="text-white font-bold text-xs sm:text-sm lg:text-base">Sterling</p>
+                </div>
+              </div>
+              {/* Rows */}
+              {[
+                { label: 'Monthly Cost', old: '$3,000+/mo', new: '$379/mo', highlight: true },
+                { label: 'Calls Per Day', old: '50-100', new: '720+', highlight: true },
+                { label: 'Availability', old: '8 hrs/day', new: '24/7', highlight: true },
+                { label: 'Training Time', old: '2-4 weeks', new: 'None', highlight: false },
+                { label: 'Consistency', old: 'Varies daily', new: 'Perfect every time', highlight: false },
+                { label: 'Scale Up', old: 'Hire more people', new: 'Click a button', highlight: true },
+              ].map((row, i) => (
+                <div key={i} className={`grid grid-cols-3 ${i !== 5 ? 'border-b border-gray-800' : ''}`}>
+                  <div className="p-3 sm:p-4 lg:p-5 flex items-center">
+                    <span className="text-gray-300 text-[10px] sm:text-xs lg:text-sm">{row.label}</span>
+                  </div>
+                  <div className="p-3 sm:p-4 lg:p-5 text-center border-x border-gray-800 flex items-center justify-center">
+                    <span className="text-gray-500 text-[10px] sm:text-xs lg:text-sm">{row.old}</span>
+                  </div>
+                  <div className="p-3 sm:p-4 lg:p-5 text-center bg-gradient-to-r from-blue-500/5 to-purple-500/5 flex items-center justify-center">
+                    <span className={`text-[10px] sm:text-xs lg:text-sm font-semibold ${row.highlight ? 'text-green-400' : 'text-white'}`}>
+                      {row.new}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* FAQ Section */}
           <div className="scroll-reveal max-w-3xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-6 sm:mb-8 md:mb-12 px-4">
@@ -528,10 +728,47 @@ export default function PricingPage() {
         .animate-gradient-shift {
           animation: gradient-shift 15s ease infinite;
         }
+        
+        @keyframes ticker {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-ticker {
+          animation: ticker 30s linear infinite;
+        }
       `}</style>
 
       <PublicFooter />
       <MobileFooter />
+
+      {/* Floating Chat Widget */}
+      <Link href="/contact" className="fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 group">
+        <Headphones className="w-6 h-6" />
+        <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg pointer-events-none">
+          Need help? Chat with us!
+        </div>
+      </Link>
+
+      {/* FAQ Quick Link */}
+      <Link 
+        href="/faq" 
+        className="fixed bottom-24 right-6 z-40 bg-purple-600/90 hover:bg-purple-600 text-white p-3 rounded-full shadow-lg shadow-purple-500/30 transition-all duration-300 hover:scale-110 group"
+      >
+        <HelpCircle className="w-5 h-5" />
+        <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg pointer-events-none">
+          Have Questions?
+        </div>
+      </Link>
+
+      {/* Today's Appointments Counter */}
+      <div className="hidden lg:block fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
+        <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-lg border border-green-500/30 rounded-full px-6 py-2.5 shadow-xl">
+          <p className="text-green-400 text-sm font-medium flex items-center gap-2">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span><span className="font-bold text-white">{todayAppointments}</span> appointments booked today</span>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
