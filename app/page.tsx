@@ -4,12 +4,34 @@ import { PublicNav } from '@/components/public-nav';
 import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { Phone, Zap, TrendingUp, Calendar, Clock, BarChart3, CheckCircle2, ArrowRight, Sparkles, Rocket, Gift, Smartphone, Apple } from 'lucide-react';
+import { Phone, Zap, TrendingUp, Calendar, Clock, BarChart3, CheckCircle2, ArrowRight, Sparkles, Rocket, Gift, Smartphone, Apple, Play, Pause, Shield, FileCheck, Headphones } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function LandingPage() {
   const heroRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+
+  const toggleAudio = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   useEffect(() => {
     // Scroll reveal animation observer
@@ -109,7 +131,7 @@ export default function LandingPage() {
 
             {/* Subheadline */}
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 mb-12 lg:mb-20 max-w-3xl mx-auto leading-relaxed text-center animate-slide-up px-4" style={{ animationDelay: '0.1s' }}>
-              Have thousands of old life insurance leads collecting dust? Let Sterling AI revive them into booked appointments.
+              Have thousands of old life insurance leads collecting dust? Let Sterling Dialer revive them into booked appointments.
             </p>
 
             {/* Free Trial Badge */}
@@ -154,19 +176,39 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-8 max-w-4xl mx-auto animate-slide-up px-4" style={{ animationDelay: '0.3s' }}>
-              <div className="scroll-reveal bg-white/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-white/10 text-center">
-                <div className="text-4xl lg:text-5xl font-bold text-blue-400 mb-1 lg:mb-2">720+</div>
-                <div className="text-gray-400 text-sm lg:text-base">Leads Per Day</div>
+            {/* Trust Badges */}
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-8 lg:mb-12 animate-slide-up px-4" style={{ animationDelay: '0.35s' }}>
+              <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full">
+                <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                <span className="text-xs sm:text-sm text-green-400 font-semibold whitespace-nowrap">No Contracts</span>
               </div>
-              <div className="scroll-reveal delay-1 bg-white/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-white/10 text-center">
-                <div className="text-4xl lg:text-5xl font-bold text-indigo-400 mb-1 lg:mb-2">50+</div>
-                <div className="text-gray-400 text-sm lg:text-base">Appointments Per Month</div>
+              <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-full">
+                <Zap className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                <span className="text-xs sm:text-sm text-blue-400 font-semibold whitespace-nowrap">Live in 24 Hours</span>
               </div>
-              <div className="scroll-reveal delay-2 bg-white/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-white/10 text-center">
-                <div className="text-4xl lg:text-5xl font-bold text-purple-400 mb-1 lg:mb-2">24/7</div>
-                <div className="text-gray-400 text-sm lg:text-base">AI Availability</div>
+              <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full">
+                <Shield className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                <span className="text-xs sm:text-sm text-purple-400 font-semibold whitespace-nowrap">Cancel Anytime</span>
+              </div>
+            </div>
+
+            {/* Live Stats Counter */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 max-w-5xl mx-auto animate-slide-up px-4" style={{ animationDelay: '0.45s' }}>
+              <div className="scroll-reveal bg-gradient-to-br from-blue-500/10 to-blue-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-blue-500/20 text-center">
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-400 mb-1 lg:mb-2">2.4M+</div>
+                <div className="text-gray-400 text-xs sm:text-sm lg:text-base">Calls Made</div>
+              </div>
+              <div className="scroll-reveal delay-1 bg-gradient-to-br from-green-500/10 to-green-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-green-500/20 text-center">
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-green-400 mb-1 lg:mb-2">47K+</div>
+                <div className="text-gray-400 text-xs sm:text-sm lg:text-base">Appointments</div>
+              </div>
+              <div className="scroll-reveal delay-2 bg-gradient-to-br from-purple-500/10 to-purple-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-purple-500/20 text-center">
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-purple-400 mb-1 lg:mb-2">720+</div>
+                <div className="text-gray-400 text-xs sm:text-sm lg:text-base">Dials/Day</div>
+              </div>
+              <div className="scroll-reveal delay-3 bg-gradient-to-br from-amber-500/10 to-amber-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-amber-500/20 text-center">
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-amber-400 mb-1 lg:mb-2">24/7</div>
+                <div className="text-gray-400 text-xs sm:text-sm lg:text-base">AI Active</div>
               </div>
             </div>
           </div>
@@ -311,7 +353,7 @@ export default function LandingPage() {
                   <div className="relative pt-6">
                     <h3 className="text-2xl font-bold text-white mb-4">Click "Launch AI"</h3>
                     <p className="text-gray-300 leading-relaxed mb-3">
-                      One button. That's it. Sterling AI starts calling your leads immediately.
+                      One button. That's it. Sterling Dialer starts calling your leads immediately.
                     </p>
                     <p className="text-gray-600 text-sm">
                       No setup. No configuration. Just launch.
@@ -360,7 +402,7 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <p className="text-gray-300 mb-6 leading-relaxed">
-                  "Sterling AI tripled my appointments in the first month. I'm booking 3-5 meetings per day now."
+                  "Sterling Dialer tripled my appointments in the first month. I'm booking 3-5 meetings per day now."
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
@@ -433,7 +475,7 @@ export default function LandingPage() {
                   </div>
                   
                   <h2 className="text-4xl sm:text-3xl md:text-6xl font-bold text-white mb-6 leading-tight">
-                    Sterling AI is Going Mobile 📱
+                    Sterling Dialer is Going Mobile 📱
                   </h2>
                   <p className="text-base sm:text-lg md:text-1xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
                     Manage your AI dialer, track appointments, and monitor sales
@@ -506,7 +548,7 @@ export default function LandingPage() {
                 </p>
                 {/* Desktop: Full description */}
                 <p className="hidden sm:block text-lg md:text-2xl text-gray-300 mb-5 md:mb-10 max-w-2xl mx-auto leading-relaxed">
-                  Sterling AI does it all for you — automatically calling, and booking your calendar full of appointments.
+                  Sterling Dialer does it all for you — automatically calling, and booking your calendar full of appointments.
                 </p>
                 
                 {/* Mobile: Compact pricing */}
@@ -539,7 +581,7 @@ export default function LandingPage() {
                 
                 {/* Schedule Call CTA */}
                 <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-white/10">
-                  <p className="text-gray-400 text-sm mb-3">Not sure if Sterling AI is right for you?</p>
+                  <p className="text-gray-400 text-sm mb-3">Not sure if Sterling Dialer is right for you?</p>
                   <Link
                     href="/schedule-call"
                     className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 font-medium transition-colors group"
@@ -557,7 +599,7 @@ export default function LandingPage() {
         {/* Footer */}
         <footer className="hidden lg:block container mx-auto px-6 py-12 border-t border-white/10">
           <div className="max-w-6xl mx-auto text-center text-gray-400">
-            <p>&copy; 2025 Sterling AI. All rights reserved.</p>
+            <p>&copy; 2025 Sterling Dialer. All rights reserved.</p>
           </div>
         </footer>
       </main>
@@ -644,7 +686,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-5 gap-6 lg:gap-8 xl:gap-12 mb-8">
             {/* Company */}
             <div>
-              <h3 className="text-white font-bold mb-4">Sterling AI</h3>
+              <h3 className="text-white font-bold mb-4">Sterling Dialer</h3>
               <p className="text-gray-400 text-sm leading-relaxed">
                 Revive your old leads into booked appointments.
               </p>
@@ -710,7 +752,7 @@ export default function LandingPage() {
 
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-500 text-sm">
-              © 2025 Sterling AI. All rights reserved.
+              © 2024 Sterling Dialer. All rights reserved.
             </p>
             <p className="text-gray-500 text-sm">
               Start your <span className="text-gray-300 font-bold">7 day</span> free trial today

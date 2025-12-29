@@ -383,7 +383,7 @@ export function CallBalanceCard({
                       className="mt-0.5 md:mt-1 w-4 h-4 md:w-5 md:h-5 rounded border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer shrink-0"
                     />
                     <span className="text-xs md:text-sm text-gray-300">
-                      I understand and agree that Sterling AI will automatically charge $25 when my balance drops below $1. I can cancel auto-refill anytime.
+                      I understand and agree that Sterling Dialer will automatically charge $25 when my balance drops below $1. I can cancel auto-refill anytime.
                     </span>
                     {consentChecked && (
                       <span className="ml-auto text-green-400 text-lg">✓</span>

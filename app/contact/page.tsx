@@ -6,7 +6,7 @@ import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { Mail, Phone, Clock, Send, CheckCircle, ArrowRight, Calendar } from 'lucide-react';
+import { Mail, Phone, Clock, Send, CheckCircle, ArrowRight, Calendar, Shield, CheckCircle2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -98,7 +98,7 @@ export default function ContactPage() {
             </div>
             <div className="text-4xl md:text-5xl flex justify-center mt-2">
               <BlurText
-                text="Sterling AI Support"
+                text="Sterling Dialer Support"
                 delay={120}
                 className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
                 animateBy="words"
@@ -109,6 +109,22 @@ export default function ContactPage() {
           <p className="text-1xl text-gray-400 max-w-2xl mx-auto">
             Questions about reviving your old leads? We're always here happy to help.
           </p>
+
+          {/* Trust Badges */}
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6">
+            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full">
+              <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
+              <span className="text-[10px] sm:text-xs text-green-400 font-semibold">No Contracts</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 rounded-full">
+              <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
+              <span className="text-[10px] sm:text-xs text-blue-400 font-semibold">Live in 24hrs</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full">
+              <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
+              <span className="text-[10px] sm:text-xs text-purple-400 font-semibold">Cancel Anytime</span>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-8">

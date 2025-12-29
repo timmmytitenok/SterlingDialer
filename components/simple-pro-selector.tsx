@@ -15,7 +15,7 @@ export function SimpleProSelector({ currentTier, hideFreeTrial = false }: Simple
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      console.log('💎 Subscribing to SterlingAI Pro Access ($379/month)...');
+      console.log('💎 Subscribing to Sterling Pro Access ($379/month)...');
       
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
@@ -109,7 +109,7 @@ export function SimpleProSelector({ currentTier, hideFreeTrial = false }: Simple
               <Zap className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-4xl font-bold text-white mb-3">
-              SterlingAI Pro Access
+              Sterling Pro Access
             </h2>
             <div className="flex items-baseline justify-center gap-2 mb-3">
               <span className="text-6xl font-bold text-blue-400">$379</span>

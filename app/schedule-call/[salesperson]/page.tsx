@@ -502,7 +502,7 @@ export default function SalespersonSchedulePage() {
           className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          Back to Sterling AI
+          Back to Sterling Dialer
         </Link>
       </nav>
 

@@ -548,7 +548,7 @@ export default function ScheduleCallPage() {
                 filter: 'blur(10px)'
               }}
             >
-              Not sure if Sterling AI is right for you? Book a free 15-minute call and I'll personally show you how our AI dialer can help you book more appointments and close more deals.
+              Not sure if Sterling Dialer is right for you? Book a free 15-minute call and I'll personally show you how our AI dialer can help you book more appointments and close more deals.
             </p>
           </div>
 
@@ -890,7 +890,7 @@ export default function ScheduleCallPage() {
                   filter: 'blur(10px)'
                 }}
               >
-                Not sure if Sterling AI is right for you? Book a free 15-minute call and I'll personally show you how our AI dialer can help you book more appointments and close more deals.
+                Not sure if Sterling Dialer is right for you? Book a free 15-minute call and I'll personally show you how our AI dialer can help you book more appointments and close more deals.
               </p>
             </div>
 

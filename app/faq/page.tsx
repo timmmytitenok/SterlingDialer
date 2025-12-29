@@ -6,7 +6,7 @@ import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { ChevronDown, Sparkles, Zap, DollarSign, Phone, Calendar, Clock, Gift, Rocket, ArrowRight } from 'lucide-react';
+import { ChevronDown, Sparkles, Zap, DollarSign, Phone, Calendar, Clock, Gift, Rocket, ArrowRight, Shield, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -34,10 +34,10 @@ export default function FAQPage() {
   const faqs = [
     {
       question: "Have thousands of old leads collecting dust?",
-      answer: "Sterling AI is PERFECT for you. Those leads you paid for months or years ago? We'll call them automatically — no manual dialing, no wasted time. Our AI revives old leads into booked appointments while you focus on closing. You already paid for them. Let's make sure you get your money's worth."
+      answer: "Sterling Dialer is PERFECT for you. Those leads you paid for months or years ago? We'll call them automatically — no manual dialing, no wasted time. Our AI revives old leads into booked appointments while you focus on closing. You already paid for them. Let's make sure you get your money's worth."
     },
     {
-      question: "How does Sterling AI actually work?",
+      question: "How does Sterling Dialer actually work?",
       answer: "Simple. You upload your leads and launch. Our AI automatically dials each lead, has natural conversations, handles objections, and books appointments directly to your calendar. You wake up to a full calendar. It's like having unlimited SDRs working 24/7 — for a fraction of the cost."
     },
     {
@@ -50,7 +50,7 @@ export default function FAQPage() {
     },
     {
       question: "Do I need to provide my own leads?",
-      answer: "Yes — but that's the beauty of it. You already HAVE leads sitting in your CRM collecting dust. Those old leads you paid for but never called? Sterling AI will call them ALL. No more guilt about wasted lead spend. Put your old leads to work."
+      answer: "Yes — but that's the beauty of it. You already HAVE leads sitting in your CRM collecting dust. Those old leads you paid for but never called? Sterling Dialer will call them ALL. No more guilt about wasted lead spend. Put your old leads to work."
     },
     {
       question: "Can I cancel anytime?",
@@ -62,15 +62,15 @@ export default function FAQPage() {
     },
     {
       question: "What if I run out of calling credits?",
-      answer: "Sterling AI uses a prepaid system with auto-refill to keep your AI running. Calls cost $0.35 per minute. We auto-refill $25 to your balance when it drops below $1, so your AI never stops working. You can manage your balance and payment methods in your dashboard."
+      answer: "Sterling Dialer uses a prepaid system with auto-refill to keep your AI running. Calls cost $0.35 per minute. We auto-refill $25 to your balance when it drops below $1, so your AI never stops working. You can manage your balance and payment methods in your dashboard."
     },
     {
-      question: "What features are included with SterlingAI Pro Access?",
+      question: "What features are included with Sterling Pro Access?",
       answer: "Everything! For $379/month, you get unlimited AI calling agents, unlimited leads per day, live call transfers, Cal.ai appointment booking, Google Sheets integration, call recordings & transcripts, performance dashboard, priority support, and 24/7 AI operation. One simple plan with all features unlocked."
     },
     {
       question: "Still chasing new leads when you haven't worked the old ones?",
-      answer: "This is the biggest mistake agents make. You're spending money on NEW leads while thousands of OLD leads sit untouched. Sterling AI solves this. Load up ALL your old leads — the ones from 6 months ago, a year ago, even 2 years ago. Our AI will systematically call every single one, follow up, and book appointments. Work what you already paid for FIRST."
+      answer: "This is the biggest mistake agents make. You're spending money on NEW leads while thousands of OLD leads sit untouched. Sterling Dialer solves this. Load up ALL your old leads — the ones from 6 months ago, a year ago, even 2 years ago. Our AI will systematically call every single one, follow up, and book appointments. Work what you already paid for FIRST."
     },
     {
       question: "How fast will I see results?",
@@ -78,7 +78,7 @@ export default function FAQPage() {
     },
     {
       question: "What if my leads are really old — like 1-2 years?",
-      answer: "Even better. Old leads cost you ZERO now (you already paid), and people's situations change. Someone who said 'no' 18 months ago might be ready NOW. Sterling AI will find out — automatically. You have nothing to lose and appointments to gain."
+      answer: "Even better. Old leads cost you ZERO now (you already paid), and people's situations change. Someone who said 'no' 18 months ago might be ready NOW. Sterling Dialer will find out — automatically. You have nothing to lose and appointments to gain."
     },
     {
       question: "Will there be a mobile app?",
@@ -86,7 +86,7 @@ export default function FAQPage() {
     },
     {
       question: "Can I upload as many leads as I want?",
-      answer: "Yes. You can upload unlimited leads and run unlimited campaigns. Whether you have 500 leads or 50,000 leads, Sterling AI will work through them systematically. Upload your entire database and let the AI do what it does best."
+      answer: "Yes. You can upload unlimited leads and run unlimited campaigns. Whether you have 500 leads or 50,000 leads, Sterling Dialer will work through them systematically. Upload your entire database and let the AI do what it does best."
     },
     {
       question: "Can the AI transfer live calls to me?",
@@ -110,23 +110,23 @@ export default function FAQPage() {
     },
     {
       question: "How accurate are the appointment bookings?",
-      answer: "Very accurate. SterlingAI confirms interest, checks availability, and books a time directly onto your calendar. You'll also get a transcript of every booking call so you know exactly what was discussed. No-show rate is typically under 20% — same as manually booked appointments."
+      answer: "Very accurate. Sterling confirms interest, checks availability, and books a time directly onto your calendar. You'll also get a transcript of every booking call so you know exactly what was discussed. No-show rate is typically under 20% — same as manually booked appointments."
     },
     {
       question: "Does this work for life insurance, final expense, mortgage protection, or Medicare?",
-      answer: "Yes. SterlingAI works with all types of insurance leads. Whether you sell final expense, term life, whole life, mortgage protection, annuities, or Medicare — the AI adapts to your script and product. Just upload your leads and configure your pitch."
+      answer: "Yes. Sterling works with all types of insurance leads. Whether you sell final expense, term life, whole life, mortgage protection, annuities, or Medicare — the AI adapts to your script and product. Just upload your leads and configure your pitch."
     },
     {
       question: "Do I need any tech skills?",
       answer: "No. Setup takes under 10 minutes. If you can upload a CSV and connect your calendar, you're good to go. Our team also handles the initial AI agent configuration for you — all you do is launch when ready."
     },
     {
-      question: "Does SterlingAI sound like a real human?",
+      question: "Does Sterling sound like a real human?",
       answer: "Yes. The AI uses natural, human-sounding voices with realistic pauses, tone, and conversation flow. Most prospects don't realize they're speaking to AI until the call ends. It sounds professional, friendly, and conversational."
     },
     {
-      question: "Is SterlingAI TCPA compliant?",
-      answer: "Yes — when used correctly. SterlingAI only calls opt-in leads that YOU already own. You must follow standard TCPA guidelines and ensure your leads are compliant. The AI respects do-not-call requests immediately and all calls are recorded for your records."
+      question: "Is Sterling TCPA compliant?",
+      answer: "Yes — when used correctly. Sterling only calls opt-in leads that YOU already own. You must follow standard TCPA guidelines and ensure your leads are compliant. The AI respects do-not-call requests immediately and all calls are recorded for your records."
     }
   ];
 
@@ -176,6 +176,22 @@ export default function FAQPage() {
           <p className="text-1xl text-gray-400 max-w-2xl mx-auto">
             Everything you need to know about reviving your old leads and booking more appointments
           </p>
+
+          {/* Trust Badges */}
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6">
+            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full">
+              <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
+              <span className="text-[10px] sm:text-xs text-green-400 font-semibold">No Contracts</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 rounded-full">
+              <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
+              <span className="text-[10px] sm:text-xs text-blue-400 font-semibold">Live in 24hrs</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full">
+              <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
+              <span className="text-[10px] sm:text-xs text-purple-400 font-semibold">Cancel Anytime</span>
+            </div>
+          </div>
         </div>
 
 

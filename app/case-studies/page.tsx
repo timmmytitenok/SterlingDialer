@@ -21,7 +21,7 @@ export default function CaseStudiesPage() {
         revenue: "$33,093",
         roi: "33x"
       },
-      quote: "I had thousands of leads sitting in my CRM from the past 2 years. Paid good money for them but never had time to call. Sterling AI called them ALL in 90 days. Booked 112 appointments. Closed 22 policies. Best investment I've ever made.",
+      quote: "I had thousands of leads sitting in my CRM from the past 2 years. Paid good money for them but never had time to call. Sterling Dialer called them ALL in 90 days. Booked 112 appointments. Closed 22 policies. Best investment I've ever made.",
       highlight: "Dusty leads to $33K in 90 days"
     },
     {
@@ -35,7 +35,7 @@ export default function CaseStudiesPage() {
         revenue: "$54,342",
         roi: "54x"
       },
-      quote: "We had leads from conferences, trade shows, Facebook ads — all going cold. Sterling AI with Elite plan (1,800 dials/day) worked through our entire backlog. My agents' calendars have never been this full. We're closing more deals than ever.",
+      quote: "We had leads from conferences, trade shows, Facebook ads — all going cold. Sterling Dialer with Elite plan (1,800 dials/day) worked through our entire backlog. My agents' calendars have never been this full. We're closing more deals than ever.",
       highlight: "Turned 8,723 old leads into $54k"
     },
     {
@@ -49,7 +49,7 @@ export default function CaseStudiesPage() {
         revenue: "$8,402",
         roi: "8x"
       },
-      quote: "Started with Starter plan ($999/mo). First week: 14 appointments. Second week: 11 appointments. By week 3, I upgraded to Pro because it was doing so much for me! Sterling AI is a cheat code.",
+      quote: "Started with Starter plan ($999/mo). First week: 14 appointments. Second week: 11 appointments. By week 3, I upgraded to Pro because it was doing so much for me! Sterling Dialer is a cheat code.",
       highlight: "ROI in the first week!"
     }
   ];
@@ -230,7 +230,7 @@ export default function CaseStudiesPage() {
             </div>
           </div>
           <p className="text-center text-gray-300 mt-8 text-lg">
-            Sterling AI pays for itself with <span className="text-green-400 font-bold">ONE policy</span>. 
+            Sterling Dialer pays for itself with <span className="text-green-400 font-bold">ONE policy</span>. 
             Everything after that is pure profit.
           </p>
         </div>

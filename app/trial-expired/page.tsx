@@ -84,7 +84,7 @@ export default function TrialExpiredPage() {
               <Clock className="w-6 h-6 md:w-8 md:h-8 text-amber-400" />
               <div className="text-left">
                 <p className="text-lg md:text-xl font-bold text-amber-300">Your Free Trial Has Ended</p>
-                <p className="text-sm md:text-base text-amber-200">Thank you for trying Sterling AI!</p>
+                <p className="text-sm md:text-base text-amber-200">Thank you for trying Sterling Dialer!</p>
               </div>
             </div>
 

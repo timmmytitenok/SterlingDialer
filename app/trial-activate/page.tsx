@@ -79,7 +79,7 @@ export default function TrialActivatePage() {
           </div>
 
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center">
-            SterlingAI Pro Access
+            Sterling Pro Access
           </h2>
           <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-white/70 text-center">
             Let AI call your leads and fill your calendar.
@@ -136,7 +136,7 @@ export default function TrialActivatePage() {
                 className="mt-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer flex-shrink-0"
               />
               <span className="text-[10.5px] sm:text-[10px] md:text-sm text-gray-300 leading-relaxed">
-                By continuing, I confirm I have read and agree to Sterling AI's{' '}
+                By continuing, I confirm I have read and agree to Sterling Dialer's{' '}
                 <a 
                   href="/terms-of-service" 
                   target="_blank"

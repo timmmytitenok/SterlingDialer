@@ -57,7 +57,7 @@ export default function WelcomePage() {
           Welcome to
           <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400">
-            Sterling AI
+            Sterling Dialer
           </span>
         </h1>
 

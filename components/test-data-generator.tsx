@@ -84,7 +84,7 @@ export function TestDataGenerator({ userId }: TestDataGeneratorProps) {
             stripe_customer_id: 'test_customer_' + Math.random().toString(36).substr(2, 9),
             stripe_subscription_id: 'test_sub_' + Math.random().toString(36).substr(2, 9),
             status: 'active',
-            plan_name: 'Sterling AI Basic',
+            plan_name: 'Sterling Dialer Basic',
             amount: 99.00,
             current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             cancel_at_period_end: false,

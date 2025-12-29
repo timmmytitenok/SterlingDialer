@@ -67,12 +67,12 @@ export default function OnboardingPage() {
           {/* Header */}
           <div className="text-center mb-6 md:mb-10 space-y-3 md:space-y-4">
             {/* Logo */}
-            <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg animate-bounce-in">
-              <span className="text-2xl md:text-3xl font-bold text-white">SA</span>
+            <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-2xl mb-4 shadow-lg animate-bounce-in">
+              <span className="text-2xl md:text-3xl font-bold text-white">SD</span>
             </div>
 
             <h1 className="text-3xl md:text-5xl font-bold text-white animate-slide-up">
-              Welcome to Sterling AI! 🚀
+              Welcome to Sterling Dialer! 🚀
             </h1>
             
             <p className="text-base md:text-xl text-gray-300 animate-slide-up-delay">
@@ -109,7 +109,7 @@ export default function OnboardingPage() {
               <div className="flex items-start gap-3 md:gap-4 p-3 md:p-4 bg-gray-800/30 rounded-lg">
                 <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 text-sm md:text-base font-bold text-purple-400">2</div>
                 <div>
-                  <p className="text-sm md:text-base text-white font-semibold">Sterling AI Team Sets Up Your Agent</p>
+                  <p className="text-sm md:text-base text-white font-semibold">Sterling Dialer Team Sets Up Your Agent</p>
                   <p className="text-xs md:text-sm text-gray-400">We'll configure your AI caller, Cal.ai integration, and workflows</p>
                 </div>
               </div>

@@ -187,7 +187,7 @@ export default function SupportPage() {
       {/* Thank You Note - Compact on mobile */}
       <div className="text-center py-4 md:py-8">
         <p className="text-gray-400 text-xs md:text-sm">
-          Thank you for choosing Sterling AI! 💙
+          Thank you for choosing Sterling Dialer! 💙
         </p>
         <p className="text-gray-500 text-[10px] md:text-xs mt-1 md:mt-2">
           Your success is our success

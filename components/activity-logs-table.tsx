@@ -449,7 +449,7 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
       // Add title
       doc.setFontSize(18);
       doc.setTextColor(59, 130, 246); // blue color
-      doc.text('Sterling AI - Call History Report', 14, 15);
+      doc.text('Sterling Dialer - Call History Report', 14, 15);
       
       // Add metadata
       doc.setFontSize(10);

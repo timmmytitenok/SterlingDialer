@@ -105,12 +105,12 @@ export function DashboardMobileNav({ user, profile }: DashboardMobileNavProps) {
           {/* Logo - Bigger */}
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
             <div className="relative">
-              <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:shadow-blue-500/50 transition-all duration-300 group-hover:scale-110">
-                <span className="text-lg font-bold text-white">SA</span>
+              <div className="w-11 h-11 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-all duration-300 group-hover:scale-110">
+                <span className="text-lg font-bold text-white">SD</span>
               </div>
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl opacity-0 group-hover:opacity-30 blur-md transition-all duration-300" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-30 blur-md transition-all duration-300" />
             </div>
-            <span className="text-xl font-bold text-white tracking-tight">Sterling AI</span>
+            <span className="text-xl font-bold text-white tracking-tight">Sterling Dialer</span>
           </Link>
 
           {/* Hamburger Button - Bigger */}
@@ -174,8 +174,8 @@ export function DashboardMobileNav({ user, profile }: DashboardMobileNavProps) {
             }}
           >
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-sm font-bold text-white">SA</span>
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-lg flex items-center justify-center shadow-lg">
+                <span className="text-sm font-bold text-white">SD</span>
               </div>
               <span className="text-base font-bold text-white">Dashboard Menu</span>
             </div>

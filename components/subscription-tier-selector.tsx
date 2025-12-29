@@ -104,7 +104,7 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
               <Zap className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-4xl font-bold text-white mb-3">
-              SterlingAI Pro Access
+              Sterling Pro Access
             </h2>
             <div className="flex items-baseline justify-center gap-2 mb-3">
               <span className="text-6xl font-bold text-blue-400">$379</span>

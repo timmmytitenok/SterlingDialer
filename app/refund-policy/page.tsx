@@ -28,7 +28,7 @@ export default function RefundPolicyPage() {
           <div className="prose prose-invert max-w-none text-sm sm:text-base">
             <div className="space-y-6 sm:space-y-8 text-gray-300">
               <p className="text-sm sm:text-lg leading-relaxed">
-                Thank you for using SterlingAI. This policy explains how cancellations, refunds, trial periods, and call-credit charges work. Because SterlingAI provides digital, automated calling services that incur real telephony costs, all users must agree to this policy.
+                Thank you for using Sterling. This policy explains how cancellations, refunds, trial periods, and call-credit charges work. Because Sterling provides digital, automated calling services that incur real telephony costs, all users must agree to this policy.
               </p>
 
               <section>
@@ -60,7 +60,7 @@ export default function RefundPolicyPage() {
 
               <section>
                 <h2 className="text-2xl font-bold text-white mb-4">2. Free Trial Policy</h2>
-                <p className="mb-3">SterlingAI offers a <span className="font-bold">7-Day Free Trial</span> which includes full platform access.</p>
+                <p className="mb-3">Sterling offers a <span className="font-bold">7-Day Free Trial</span> which includes full platform access.</p>
                 <p className="mb-3 font-bold text-white">During the free trial:</p>
                 <ul className="space-y-2 list-disc list-inside">
                   <li>You will only pay for <span className="font-bold">call minutes used</span></li>
@@ -115,10 +115,10 @@ export default function RefundPolicyPage() {
 
               <section>
                 <h2 className="text-2xl font-bold text-white mb-4">5. Chargeback Policy</h2>
-                <p className="mb-3">Because SterlingAI clearly states pricing, offers a free trial, and charges only for minutes used:</p>
+                <p className="mb-3">Because Sterling clearly states pricing, offers a free trial, and charges only for minutes used:</p>
                 <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg mb-4">
                   <p className="font-bold text-red-300 text-lg">
-                    ➡️ Any chargeback filed against SterlingAI will be considered fraudulent.
+                    ➡️ Any chargeback filed against Sterling will be considered fraudulent.
                   </p>
                 </div>
                 <p className="mb-3">If a chargeback is submitted:</p>
@@ -141,7 +141,7 @@ export default function RefundPolicyPage() {
               <section>
                 <h2 className="text-2xl font-bold text-white mb-4">6. Illegal, Non-Consented, or Prohibited Lead Uploads</h2>
                 <p className="mb-3">You are solely responsible for the legality of the leads you upload.</p>
-                <p className="mb-3">SterlingAI is <span className="font-bold">not liable</span> for:</p>
+                <p className="mb-3">Sterling is <span className="font-bold">not liable</span> for:</p>
                 <ul className="space-y-2 list-disc list-inside">
                   <li>TCPA violations</li>
                   <li>DNC (Do Not Call) violations</li>

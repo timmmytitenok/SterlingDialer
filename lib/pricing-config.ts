@@ -1,7 +1,7 @@
 /**
  * PRICING CONFIGURATION
  * 
- * Centralized pricing configuration for Sterling AI
+ * Centralized pricing configuration for Sterling Dialer
  * Update prices here to reflect across the entire application
  */
 

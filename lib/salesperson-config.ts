@@ -19,7 +19,7 @@ export const salespeople: Record<string, SalespersonConfig> = {
     slug: 'wardy',
     name: 'Wardy',
     title: 'Senior Sales Consultant',
-    description: 'Schedule a free consultation with Wardy to learn how Sterling AI can transform your insurance business.',
+    description: 'Schedule a free consultation with Wardy to learn how Sterling Dialer can transform your insurance business.',
     image: '/team/wardy.png',
     calEventTypeId: '4241182',
     calApiKey: process.env.WARDY_CAL_API_KEY || 'cal_live_b1a3def14790850edca137de6660e62f', // Fallback for local dev

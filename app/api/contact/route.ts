@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
     // Send email using Resend
     const data = await resend.emails.send({
-      from: 'Sterling AI Contact <onboarding@resend.dev>', // You'll update this with your domain later
+      from: 'Sterling Dialer Contact <onboarding@resend.dev>', // You'll update this with your domain later
       to: ['timothytitenok9@gmail.com'], // Must use your Resend signup email in testing mode
       replyTo: email,
       subject: `Contact Form Submission from ${name}`,

@@ -14,14 +14,14 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-3">1. Acceptance of Terms</h2>
               <p>
-                By accessing and using Sterling AI (&ldquo;the Service&rdquo;), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms of Service, please do not use the Service.
+                By accessing and using Sterling Dialer (&ldquo;the Service&rdquo;), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms of Service, please do not use the Service.
               </p>
             </section>
 
             <section>
               <h2 className="text-2xl font-bold text-white mb-3">2. Description of Service</h2>
               <p>
-                Sterling AI provides AI-powered automated calling services to help businesses contact leads, book appointments, and manage customer relationships. The Service includes:
+                Sterling Dialer provides AI-powered automated calling services to help businesses contact leads, book appointments, and manage customer relationships. The Service includes:
               </p>
               <ul className="list-disc pl-6 space-y-2 mt-3">
                 <li>Automated AI calling and lead management</li>
@@ -83,21 +83,21 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-3">7. Intellectual Property</h2>
               <p>
-                The Service and its original content, features, and functionality are owned by Sterling AI and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
+                The Service and its original content, features, and functionality are owned by Sterling Dialer and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
               </p>
             </section>
 
             <section>
               <h2 className="text-2xl font-bold text-white mb-3">8. Limitation of Liability</h2>
               <p>
-                Sterling AI shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the Service. Our total liability shall not exceed the amount you paid to Sterling AI in the past 12 months.
+                Sterling Dialer shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the Service. Our total liability shall not exceed the amount you paid to Sterling Dialer in the past 12 months.
               </p>
             </section>
 
             <section>
               <h2 className="text-2xl font-bold text-white mb-3">9. Disclaimer of Warranties</h2>
               <p>
-                The Service is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo; without warranties of any kind, either express or implied. Sterling AI does not guarantee that the Service will be uninterrupted, secure, or error-free.
+                The Service is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo; without warranties of any kind, either express or implied. Sterling Dialer does not guarantee that the Service will be uninterrupted, secure, or error-free.
               </p>
             </section>
 
@@ -111,7 +111,7 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-3">11. Modifications to Terms</h2>
               <p>
-                Sterling AI reserves the right to modify these Terms of Service at any time. We will notify users of any material changes via email or through the Service. Your continued use of the Service after such modifications constitutes acceptance of the updated terms.
+                Sterling Dialer reserves the right to modify these Terms of Service at any time. We will notify users of any material changes via email or through the Service. Your continued use of the Service after such modifications constitutes acceptance of the updated terms.
               </p>
             </section>
 

@@ -60,7 +60,7 @@ export function WelcomeModal({ userName, onContinue }: WelcomeModalProps) {
 
           {/* Title */}
           <h1 className="text-4xl md:text-5xl font-black text-white mb-4 animate-slide-up">
-            🎉 Welcome to Sterling AI!
+            🎉 Welcome to Sterling Dialer!
           </h1>
 
           {/* Personalized Message */}

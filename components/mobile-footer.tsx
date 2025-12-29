@@ -17,10 +17,10 @@ export function MobileFooter() {
         {/* Logo & Description */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-              <span className="text-lg font-bold text-white">SA</span>
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+              <span className="text-lg font-bold text-white">SD</span>
             </div>
-            <span className="text-xl font-bold text-white">Sterling AI</span>
+            <span className="text-xl font-bold text-white">Sterling Dialer</span>
           </div>
           <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">
             Revive your old leads into booked appointments.
@@ -66,7 +66,7 @@ export function MobileFooter() {
         {/* Legal Links - Removed (now in nav dropdown) */}
         <div className="space-y-2 pt-4 border-t border-gray-800/50">
           <p className="text-xs text-gray-600 text-center">
-            © 2025 Sterling AI. All rights reserved.
+            © 2024 Sterling Dialer. All rights reserved.
           </p>
           <p className="text-xs text-gray-500 text-center">
             Start your <span className="text-gray-300 font-bold">7 day</span> free trial today

@@ -30,11 +30,11 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
       {/* Logo */}
       <div className="p-6 border-b border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-xl font-bold">
-            SA
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-lg flex items-center justify-center text-xl font-bold">
+            SD
           </div>
           <div>
-            <h1 className="text-lg font-bold">Sterling AI</h1>
+            <h1 className="text-lg font-bold">Sterling Dialer</h1>
             <p className="text-xs text-gray-400">Command Center</p>
           </div>
         </div>

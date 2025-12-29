@@ -8,7 +8,7 @@ export function PublicFooter() {
         <div className="grid grid-cols-5 gap-6 lg:gap-8 xl:gap-12 mb-8">
           {/* Company */}
           <div>
-            <h3 className="text-white font-bold mb-4">Sterling AI</h3>
+            <h3 className="text-white font-bold mb-4">Sterling Dialer</h3>
             <p className="text-gray-400 text-sm leading-relaxed">
               Revive your old leads into booked appointments.
             </p>
@@ -74,7 +74,7 @@ export function PublicFooter() {
 
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-gray-500 text-sm">
-            © 2025 Sterling AI. All rights reserved.
+            © 2024 Sterling Dialer. All rights reserved.
           </p>
           <p className="text-gray-500 text-sm">
             Start your <span className="text-gray-300 font-bold">7 day</span> free trial today

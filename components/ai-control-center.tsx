@@ -61,7 +61,7 @@ export function AIControlCenter({ userId, initialSettings, hasSubscription }: AI
               
               <h2 className="text-3xl font-semibold text-white mb-3">Subscription Required</h2>
               <p className="text-gray-400 text-lg mb-8">
-                Subscribe to <span className="text-white font-semibold">Sterling AI Basic Plan</span> to unlock the AI calling agent
+                Subscribe to <span className="text-white font-semibold">Sterling Dialer Basic Plan</span> to unlock the AI calling agent
               </p>
 
               {/* Features List */}

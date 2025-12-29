@@ -184,9 +184,9 @@ export default function SalesPresentationPage() {
             className="mb-12 flex items-center gap-4"
           >
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl blur opacity-60" />
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-2xl">
-                <span className="text-white font-bold text-3xl sm:text-4xl">SA</span>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-2xl blur opacity-60" />
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 flex items-center justify-center shadow-2xl">
+                <span className="text-white font-bold text-3xl sm:text-4xl">SD</span>
               </div>
             </div>
             <span className="text-4xl sm:text-5xl font-bold text-white">

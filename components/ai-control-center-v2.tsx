@@ -142,7 +142,7 @@ export function AIControlCenterV2({ userId, initialSettings, hasSubscription, su
                   Complete onboarding to activate your AI agent
                 </p>
                 <p className="text-sm md:text-1xl text-gray-400 mb-6 md:mb-8 max-w-lg mx-auto">
-                  Our Sterling AI team needs your information to configure your AI calling agent
+                  Our Sterling Dialer team needs your information to configure your AI calling agent
                 </p>
               </div>
 

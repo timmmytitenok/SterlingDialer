@@ -27,7 +27,7 @@ export function SubscriptionEnded({ wasFreeTrial = false, endDate }: Subscriptio
           {/* Subtitle */}
           <p className="text-xl text-gray-400 mb-2">
             {wasFreeTrial 
-              ? 'Thanks for trying Sterling AI!' 
+              ? 'Thanks for trying Sterling Dialer!' 
               : 'Your subscription period has ended'}
           </p>
           {endDate && (

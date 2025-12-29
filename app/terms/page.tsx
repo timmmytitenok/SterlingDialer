@@ -30,11 +30,11 @@ export default function TermsPage() {
             <div className="space-y-6 sm:space-y-8 text-gray-300">
               <div className="mb-6 sm:mb-8">
                 <p className="text-sm sm:text-lg leading-relaxed">
-                  Welcome to SterlingAI ("SterlingAI," "we," "us," or "our"). These Terms of Service ("Terms") govern your 
+                  Welcome to Sterling ("Sterling," "we," "us," or "our"). These Terms of Service ("Terms") govern your 
                   access to and use of our AI calling platform, website, software, and related services ("Service").
                 </p>
                 <p className="text-lg leading-relaxed mt-4">
-                  By creating an account, subscribing, or using SterlingAI, you agree to these Terms.
+                  By creating an account, subscribing, or using Sterling, you agree to these Terms.
                 </p>
                 <p className="text-lg leading-relaxed mt-2">
                   <span className="font-bold text-white">If you do not agree, do not use the Service.</span>
@@ -44,7 +44,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-lg sm:text-2xl font-bold text-white mb-3 sm:mb-4">1. Service Description</h2>
                 <p>
-                  SterlingAI provides AI-powered calling, appointment booking, lead follow-up, analytics, and automation 
+                  Sterling provides AI-powered calling, appointment booking, lead follow-up, analytics, and automation 
                   tools designed to help insurance professionals contact and re-engage their leads.
                 </p>
                 <p className="mt-3">
@@ -56,7 +56,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-bold text-white mb-4">2. Subscription & Billing</h2>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>SterlingAI uses a <span className="font-bold">monthly subscription</span> model.</li>
+                  <li>Sterling uses a <span className="font-bold">monthly subscription</span> model.</li>
                   <li>Subscription cost: <span className="font-bold">$379/month</span>, billed automatically through Stripe.</li>
                   <li>Calls are billed <span className="font-bold">pay-as-you-go at $0.35 per minute</span>.</li>
                   <li>A valid payment method is required to place calls.</li>
@@ -70,7 +70,7 @@ export default function TermsPage() {
                     <li>Free trial lasts <span className="font-bold">7 days</span>.</li>
                     <li>Calls during the trial are still billed at $0.35/min.</li>
                     <li>Your subscription begins automatically unless canceled before the trial ends.</li>
-                    <li>By starting the trial, you authorize SterlingAI to charge your payment method at renewal unless you cancel.</li>
+                    <li>By starting the trial, you authorize Sterling to charge your payment method at renewal unless you cancel.</li>
                   </ul>
                 </div>
               </section>
@@ -82,18 +82,18 @@ export default function TermsPage() {
                   <li>You must maintain sufficient balance to allow calls to continue.</li>
                   <li>Auto-refill can be enabled to automatically add funds when the balance falls below $1.</li>
                   <li><span className="font-bold">All call credit purchases are final and non-refundable.</span></li>
-                  <li>SterlingAI is not responsible for disruptions caused by insufficient balance.</li>
+                  <li>Sterling is not responsible for disruptions caused by insufficient balance.</li>
                 </ul>
               </section>
 
               <section>
                 <h2 className="text-2xl font-bold text-white mb-4">4. User Responsibilities (VERY IMPORTANT)</h2>
-                <p className="mb-4">By using SterlingAI, you agree to the following:</p>
+                <p className="mb-4">By using Sterling, you agree to the following:</p>
                 
                 <h3 className="text-xl font-bold text-white mb-3 mt-6">4.1 Compliance With Laws</h3>
                 <ul className="space-y-2 list-disc list-inside">
                   <li>You must comply with <span className="font-bold">all telemarketing, TCPA, FCC, state, federal, and industry regulations.</span></li>
-                  <li>SterlingAI DOES NOT monitor your lead compliance and is NOT responsible for legal violations you commit.</li>
+                  <li>Sterling DOES NOT monitor your lead compliance and is NOT responsible for legal violations you commit.</li>
                 </ul>
 
                 <h3 className="text-xl font-bold text-white mb-3 mt-6">4.2 Lead Quality & Consent</h3>
@@ -107,7 +107,7 @@ export default function TermsPage() {
                 </ul>
 
                 <h3 className="text-xl font-bold text-white mb-3 mt-6">4.3 Illegal or Prohibited Use</h3>
-                <p className="mb-2">You may NOT use SterlingAI to:</p>
+                <p className="mb-2">You may NOT use Sterling to:</p>
                 <ul className="space-y-2 list-disc list-inside">
                   <li>Contact illegally obtained leads</li>
                   <li>Contact numbers without proper opt-in consent</li>
@@ -120,7 +120,7 @@ export default function TermsPage() {
                 <h3 className="text-xl font-bold text-white mb-3 mt-6">4.4 Full Responsibility for Outcomes</h3>
                 <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg mb-4">
                   <p className="font-bold text-red-300">
-                    SterlingAI is not responsible or liable for any fines, penalties, legal fees, damages, or 
+                    Sterling is not responsible or liable for any fines, penalties, legal fees, damages, or 
                     consequences resulting from your use of the Service or your choice of leads.
                   </p>
                 </div>
@@ -134,8 +134,8 @@ export default function TermsPage() {
                 <ul className="space-y-2 list-disc list-inside">
                   <li>AI agents may take 24–72 hours for initial configuration after signup.</li>
                   <li>During setup, certain platform features may be temporarily limited.</li>
-                  <li>You can customize scripts, settings, and preferences, but SterlingAI does not guarantee specific call outcomes.</li>
-                  <li>SterlingAI is not responsible for lost deals, incorrect conversations, or missed opportunities; AI behavior may vary.</li>
+                  <li>You can customize scripts, settings, and preferences, but Sterling does not guarantee specific call outcomes.</li>
+                  <li>Sterling is not responsible for lost deals, incorrect conversations, or missed opportunities; AI behavior may vary.</li>
                 </ul>
               </section>
 
@@ -144,7 +144,7 @@ export default function TermsPage() {
                 <ul className="space-y-2 list-disc list-inside">
                   <li>We aim for 99.9% uptime but do not guarantee uninterrupted service.</li>
                   <li>Scheduled maintenance or outages may occur.</li>
-                  <li>SterlingAI is not liable for downtime, call failures, dropped calls, or service interruptions outside our control.</li>
+                  <li>Sterling is not liable for downtime, call failures, dropped calls, or service interruptions outside our control.</li>
                 </ul>
               </section>
 
@@ -152,13 +152,13 @@ export default function TermsPage() {
                 <h2 className="text-2xl font-bold text-white mb-4">7. Limitation of Liability</h2>
                 <p className="mb-3">To the fullest extent permitted by law:</p>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>SterlingAI is provided <span className="font-bold">"as is" and "as available."</span></li>
+                  <li>Sterling is provided <span className="font-bold">"as is" and "as available."</span></li>
                   <li>We make <span className="font-bold">no warranties</span> regarding call accuracy, AI behavior, lead outcomes, sales results, or performance.</li>
                   <li>We are <span className="font-bold">not liable</span> for missed opportunities, lost revenue, lost data, inaccurate AI responses, or any direct or indirect damages.</li>
-                  <li><span className="font-bold">Maximum liability</span> is limited to the amount you paid SterlingAI in the current billing month.</li>
+                  <li><span className="font-bold">Maximum liability</span> is limited to the amount you paid Sterling in the current billing month.</li>
                 </ul>
                 <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                  <p className="font-bold text-yellow-300 mb-2">You agree that SterlingAI is NOT liable for:</p>
+                  <p className="font-bold text-yellow-300 mb-2">You agree that Sterling is NOT liable for:</p>
                   <ul className="space-y-1 list-disc list-inside text-sm">
                     <li>TCPA violations</li>
                     <li>Carrier flags or spam labeling</li>

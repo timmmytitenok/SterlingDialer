@@ -391,7 +391,7 @@ export function AffiliateEarningsClient({
         <div className="bg-gradient-to-br from-red-900/20 to-pink-900/20 rounded-xl p-6 border border-red-500/30">
           <div className="text-sm font-bold text-gray-400 uppercase mb-2">Cancelled</div>
           <div className="text-4xl font-black text-red-400">{stats.cancelled}</div>
-          <div className="text-xs text-gray-400 mt-2">Left SterlingAI</div>
+          <div className="text-xs text-gray-400 mt-2">Left Sterling</div>
         </div>
       </div>
 

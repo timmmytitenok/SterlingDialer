@@ -98,7 +98,7 @@ export default function PricingPage() {
 
                 {/* Title - Mobile smaller */}
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center animate-slide-up">
-                  SterlingAI Pro Access
+                  Sterling Pro Access
                 </h2>
                 <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-white/70 text-center animate-slide-up-delay px-2">
                   Let AI call your leads and fill your calendar.
@@ -155,6 +155,44 @@ export default function PricingPage() {
                   {/* Desktop: Full version */}
                   <span className="hidden sm:inline">Cancel anytime · No long-term contracts · Secure payment via Stripe</span>
                 </p>
+
+                {/* Trust Badges */}
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-4 sm:mt-6">
+                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full">
+                    <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
+                    <span className="text-[10px] sm:text-xs text-green-400 font-semibold">No Contracts</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 rounded-full">
+                    <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
+                    <span className="text-[10px] sm:text-xs text-blue-400 font-semibold">Live in 24hrs</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full">
+                    <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
+                    <span className="text-[10px] sm:text-xs text-purple-400 font-semibold">Cancel Anytime</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Live Stats Banner */}
+          <div className="scroll-reveal max-w-5xl mx-auto mb-12 sm:mb-16 px-3 sm:px-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 backdrop-blur-sm rounded-xl p-4 border border-blue-500/20 text-center">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-400 mb-1">2.4M+</div>
+                <div className="text-gray-400 text-xs sm:text-sm">Calls Made</div>
+              </div>
+              <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 backdrop-blur-sm rounded-xl p-4 border border-green-500/20 text-center">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-green-400 mb-1">47K+</div>
+                <div className="text-gray-400 text-xs sm:text-sm">Appointments</div>
+              </div>
+              <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 backdrop-blur-sm rounded-xl p-4 border border-purple-500/20 text-center">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-purple-400 mb-1">500+</div>
+                <div className="text-gray-400 text-xs sm:text-sm">Happy Agents</div>
+              </div>
+              <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 backdrop-blur-sm rounded-xl p-4 border border-amber-500/20 text-center">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-amber-400 mb-1">24hrs</div>
+                <div className="text-gray-400 text-xs sm:text-sm">Setup Time</div>
               </div>
             </div>
           </div>
@@ -166,7 +204,7 @@ export default function PricingPage() {
                 WHAT'S INCLUDED
               </h3>
               <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white px-4">
-                Everything You Need in SterlingAI Pro Access
+                Everything You Need in Sterling Pro Access
               </h2>
             </div>
 
@@ -318,7 +356,7 @@ export default function PricingPage() {
             <div className="bg-gradient-to-br from-green-500/10 to-emerald-600/5 rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 lg:p-10 border border-green-500/20">
               <div className="text-center mb-5 sm:mb-6 md:mb-8">
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1.5 sm:mb-2">See Your ROI</h2>
-                <p className="text-xs sm:text-sm md:text-base text-gray-400 px-2">Conservative estimates with Sterling AI Pro ($379/month)</p>
+                <p className="text-xs sm:text-sm md:text-base text-gray-400 px-2">Conservative estimates with Sterling Dialer Pro ($379/month)</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
@@ -408,7 +446,7 @@ export default function PricingPage() {
 
             <div className="space-y-3 sm:space-y-4">
               <div className="bg-white/5 backdrop-blur-sm rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-white/10 hover:border-blue-500/30 transition-all">
-                <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">What's included with SterlingAI Pro Access?</h3>
+                <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">What's included with Sterling Pro Access?</h3>
                 <p className="text-xs sm:text-sm md:text-base text-gray-400">
                   Everything! For $379/month, you get unlimited AI calling agents, unlimited leads per day, live call transfers, Cal.ai appointment booking, Google Sheets integration, call recordings & transcripts, performance dashboard, priority support, and 24/7 AI operation. One simple plan with all features unlocked.
                 </p>
@@ -446,15 +484,15 @@ export default function PricingPage() {
                   Have thousands of old leads collecting dust?
                 </h2>
                 <p className="text-[13.5px] sm:text-base md:text-lg lg:text-xl xl:text-2xl text-gray-300 mb-4 sm:mb-4 md:mb-6 lg:mb-8 leading-relaxed">
-                  Let Sterling AI revive them into booked appointments, automatically. 
+                  Let Sterling Dialer revive them into booked appointments, automatically. 
                   Those leads from 6 months, 1 year, even 2 years ago? We'll call them ALL!
                 </p>
                 <p className="text-[12.5px] sm:text-sm md:text-base lg:text-lg text-gray-400 mb-5 sm:mb-5 md:mb-8 lg:mb-10 leading-relaxed">
-                  You already paid for those leads. Sterling AI just makes sure you get your money's worth.
+                  You already paid for those leads. Sterling Dialer just makes sure you get your money's worth.
                 </p>
                 <div className="inline-flex items-center gap-2 sm:gap-2 px-4 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 bg-green-600/20 border border-green-500/40 rounded-xl sm:rounded-xl">
                   <CheckCircle2 className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 text-green-400" />
-                  <span className="text-green-400 font-bold text-sm sm:text-sm md:text-base">Sterling AI pays for itself!</span>
+                  <span className="text-green-400 font-bold text-sm sm:text-sm md:text-base">Sterling Dialer pays for itself!</span>
                 </div>
               </div>
             </div>
@@ -465,7 +503,7 @@ export default function PricingPage() {
             <div className="p-6 sm:p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
               <h3 className="text-2xl sm:text-4xl font-bold text-white mb-3">Still Have Questions?</h3>
               <p className="text-gray-400 text-sm sm:text-base mb-6">
-                Book a free 15-minute call and I'll show you exactly how Sterling AI can help grow your business today.
+                Book a free 15-minute call and I'll show you exactly how Sterling Dialer can help grow your business today.
               </p>
               <Link
                 href="/schedule-call"

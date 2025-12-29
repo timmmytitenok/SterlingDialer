@@ -157,9 +157,9 @@ function LoginPageContent() {
         <div className="text-center mb-6">
           <div 
             onClick={handleLogoClick}
-            className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-3 shadow-lg cursor-pointer hover:scale-110 transition-transform"
+            className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-2xl mb-3 shadow-lg cursor-pointer hover:scale-110 transition-transform"
           >
-            <span className="text-xl font-bold text-white">SA</span>
+            <span className="text-xl font-bold text-white">SD</span>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">
             {isAdminDashboardMode ? '🔐 Admin Dashboard Access' : 'Welcome Back'}

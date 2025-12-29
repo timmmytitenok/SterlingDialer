@@ -30,7 +30,7 @@ export default function PrivacyPage() {
             <div className="space-y-6 sm:space-y-8 text-gray-300">
               <section>
                 <h2 className="text-lg sm:text-2xl font-bold text-white mb-3 sm:mb-4">1. Information We Collect</h2>
-                <p className="mb-4">When you use SterlingAI, we collect only the information necessary to operate the AI dialing and appointment-booking service:</p>
+                <p className="mb-4">When you use Sterling, we collect only the information necessary to operate the AI dialing and appointment-booking service:</p>
                 
                 <h3 className="text-xl font-bold text-white mb-3 mt-6">Account Information</h3>
                 <ul className="space-y-1 list-disc list-inside">
@@ -167,7 +167,7 @@ export default function PrivacyPage() {
               <section>
                 <h2 className="text-2xl font-bold text-white mb-4">9. Children's Privacy</h2>
                 <p>
-                  SterlingAI is <span className="font-bold">not intended for anyone under 18.</span>
+                  Sterling is <span className="font-bold">not intended for anyone under 18.</span>
                 </p>
                 <p className="mt-2">
                   We do not knowingly collect data from minors.
@@ -176,7 +176,7 @@ export default function PrivacyPage() {
 
               <section>
                 <h2 className="text-2xl font-bold text-white mb-4">10. Illegal, Non-Consented, or Prohibited Lead Uploads</h2>
-                <p className="mb-3">By using SterlingAI, you agree to upload <span className="font-bold">only leads you are legally allowed to contact.</span></p>
+                <p className="mb-3">By using Sterling, you agree to upload <span className="font-bold">only leads you are legally allowed to contact.</span></p>
                 <p className="mb-3">You may <span className="font-bold">not</span> upload:</p>
                 <ul className="space-y-2 list-disc list-inside">
                   <li>Purchased leads without consent</li>
@@ -187,7 +187,7 @@ export default function PrivacyPage() {
                 </ul>
                 <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg mt-4">
                   <p className="font-bold text-red-300">
-                    ➡️ If you upload illegal or non-consented leads, you are fully responsible. SterlingAI is not liable for 
+                    ➡️ If you upload illegal or non-consented leads, you are fully responsible. Sterling is not liable for 
                     any resulting fines, penalties, or damages.
                   </p>
                 </div>

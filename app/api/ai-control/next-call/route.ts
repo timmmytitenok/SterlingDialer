@@ -1231,39 +1231,30 @@ export async function POST(request: Request) {
       
       console.error(`❌ Call failed for lead ${nextLead.id}: ${errorMessage}`);
       console.log('');
-      console.log('🔧 Marking lead as needs_review and moving to next lead...');
+      console.log('🔧 Marking lead as unclassified and signaling to continue...');
       
-      // Mark this lead as needing review (bad phone number or other issue)
+      // Mark this lead as unclassified (bad phone number or other issue - can be retried)
       // Note: call_attempts_today and last_attempt_date were already updated above
       await supabase
         .from('leads')
         .update({
-          status: 'needs_review',
+          status: 'unclassified',
           last_call_outcome: `error: ${errorMessage.substring(0, 100)}`,
         })
         .eq('id', nextLead.id);
       
-      console.log(`✅ Lead ${nextLead.name} marked as needs_review`);
-      console.log('🔄 Recursively calling next-call to try the next lead...');
+      console.log(`✅ Lead ${nextLead.name} marked as unclassified (will be retried later)`);
+      console.log('⚠️ Call failed - returning continue signal (call-result webhook will trigger next call)');
       
-      // Get the proper base URL (works in both local and production)
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-      
-      // Try the next lead recursively
-      return fetch(`${baseUrl}/api/ai-control/next-call`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
-      })
-        .then(res => res.json())
-        .then(data => NextResponse.json(data))
-        .catch(err => {
-          console.error('❌ Recursive call failed:', err);
-      return NextResponse.json({ 
-            error: `Call failed and retry failed: ${errorMessage}` 
-      }, { status: 500 });
-        });
+      // Return success with continueDialing flag so the dialer knows to keep going
+      // The call-result webhook handles triggering the next call, not a recursive fetch
+      return NextResponse.json({
+        success: false,
+        error: `Call failed: ${errorMessage}`,
+        leadId: nextLead.id,
+        leadName: nextLead.name,
+        continueDialing: true,  // Signal that dialer should continue with next lead
+      });
     }
 
     const callData = await callResponse.json();

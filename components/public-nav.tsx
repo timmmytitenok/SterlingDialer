@@ -136,13 +136,13 @@ export function PublicNav() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group relative flex-shrink-0">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl blur opacity-50 group-hover:opacity-75 transition-opacity" />
-              <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                <span className="text-white font-bold text-2xl">SA</span>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl blur opacity-50 group-hover:opacity-75 transition-opacity" />
+              <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                <span className="text-white font-bold text-2xl">SD</span>
               </div>
             </div>
-            <span className="text-2xl font-bold text-white group-hover:text-blue-400 transition-colors">
-              Sterling<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400"> AI</span>
+            <span className="text-2xl font-bold text-white group-hover:text-purple-400 transition-colors">
+              Sterling<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400"> Dialer</span>
             </span>
           </Link>
 

@@ -6,7 +6,7 @@ import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { Upload, Rocket, Calendar, Play, Pause, DollarSign, Phone, CheckCircle, ArrowRight, Headphones, Clock, Target, TrendingUp, CalendarCheck, Zap } from 'lucide-react';
+import { Upload, Rocket, Calendar, Play, Pause, DollarSign, Phone, CheckCircle, ArrowRight, Headphones, Clock, Target, TrendingUp, CalendarCheck, Zap, Shield, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DemoPage() {
@@ -174,7 +174,7 @@ export default function DemoPage() {
             {/* Pill Badge - Smaller on mobile */}
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-5 sm:mb-8 animate-in fade-in zoom-in duration-500">
               <Rocket className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
-              <span className="text-xs sm:text-sm text-blue-400 font-semibold">See Sterling AI In Action</span>
+              <span className="text-xs sm:text-sm text-blue-400 font-semibold">See Sterling Dialer In Action</span>
             </div>
             
             {/* Desktop Title */}
@@ -195,8 +195,44 @@ export default function DemoPage() {
             
             {/* Subtitle - Better mobile sizing */}
             <p className="text-1sm sm:text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed px-2 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '200ms' }}>
-              Have old life insurance leads collecting dust? Let Sterling AI revive them into booked appointments — automatically.
+              Have old life insurance leads collecting dust? Let Sterling Dialer revive them into booked appointments — automatically.
             </p>
+
+            {/* Trust Badges */}
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6 sm:mt-8 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '300ms' }}>
+              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full">
+                <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
+                <span className="text-[10px] sm:text-xs text-green-400 font-semibold">No Contracts</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 rounded-full">
+                <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
+                <span className="text-[10px] sm:text-xs text-blue-400 font-semibold">Live in 24hrs</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full">
+                <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
+                <span className="text-[10px] sm:text-xs text-purple-400 font-semibold">Cancel Anytime</span>
+              </div>
+            </div>
+
+            {/* Live Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto mt-8 sm:mt-10 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '400ms' }}>
+              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-400">2.4M+</div>
+                <div className="text-gray-500 text-[10px] sm:text-xs">Calls Made</div>
+              </div>
+              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-400">47K+</div>
+                <div className="text-gray-500 text-[10px] sm:text-xs">Appointments</div>
+              </div>
+              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-400">500+</div>
+                <div className="text-gray-500 text-[10px] sm:text-xs">Agents</div>
+              </div>
+              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-amber-400">24hrs</div>
+                <div className="text-gray-500 text-[10px] sm:text-xs">Setup</div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -214,14 +250,14 @@ export default function DemoPage() {
               {/* Desktop Big Title */}
               <h2 className="hidden sm:block text-5xl md:text-6xl lg:text-7xl font-bold mb-4 leading-tight">
                 <span className="text-white">Hear </span>
-                <span className="bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">Sterling AI</span>
+                <span className="bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">Sterling Dialer</span>
                 <span className="text-white"> In Action</span>
               </h2>
               
               {/* Mobile Big Title */}
               <h2 className="sm:hidden text-3xl font-bold mb-3 leading-tight">
                 <span className="text-white">Hear </span>
-                <span className="bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">Sterling AI</span>
+                <span className="bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">Sterling Dialer</span>
                 <span className="text-white"> In Action</span>
               </h2>
               
@@ -480,7 +516,7 @@ export default function DemoPage() {
                 <h2 className="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">
                   The Math Is Simple
                 </h2>
-                <p className="text-sm sm:text-base text-gray-400">See why Sterling AI pays for itself</p>
+                <p className="text-sm sm:text-base text-gray-400">See why Sterling Dialer pays for itself</p>
               </div>
 
               {/* ROI Grid - Stack on mobile */}
@@ -493,7 +529,7 @@ export default function DemoPage() {
                   </h3>
                   <div className="space-y-2 sm:space-y-3">
                     <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-800">
-                      <span className="text-xs sm:text-sm text-gray-400">Sterling AI Monthly</span>
+                      <span className="text-xs sm:text-sm text-gray-400">Sterling Dialer Monthly</span>
                       <span className="text-sm sm:text-base text-white font-semibold">$379</span>
                     </div>
                     <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-800">
@@ -559,7 +595,7 @@ export default function DemoPage() {
                   Ready to Revive Your Leads?
             </h2>
                 <p className="text-1sm sm:text-lg text-gray-300 mb-8 sm:mb-8">
-                  Sterling AI pays for itself with just one policy. Start today.
+                  Sterling Dialer pays for itself with just one policy. Start today.
                 </p>
                 
                 {/* Buttons - Full width on mobile */}

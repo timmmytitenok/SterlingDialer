@@ -306,8 +306,8 @@ function SignupPageContent() {
       <div className="relative z-10 w-full max-w-md">
         {/* Header - MATCHES LOGIN */}
         <div className="text-center mb-4 sm:mb-6 mt-4 sm:mt-0">
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-2 sm:mb-3 shadow-lg">
-            <span className="text-lg sm:text-xl font-bold text-white">SA</span>
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-2xl mb-2 sm:mb-3 shadow-lg">
+            <span className="text-lg sm:text-xl font-bold text-white">SD</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">
             Start Your Free Trial

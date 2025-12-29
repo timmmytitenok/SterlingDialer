@@ -134,14 +134,14 @@ export default function OnboardingFormPage() {
         <main className="max-w-4xl mx-auto px-4 py-8 pb-32">
           {/* Hero Section */}
           <div className={`text-center mb-10 transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 rounded-2xl mb-5 shadow-lg shadow-blue-500/25">
-              <span className="text-2xl font-bold text-white">SA</span>
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-2xl mb-5 shadow-lg shadow-purple-500/25">
+              <span className="text-2xl font-bold text-white">SD</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
               Configure Your AI Agent
             </h1>
             <p className="text-gray-400 text-base md:text-lg max-w-xl mx-auto">
-              Complete these steps to activate your Sterling AI and start booking appointments
+              Complete these steps to activate your Sterling Dialer and start booking appointments
             </p>
           </div>
 
@@ -473,7 +473,7 @@ export default function OnboardingFormPage() {
                       </li>
                       <li className="flex items-center gap-2">
                         <ChevronRight className="w-3 h-3 text-gray-600" />
-                        Name: <span className="text-white font-medium">"Sterling AI"</span>
+                        Name: <span className="text-white font-medium">"Sterling Dialer"</span>
                       </li>
                       <li className="flex items-center gap-2 text-red-400">
                         <Zap className="w-3 h-3" />

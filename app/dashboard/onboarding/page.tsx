@@ -274,7 +274,7 @@ export default function OnboardingStepsPage() {
               <div className="mt-8 text-center p-6 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-2xl shadow-xl shadow-green-500/20">
                 <div className="text-4xl mb-3">🎉</div>
                 <h3 className="text-2xl font-bold text-green-400 mb-2">All Steps Complete!</h3>
-                <p className="text-gray-300">You're all set to start using Sterling AI</p>
+                <p className="text-gray-300">You're all set to start using Sterling Dialer</p>
               </div>
             )}
           </div>
