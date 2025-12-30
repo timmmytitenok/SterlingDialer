@@ -1597,8 +1597,21 @@ export async function POST(request: Request) {
     console.log('');
     
     // Get the proper base URL (works in both local and production)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    // Priority: NEXT_PUBLIC_APP_URL > VERCEL_URL > request origin > localhost
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!baseUrl && process.env.VERCEL_URL) {
+      baseUrl = `https://${process.env.VERCEL_URL}`;
+    }
+    if (!baseUrl) {
+      // Fallback: extract from the incoming request URL
+      try {
+        const requestUrl = new URL(request.url);
+        baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
+        console.log(`📍 Using request origin as baseUrl: ${baseUrl}`);
+      } catch {
+        baseUrl = 'http://localhost:3000';
+      }
+    }
     
     console.log(`   Base URL: ${baseUrl}`);
     console.log(`   Endpoint: ${baseUrl}/api/ai-control/next-call`);

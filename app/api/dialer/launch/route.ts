@@ -187,8 +187,21 @@ export async function POST(request: Request) {
     // ========================================================================
     // TRIGGER THE FIRST CALL - This starts the call chain!
     // ========================================================================
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    // Get the proper base URL - extract from request if env vars not set
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!baseUrl && process.env.VERCEL_URL) {
+      baseUrl = `https://${process.env.VERCEL_URL}`;
+    }
+    if (!baseUrl) {
+      // Fallback: extract from the incoming request URL
+      try {
+        const requestUrl = new URL(request.url);
+        baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
+        console.log(`📍 Using request origin as baseUrl: ${baseUrl}`);
+      } catch {
+        baseUrl = 'http://localhost:3000';
+      }
+    }
     
     console.log('');
     console.log('🚀 ========== TRIGGERING FIRST CALL ==========');
