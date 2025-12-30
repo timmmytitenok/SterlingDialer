@@ -1685,21 +1685,29 @@ export async function POST(request: Request) {
       }
     }
     
-    // If all retries failed, update AI status to show there's an issue
-    // but DON'T stop the AI - let the watchdog or manual intervention recover it
+    // If all retries failed, STOP THE AI to prevent frozen state
+    // The user will see "STANDBY" instead of fake "AI DIALING" with nothing happening
     if (!nextCallSuccess) {
       console.error('❌❌❌ ALL RETRIES FAILED TO TRIGGER NEXT CALL! ❌❌❌');
-      console.error('   AI is still in "running" state but no calls are being made.');
-      console.error('   The next incoming webhook or manual trigger should recover it.');
+      console.error('   Stopping AI to prevent frozen state.');
+      console.error('   User can restart the dialer manually.');
       
-      // Update last_call_status to indicate the issue
+      // STOP THE AI - Don't leave it in a frozen "running" state!
       await supabase
         .from('ai_control_settings')
         .update({ 
+          status: 'stopped',
           last_call_status: 'next_call_failed',
-          // Store the error for debugging
         })
         .eq('user_id', userId);
+      
+      // Also update the dialer session
+      await supabase
+        .from('dialer_sessions')
+        .update({ status: 'stopped' })
+        .eq('user_id', userId);
+      
+      console.log('🛑 AI stopped due to next-call trigger failure');
     }
     
     // Log final status
