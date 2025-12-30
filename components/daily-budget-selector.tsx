@@ -153,7 +153,7 @@ export function DailyBudgetSelector({ onConfirm, onCancel }: DailyBudgetSelector
                   </li>
                 </ul>
                 <p className="text-gray-500 text-xs mt-3 italic">
-                  Calling hours: 9:00 AM - 6:00 PM (every day)
+                  Calling hours: 9:00 AM - 8:00 PM (every day)
                 </p>
               </div>
             </div>

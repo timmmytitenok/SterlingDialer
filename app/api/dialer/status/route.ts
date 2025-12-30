@@ -164,7 +164,7 @@ export async function GET() {
     const userTimezone = retellConfig?.timezone || aiSettings?.user_timezone || 'America/New_York';
     const nowInUserTZ = new Date(new Date().toLocaleString('en-US', { timeZone: userTimezone }));
     const currentHour = nowInUserTZ.getHours();
-    const withinCallingHours = currentHour >= 9 && currentHour < 18;
+    const withinCallingHours = currentHour >= 9 && currentHour < 20;
     const callingHoursDisabled = aiSettings?.disable_calling_hours === true;
     
     // Format current time for display
@@ -179,7 +179,7 @@ export async function GET() {
     
     if (outsideCallingHours && status === 'idle') {
       status = 'outside-hours';
-      reason = `Calling hours: 9:00 AM - 6:00 PM ${userTimezone.replace('America/', '').replace('_', ' ')}`;
+      reason = `Calling hours: 9:00 AM - 8:00 PM ${userTimezone.replace('America/', '').replace('_', ' ')}`;
     }
 
     // Check if budget reached

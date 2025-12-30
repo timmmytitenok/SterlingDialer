@@ -68,7 +68,7 @@ export async function POST(request: Request) {
       bypassEnabled: enabled,
       message: enabled 
         ? 'Calling restrictions bypassed - AI can call anytime including Sundays' 
-        : 'Calling restrictions active - AI follows normal hours (9am-6pm)'
+        : 'Calling restrictions active - AI follows normal hours (9am-8pm)'
     });
   } catch (error: any) {
     console.error('Error in bypass-restrictions POST:', error);

@@ -215,7 +215,7 @@ export function AutomationSettingsSimple({ userId, initialSettings }: Automation
                     <li>• If budget reached, AI stops for the day</li>
                     <li>• If budget NOT met and calling hours end, AI stops</li>
                   </ul>
-                  <p className="text-gray-500 text-xs mt-2 italic">Calling hours: 9:00 AM - 6:00 PM (every day)</p>
+                  <p className="text-gray-500 text-xs mt-2 italic">Calling hours: 9:00 AM - 8:00 PM (every day)</p>
                 </div>
               </div>
 

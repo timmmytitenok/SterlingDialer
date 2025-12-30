@@ -135,27 +135,10 @@ const sanitizeVendorForRetell = (vendor: string | null | undefined): string => {
  */
 export async function POST(request: Request) {
   try {
-    const { userId, consecutiveFailures = 0 } = await request.json();
+    const { userId } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 });
-    }
-
-    // Safety limit: Stop after 5 consecutive failures to prevent infinite loops
-    const MAX_CONSECUTIVE_FAILURES = 5;
-    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-      console.log('');
-      console.log('🛑🛑🛑 TOO MANY CONSECUTIVE FAILURES 🛑🛑🛑');
-      console.log(`   ${consecutiveFailures} leads in a row failed to dial`);
-      console.log('   Stopping to prevent infinite loop');
-      console.log('   Check your leads for bad phone numbers!');
-      
-      return NextResponse.json({
-        done: true,
-        reason: 'too_many_failures',
-        message: `${consecutiveFailures} leads in a row had bad phone numbers. Check your lead data.`,
-        consecutiveFailures,
-      });
     }
 
     console.log('');
@@ -164,9 +147,6 @@ export async function POST(request: Request) {
     console.log('═══════════════════════════════════════════════════════');
     console.log(`   User ID: ${userId}`);
     console.log(`   Time: ${new Date().toISOString()}`);
-    if (consecutiveFailures > 0) {
-      console.log(`   ⚠️ Consecutive failures: ${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}`);
-    }
 
     // For server-to-server calls, use service role client to bypass RLS
     const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
@@ -397,8 +377,8 @@ export async function POST(request: Request) {
     console.log(`🕐 User's local time: ${userTimeString} (${currentHour}:${currentMinute.toString().padStart(2, '0')})`);
     console.log(`🕐 Current hour (24h): ${currentHour}`);
     
-    // Simple calling hours check: 9am-6pm (every day)
-    const withinCallingHours = currentHour >= 9 && currentHour < 18;
+    // Simple calling hours check: 9am-8pm (every day)
+    const withinCallingHours = currentHour >= 9 && currentHour < 20;
     
     // Check if calling hours are disabled (for testing)
     const callingHoursDisabled = aiSettings.disable_calling_hours === true;
@@ -412,7 +392,7 @@ export async function POST(request: Request) {
     } else if (!withinCallingHours) {
       // Normal mode - enforce calling hours
       console.log(`🛑 [EXIT-6] Outside calling hours! Current time: ${currentHour}:${currentMinute.toString().padStart(2, '0')}`);
-      console.log(`   Calling hours: 9am-6pm (${userTimezone})`);
+      console.log(`   Calling hours: 9am-8pm (${userTimezone})`);
       console.log(`   Current: ${currentHour < 9 ? 'Too early' : 'Too late'}`);
       
       await supabase
@@ -423,7 +403,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         done: true,
         reason: 'outside_calling_hours',
-        message: `Outside calling hours (9am-6pm in ${userTimezone}). Current time: ${userTimeString}`,
+        message: `Outside calling hours (9am-8pm in ${userTimezone}). Current time: ${userTimeString}`,
         userTime: userTimeString,
         timezone: userTimezone,
         exitPoint: 'EXIT-6-outside-calling-hours'
@@ -431,7 +411,7 @@ export async function POST(request: Request) {
     }
     console.log('✅ [CHECK-3] Calling hours OK - continuing...');
     
-    console.log(`✅ ${callingHoursDisabled ? 'Calling hours disabled - continuing anyway' : 'Within calling hours (9am-6pm)'}`);
+    console.log(`✅ ${callingHoursDisabled ? 'Calling hours disabled - continuing anyway' : 'Within calling hours (9am-8pm)'}`);
 
     // ========================================================================
     // SIMPLIFIED LEAD SELECTION - 20 ATTEMPT LIMIT
@@ -464,6 +444,15 @@ export async function POST(request: Request) {
       });
     }
     console.log('✅ [CHECK-4] Active sheets found:', activeSheetIds.length);
+    
+    // ========================================================================
+    // INTERNAL LOOP: Try up to 5 leads if they fail consecutively
+    // This prevents a single bad lead from stopping the entire dialer
+    // ========================================================================
+    const MAX_CONSECUTIVE_FAILURES = 5;
+    let consecutiveFailures = 0;
+    
+    leadAttemptLoop: while (consecutiveFailures < MAX_CONSECUTIVE_FAILURES) {
     
     // STEP 1: Count total callable leads
     // First, let's see ALL leads for this user to understand the data
@@ -1301,57 +1290,11 @@ export async function POST(request: Request) {
         console.log(`⚠️ Lead ${nextLead.name} marked as no_answer (attempt ${newTotalCalls}) - will retry tomorrow`);
       }
       
-      // ========================================================================
-      // MOVE ON TO NEXT LEAD - Don't stop just because one lead failed!
-      // ========================================================================
-      console.log('');
-      console.log('🔄 Lead failed - MOVING ON to next lead...');
-      console.log(`   Consecutive failures: ${consecutiveFailures + 1}`);
-      
-      // Get the base URL for the recursive call
-      let retryBaseUrl = process.env.NEXT_PUBLIC_APP_URL;
-      if (!retryBaseUrl && process.env.VERCEL_URL) {
-        retryBaseUrl = `https://${process.env.VERCEL_URL}`;
-      }
-      if (!retryBaseUrl) {
-        try {
-          const requestUrl = new URL(request.url);
-          retryBaseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
-        } catch {
-          retryBaseUrl = 'http://localhost:3000';
-        }
-      }
-      
-      // Small delay to prevent hammering
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Try next lead with incremented failure counter
-      try {
-        console.log(`📞 Calling next-call for next lead...`);
-        const retryResponse = await fetch(`${retryBaseUrl}/api/ai-control/next-call`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            userId, 
-            consecutiveFailures: consecutiveFailures + 1 
-          }),
-        });
-        
-        const retryResult = await retryResponse.json();
-        console.log('📞 Next lead result:', retryResult.success ? 'SUCCESS' : retryResult.done ? 'DONE' : 'FAILED');
-        
-        // Return the result from the retry (could be success, done, or another failure)
-        return NextResponse.json(retryResult);
-      } catch (retryError: any) {
-        console.error('❌ Failed to try next lead:', retryError.message);
-        return NextResponse.json({
-          success: false,
-          error: `Original error: ${errorMessage}. Retry error: ${retryError.message}`,
-          leadId: nextLead.id,
-          leadName: nextLead.name,
-          leadMarkedDead: shouldMarkDead,
-        });
-      }
+      // Instead of stopping, try the next lead!
+      consecutiveFailures++;
+      console.log(`🔄 Trying next lead... (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES} consecutive failures)`);
+      await new Promise(resolve => setTimeout(resolve, 500)); // Small delay before retrying
+      continue leadAttemptLoop; // Continue the while loop to pick the next lead
     }
 
     const callData = await callResponse.json();
@@ -1406,6 +1349,31 @@ export async function POST(request: Request) {
       agent_pronoun: userAgentPronoun,
       timezone: retellTimezone,
     });
+    
+    } // End of leadAttemptLoop while loop
+    
+    // If we exit the loop, it means we hit MAX_CONSECUTIVE_FAILURES
+    console.log('');
+    console.log('🛑🛑🛑 TOO MANY CONSECUTIVE FAILURES 🛑🛑🛑');
+    console.log(`   ${consecutiveFailures} leads in a row failed to dial`);
+    console.log('   Stopping AI to prevent infinite loop');
+    console.log('   Check your leads for bad phone numbers!');
+    
+    await supabase
+      .from('ai_control_settings')
+      .update({
+        status: 'stopped',
+        last_call_status: 'too_many_failures'
+      })
+      .eq('user_id', userId);
+    
+    return NextResponse.json({
+      done: true,
+      reason: 'too_many_failures',
+      message: `${consecutiveFailures} leads in a row had bad phone numbers. Check your lead data.`,
+      consecutiveFailures: consecutiveFailures,
+    });
+    
   } catch (error: any) {
     console.error('❌ Error in next-call:', error);
     return NextResponse.json(

@@ -644,7 +644,7 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                   </p>
                   <div className="mt-4 px-6 py-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
                     <p className="text-purple-200 text-sm">
-                     🌙  The AI dialer operates between <span className="font-bold">9:00 AM - 6:00 PM</span> to ensure calls are made during appropriate business hours. 🌙
+                     🌙  The AI dialer operates between <span className="font-bold">9:00 AM - 8:00 PM</span> to ensure calls are made during appropriate business hours. 🌙
                     </p>
                   </div>
                 </div>
