@@ -61,13 +61,15 @@ export default function CaseStudiesPage() {
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.muted = false;
-      videoRef.current.volume = 0; // Start silent, fade in when in view
+      videoRef.current.volume = 0; // Start completely silent
       videoRef.current.play().catch(() => {});
     }
   }, []);
 
-  // Handle hover volume fade (only when video is in view)
+  // Handle hover volume fade (DESKTOP ONLY - only when video is in view)
   useEffect(() => {
+    // Skip this effect entirely for mobile - mobile uses tap-to-unmute
+    if (isMobile) return;
     if (!videoRef.current || !isInView) return;
     
     let animationFrame: number;
@@ -92,9 +94,9 @@ export default function CaseStudiesPage() {
     
     fadeVolume();
     return () => cancelAnimationFrame(animationFrame);
-  }, [isHovered, isInView]);
+  }, [isHovered, isInView, isMobile]);
 
-  // Fade in/out audio when scrolling in/out of video section (desktop only)
+  // Fade in/out audio when scrolling in/out of video section
   useEffect(() => {
     if (!videoContainerRef.current || !videoRef.current) return;
 
@@ -109,9 +111,15 @@ export default function CaseStudiesPage() {
           
           if (entry.isIntersecting) {
             setIsInView(true);
-            // On mobile, keep muted until user taps
+            // On mobile, keep volume at 0 until user taps to unmute
+            // Do NOT auto-fade in any audio on mobile
             if (isMobile) {
-              videoRef.current.volume = 0;
+              // Only set volume if user has unmuted
+              if (!isMuted) {
+                videoRef.current.volume = 0.20;
+              } else {
+                videoRef.current.volume = 0;
+              }
               return;
             }
             // Desktop: Fade in smoothly to 1% background volume when scrolling into view
@@ -131,13 +139,15 @@ export default function CaseStudiesPage() {
             // For mobile: also mute when scrolling away
             if (isMobile) {
               setIsMuted(true);
+              videoRef.current.volume = 0;
+              return;
             }
             
-            // Fade audio to 0 for both desktop and mobile
+            // Desktop: Fade audio to 0
             fadeInterval = setInterval(() => {
               if (!videoRef.current) return;
               if (videoRef.current.volume > 0.0005) {
-                videoRef.current.volume = Math.max(0, videoRef.current.volume - 0.008); // Faster fade for mobile
+                videoRef.current.volume = Math.max(0, videoRef.current.volume - 0.008);
               } else {
                 videoRef.current.volume = 0;
                 clearInterval(fadeInterval);
@@ -154,7 +164,7 @@ export default function CaseStudiesPage() {
       observer.disconnect();
       if (fadeInterval) clearInterval(fadeInterval);
     };
-  }, [isMobile]);
+  }, [isMobile, isMuted]);
 
   const toggleVideo = () => {
     // On mobile, toggle mute/unmute instead of play/pause

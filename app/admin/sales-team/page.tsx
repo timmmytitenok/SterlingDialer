@@ -28,6 +28,7 @@ interface SalesPerson {
   total_conversions: number;
   created_at: string;
   updated_at: string;
+  last_login: string | null;
 }
 
 // Admin email - Timmy is always #000 at the top
@@ -143,8 +144,11 @@ export default function SalesTeamPage() {
       );
     }
 
-    // Check if inactive for 7+ days (no activity)
-    const lastActive = new Date(person.updated_at || person.created_at);
+    // Check if inactive for 7+ days (no login activity)
+    // Use last_login if available, otherwise fall back to created_at
+    const lastActive = person.last_login 
+      ? new Date(person.last_login) 
+      : new Date(person.created_at);
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const isInactiveDueToTime = lastActive < sevenDaysAgo;
@@ -352,7 +356,7 @@ export default function SalesTeamPage() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className="text-gray-400 text-sm">
-                          {formatDate(person.updated_at || person.created_at)}
+                          {formatDate(person.last_login || person.created_at)}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">

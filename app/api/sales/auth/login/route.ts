@@ -39,12 +39,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Account is not active. Please contact admin.' }, { status: 403 });
     }
 
+    // Update last_login timestamp
+    await supabase
+      .from('sales_team')
+      .update({ last_login: new Date().toISOString() })
+      .eq('id', salesPerson.id);
+
     // Return sales person data (exclude password)
     const { password_hash, ...safeData } = salesPerson;
 
     return NextResponse.json({ 
       success: true, 
-      salesPerson: safeData,
+      salesPerson: {
+        ...safeData,
+        last_login: new Date().toISOString(), // Return updated last_login
+      },
     });
   } catch (error: any) {
     console.error('Sales login error:', error);

@@ -8,7 +8,6 @@ import { AdminStatCard } from '@/components/admin/admin-stat-card';
 import { CustomExpensesManager } from '@/components/admin/custom-expenses-manager';
 import { DollarSign, TrendingUp, Wallet, CreditCard, Calendar, Loader2, Users, Phone, CheckCircle, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import confetti from 'canvas-confetti';
 
 type ChartView = 'total' | 'minutes' | 'subscriptions';
 type HeroView = 'revenue' | 'profit' | 'expense';
@@ -161,9 +160,6 @@ export default function AdminRevenuePage() {
   const [simpleUsers, setSimpleUsers] = useState<SimpleUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   
-  // Confetti state
-  const [confettiShown, setConfettiShown] = useState(false);
-  
   // Swipe gesture state for mobile hero card
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -257,48 +253,11 @@ export default function AdminRevenuePage() {
     }
   }, [mobileTab]);
   
-  // Confetti celebration function - quick burst!
-  const shootConfetti = () => {
-    const colors = ['#10B981', '#34D399', '#6EE7B7', '#FFD700', '#FFA500'];
-
-    // Single quick burst from both sides
-    confetti({
-      particleCount: 80,
-      angle: 60,
-      spread: 70,
-      origin: { x: 0, y: 0.6 },
-      colors: colors,
-    });
-    confetti({
-      particleCount: 80,
-      angle: 120,
-      spread: 70,
-      origin: { x: 1, y: 0.6 },
-      colors: colors,
-    });
-  };
-
   useEffect(() => {
     setMounted(true);
     loadRevenueData();
     loadAutoScheduleStats();
   }, []);
-  
-  // Shoot confetti when revenue loads and there's revenue
-  useEffect(() => {
-    if (!loading && revenueData && !confettiShown) {
-      const totalRevenue = revenueData.allTime?.totalRevenue || 0;
-      console.log('💰 Checking confetti - Total Revenue:', totalRevenue, 'Full data:', revenueData.allTime);
-      if (totalRevenue > 0) {
-        // Small delay for dramatic effect
-        console.log('🎉 Shooting confetti!');
-        setTimeout(() => {
-          shootConfetti();
-          setConfettiShown(true);
-        }, 500);
-      }
-    }
-  }, [loading, revenueData, confettiShown]);
 
   const loadRevenueData = async () => {
     try {

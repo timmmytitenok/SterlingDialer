@@ -136,23 +136,23 @@ export default function AdminUsersPage() {
       const isAdmin = user.id === TIMMY_ID_FILTER || user.id === DEMO_ID_FILTER;
       
       if (filter === 'useless') {
-        // No subscription yet - exclude admins
-        return !isAdmin && user.setup_status === 'useless';
+        // No subscription yet - exclude admins AND dead users
+        return !isAdmin && !user.is_dead && user.setup_status === 'useless';
       }
       if (filter === 'needs_onboarding') {
-        // Has subscription but Step 1 not complete - exclude admins
-        return !isAdmin && user.setup_status === 'needs_onboarding';
+        // Has subscription but Step 1 not complete - exclude admins AND dead users
+        return !isAdmin && !user.is_dead && user.setup_status === 'needs_onboarding';
       }
       if (filter === 'needs_ai_setup') {
-        // Step 1 complete but AI not unlocked - exclude admins
-        return !isAdmin && user.setup_status === 'needs_ai_config';
+        // Step 1 complete but AI not unlocked - exclude admins AND dead users
+        return !isAdmin && !user.is_dead && user.setup_status === 'needs_ai_config';
       }
       if (filter === 'active') {
-        // AI unlocked and ready - exclude admins
-        return !isAdmin && user.setup_status === 'active';
+        // AI unlocked and ready - exclude admins AND dead users
+        return !isAdmin && !user.is_dead && user.setup_status === 'active';
       }
       if (filter === 'dead') {
-        // Show users marked as dead (excludes admins)
+        // Show users marked as dead (excludes admins) - DEAD OVERRIDES EVERYTHING
         if (isAdmin) return false;
         return user.is_dead === true;
       }
@@ -183,11 +183,12 @@ export default function AdminUsersPage() {
   // Filter out admin accounts from stats
   const regularUsers = allUsers.filter(u => u.id !== TIMMY_ID && u.id !== DEMO_ID);
   
-  const uselessAccounts = regularUsers.filter(u => u.setup_status === 'useless').length; // No subscription
-  const needsOnboarding = regularUsers.filter(u => u.setup_status === 'needs_onboarding').length; // Has subscription but Step 1 not done
-  const needsAISetup = regularUsers.filter(u => u.setup_status === 'needs_ai_config').length; // Step 1 done but AI not unlocked
-  const activeAccounts = regularUsers.filter(u => u.setup_status === 'active').length; // AI unlocked
-  const deadAccounts = regularUsers.filter(u => u.is_dead === true).length;
+  // IMPORTANT: Dead users are EXCLUDED from all other categories - they ONLY appear in dead
+  const uselessAccounts = regularUsers.filter(u => u.setup_status === 'useless' && !u.is_dead).length; // No subscription (exclude dead)
+  const needsOnboarding = regularUsers.filter(u => u.setup_status === 'needs_onboarding' && !u.is_dead).length; // Has subscription but Step 1 not done (exclude dead)
+  const needsAISetup = regularUsers.filter(u => u.setup_status === 'needs_ai_config' && !u.is_dead).length; // Step 1 done but AI not unlocked (exclude dead)
+  const activeAccounts = regularUsers.filter(u => u.setup_status === 'active' && !u.is_dead).length; // AI unlocked (exclude dead)
+  const deadAccounts = regularUsers.filter(u => u.is_dead === true).length; // Dead overrides everything
 
   const getStatusBadge = (user: User) => {
     const TIMMY_ID = 'd33602b3-4b0c-4ec7-938d-7b1d31722dc5';

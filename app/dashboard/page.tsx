@@ -7,7 +7,6 @@ import { CallActivityChart } from '@/components/call-activity-chart';
 import { DashboardStatsGrid } from '@/components/dashboard-stats-grid';
 import { TrialCountdownBanner } from '@/components/trial-countdown-banner';
 import { DashboardRefresher } from '@/components/dashboard-refresher';
-import { FirstVisitConfetti } from '@/components/first-visit-confetti';
 import { DashboardGreeting } from '@/components/dashboard-greeting';
 import { getStartOfTodayInUserTimezone, getDaysAgoInUserTimezone, getTodayDateString, getDateStringDaysAgo } from '@/lib/timezone-helpers';
 import { LayoutDashboard } from 'lucide-react';
@@ -604,9 +603,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#0B1437] relative overflow-hidden">
-      {/* First Visit Confetti - shoots once on first dashboard visit */}
-      <FirstVisitConfetti userId={user.id} />
-      
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-3xl -top-40 -left-40 animate-pulse" />

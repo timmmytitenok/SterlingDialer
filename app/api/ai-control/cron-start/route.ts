@@ -135,9 +135,29 @@ export async function GET(request: Request) {
         console.log(`   Skip dates: ${JSON.stringify(dialer_skip_dates)}`);
         console.log(`   Extra dates: ${JSON.stringify(dialer_extra_dates)}`);
 
-        // ===== CHECK IF IT'S 9 AM IN USER'S TIMEZONE =====
-        const targetHour = 9; // 9 AM local time
-        const isTargetHour = userHour === targetHour;
+        // ===== CHECK IF IT'S 9 AM IN USER'S TIMEZONE (with 1-hour window) =====
+        // Use a window (9:00-9:59) to handle cron timing variations
+        // Vercel crons can run slightly late, so we give a full hour window
+        const isTargetHour = userHour === 9;
+        
+        // ALSO check if we already launched for this user today
+        // This prevents double-launching if cron runs multiple times in the 9 AM hour
+        const { data: existingSession } = await supabase
+          .from('dialer_sessions')
+          .select('id')
+          .eq('user_id', user_id)
+          .eq('is_scheduled', true)
+          .gte('started_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
+          .limit(1)
+          .maybeSingle();
+        
+        const alreadyLaunchedToday = !!existingSession;
+        
+        if (alreadyLaunchedToday && !testMode) {
+          console.log(`   ⏭️  Already launched scheduled session today, skipping`);
+          results.push({ user_id, success: false, reason: 'Already launched today' });
+          continue;
+        }
         
         if (!isTargetHour && !testMode) {
           console.log(`   ⏭️  Not 9 AM in user's timezone (currently ${userHour}:00), skipping`);
@@ -147,6 +167,10 @@ export async function GET(request: Request) {
 
         if (testMode && !isTargetHour) {
           console.log(`   🧪 TEST MODE: Ignoring 9 AM check (currently ${userHour}:00)`);
+        }
+        
+        if (testMode && alreadyLaunchedToday) {
+          console.log(`   🧪 TEST MODE: Ignoring already-launched check`);
         }
 
         // ===== CHECK IF TODAY IS AN ACTIVE DIALING DAY =====
@@ -362,6 +386,104 @@ export async function GET(request: Request) {
         console.error(`❌ Error processing user ${user_id}:`, userError);
         results.push({ user_id, success: false, error: userError.message });
       }
+    }
+
+    // ========================================================================
+    // WATCHDOG: Detect and recover "stuck" AI sessions
+    // If AI status is "running" but no calls have been made in 10+ minutes,
+    // trigger a new call to unstick the session
+    // ========================================================================
+    console.log('\n🔍 WATCHDOG: Checking for stuck AI sessions...');
+    
+    const { data: stuckSessions } = await supabase
+      .from('ai_control_settings')
+      .select('user_id, last_call_status, calls_made_today')
+      .eq('status', 'running');
+    
+    if (stuckSessions && stuckSessions.length > 0) {
+      console.log(`🔍 Found ${stuckSessions.length} users with AI in "running" status`);
+      
+      for (const session of stuckSessions) {
+        // Check if user has auto_dialer_enabled
+        const { data: config } = await supabase
+          .from('user_retell_config')
+          .select('auto_dialer_enabled')
+          .eq('user_id', session.user_id)
+          .maybeSingle();
+        
+        if (!config?.auto_dialer_enabled) {
+          // User doesn't have auto-dialer, skip (they might be manually running)
+          continue;
+        }
+        
+        // Check last call for this user
+        const { data: lastCall } = await supabase
+          .from('calls')
+          .select('created_at')
+          .eq('user_id', session.user_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (lastCall) {
+          const lastCallTime = new Date(lastCall.created_at).getTime();
+          const now = Date.now();
+          const minutesSinceLastCall = (now - lastCallTime) / 1000 / 60;
+          
+          if (minutesSinceLastCall > 10) {
+            console.log(`⚠️ STUCK SESSION DETECTED for user ${session.user_id}!`);
+            console.log(`   Last call was ${minutesSinceLastCall.toFixed(1)} minutes ago`);
+            console.log(`   Last status: ${session.last_call_status}`);
+            console.log(`   Attempting to restart dialing...`);
+            
+            try {
+              const restartResponse = await fetch(`${baseUrl}/api/ai-control/next-call`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: session.user_id }),
+              });
+              
+              const restartResult = await restartResponse.json();
+              
+              if (restartResult.success) {
+                console.log(`✅ Successfully restarted dialing for user ${session.user_id}`);
+                results.push({ 
+                  user_id: session.user_id, 
+                  success: true, 
+                  message: 'Recovered stuck session',
+                  recovered: true
+                });
+              } else if (restartResult.done) {
+                console.log(`🛑 Session recovery stopped: ${restartResult.reason}`);
+                // AI might have been stopped for a valid reason
+              } else {
+                console.log(`⚠️ Recovery attempt returned: ${JSON.stringify(restartResult)}`);
+              }
+            } catch (restartError: any) {
+              console.error(`❌ Failed to restart stuck session: ${restartError.message}`);
+            }
+          }
+        } else {
+          // No calls at all - this might be stuck at the beginning
+          console.log(`⚠️ User ${session.user_id} has running AI but no calls in history`);
+          console.log(`   Attempting to start first call...`);
+          
+          try {
+            const startResponse = await fetch(`${baseUrl}/api/ai-control/next-call`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: session.user_id }),
+            });
+            
+            const startResult = await startResponse.json();
+            console.log(`   Result: ${startResult.success ? 'SUCCESS' : startResult.reason || 'FAILED'}`);
+          } catch (startError: any) {
+            console.error(`❌ Failed to start first call: ${startError.message}`);
+          }
+        }
+      }
+    } else {
+      console.log('✅ No stuck sessions found');
     }
 
     // Summary

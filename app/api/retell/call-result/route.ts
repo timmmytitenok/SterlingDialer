@@ -1610,16 +1610,24 @@ export async function POST(request: Request) {
     // Add small delay to ensure database is updated before next query
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Try up to 2 times to trigger next call
-    for (let attempt = 1; attempt <= 2; attempt++) {
+    // Try up to 3 times to trigger next call with exponential backoff
+    const maxRetries = 3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`📞 Making fetch request to next-call (attempt ${attempt})...`);
+        console.log(`📞 Making fetch request to next-call (attempt ${attempt}/${maxRetries})...`);
+        
+        // Use AbortController with timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
         
         const nextCallResponse = await fetch(`${baseUrl}/api/ai-control/next-call`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId }),
+          signal: controller.signal,
         });
+        
+        clearTimeout(timeoutId);
         
         console.log(`📞 Response status: ${nextCallResponse.status}`);
         
@@ -1630,10 +1638,11 @@ export async function POST(request: Request) {
           console.error('❌ Next call endpoint returned error!');
           nextCallError = responseText;
           
-          // If first attempt failed, wait and retry
-          if (attempt === 1) {
-            console.log('⏳ Waiting 1 second before retry...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
+          // If not last attempt, wait and retry with exponential backoff
+          if (attempt < maxRetries) {
+            const waitMs = attempt * 2000; // 2s, 4s, 6s
+            console.log(`⏳ Waiting ${waitMs}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitMs));
             continue;
           }
         } else {
@@ -1649,6 +1658,14 @@ export async function POST(request: Request) {
               console.log('🛑 Next-call returned done:', nextCallData.reason);
               console.log('   Message:', nextCallData.message);
             }
+            
+            // Check if call failed but should continue (e.g., bad phone number)
+            if (nextCallData.continueDialing && !nextCallData.success) {
+              console.log('⚠️ Call failed but continueDialing=true, triggering another call...');
+              // Add a small delay and retry to get the next lead
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              continue;
+            }
           } catch (parseError) {
             console.log('✅ Next call triggered (response not JSON)');
             nextCallSuccess = true;
@@ -1659,12 +1676,30 @@ export async function POST(request: Request) {
         console.error(`❌❌❌ FETCH ERROR triggering next call (attempt ${attempt}):`, error.message);
         nextCallError = error.message;
         
-        // If first attempt failed, wait and retry
-        if (attempt === 1) {
-          console.log('⏳ Waiting 1 second before retry...');
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        // If not last attempt, wait and retry with exponential backoff
+        if (attempt < maxRetries) {
+          const waitMs = attempt * 2000;
+          console.log(`⏳ Waiting ${waitMs}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitMs));
         }
       }
+    }
+    
+    // If all retries failed, update AI status to show there's an issue
+    // but DON'T stop the AI - let the watchdog or manual intervention recover it
+    if (!nextCallSuccess) {
+      console.error('❌❌❌ ALL RETRIES FAILED TO TRIGGER NEXT CALL! ❌❌❌');
+      console.error('   AI is still in "running" state but no calls are being made.');
+      console.error('   The next incoming webhook or manual trigger should recover it.');
+      
+      // Update last_call_status to indicate the issue
+      await supabase
+        .from('ai_control_settings')
+        .update({ 
+          last_call_status: 'next_call_failed',
+          // Store the error for debugging
+        })
+        .eq('user_id', userId);
     }
     
     // Log final status

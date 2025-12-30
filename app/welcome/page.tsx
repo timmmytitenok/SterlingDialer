@@ -7,10 +7,8 @@ import { Sparkles, ArrowRight } from 'lucide-react';
 export default function WelcomePage() {
   const router = useRouter();
   const [show, setShow] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     setTimeout(() => setShow(true), 200);
   }, []);
 
@@ -25,25 +23,6 @@ export default function WelcomePage() {
         <div className="absolute w-[1000px] h-[1000px] bg-purple-500/10 rounded-full top-[-200px] left-[10%] animate-pulse" style={{ filter: 'blur(180px)' }} />
         <div className="absolute w-[900px] h-[900px] bg-blue-500/10 rounded-full bottom-[-200px] right-[10%] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '1s' }} />
       </div>
-
-      {/* Confetti - Only render on client */}
-      {mounted && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {Array.from({ length: 80 }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-3 h-3 rounded-full animate-confetti"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: '-10%',
-                background: ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'][Math.floor(Math.random() * 5)],
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${3 + Math.random() * 2}s`,
-              }}
-            />
-          ))}
-        </div>
-      )}
 
       {/* Content */}
       <div className={`relative z-10 text-center px-4 transition-all duration-1000 ${show ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
@@ -77,10 +56,6 @@ export default function WelcomePage() {
       </div>
 
       <style jsx global>{`
-        @keyframes confetti {
-          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-        }
         @keyframes bounce-slow {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.05); }
@@ -97,7 +72,6 @@ export default function WelcomePage() {
           from { transform: translateY(30px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
-        .animate-confetti { animation: confetti linear infinite; }
         .animate-bounce-slow { animation: bounce-slow 3s ease-in-out infinite; }
         .animate-fade-in-up { animation: fade-in-up 0.8s ease-out 0.3s both; }
         .animate-fade-in-up-delay { animation: fade-in-up-delay 0.8s ease-out 0.6s both; }

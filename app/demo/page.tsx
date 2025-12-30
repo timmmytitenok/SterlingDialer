@@ -78,6 +78,8 @@ export default function DemoPage() {
     1: useRef<HTMLAudioElement>(null),
     2: useRef<HTMLAudioElement>(null),
   };
+  
+  const audioSectionRef = useRef<HTMLDivElement>(null);
 
   const speedOptions = [1, 1.25, 1.5, 2];
 
@@ -169,6 +171,30 @@ export default function DemoPage() {
 
     return () => observer.disconnect();
   }, []);
+
+  // Auto-pause audio when scrolling away from audio section
+  useEffect(() => {
+    if (!audioSectionRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // When section is not visible, pause any playing audio
+          if (!entry.isIntersecting && activePlayer !== null) {
+            const audioRef = audioRefs[activePlayer as keyof typeof audioRefs];
+            if (audioRef.current) {
+              audioRef.current.pause();
+            }
+            setActivePlayer(null);
+          }
+        });
+      },
+      { threshold: 0.1 } // Pause when less than 10% visible
+    );
+
+    observer.observe(audioSectionRef.current);
+    return () => observer.disconnect();
+  }, [activePlayer]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -288,7 +314,7 @@ export default function DemoPage() {
         </section>
 
         {/* LISTEN TO STERLING AI SECTION - Glowy Two Cards */}
-        <section className="scroll-reveal py-16 sm:py-24 px-3 sm:px-4 relative">
+        <section ref={audioSectionRef} className="scroll-reveal py-16 sm:py-24 px-3 sm:px-4 relative">
           
           <div className="max-w-6xl mx-auto relative z-10">
             {/* Section Header - BIGGER Title */}

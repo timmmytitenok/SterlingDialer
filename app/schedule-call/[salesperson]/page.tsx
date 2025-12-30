@@ -492,6 +492,15 @@ export default function SalespersonSchedulePage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-pink-600/5 rounded-full blur-[80px]" />
       </div>
       
+      {/* Grid Pattern */}
+      <div 
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)`,
+          backgroundSize: '3rem 3rem'
+        }}
+      />
+      
       {/* Solid background at bottom for Safari safe area */}
       <div className="fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#0B1437] to-transparent pointer-events-none z-[1]" />
 

@@ -12,8 +12,24 @@ export default function SalesPresentationPage() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
+  const [videoPlaying, setVideoPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const totalSlides = 8;
+  const testimonialVideoRef = useRef<HTMLVideoElement>(null);
+  const totalSlides = 9;
+
+  // Handle testimonial video play/pause
+  const toggleTestimonialVideo = () => {
+    if (testimonialVideoRef.current) {
+      if (videoPlaying) {
+        testimonialVideoRef.current.pause();
+      } else {
+        testimonialVideoRef.current.volume = 0.25; // 25% volume
+        testimonialVideoRef.current.muted = false;
+        testimonialVideoRef.current.play();
+      }
+      setVideoPlaying(!videoPlaying);
+    }
+  };
 
   const speedOptions = [1, 1.25, 1.5, 2];
 
@@ -118,13 +134,21 @@ export default function SalesPresentationPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [nextSlide, prevSlide]);
 
-  // Pause audio when navigating away from the demo slide (slide 5, index 4)
+  // Pause audio when navigating away from the demo slide (slide 6, index 5)
   useEffect(() => {
-    if (currentSlide !== 4 && isPlaying && audioRef.current) {
+    if (currentSlide !== 5 && isPlaying && audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);
     }
   }, [currentSlide, isPlaying]);
+
+  // Pause video when navigating away from the results slide (slide 8, index 7)
+  useEffect(() => {
+    if (currentSlide !== 7 && videoPlaying && testimonialVideoRef.current) {
+      testimonialVideoRef.current.pause();
+      setVideoPlaying(false);
+    }
+  }, [currentSlide, videoPlaying]);
 
   const slideVariants = {
     enter: (direction: number) => ({
@@ -256,7 +280,7 @@ export default function SalesPresentationPage() {
       ),
     },
 
-    // Slide 2 - The Problem
+    // Slide 2 - The Real Problem (Relatable Pain Points)
     {
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center px-6 sm:px-12">
@@ -278,10 +302,10 @@ export default function SalesPresentationPage() {
             animate={{ opacity: 1 }}
             className="text-red-400/80 text-sm uppercase tracking-widest mb-6"
           >
-            The Problem
+            The Real Problem
           </motion.p>
           
-          {/* Main Headline - All in one line */}
+          {/* Main Headline */}
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -289,22 +313,22 @@ export default function SalesPresentationPage() {
             className="text-3xl sm:text-5xl md:text-6xl font-bold text-white mb-12"
             style={{ willChange: 'transform' }}
           >
-            Why Leads Go{' '}
+            Sound{' '}
             <span 
               className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-400 to-red-500"
               style={{ filter: 'drop-shadow(0 0 30px rgba(239, 68, 68, 0.5))' }}
             >
-              Cold
+              Familiar?
             </span>
           </motion.h2>
 
-          {/* Bullet Points */}
+          {/* Bullet Points - Relatable Pain */}
           <div className="grid gap-4 max-w-2xl w-full">
             {[
-              { icon: '⏰', text: 'Old leads expire fast', delay: 0.4 },
-              { icon: '📈', text: "Manual follow-up doesn't scale", delay: 0.5 },
-              { icon: '😓', text: 'Callers burn out or quit', delay: 0.6 },
-              { icon: '🚫', text: "You can't call everyone yourself", delay: 0.7 },
+              { icon: '📞', text: "You're dialing 100 leads a day... but you need 500", delay: 0.4 },
+              { icon: '😓', text: 'Your callers burn out, quit, or just stop showing up', delay: 0.5 },
+              { icon: '🗂️', text: 'Thousands of old leads are sitting in your CRM collecting dust', delay: 0.6 },
+              { icon: '🚫', text: "You can't clone yourself — and hiring is expensive", delay: 0.7 },
             ].map((item, i) => (
               <motion.div
                 key={i}
@@ -318,91 +342,21 @@ export default function SalesPresentationPage() {
               </motion.div>
             ))}
           </div>
-        </div>
-      ),
-    },
 
-    // Slide 3 - Why Traditional Solutions Fail
-    {
-      content: (
-        <div className="flex flex-col items-center justify-center h-full text-center px-6 sm:px-12">
-          {/* Static glow orbs - amber/orange theme */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ willChange: 'transform' }}>
-            <div 
-              className="absolute w-[400px] h-[400px] bg-amber-500/10 rounded-full top-[-100px] left-[-150px]"
-              style={{ filter: 'blur(70px)' }}
-            />
-            <div 
-              className="absolute w-[350px] h-[350px] bg-orange-500/12 rounded-full bottom-[-150px] right-[-100px]"
-              style={{ filter: 'blur(70px)' }}
-            />
-          </div>
-
-          {/* Section Label */}
+          {/* Bottom line */}
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-amber-400/80 text-sm uppercase tracking-widest mb-6"
+            transition={{ delay: 0.9 }}
+            className="mt-10 text-gray-500 text-sm"
           >
-            Why Traditional Solutions Fail
+            Most agents don't have a lead problem — they have a <span className="text-red-400">follow-up problem</span>
           </motion.p>
-          
-          {/* Main Headline */}
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-3xl sm:text-5xl md:text-6xl font-bold text-white mb-12"
-            style={{ willChange: 'transform' }}
-          >
-            Why Most Solutions{' '}
-            <span 
-              className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500"
-              style={{ filter: 'drop-shadow(0 0 30px rgba(251, 191, 36, 0.5))' }}
-            >
-              Don't Work
-            </span>
-          </motion.h2>
-
-          {/* Bullet Points - 4 cards in grid */}
-          <div className="grid sm:grid-cols-2 gap-4 max-w-3xl w-full">
-            {[
-              { icon: '😓', text: 'Callers burn out or quit', delay: 0.3 },
-              { icon: '🚫', text: 'Dialers get blocked or ignored', delay: 0.4 },
-              { icon: '📊', text: "CRMs don't revive old leads", delay: 0.5 },
-              { icon: '📈', text: 'More volume means more overhead', delay: 0.6 },
-            ].map((item, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: item.delay }}
-                className="flex items-center gap-4 p-4 sm:p-5 bg-[#0f1a3d]/60 backdrop-blur-sm rounded-xl border border-amber-500/20 text-left"
-              >
-                <div className="w-12 h-12 flex-shrink-0 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <span className="text-2xl">{item.icon}</span>
-                </div>
-                <p className="text-base sm:text-lg text-gray-200">{item.text}</p>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* X marks to emphasize failure */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.8 }}
-            className="mt-10 flex items-center gap-3"
-          >
-            <span className="text-red-400/60 text-2xl">✗</span>
-            <span className="text-gray-500 text-sm">None of these scale without you</span>
-            <span className="text-red-400/60 text-2xl">✗</span>
-          </motion.div>
         </div>
       ),
     },
 
-    // Slide 4 - The Solution
+    // Slide 3 - The Solution
     {
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center px-6 sm:px-12">
@@ -482,7 +436,198 @@ export default function SalesPresentationPage() {
       ),
     },
 
-    // Slide 5 - Hear It In Action (Demo Recording)
+    // Slide 4 - This Isn't a Replacement (Positioning)
+    {
+      content: (
+        <div className="flex flex-col items-center justify-center h-full text-center px-6 sm:px-12">
+          {/* Static glow orbs - purple/blue theme */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ willChange: 'transform' }}>
+            <div 
+              className="absolute w-[400px] h-[400px] bg-purple-500/12 rounded-full top-[-100px] right-[-100px]"
+              style={{ filter: 'blur(70px)' }}
+            />
+            <div 
+              className="absolute w-[350px] h-[350px] bg-indigo-500/10 rounded-full bottom-[-100px] left-[-100px]"
+              style={{ filter: 'blur(70px)' }}
+            />
+          </div>
+
+          {/* Section Label */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-purple-400/80 text-sm uppercase tracking-widest mb-6"
+          >
+            Important Clarification
+          </motion.p>
+          
+          {/* Main Headline */}
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-3xl sm:text-5xl md:text-6xl font-bold text-white mb-6"
+            style={{ willChange: 'transform' }}
+          >
+            This Isn't a{' '}
+            <span 
+              className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-400 to-purple-500"
+              style={{ filter: 'drop-shadow(0 0 30px rgba(168, 85, 247, 0.5))' }}
+            >
+              Replacement
+            </span>
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-xl sm:text-2xl text-gray-400 mb-12 max-w-2xl"
+          >
+            It's a <span className="text-purple-400 font-semibold">multiplier</span> for what you're already doing
+          </motion.p>
+
+          {/* Key Points */}
+          <div className="grid gap-4 max-w-2xl w-full">
+            {[
+              { icon: '🔁', text: "Sterling doesn't replace your process — it multiplies it", delay: 0.4 },
+              { icon: '👥', text: 'Think of it as hiring 10 callers who never quit', delay: 0.5 },
+              { icon: '🎯', text: 'You still close the deals. AI just fills your calendar.', delay: 0.6 },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: item.delay }}
+                className="flex items-center gap-4 p-4 sm:p-5 bg-[#0f1a3d]/60 backdrop-blur-sm rounded-xl border border-purple-500/20 text-left"
+              >
+                <span className="text-2xl sm:text-3xl">{item.icon}</span>
+                <p className="text-lg sm:text-xl text-gray-200">{item.text}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Bottom emphasis */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className="mt-10 px-6 py-3 bg-purple-500/10 border border-purple-500/30 rounded-full"
+          >
+            <p className="text-purple-400 text-sm sm:text-base font-medium">
+              More appointments = More revenue. Simple.
+            </p>
+          </motion.div>
+        </div>
+      ),
+    },
+
+    // Slide 5 - The Numbers (ROI)
+    {
+      content: (
+        <div className="flex flex-col items-center justify-center h-full text-center px-6 sm:px-12">
+          {/* Static glow orbs - green/emerald theme for money */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ willChange: 'transform' }}>
+            <div 
+              className="absolute w-[400px] h-[400px] bg-emerald-500/12 rounded-full top-[-100px] left-[-100px]"
+              style={{ filter: 'blur(70px)' }}
+            />
+            <div 
+              className="absolute w-[350px] h-[350px] bg-green-500/10 rounded-full bottom-[-100px] right-[-100px]"
+              style={{ filter: 'blur(70px)' }}
+            />
+          </div>
+
+          {/* Section Label */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-emerald-400/80 text-sm uppercase tracking-widest mb-6"
+          >
+            The Math
+          </motion.p>
+          
+          {/* Main Headline */}
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-3xl sm:text-5xl md:text-6xl font-bold text-white mb-10"
+            style={{ willChange: 'transform' }}
+          >
+            The Numbers{' '}
+            <span 
+              className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-400 to-emerald-500"
+              style={{ filter: 'drop-shadow(0 0 30px rgba(16, 185, 129, 0.5))' }}
+            >
+              Don't Lie
+            </span>
+          </motion.h2>
+
+          {/* ROI Flow */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+            className="w-full max-w-4xl"
+          >
+            {/* Stats Row */}
+            <div className="grid grid-cols-4 gap-4 mb-8">
+              {[
+                { value: '$379', label: '/month', color: 'text-white' },
+                { value: '500+', label: 'calls/day', color: 'text-blue-400' },
+                { value: '20-30', label: 'appts/month', color: 'text-purple-400' },
+                { value: '$3K+', label: 'revenue', color: 'text-emerald-400' },
+              ].map((stat, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + i * 0.1 }}
+                  className="text-center p-4 bg-[#0f1a3d]/60 rounded-xl border border-gray-700/30"
+                >
+                  <div className={`text-2xl sm:text-4xl font-bold ${stat.color}`}>{stat.value}</div>
+                  <div className="text-xs sm:text-sm text-gray-500 mt-1">{stat.label}</div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Arrow flow */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="flex items-center justify-center gap-3 sm:gap-6 text-gray-500 mb-8"
+            >
+              <span className="text-white">$379</span>
+              <ArrowRight className="w-5 h-5" />
+              <span>500+ dials</span>
+              <ArrowRight className="w-5 h-5" />
+              <span>20+ appts</span>
+              <ArrowRight className="w-5 h-5" />
+              <span>2-3 policies</span>
+              <ArrowRight className="w-5 h-5" />
+              <span className="text-emerald-400 font-bold">$3,000+</span>
+            </motion.div>
+
+            {/* ROI Box */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1.0 }}
+              className="p-6 bg-gradient-to-r from-emerald-500/10 to-green-500/10 rounded-2xl border border-emerald-500/30"
+            >
+              <p className="text-2xl sm:text-3xl font-bold text-white">
+                <span className="text-gray-400">Invest</span> $379 <span className="text-gray-400">→ Return</span> <span className="text-emerald-400">$3,000+</span>
+              </p>
+              <p className="text-emerald-400 text-lg mt-2">That's an 8-10x ROI</p>
+            </motion.div>
+          </motion.div>
+        </div>
+      ),
+    },
+
+    // Slide 6 - Hear It In Action (Demo Recording)
     {
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center px-6 sm:px-12">
@@ -640,7 +785,7 @@ export default function SalesPresentationPage() {
       ),
     },
 
-    // Slide 6 - How It Works
+    // Slide 7 - How It Works
     {
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center px-6 sm:px-12">
@@ -720,155 +865,149 @@ export default function SalesPresentationPage() {
       ),
     },
 
-    // Slide 7 - Real Results (Testimonials)
+    // Slide 8 - Real Results
     {
-      content: (() => {
-        const testimonials = [
-          {
-            name: 'Marcus J.',
-            role: 'Life Insurance Agent',
-            video: '/testimonials/marcus.mp4', // placeholder
-            stats: {
-              calls: '1170',
-              appointments: '8',
-              policies: '3',
-              premium: '$1,987'
-            }
-          },
-          {
-            name: 'Sarah K.',
-            role: 'Insurance Agency Owner',
-            video: '/testimonials/sarah.mp4', // placeholder
-            stats: {
-              calls: '1,234',
-              appointments: '31',
-              policies: '6',
-              premium: '$18,750'
-            }
-          },
-          {
-            name: 'David R.',
-            role: 'Independent Agent',
-            video: '/testimonials/david.mp4', // placeholder
-            stats: {
-              calls: '652',
-              appointments: '18',
-              policies: '3',
-              premium: '$9,200'
-            }
-          }
-        ];
+      content: (
+        <div className="flex flex-col items-center justify-center h-full text-center px-6 sm:px-12">
+          {/* Static glow orbs - gold/yellow theme for success */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ willChange: 'transform' }}>
+            <div 
+              className="absolute w-[400px] h-[400px] bg-yellow-500/10 rounded-full top-[-100px] left-[10%]"
+              style={{ filter: 'blur(70px)' }}
+            />
+            <div 
+              className="absolute w-[350px] h-[350px] bg-amber-500/12 rounded-full bottom-[-100px] right-[10%]"
+              style={{ filter: 'blur(70px)' }}
+            />
+          </div>
 
-        return (
-          <div className="flex flex-col items-center justify-center h-full text-center px-6 sm:px-12">
-            {/* Static glow orbs - gold/yellow theme for success */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ willChange: 'transform' }}>
-              <div 
-                className="absolute w-[400px] h-[400px] bg-yellow-500/10 rounded-full top-[-100px] left-[10%]"
-                style={{ filter: 'blur(70px)' }}
-              />
-              <div 
-                className="absolute w-[350px] h-[350px] bg-amber-500/12 rounded-full bottom-[-100px] right-[10%]"
-                style={{ filter: 'blur(70px)' }}
-              />
-            </div>
+          {/* Section Label */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-yellow-400/80 text-sm uppercase tracking-widest mb-6"
+          >
+            Real Agent Results
+          </motion.p>
+          
+          {/* Main Headline */}
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-3xl sm:text-5xl md:text-6xl font-bold text-white mb-10"
+            style={{ willChange: 'transform' }}
+          >
+            Real{' '}
+            <span 
+              className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500"
+              style={{ filter: 'drop-shadow(0 0 30px rgba(251, 191, 36, 0.5))' }}
+            >
+              Results
+            </span>
+          </motion.h2>
 
-            {/* Section Label */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-yellow-400/80 text-sm uppercase tracking-widest mb-6"
-            >
-              Social Proof
-            </motion.p>
-            
-            {/* Main Headline */}
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-3xl sm:text-5xl md:text-6xl font-bold text-white mb-10"
-              style={{ willChange: 'transform' }}
-            >
-              Real{' '}
-              <span 
-                className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500"
-                style={{ filter: 'drop-shadow(0 0 30px rgba(251, 191, 36, 0.5))' }}
+          {/* Content Layout */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+            className="w-full max-w-5xl mb-8 pl-12 sm:pl-28"
+          >
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-10 sm:gap-16">
+              {/* Phone Frame with actual video */}
+              <motion.div 
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+                className="relative flex-shrink-0"
               >
-                Results
-              </span>
-            </motion.h2>
-
-            {/* Content Layout */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
-              className="w-full max-w-5xl mb-16 pl-12 sm:pl-28"
-            >
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-10 sm:gap-20">
-                {/* Phone Frame - Standalone (no card wrapper) */}
-                <motion.div 
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="relative aspect-[9/16] w-[200px] sm:w-[240px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] overflow-hidden border-[5px] border-gray-700 shadow-2xl shadow-yellow-500/10 flex-shrink-0"
+                {/* Glow behind phone */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-[280px] h-[420px] bg-gradient-to-br from-yellow-500/30 via-amber-500/20 to-orange-500/30 rounded-full blur-[60px]" />
+                </div>
+                
+                <div 
+                  className="relative aspect-[9/16] w-[200px] sm:w-[260px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] overflow-hidden border-[5px] border-gray-700 shadow-2xl shadow-yellow-500/20 z-10 cursor-pointer"
+                  onClick={toggleTestimonialVideo}
                 >
-                  {/* Video placeholder */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-                    <div className="text-center">
-                      <div className="w-14 h-14 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-2">
-                        <Play className="w-7 h-7 text-yellow-400" />
-                      </div>
-                      <p className="text-gray-400 text-xs">Video Testimonial</p>
+                  {/* Video */}
+                  <video
+                    ref={testimonialVideoRef}
+                    className="absolute inset-3 rounded-[2rem] w-[calc(100%-1.5rem)] h-[calc(100%-1.5rem)] object-cover"
+                    poster="/testimonials/marcus-thumbnail.jpg"
+                    playsInline
+                    loop
+                    muted
+                  >
+                    <source src="/testimonials/marcus-testimonial.mp4" type="video/mp4" />
+                  </video>
+                  
+                  {/* Play/Pause Overlay */}
+                  <div className={`absolute inset-3 rounded-[2rem] flex items-center justify-center transition-all duration-300 ${videoPlaying ? 'bg-black/0 opacity-0 hover:opacity-100 hover:bg-black/30' : 'bg-black/40'}`}>
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${videoPlaying ? 'bg-black/50 backdrop-blur-sm' : 'bg-yellow-500/90'}`}>
+                      {videoPlaying ? (
+                        <Pause className="w-6 h-6 text-white" />
+                      ) : (
+                        <Play className="w-6 h-6 text-white ml-1" />
+                      )}
                     </div>
                   </div>
-                  {/* Notch */}
-                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-4 bg-black rounded-full" />
-                </motion.div>
-
-                {/* Stats Card - Right (wider) */}
-                <motion.div 
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="bg-[#0f1a3d]/80 backdrop-blur-sm rounded-2xl border border-yellow-500/30 p-6 sm:p-8 w-full sm:w-[400px]"
-                >
-                  <h3 className="text-xl font-bold text-yellow-400 mb-6 flex items-center gap-2">
-                    📊 First 7 Days
-                  </h3>
                   
-                  <div className="space-y-4">
+                  {/* Notch */}
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-4 bg-black rounded-full z-20" />
+                </div>
+              </motion.div>
+
+              {/* Stats Card - First Month Results */}
+              <motion.div 
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+                className="text-left"
+              >
+                <div className="bg-[#0f1a3d]/80 backdrop-blur-sm rounded-2xl border border-yellow-500/30 p-6 sm:p-8 w-full sm:w-[380px]">
+                  <h4 className="text-lg font-bold text-yellow-400 mb-5 flex items-center gap-2">
+                    📊 First Month Results
+                  </h4>
+                  
+                  <div className="space-y-3">
                     {[
-                      { label: 'Calls Made', value: testimonials[currentTestimonial].stats.calls, icon: '📞' },
-                      { label: 'Appointments Booked', value: testimonials[currentTestimonial].stats.appointments, icon: '📅' },
-                      { label: 'Policies Sold', value: testimonials[currentTestimonial].stats.policies, icon: '✅' },
-                      { label: 'Premium Written', value: testimonials[currentTestimonial].stats.premium, icon: '💰' },
+                      { label: 'Calls Made', value: '5,694', icon: '📞' },
+                      { label: 'Appointments Booked', value: '24', icon: '📅' },
+                      { label: 'Policies Sold', value: '8', icon: '✅' },
+                      { label: 'Revenue Generated', value: '$7,200', icon: '💰' },
                     ].map((stat, i) => (
                       <motion.div
                         key={i}
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.6 + i * 0.1 }}
-                        className="flex items-center justify-between p-4 bg-gray-800/50 rounded-xl"
+                        className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl"
                       >
-                        <span className="text-gray-300 flex items-center gap-3">
-                          <span className="text-lg">{stat.icon}</span>
+                        <span className="text-gray-300 flex items-center gap-2 text-sm">
+                          <span className="text-base">{stat.icon}</span>
                           {stat.label}
                         </span>
                         <span className="text-white font-bold text-lg">{stat.value}</span>
                       </motion.div>
                     ))}
                   </div>
-                </motion.div>
-              </div>
-            </motion.div>
-          </div>
-        );
-      })(),
+                  
+                  {/* ROI highlight */}
+                  <div className="mt-5 pt-4 border-t border-yellow-500/20 flex items-center justify-between">
+                    <span className="text-gray-400 text-sm">Paid $379/month</span>
+                    <span className="text-yellow-400 font-bold text-lg">19x ROI</span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
+      ),
     },
 
-    // Slide 8 - Fit + Next Step
+    // Slide 9 - Fit + Next Step
     {
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center px-6 sm:px-12">
