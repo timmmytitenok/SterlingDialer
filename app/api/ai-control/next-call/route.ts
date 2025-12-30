@@ -1231,19 +1231,55 @@ export async function POST(request: Request) {
       
       console.error(`❌ Call failed for lead ${nextLead.id}: ${errorMessage}`);
       console.log('');
-      console.log('🔧 Marking lead as unclassified and signaling to continue...');
       
-      // Mark this lead as unclassified (bad phone number or other issue - can be retried)
-      // Note: call_attempts_today and last_attempt_date were already updated above
+      // ========================================================================
+      // CRITICAL: Increment counters and mark as DEAD after multiple failures
+      // This prevents infinite retry loops on bad phone numbers!
+      // ========================================================================
+      const currentTotalCalls = nextLead.total_calls_made || 0;
+      const newTotalCalls = currentTotalCalls + 1;
+      const currentAttemptsToday = nextLead.call_attempts_today || 0;
+      
+      // Check if this lead has failed before (last_call_outcome starts with 'error:')
+      const lastOutcome = nextLead.last_call_outcome || '';
+      const hadPreviousError = lastOutcome.startsWith('error:');
+      
+      // Mark as DEAD if:
+      // 1. This is the 3rd+ consecutive error (2 previous errors + this one)
+      // 2. OR total attempts >= 5 with current error
+      // 3. OR error indicates permanently bad phone (invalid number, disconnected, etc.)
+      const isPermanentError = errorMessage.toLowerCase().includes('invalid') || 
+                               errorMessage.toLowerCase().includes('not a valid') ||
+                               errorMessage.toLowerCase().includes('disconnected') ||
+                               errorMessage.toLowerCase().includes('not in service');
+      const shouldMarkDead = isPermanentError || (hadPreviousError && newTotalCalls >= 3) || newTotalCalls >= 5;
+      
+      const newStatus = shouldMarkDead ? 'dead_lead' : 'no_answer';
+      
+      console.log(`🔧 Lead error handling:`);
+      console.log(`   - Previous outcome: ${lastOutcome || '(none)'}`);
+      console.log(`   - Had previous error: ${hadPreviousError}`);
+      console.log(`   - Total attempts: ${currentTotalCalls} → ${newTotalCalls}`);
+      console.log(`   - Is permanent error: ${isPermanentError}`);
+      console.log(`   - New status: ${newStatus}`);
+      
       await supabase
         .from('leads')
         .update({
-          status: 'unclassified',
+          status: newStatus,
+          total_calls_made: newTotalCalls,
+          call_attempts_today: currentAttemptsToday + 1,
+          last_attempt_date: todayStr,
           last_call_outcome: `error: ${errorMessage.substring(0, 100)}`,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', nextLead.id);
       
-      console.log(`✅ Lead ${nextLead.name} marked as unclassified (will be retried later)`);
+      if (shouldMarkDead) {
+        console.log(`💀 Lead ${nextLead.name} marked as DEAD_LEAD after ${newTotalCalls} attempts - won't be called again!`);
+      } else {
+        console.log(`⚠️ Lead ${nextLead.name} marked as no_answer (attempt ${newTotalCalls}) - will retry tomorrow`);
+      }
       console.log('⚠️ Call failed - returning continue signal (call-result webhook will trigger next call)');
       
       // Return success with continueDialing flag so the dialer knows to keep going
