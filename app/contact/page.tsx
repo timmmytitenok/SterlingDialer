@@ -96,11 +96,11 @@ export default function ContactPage() {
                 direction="top"
               />
             </div>
-            <div className="text-4xl md:text-5xl flex justify-center mt-2">
+            <div className="text-4xl md:text-5xl flex justify-center mt-2 overflow-visible pb-2">
               <BlurText
                 text="Sterling Dialer Support"
                 delay={120}
-                className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+                className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight"
                 animateBy="words"
                 direction="top"
               />
@@ -110,21 +110,6 @@ export default function ContactPage() {
             Questions about reviving your old leads? We're always here happy to help.
           </p>
 
-          {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6">
-            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full">
-              <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
-              <span className="text-[10px] sm:text-xs text-green-400 font-semibold">No Contracts</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 rounded-full">
-              <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
-              <span className="text-[10px] sm:text-xs text-blue-400 font-semibold">Live in 24hrs</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full">
-              <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
-              <span className="text-[10px] sm:text-xs text-purple-400 font-semibold">Cancel Anytime</span>
-            </div>
-          </div>
         </div>
 
         <div className="space-y-8">
@@ -225,8 +210,8 @@ export default function ContactPage() {
             )}
           </div>
 
-          {/* Contact Options - 3 Column Grid */}
-          <div className="scroll-reveal max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Contact Options - 2 Column Grid */}
+          <div className="scroll-reveal max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Email Card */}
                   <a
                     href="mailto:SterlingDialer@gmail.com"
@@ -254,14 +239,6 @@ export default function ContactPage() {
               </p>
             </Link>
 
-            {/* Response Time */}
-            <div className="bg-[#1A2647]/80 rounded-xl p-5 border border-gray-800 text-center">
-              <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center mx-auto mb-3 border border-green-500/30">
-                <Clock className="w-5 h-5 text-green-400" />
-              </div>
-              <h3 className="text-base font-semibold text-white mb-1">Response Time</h3>
-              <p className="text-green-400 text-sm font-bold">Within 24 Hours</p>
-            </div>
           </div>
         </div>
 

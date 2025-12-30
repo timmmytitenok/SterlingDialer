@@ -388,16 +388,13 @@ export default function LandingPage() {
             <div className="bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10 border-2 border-green-500/30 rounded-2xl p-6 sm:p-8 text-center relative overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.1),transparent_70%)]" />
               <div className="relative z-10">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 rounded-full mb-4">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 rounded-full mb-5">
                   <Shield className="w-5 h-5 text-green-400" />
                   <span className="text-green-400 font-bold text-sm">100% RISK-FREE GUARANTEE</span>
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-                  Book 5+ Appointments in Your First Week
+                <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                  Book 10+ Appointments in Your First Week
                 </h3>
-                <p className="text-gray-300 text-lg mb-4">
-                  Or we'll <span className="text-green-400 font-semibold">extend your trial</span> until you do.
-                </p>
                 <p className="text-gray-500 text-sm">
                   No questions asked. No fine print. We're that confident.
                 </p>
@@ -666,73 +663,22 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="container mx-auto px-6 py-20 scroll-reveal-scale">
-          <div className="max-w-4xl mx-auto">
-            <div className="relative bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-3xl p-6 md:p-12 lg:p-16 border-2 border-blue-500/30 overflow-hidden group hover:border-blue-500/50 transition-all">
-              {/* Animated background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse" />
-              
-              <div className="relative z-10 text-center">
-                {/* Mobile: Shorter headline */}
-                <h2 className="sm:hidden text-4xl font-bold text-white mb-4 leading-tight px-4">
-                  Work Your Old Leads First
-                </h2>
-                {/* Desktop: Full headline */}
-                <h2 className="hidden sm:block text-3xl md:text-6xl lg:text-6xl font-bold text-white mb-4 md:mb-6 leading-tight">
-                  Still chasing new leads when you haven't worked the old ones?
-                </h2>
-                
-                {/* Mobile: Shorter description */}
-                <p className="sm:hidden text-1xl text-gray-300 mb-9 max-w-xs mx-auto leading-relaxed px-4">
-             
-                </p>
-                {/* Desktop: Full description */}
-                <p className="hidden sm:block text-lg md:text-2xl text-gray-300 mb-5 md:mb-10 max-w-2xl mx-auto leading-relaxed">
-                  Sterling Dialer does it all for you — automatically calling, and booking your calendar full of appointments.
-                </p>
-                
-                {/* Mobile: Compact pricing */}
-                <p className="sm:hidden text-xs text-gray-400 mb-6 px-4">
-                  <span className="text-green-400 font-bold block mb-1">$379/month. Unlimited everything.</span>
-                  <span>One policy pays for it all.</span>
-                </p>
-                {/* Desktop: Full pricing */}
-                <p className="hidden sm:block text-base md:text-1xl text-gray-400 mb-8 md:mb-8">
-                  <span className="text-green-400 font-bold">$379/month. Unlimited leads. Unlimited appointments.</span> What's one policy worth to you?
-                </p>
-                <Link
-                  href="/signup"
-                  className="group/cta inline-flex items-center justify-center gap-2 md:gap-3 px-8 py-4 md:px-12 md:py-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold text-lg md:text-xl rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/50 w-full sm:w-auto"
-                >
-                  <Rocket className="w-5 h-5 md:w-7 md:h-7 group-hover/cta:translate-y-[-4px] transition-transform" />
-                  Start Free Trial
-                  <ArrowRight className="w-5 h-5 md:w-7 md:h-7 group-hover/cta:translate-x-2 transition-transform" />
-                </Link>
-                {/* Mobile: Shorter version */}
-                <p className="sm:hidden text-xs text-gray-400 mt-4">
-                  <Zap className="w-3 h-3 inline mr-1 text-green-400 animate-pulse" />
-                  7-Day Trial — Pay Per Minute
-                </p>
-                {/* Desktop: Full version */}
-                <p className="hidden sm:block text-xs sm:text-sm text-gray-400 mt-4 md:mt-6">
-                  <Zap className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-green-400 animate-pulse" />
-                  7-Day Free Trial — Pay Only for Minutes <span className="font-bold">You</span> Use
-                </p>
-                
-                {/* Schedule Call CTA */}
-                <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-white/10">
-                  <p className="text-gray-400 text-sm mb-3">Not sure if Sterling Dialer is right for you?</p>
-                  <Link
-                    href="/schedule-call"
-                    className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 font-medium transition-colors group"
-                  >
-                    <Phone className="w-4 h-4" />
-                    Schedule a Free Consultation
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </div>
-              </div>
+        {/* Schedule Call CTA */}
+        <section className="container mx-auto px-6 pt-24 pb-48 scroll-reveal">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="p-6 sm:p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
+              <h3 className="text-2xl sm:text-4xl font-bold text-white mb-3">Still Have Questions?</h3>
+              <p className="text-gray-400 text-sm sm:text-base mb-6">
+                Book a free 15-minute call and We'll show you exactly how Sterling Dialer can help grow your business today.
+              </p>
+              <Link
+                href="/schedule-call"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-105 group"
+              >
+                <Phone className="w-5 h-5" />
+                Schedule Free Consultation
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </div>
           </div>
         </section>
@@ -741,17 +687,17 @@ export default function LandingPage() {
         <footer className="hidden lg:block relative z-10 border-t border-gray-800/50">
           {/* Main Footer */}
           <div className="bg-[#0A1129]/80 backdrop-blur-sm">
-            <div className="container mx-auto px-8 py-16">
-              <div className="grid grid-cols-6 gap-12">
+            <div className="container mx-auto px-8 py-10">
+              <div className="grid grid-cols-5 gap-12 items-center">
                 {/* Brand Column */}
                 <div className="col-span-2">
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-11 h-11 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
-                      <span className="text-white font-bold text-lg">SD</span>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
+                      <span className="text-white font-bold">SD</span>
                     </div>
-                    <span className="text-white font-bold text-xl tracking-tight">Sterling Dialer</span>
+                    <span className="text-white font-bold text-lg tracking-tight">Sterling Dialer</span>
                   </div>
-                  <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-[280px]">
+                  <p className="text-gray-500 text-sm leading-relaxed mb-4 max-w-[280px]">
                     AI-powered appointment setting for life insurance agents. Turn old leads into booked appointments today.
                   </p>
                   <Link 
@@ -765,8 +711,8 @@ export default function LandingPage() {
 
                 {/* Product */}
                 <div>
-                  <h4 className="text-white font-semibold mb-4 text-sm">Product</h4>
-                  <div className="space-y-2.5">
+                  <h4 className="text-white font-semibold mb-3 text-sm">Product</h4>
+                  <div className="space-y-2">
                     <Link href="/pricing" className="block text-gray-500 hover:text-white transition-colors text-sm">
                       Pricing
                     </Link>
@@ -774,7 +720,20 @@ export default function LandingPage() {
                       Demo
                     </Link>
                     <Link href="/case-studies" className="block text-gray-500 hover:text-white transition-colors text-sm">
-                      Case Studies
+                      Studies
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Support */}
+                <div>
+                  <h4 className="text-white font-semibold mb-3 text-sm">Support</h4>
+                  <div className="space-y-2">
+                    <Link href="/schedule-call" className="block text-gray-500 hover:text-white transition-colors text-sm">
+                      Consultation
+                    </Link>
+                    <Link href="/contact" className="block text-gray-500 hover:text-white transition-colors text-sm">
+                      Contact Us
                     </Link>
                     <Link href="/faq" className="block text-gray-500 hover:text-white transition-colors text-sm">
                       FAQ
@@ -782,23 +741,10 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                {/* Company */}
-                <div>
-                  <h4 className="text-white font-semibold mb-4 text-sm">Company</h4>
-                  <div className="space-y-2.5">
-                    <Link href="/contact" className="block text-gray-500 hover:text-white transition-colors text-sm">
-                      Contact
-                    </Link>
-                    <a href="mailto:support@sterlingdialer.com" className="block text-gray-500 hover:text-white transition-colors text-sm">
-                      Support
-                    </a>
-                  </div>
-                </div>
-
                 {/* Legal */}
                 <div>
-                  <h4 className="text-white font-semibold mb-4 text-sm">Legal</h4>
-                  <div className="space-y-2.5">
+                  <h4 className="text-white font-semibold mb-3 text-sm">Legal</h4>
+                  <div className="space-y-2">
                     <Link href="/terms" className="block text-gray-500 hover:text-white transition-colors text-sm">
                       Terms
                     </Link>
@@ -808,21 +754,6 @@ export default function LandingPage() {
                     <Link href="/refund-policy" className="block text-gray-500 hover:text-white transition-colors text-sm">
                       Refunds
                     </Link>
-                  </div>
-                </div>
-
-                {/* Connect */}
-                <div>
-                  <h4 className="text-white font-semibold mb-4 text-sm">Connect</h4>
-                  <div className="space-y-2.5">
-                    <a href="mailto:support@sterlingdialer.com" className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-sm">
-                      <Mail className="w-4 h-4" />
-                      Email Us
-                    </a>
-                    <div className="flex items-center gap-2 text-gray-600 text-sm">
-                      <Smartphone className="w-4 h-4" />
-                      <span>Mobile App Soon</span>
-                    </div>
                   </div>
                 </div>
               </div>

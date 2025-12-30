@@ -175,6 +175,13 @@ export default function SchedulingPage() {
 
   useEffect(() => {
     fetchSettings();
+    
+    // Mark onboarding step 4 as complete when visiting this page
+    fetch('/api/onboarding/mark-step-complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ step: 4 }),
+    }).catch(() => {}); // Silently fail if already complete
   }, [fetchSettings]);
 
   // Save settings

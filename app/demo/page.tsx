@@ -9,6 +9,63 @@ import BlurText from '@/components/blur-text';
 import { Upload, Rocket, Calendar, Play, Pause, DollarSign, Phone, CheckCircle, ArrowRight, Headphones, Clock, Target, TrendingUp, CalendarCheck, Zap, Shield, CheckCircle2, Users, BadgeCheck, Lock, FileCheck, Sparkles, Star, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 
+// Easing function for smooth deceleration
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+// Animated counter hook with easing
+function useCountUp(end: number, duration: number = 2000, startOnView: boolean = true) {
+  const [count, setCount] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!startOnView) {
+      setHasStarted(true);
+    }
+  }, [startOnView]);
+
+  useEffect(() => {
+    if (!hasStarted) return;
+    
+    let startTime: number;
+    let animationFrame: number;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const linearProgress = Math.min((timestamp - startTime) / duration, 1);
+      const easedProgress = easeOutCubic(linearProgress);
+      setCount(Math.floor(easedProgress * end));
+      
+      if (linearProgress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [hasStarted, end, duration]);
+
+  useEffect(() => {
+    if (!startOnView || !ref.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasStarted) {
+          setHasStarted(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [startOnView, hasStarted]);
+
+  return { count, ref };
+}
+
 export default function DemoPage() {
   // Audio player state - now just 2 players
   const [activePlayer, setActivePlayer] = useState<number | null>(null);
@@ -23,6 +80,11 @@ export default function DemoPage() {
   };
 
   const speedOptions = [1, 1.25, 1.5, 2];
+
+  // Animated counters for stats
+  const callsCounter = useCountUp(400000, 2500);
+  const appointmentsCounter = useCountUp(3100, 2000);
+  const agentsCounter = useCountUp(250, 1500);
 
   const togglePlay = (playerNum: number) => {
     // Stop the OTHER player (only 2 now)
@@ -198,50 +260,23 @@ export default function DemoPage() {
               Have old life insurance leads collecting dust? Let Sterling Dialer revive them into booked appointments — automatically.
             </p>
 
-            {/* Trust Badges Row 1 */}
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6 sm:mt-8 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '300ms' }}>
-              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full">
-                <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
-                <span className="text-[10px] sm:text-xs text-green-400 font-semibold">No Contracts</span>
-              </div>
-              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 rounded-full">
-                <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
-                <span className="text-[10px] sm:text-xs text-blue-400 font-semibold">Live in 24hrs</span>
-              </div>
-              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full">
-                <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
-                <span className="text-[10px] sm:text-xs text-purple-400 font-semibold">Cancel Anytime</span>
-              </div>
-            </div>
-
-            {/* Trust Badges Row 2 */}
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-3 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '350ms' }}>
-              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
-                <BadgeCheck className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
-                <span className="text-[10px] sm:text-xs text-emerald-400 font-semibold">7-Day Money-Back</span>
-              </div>
-              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 rounded-full">
-                <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
-                <span className="text-[10px] sm:text-xs text-cyan-400 font-semibold">Bank-Level SSL</span>
-              </div>
-              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/30 rounded-full">
-                <FileCheck className="w-3 h-3 sm:w-4 sm:h-4 text-indigo-400" />
-                <span className="text-[10px] sm:text-xs text-indigo-400 font-semibold">TCPA Compliant</span>
-              </div>
-            </div>
 
             {/* Live Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto mt-8 sm:mt-10 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '400ms' }}>
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
-                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-400">2.4M+</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto mt-12 sm:mt-16 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '400ms' }}>
+              <div ref={callsCounter.ref} className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-400">
+                  {callsCounter.count >= 1000 ? `${Math.floor(callsCounter.count / 1000)}K+` : `${callsCounter.count}+`}
+                </div>
                 <div className="text-gray-500 text-[10px] sm:text-xs">Calls Made</div>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
-                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-400">47K+</div>
+              <div ref={appointmentsCounter.ref} className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-400">
+                  {appointmentsCounter.count >= 1000 ? `${(appointmentsCounter.count / 1000).toFixed(1)}K+` : `${appointmentsCounter.count}+`}
+                </div>
                 <div className="text-gray-500 text-[10px] sm:text-xs">Appointments</div>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
-                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-400">500+</div>
+              <div ref={agentsCounter.ref} className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-400">{agentsCounter.count}+</div>
                 <div className="text-gray-500 text-[10px] sm:text-xs">Agents</div>
               </div>
               <div className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
@@ -519,135 +554,64 @@ export default function DemoPage() {
                   </div>
         </section>
 
-        {/* ROI CALCULATOR SECTION - Mobile Optimized */}
+        {/* ROI CALCULATOR SECTION */}
         <section className="scroll-reveal py-10 sm:py-24 px-3 sm:px-4">
           <div className="max-w-4xl mx-auto">
-            <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl sm:rounded-2xl p-5 sm:p-12 border border-gray-800 animate-in fade-in zoom-in-95 duration-700">
-              {/* Header */}
-              <div className="text-center mb-6 sm:mb-10">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-green-500/10 border border-green-500/20 rounded-full mb-3 sm:mb-4">
-                  <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" />
-                  <span className="text-xs sm:text-sm font-bold text-green-400">ROI CALCULATOR</span>
-                </div>
-                <h2 className="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">
-                  The Math Is Simple
-                </h2>
-                <p className="text-sm sm:text-base text-gray-400">See why Sterling Dialer pays for itself</p>
-              </div>
-
-              {/* ROI Grid - Stack on mobile */}
-              <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-10">
-                {/* Left: Costs */}
-                <div className="bg-[#0B1437] border border-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
-                    Your Investment
-                  </h3>
-                  <div className="space-y-2 sm:space-y-3">
-                    <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-800">
-                      <span className="text-xs sm:text-sm text-gray-400">Sterling Dialer Monthly</span>
-                      <span className="text-sm sm:text-base text-white font-semibold">$379</span>
-                    </div>
-                    <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-800">
-                      <span className="text-xs sm:text-sm text-gray-400">~300 calls per day</span>
-                      <span className="text-sm sm:text-base text-white font-semibold">~$12/day</span>
+            <div className="text-center mb-8 sm:mb-10">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">The Numbers Don't Lie</h2>
+              <p className="text-gray-400 text-sm sm:text-base">What $379/month actually gets you</p>
             </div>
-                    <div className="flex justify-between items-center py-1.5 sm:py-2">
-                      <span className="text-xs sm:text-sm text-gray-400 font-semibold">Total Monthly</span>
-                      <span className="text-lg sm:text-xl text-white font-bold">~$679</span>
-                  </div>
-                  </div>
-                </div>
-                
-                {/* Right: Returns */}
-                <div className="bg-green-500/10 border border-green-500/30 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                    <Target className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
-                    Your Return
-                  </h3>
-                  <div className="space-y-2 sm:space-y-3">
-                    <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-green-500/20">
-                      <span className="text-xs sm:text-sm text-gray-300">Avg. Policy Value</span>
-                      <span className="text-sm sm:text-base text-white font-semibold">$1,000/yr</span>
-                    </div>
-                    <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-green-500/20">
-                      <span className="text-xs sm:text-sm text-gray-300">Break Even</span>
-                      <span className="text-sm sm:text-base text-green-400 font-bold">Just 1 Policy</span>
-                      </div>
-                    <div className="flex justify-between items-center py-1.5 sm:py-2">
-                      <span className="text-xs sm:text-sm text-green-400 font-semibold">Every Policy After</span>
-                      <span className="text-lg sm:text-xl text-green-400 font-bold">Profit 💰</span>
+            
+            <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-8">
+              <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-6 text-center border border-gray-800">
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-400 mb-2">500+</div>
+                <div className="text-white font-medium text-xs sm:text-sm">Calls/Day</div>
+              </div>
+              <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-6 text-center border border-gray-800">
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-400 mb-2">3-5</div>
+                <div className="text-white font-medium text-xs sm:text-sm">Appts/Day</div>
+              </div>
+              <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-6 text-center border border-gray-800">
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-green-400 mb-2">$6K+</div>
+                <div className="text-white font-medium text-xs sm:text-sm">Monthly Revenue</div>
               </div>
             </div>
-          </div>
-        </div>
 
-              {/* Bottom Stats - Compact on mobile */}
-              <div className="grid grid-cols-3 gap-2 sm:gap-4 p-4 sm:p-6 bg-[#0B1437] rounded-xl sm:rounded-2xl border border-gray-800">
-                <div className="text-center">
-                  <div className="text-xl sm:text-3xl font-bold text-white">300+</div>
-                  <div className="text-[10px] sm:text-sm text-gray-400">Calls/Day</div>
-                </div>
-                <div className="text-center border-x border-gray-800">
-                  <div className="text-xl sm:text-3xl font-bold text-white">50+</div>
-                  <div className="text-[10px] sm:text-sm text-gray-400">Appts/Mo</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl sm:text-3xl font-bold text-green-400">10+</div>
-                  <div className="text-[10px] sm:text-sm text-gray-400">Sold/Mo</div>
-                </div>
+            <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 rounded-xl p-5 sm:p-6 border border-green-500/20">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-center">
+                <span className="text-gray-300 text-sm sm:text-base">60 appts</span>
+                <span className="text-gray-500 hidden sm:inline">×</span>
+                <span className="text-gray-300 text-sm sm:text-base">10% close rate</span>
+                <span className="text-gray-500 hidden sm:inline">×</span>
+                <span className="text-gray-300 text-sm sm:text-base">$1,000 commission</span>
+                <span className="text-gray-500">=</span>
+                <span className="text-green-400 font-bold text-xl sm:text-2xl">$6,000/mo</span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* FINAL CTA - Mobile Optimized */}
-        <section className="scroll-reveal-scale py-10 sm:py-24 px-3 sm:px-4 pb-20 sm:pb-24">
-          <div className="max-w-3xl mx-auto">
-            <div className="relative overflow-hidden bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-xl sm:rounded-2xl p-6 sm:p-12 border-2 border-blue-500/30 text-center animate-in fade-in zoom-in-95 duration-700">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-purple-500/0 animate-pulse" />
-              <div className="relative">
-                <h2 className="text-4xl sm:text-4xl font-bold text-white mb-6 sm:mb-4">
-                  Ready to Revive Your Leads?
-            </h2>
-                <p className="text-1sm sm:text-lg text-gray-300 mb-8 sm:mb-8">
-                  Sterling Dialer pays for itself with just one policy. Start today.
-                </p>
-                
-                {/* Buttons - Full width on mobile */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 sm:justify-center">
-                <Link
-                  href="/signup"
-                    className="group px-6 py-3.5 sm:px-8 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-base sm:text-lg rounded-xl transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50 flex items-center justify-center gap-2"
-                >
-                    <Rocket className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
-                    Get Started Now
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-                <Link
-                  href="/pricing"
-                    className="px-6 py-3.5 sm:px-8 sm:py-4 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold text-base sm:text-lg rounded-xl transition-all hover:scale-105"
-                >
-                  View Pricing
-                </Link>
-                </div>
-                
-                {/* Trust badges - All in 1 line on mobile */}
-                <div className="mt-8 sm:mt-10 flex items-center justify-center gap-2.5 sm:gap-6 text-[10px] sm:text-sm text-gray-400">
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
-                    <span className="whitespace-nowrap">No contracts</span>
-                  </div>
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
-                    <span className="whitespace-nowrap">Cancel anytime</span>
-                  </div>
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
-                    <span className="whitespace-nowrap">15 min setup</span>
-                  </div>
-                </div>
-              </div>
+        {/* FINAL CTA */}
+        <section className="scroll-reveal py-24 sm:py-32 px-3 sm:px-4 pb-32 sm:pb-48">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="p-6 sm:p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
+              <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3">
+                Ready to Get Started?
+              </h2>
+              <p className="text-gray-400 text-sm sm:text-base mb-6">
+                Start your 7-day free trial and see results in your first week.
+              </p>
+              <Link
+                href="/signup"
+                className="inline-flex items-center gap-2 px-6 py-3 sm:px-8 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-base sm:text-lg rounded-xl transition-all hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30"
+              >
+                <Rocket className="w-5 h-5" />
+                Start Free Trial
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+              <p className="text-gray-500 text-xs sm:text-sm mt-4">
+                7-day free trial • Cancel anytime
+              </p>
             </div>
           </div>
         </section>

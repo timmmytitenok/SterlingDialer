@@ -1,22 +1,22 @@
 import Link from 'next/link';
-import { Smartphone, Shield, Lock, CheckCircle, Mail, Zap, Award, ArrowRight } from 'lucide-react';
+import { Shield, Lock, ArrowRight, CheckCircle } from 'lucide-react';
 
 export function PublicFooter() {
   return (
     <footer className="hidden lg:block relative z-10 border-t border-gray-800/50">
       {/* Main Footer */}
       <div className="bg-[#0A1129]/80 backdrop-blur-sm">
-        <div className="container mx-auto px-8 py-16">
-          <div className="grid grid-cols-6 gap-12">
-            {/* Brand Column - Takes 2 cols */}
+        <div className="container mx-auto px-8 py-10">
+          <div className="grid grid-cols-5 gap-12 items-center">
+            {/* Brand Column */}
             <div className="col-span-2">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-11 h-11 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">SD</span>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold">SD</span>
                 </div>
-                <span className="text-white font-bold text-xl tracking-tight">Sterling Dialer</span>
+                <span className="text-white font-bold text-lg tracking-tight">Sterling Dialer</span>
               </div>
-              <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-[280px]">
+              <p className="text-gray-500 text-sm leading-relaxed mb-4 max-w-[280px]">
                 AI-powered appointment setting for life insurance agents. Turn old leads into booked appointments today.
               </p>
               <Link 
@@ -30,8 +30,8 @@ export function PublicFooter() {
 
             {/* Product */}
             <div>
-              <h4 className="text-white font-semibold mb-4 text-sm">Product</h4>
-              <div className="space-y-2.5">
+              <h4 className="text-white font-semibold mb-3 text-sm">Product</h4>
+              <div className="space-y-2">
                 <Link href="/pricing" className="block text-gray-500 hover:text-white transition-colors text-sm">
                   Pricing
                 </Link>
@@ -39,7 +39,20 @@ export function PublicFooter() {
                   Demo
                 </Link>
                 <Link href="/case-studies" className="block text-gray-500 hover:text-white transition-colors text-sm">
-                  Case Studies
+                  Studies
+                </Link>
+              </div>
+            </div>
+
+            {/* Support */}
+            <div>
+              <h4 className="text-white font-semibold mb-3 text-sm">Support</h4>
+              <div className="space-y-2">
+                <Link href="/schedule-call" className="block text-gray-500 hover:text-white transition-colors text-sm">
+                  Consultation
+                </Link>
+                <Link href="/contact" className="block text-gray-500 hover:text-white transition-colors text-sm">
+                  Contact Us
                 </Link>
                 <Link href="/faq" className="block text-gray-500 hover:text-white transition-colors text-sm">
                   FAQ
@@ -47,23 +60,10 @@ export function PublicFooter() {
               </div>
             </div>
 
-            {/* Company */}
-            <div>
-              <h4 className="text-white font-semibold mb-4 text-sm">Company</h4>
-              <div className="space-y-2.5">
-                <Link href="/contact" className="block text-gray-500 hover:text-white transition-colors text-sm">
-                  Contact
-                </Link>
-                <a href="mailto:support@sterlingdialer.com" className="block text-gray-500 hover:text-white transition-colors text-sm">
-                  Support
-                </a>
-              </div>
-            </div>
-
             {/* Legal */}
             <div>
-              <h4 className="text-white font-semibold mb-4 text-sm">Legal</h4>
-              <div className="space-y-2.5">
+              <h4 className="text-white font-semibold mb-3 text-sm">Legal</h4>
+              <div className="space-y-2">
                 <Link href="/terms" className="block text-gray-500 hover:text-white transition-colors text-sm">
                   Terms
                 </Link>
@@ -73,21 +73,6 @@ export function PublicFooter() {
                 <Link href="/refund-policy" className="block text-gray-500 hover:text-white transition-colors text-sm">
                   Refunds
                 </Link>
-              </div>
-            </div>
-
-            {/* Connect */}
-            <div>
-              <h4 className="text-white font-semibold mb-4 text-sm">Connect</h4>
-              <div className="space-y-2.5">
-                <a href="mailto:support@sterlingdialer.com" className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-sm">
-                  <Mail className="w-4 h-4" />
-                  Email Us
-                </a>
-                <div className="flex items-center gap-2 text-gray-600 text-sm">
-                  <Smartphone className="w-4 h-4" />
-                  <span>Mobile App Soon</span>
-                </div>
               </div>
             </div>
           </div>
@@ -110,10 +95,6 @@ export function PublicFooter() {
                 <div className="flex items-center gap-1.5 text-gray-600 text-xs">
                   <Lock className="w-3.5 h-3.5 text-blue-500/70" />
                   <span>SSL Secured</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-gray-600 text-xs">
-                  <CheckCircle className="w-3.5 h-3.5 text-purple-500/70" />
-                  <span>SOC 2</span>
                 </div>
               </div>
             </div>

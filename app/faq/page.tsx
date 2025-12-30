@@ -136,14 +136,14 @@ export default function FAQPage() {
       <MobilePublicNav />
       
       {/* Animated Background - Soft gradual glow */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute w-[1000px] h-[1000px] bg-blue-500/8 rounded-full top-[-300px] left-[-300px] animate-pulse" style={{ filter: 'blur(180px)' }} />
         <div className="absolute w-[900px] h-[900px] bg-purple-500/8 rounded-full top-[30%] right-[-300px] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '1s' }} />
         <div className="absolute w-[1000px] h-[1000px] bg-pink-500/8 rounded-full bottom-[-300px] left-[20%] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '2s' }} />
       </div>
 
       {/* Grid Pattern - Fixed to cover entire page */}
-      <div className="fixed inset-0 bg-[linear-gradient(rgba(59,130,246,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.08)_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.08)_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
 
       {/* Content */}
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-30">
@@ -177,21 +177,6 @@ export default function FAQPage() {
             Everything you need to know about reviving your old leads and booking more appointments
           </p>
 
-          {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6">
-            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full">
-              <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
-              <span className="text-[10px] sm:text-xs text-green-400 font-semibold">No Contracts</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 rounded-full">
-              <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
-              <span className="text-[10px] sm:text-xs text-blue-400 font-semibold">Live in 24hrs</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full">
-              <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
-              <span className="text-[10px] sm:text-xs text-purple-400 font-semibold">Cancel Anytime</span>
-            </div>
-          </div>
         </div>
 
 

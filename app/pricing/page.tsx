@@ -6,7 +6,7 @@ import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { CheckCircle2, Zap, ArrowRight, Phone, Calendar, BarChart3, Clock, Shield, Sparkles, Gift, Rocket, Users, BadgeCheck, Lock, FileCheck, Star, HelpCircle, Headphones, DollarSign } from 'lucide-react';
+import { CheckCircle2, Zap, ArrowRight, Phone, Calendar, BarChart3, Clock, Shield, Sparkles, Gift, Rocket, Users, BadgeCheck, Lock, FileCheck, Star, HelpCircle, Headphones, DollarSign, Upload, FileText } from 'lucide-react';
 import Link from 'next/link';
 
 // Animated counter hook
@@ -169,25 +169,33 @@ export default function PricingPage() {
                   </div>
                 </div>
 
-                {/* Simple Bullet List - More compact on mobile */}
-                <ul className="mt-4 sm:mt-6 md:mt-8 space-y-1.5 sm:space-y-2 md:space-y-3 text-xs sm:text-sm text-white/80 px-2">
-                  <li className="flex items-center gap-2 sm:gap-3">
-                    <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0" />
-                    <span>Unlimited AI agents & unlimited leads</span>
-                  </li>
-                  <li className="flex items-center gap-2 sm:gap-3">
-                    <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0" />
-                    <span>Live call transfers straight to your phone</span>
-                  </li>
-                  <li className="flex items-center gap-2 sm:gap-3">
-                    <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0" />
-                    <span>Automatic appointment booking into your calendar</span>
-                  </li>
-                  <li className="flex items-center gap-2 sm:gap-3">
-                    <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0" />
-                    <span>Recordings, transcripts & performance dashboard</span>
-                  </li>
-                </ul>
+                {/* Features with colored icons */}
+                <div className="mt-4 sm:mt-6 md:mt-8 space-y-2.5 sm:space-y-3 md:space-y-4 text-sm sm:text-base px-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                      <Upload className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-400" />
+                    </div>
+                    <span className="text-gray-300">Upload unlimited leads</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                      <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-purple-400" />
+                    </div>
+                    <span className="text-gray-300">AI dials 500+ calls daily</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                      <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-400" />
+                    </div>
+                    <span className="text-gray-300">Books appointments to your calendar</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
+                    </div>
+                    <span className="text-gray-300">Full recordings & transcripts</span>
+                  </div>
+                </div>
 
                 {/* CTA Button - Mobile optimized */}
                 <Link
@@ -211,118 +219,12 @@ export default function PricingPage() {
                   <span className="hidden sm:inline">Cancel anytime · No long-term contracts · Secure payment via Stripe</span>
                 </p>
 
-                {/* Trust Badges Row 1 */}
-                <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-4 sm:mt-6">
-                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full">
-                    <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
-                    <span className="text-[10px] sm:text-xs text-green-400 font-semibold">No Contracts</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 rounded-full">
-                    <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
-                    <span className="text-[10px] sm:text-xs text-blue-400 font-semibold">Live in 24hrs</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full">
-                    <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
-                    <span className="text-[10px] sm:text-xs text-purple-400 font-semibold">Cancel Anytime</span>
-                  </div>
-                </div>
-
-                {/* Trust Badges Row 2 */}
-                <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-3">
-                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
-                    <BadgeCheck className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
-                    <span className="text-[10px] sm:text-xs text-emerald-400 font-semibold">7-Day Money-Back</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 rounded-full">
-                    <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400" />
-                    <span className="text-[10px] sm:text-xs text-cyan-400 font-semibold">Bank-Level SSL</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/30 rounded-full">
-                    <FileCheck className="w-3 h-3 sm:w-4 sm:h-4 text-indigo-400" />
-                    <span className="text-[10px] sm:text-xs text-indigo-400 font-semibold">TCPA Compliant</span>
-                  </div>
-                </div>
-
-                {/* Results Guarantee */}
-                <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-4">
-                  📅 <span className="text-white font-medium">Book your first appointment in 48hrs</span> or we extend your trial free
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Live Stats Banner with Animated Counters */}
-          <div className="scroll-reveal max-w-5xl mx-auto mb-8 sm:mb-12 px-3 sm:px-4">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div ref={callsCounter.ref} className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 backdrop-blur-sm rounded-xl p-4 border border-blue-500/20 text-center">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-400 mb-1">
-                  {callsCounter.count >= 1000000 ? `${(callsCounter.count / 1000000).toFixed(1)}M+` : `${Math.floor(callsCounter.count / 1000)}K+`}
-                </div>
-                <div className="text-gray-400 text-xs sm:text-sm">Calls Made</div>
-              </div>
-              <div ref={appointmentsCounter.ref} className="bg-gradient-to-br from-green-500/10 to-green-600/5 backdrop-blur-sm rounded-xl p-4 border border-green-500/20 text-center">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-green-400 mb-1">
-                  {appointmentsCounter.count >= 1000 ? `${Math.floor(appointmentsCounter.count / 1000)}K+` : `${appointmentsCounter.count}+`}
-                </div>
-                <div className="text-gray-400 text-xs sm:text-sm">Appointments</div>
-              </div>
-              <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 backdrop-blur-sm rounded-xl p-4 border border-purple-500/20 text-center">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-purple-400 mb-1">500+</div>
-                <div className="text-gray-400 text-xs sm:text-sm">Happy Agents</div>
-              </div>
-              <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 backdrop-blur-sm rounded-xl p-4 border border-amber-500/20 text-center">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-amber-400 mb-1">24hrs</div>
-                <div className="text-gray-400 text-xs sm:text-sm">Setup Time</div>
-              </div>
-            </div>
-            {/* Star Rating */}
-            <div className="flex justify-center items-center gap-2 mt-6">
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 fill-yellow-400" />
-                ))}
-              </div>
-              <span className="text-white font-semibold text-sm sm:text-base">4.9/5</span>
-              <span className="text-gray-400 text-xs sm:text-sm">from 127 reviews</span>
-            </div>
-          </div>
-
-          {/* Featured In */}
-          <div className="max-w-4xl mx-auto text-center mb-12 sm:mb-16 px-4">
-            <p className="text-gray-500 text-xs uppercase tracking-wider mb-4">As Featured In</p>
-            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-8 opacity-60">
-              <span className="text-gray-400 font-semibold text-sm sm:text-base">Insurance Marketing Weekly</span>
-              <span className="text-gray-600 hidden sm:inline">•</span>
-              <span className="text-gray-400 font-semibold text-sm sm:text-base">AgentHub Pro</span>
-              <span className="text-gray-600 hidden sm:inline">•</span>
-              <span className="text-gray-400 font-semibold text-sm sm:text-base hidden sm:inline">Life Insurance Daily</span>
-            </div>
-          </div>
-
-          {/* Risk Reversal Box */}
-          <div className="max-w-3xl mx-auto mb-12 sm:mb-16 px-4">
-            <div className="bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10 border-2 border-green-500/30 rounded-2xl p-5 sm:p-8 text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.1),transparent_70%)]" />
-              <div className="relative z-10">
-                <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-green-500/20 rounded-full mb-3 sm:mb-4">
-                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
-                  <span className="text-green-400 font-bold text-xs sm:text-sm">100% RISK-FREE GUARANTEE</span>
-                </div>
-                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2 sm:mb-3">
-                  Book 5+ Appointments in Your First Week
-                </h3>
-                <p className="text-gray-300 text-sm sm:text-lg mb-2 sm:mb-4">
-                  Or we'll <span className="text-green-400 font-semibold">extend your trial for free</span> until you do.
-                </p>
-                <p className="text-gray-500 text-xs sm:text-sm">
-                  No questions asked. No fine print. We're that confident.
-                </p>
               </div>
             </div>
           </div>
 
           {/* Detailed Features Section - Below the Card */}
-          <div className="scroll-reveal max-w-6xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4">
+          <div className="scroll-reveal max-w-6xl mx-auto mt-16 sm:mt-20 md:mt-24 mb-20 sm:mb-28 md:mb-36 px-3 sm:px-4">
             <div className="text-center mb-6 sm:mb-8 md:mb-10">
               <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-white/50 mb-1.5 sm:mb-2">
                 WHAT'S INCLUDED
@@ -339,11 +241,11 @@ export default function PricingPage() {
                 <ul className="space-y-1.5 sm:space-y-2 text-white/70 text-xs sm:text-sm">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span>Unlimited AI agents</span>
+                    <span>500+ dials per day</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span>No daily lead limits</span>
+                    <span>Upload unlimited leads</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
@@ -476,61 +378,43 @@ export default function PricingPage() {
           </div>
 
           {/* ROI Calculator */}
-          <div className="scroll-reveal max-w-4xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4 md:px-0">
-            <div className="bg-gradient-to-br from-green-500/10 to-emerald-600/5 rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 lg:p-10 border border-green-500/20">
-              <div className="text-center mb-5 sm:mb-6 md:mb-8">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1.5 sm:mb-2">See Your ROI</h2>
-                <p className="text-xs sm:text-sm md:text-base text-gray-400 px-2">Conservative estimates with Sterling Dialer Pro ($379/month)</p>
+          <div className="scroll-reveal max-w-4xl mx-auto mb-20 sm:mb-28 md:mb-36 px-3 sm:px-4 md:px-0">
+            <div className="text-center mb-8 sm:mb-10">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">The Numbers Don't Lie</h2>
+              <p className="text-gray-400 text-sm sm:text-base">What $379/month actually gets you</p>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-8">
+              <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-6 text-center border border-gray-800">
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-400 mb-2">500+</div>
+                <div className="text-white font-medium text-xs sm:text-sm">Calls/Day</div>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-                <div className="text-center">
-                  <div className="text-4xl sm:text-5xl font-bold text-green-400 mb-1.5 sm:mb-2">3+</div>
-                  <div className="text-white font-semibold mb-0.5 sm:mb-1 text-sm sm:text-base">Appointments/Day</div>
-                  <div className="text-gray-400 text-xs sm:text-sm">Unlimited calling</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl sm:text-5xl font-bold text-green-400 mb-1.5 sm:mb-2">60+</div>
-                  <div className="text-white font-semibold mb-0.5 sm:mb-1 text-sm sm:text-base">Appointments/Month</div>
-                  <div className="text-gray-400 text-xs sm:text-sm">20 business days</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl sm:text-5xl font-bold text-green-400 mb-1.5 sm:mb-2">12x</div>
-                  <div className="text-white font-semibold mb-0.5 sm:mb-1 text-sm sm:text-base">Return on Investment</div>
-                  <div className="text-gray-400 text-xs sm:text-sm">First month</div>
-                </div>
+              <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-6 text-center border border-gray-800">
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-400 mb-2">3-5</div>
+                <div className="text-white font-medium text-xs sm:text-sm">Appts/Day</div>
               </div>
+              <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-6 text-center border border-gray-800">
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-green-400 mb-2">$6K+</div>
+                <div className="text-white font-medium text-xs sm:text-sm">Monthly Revenue</div>
+              </div>
+            </div>
 
-              <div className="mt-5 sm:mt-5 md:mt-6 lg:mt-8 p-3.5 sm:p-4 md:p-5 lg:p-6 bg-green-500/10 rounded-xl sm:rounded-xl border border-green-500/20">
-                <div className="sm:flex sm:items-start sm:gap-2.5 md:gap-3">
-                  <div className="hidden sm:flex w-7 h-7 md:w-8 md:h-8 rounded-full bg-green-500/20 items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1">
-                    <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white font-bold mb-2 sm:mb-2.5 md:mb-3 text-[15px] sm:text-base md:text-lg">The Math:</div>
-                    <div className="space-y-1.5 sm:space-y-2 md:space-y-2.5">
-                      <p className="text-gray-300 text-[12px] sm:text-xs md:text-sm">
-                        3 appts/day × 20 days = <span className="text-white font-semibold">60 appt.</span>
-                      </p>
-                      <p className="text-gray-300 text-[12px] sm:text-xs md:text-sm">
-                        Close 1 in 10 appointments = <span className="text-white font-semibold">6 policies</span>
-                      </p>
-                      <p className="text-gray-300 text-[12px] sm:text-xs md:text-sm">
-                        6 policies × $1,000 commission = <span className="text-green-400 font-bold text-base sm:text-base md:text-lg lg:text-xl">$6,000</span>
-                      </p>
-                      <p className="text-green-400 font-semibold text-[12px] sm:text-xs md:text-sm mt-2 sm:mt-2.5 md:mt-3 lg:mt-4">
-                        That's lost money sitting in your CRM!!
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 rounded-xl p-5 sm:p-6 border border-green-500/20">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-center">
+                <span className="text-gray-300 text-sm sm:text-base">60 appts</span>
+                <span className="text-gray-500 hidden sm:inline">×</span>
+                <span className="text-gray-300 text-sm sm:text-base">10% close rate</span>
+                <span className="text-gray-500 hidden sm:inline">×</span>
+                <span className="text-gray-300 text-sm sm:text-base">$1,000 commission</span>
+                <span className="text-gray-500">=</span>
+                <span className="text-green-400 font-bold text-xl sm:text-2xl">$6,000/mo</span>
               </div>
             </div>
           </div>
 
 
           {/* Features Grid */}
-          <div className="scroll-reveal max-w-6xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4">
+          <div className="scroll-reveal max-w-6xl mx-auto mb-20 sm:mb-28 md:mb-36 px-3 sm:px-4">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-6 sm:mb-8 md:mb-12 px-4">
               Built for Insurance Professionals
             </h2>
@@ -563,9 +447,9 @@ export default function PricingPage() {
           </div>
 
           {/* Comparison Table */}
-          <div className="scroll-reveal max-w-4xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4">
+          <div className="scroll-reveal max-w-4xl mx-auto mb-20 sm:mb-28 md:mb-36 px-3 sm:px-4">
             <div className="text-center mb-6 sm:mb-10">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-4">Sterling vs Hiring a Caller</h2>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-4">Hiring vs Sterling</h2>
               <p className="text-gray-400 text-sm sm:text-base">See why agents are switching to AI</p>
             </div>
             <div className="bg-[#1A2647]/50 rounded-xl sm:rounded-2xl border border-gray-800 overflow-hidden">
@@ -583,14 +467,13 @@ export default function PricingPage() {
               </div>
               {/* Rows */}
               {[
-                { label: 'Monthly Cost', old: '$3,000+/mo', new: '$379/mo', highlight: true },
-                { label: 'Calls Per Day', old: '50-100', new: '720+', highlight: true },
-                { label: 'Availability', old: '8 hrs/day', new: '24/7', highlight: true },
-                { label: 'Training Time', old: '2-4 weeks', new: 'None', highlight: false },
-                { label: 'Consistency', old: 'Varies daily', new: 'Perfect every time', highlight: false },
-                { label: 'Scale Up', old: 'Hire more people', new: 'Click a button', highlight: true },
+                { label: 'Monthly Cost', old: '$1,600+/mo', new: '$379/mo' },
+                { label: 'Calls Per Day', old: '100-200', new: '500+' },
+                { label: 'Availability', old: '8 hrs/day', new: '24/7' },
+                { label: 'Training Time', old: '2-4 weeks', new: 'None' },
+                { label: 'Scale Up', old: 'Hire more people', new: 'Click a button' },
               ].map((row, i) => (
-                <div key={i} className={`grid grid-cols-3 ${i !== 5 ? 'border-b border-gray-800' : ''}`}>
+                <div key={i} className={`grid grid-cols-3 ${i !== 4 ? 'border-b border-gray-800' : ''}`}>
                   <div className="p-3 sm:p-4 lg:p-5 flex items-center">
                     <span className="text-gray-300 text-[10px] sm:text-xs lg:text-sm">{row.label}</span>
                   </div>
@@ -598,7 +481,7 @@ export default function PricingPage() {
                     <span className="text-gray-500 text-[10px] sm:text-xs lg:text-sm">{row.old}</span>
                   </div>
                   <div className="p-3 sm:p-4 lg:p-5 text-center bg-gradient-to-r from-blue-500/5 to-purple-500/5 flex items-center justify-center">
-                    <span className={`text-[10px] sm:text-xs lg:text-sm font-semibold ${row.highlight ? 'text-green-400' : 'text-white'}`}>
+                    <span className="text-[10px] sm:text-xs lg:text-sm font-semibold text-white">
                       {row.new}
                     </span>
                   </div>
@@ -608,7 +491,7 @@ export default function PricingPage() {
           </div>
 
           {/* FAQ Section */}
-          <div className="scroll-reveal max-w-3xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4">
+          <div className="scroll-reveal max-w-3xl mx-auto mb-20 sm:mb-28 md:mb-36 px-3 sm:px-4">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-6 sm:mb-8 md:mb-12 px-4">
               Frequently Asked Questions
             </h2>
@@ -644,35 +527,12 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* Old Leads Section - Moved to Bottom */}
-          <div className="scroll-reveal-scale max-w-5xl mx-auto mb-12 sm:mb-16 md:mb-20 px-3 sm:px-4 md:px-0">
-            <div className="relative overflow-hidden bg-gradient-to-br from-blue-600/10 to-purple-600/10 rounded-xl sm:rounded-2xl p-6 sm:p-6 md:p-8 lg:p-12 border border-blue-500/30">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-purple-500/0 animate-pulse" />
-              <div className="relative text-center">
-                <h2 className="text-[22px] sm:text-2xl md:text-3xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 sm:mb-4 md:mb-5 lg:mb-6 leading-tight">
-                  Have thousands of old leads collecting dust?
-                </h2>
-                <p className="text-[13.5px] sm:text-base md:text-lg lg:text-xl xl:text-2xl text-gray-300 mb-4 sm:mb-4 md:mb-6 lg:mb-8 leading-relaxed">
-                  Let Sterling Dialer revive them into booked appointments, automatically. 
-                  Those leads from 6 months, 1 year, even 2 years ago? We'll call them ALL!
-                </p>
-                <p className="text-[12.5px] sm:text-sm md:text-base lg:text-lg text-gray-400 mb-5 sm:mb-5 md:mb-8 lg:mb-10 leading-relaxed">
-                  You already paid for those leads. Sterling Dialer just makes sure you get your money's worth.
-                </p>
-                <div className="inline-flex items-center gap-2 sm:gap-2 px-4 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 bg-green-600/20 border border-green-500/40 rounded-xl sm:rounded-xl">
-                  <CheckCircle2 className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 text-green-400" />
-                  <span className="text-green-400 font-bold text-sm sm:text-sm md:text-base">Sterling Dialer pays for itself!</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Schedule Call CTA */}
           <div className="scroll-reveal max-w-2xl mx-auto text-center mb-12 sm:mb-16 px-4">
             <div className="p-6 sm:p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
               <h3 className="text-2xl sm:text-4xl font-bold text-white mb-3">Still Have Questions?</h3>
               <p className="text-gray-400 text-sm sm:text-base mb-6">
-                Book a free 15-minute call and I'll show you exactly how Sterling Dialer can help grow your business today.
+                Book a free 15-minute call and We'll show you exactly how Sterling Dialer can help grow your business today.
               </p>
               <Link
                 href="/schedule-call"
