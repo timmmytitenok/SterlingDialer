@@ -1,123 +1,43 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { PublicNav } from '@/components/public-nav';
 import { MobilePublicNav } from '@/components/mobile-public-nav';
 import { PublicFooter } from '@/components/public-footer';
 import { MobileFooter } from '@/components/mobile-footer';
 import BlurText from '@/components/blur-text';
-import { TrendingUp, Calendar, Phone, DollarSign, Zap, ArrowRight, Sparkles, Rocket, Clock, Star, Users, Target, CheckCircle, Play, Quote, Award, Headphones, HelpCircle } from 'lucide-react';
+import { TrendingUp, Calendar, Phone, DollarSign, Play, Pause, Star, Quote, ArrowRight, Rocket, Users, Zap, Clock, CheckCircle, X } from 'lucide-react';
 import Link from 'next/link';
 
-// Case studies with video testimonials
-const caseStudies = [
-  {
-    name: "Marcus J.",
-    location: "Houston, TX",
-    role: "Independent Agent",
-    avatar: "MJ",
-    color: "blue",
-    videoPlaceholder: true,
-    quote: "I was sitting on 4,000+ leads from the past 3 years. Never had time to call them all. Sterling Dialer called every single one in 6 weeks. My calendar has never been this full.",
-    stats: {
-      firstWeek: {
-        calls: "2,847",
-        connected: "342",
-        appointments: "18",
-      },
-      total: {
-        leads: "4,200",
-        appointments: "67",
-        policies: "14",
-        revenue: "$21,400",
-      }
-    },
-    highlight: "14 policies from 'dead' leads"
-  },
-  {
-    name: "Jennifer T.",
-    location: "Miami, FL", 
-    role: "Agency Owner",
-    avatar: "JT",
-    color: "purple",
-    videoPlaceholder: true,
-    quote: "My team was spending 6 hours a day dialing. Now they spend that time closing. We 3x'd our production in the first 60 days.",
-    stats: {
-      firstWeek: {
-        calls: "4,126",
-        connected: "512",
-        appointments: "31",
-      },
-      total: {
-        leads: "8,500",
-        appointments: "134",
-        policies: "28",
-        revenue: "$42,000",
-      }
-    },
-    highlight: "$42K revenue in 60 days"
-  },
-  {
-    name: "David R.",
-    location: "Phoenix, AZ",
-    role: "Solo Agent (15 Years)",
-    avatar: "DR",
-    color: "green",
-    videoPlaceholder: true,
-    quote: "I've tried every dialer on the market. This is the first one that actually books appointments for me. It's like having 10 SDRs working 24/7.",
-    stats: {
-      firstWeek: {
-        calls: "1,892",
-        connected: "234",
-        appointments: "12",
-      },
-      total: {
-        leads: "2,400",
-        appointments: "48",
-        policies: "11",
-        revenue: "$16,500",
-      }
-    },
-    highlight: "First policy in 72 hours"
-  },
-  {
-    name: "Amanda K.",
-    location: "Atlanta, GA",
-    role: "Team Lead (3 Agents)",
-    avatar: "AK",
-    color: "amber",
-    videoPlaceholder: true,
-    quote: "We were buying fresh leads at $15-20 each. Now we're reviving our old leads for pennies. Our cost per acquisition dropped 80%.",
-    stats: {
-      firstWeek: {
-        calls: "3,456",
-        connected: "428",
-        appointments: "24",
-      },
-      total: {
-        leads: "6,800",
-        appointments: "98",
-        policies: "21",
-        revenue: "$31,500",
-      }
-    },
-    highlight: "80% lower cost per acquisition"
-  }
-];
-
-// Additional testimonials (text only)
+// Text testimonials
 const textTestimonials = [
-  { name: "Robert M.", location: "Dallas, TX", text: "Week 1: 11 appointments. Week 2: 14 appointments. This thing is relentless.", rating: 5 },
-  { name: "Lisa C.", location: "Chicago, IL", text: "My VA was dialing 50 leads a day. Sterling does 700. No comparison.", rating: 5 },
-  { name: "Chris B.", location: "Denver, CO", text: "Closed my first deal within 5 days of signing up. Already paid for itself.", rating: 5 },
-  { name: "Maria S.", location: "Los Angeles, CA", text: "I was skeptical about AI calling. After seeing my calendar, I'm a believer.", rating: 5 },
-  { name: "Steve W.", location: "Seattle, WA", text: "4,000 old leads. 89 appointments. 19 policies. Do the math.", rating: 5 },
-  { name: "Nicole P.", location: "Boston, MA", text: "The AI sounds so natural, clients don't even realize it's not human.", rating: 5 },
+  { name: "Robert M.", location: "El Paso, TX", text: "Week 1 I got 11 appointments. Week 2 I got 14 appointments. Simple but effective.", rating: 5 },
+  { name: "Lisa C.", location: "Chicago, IL", text: "My VA was dialing 200 leads a day. Sterling does 500. No comparison.", rating: 5 },
+  { name: "Chris B.", location: "Charlotte, NC", text: "Closed my first deal within 2 days of signing up. Already paid for itself.", rating: 5 },
+  { name: "Maria S.", location: "Jacksonville, FL", text: "I was skeptical about AI calling. After seeing my calendar, It actully works.", rating: 5 },
+  { name: "Steve W.", location: "Fort Lauderdale, WA", text: "4,000 old leads. 89 appointments. 19 policies. Do the math.", rating: 5 },
+  { name: "Nicole P.", location: "Clevland, TN", text: "The AI sounds so natural, clients don't even realize it's not human.", rating: 5 },
 ];
 
 export default function CaseStudiesPage() {
-  const [activeVideo, setActiveVideo] = useState<number | null>(null);
+  const [isPlaying, setIsPlaying] = useState(true); // Autoplay by default
+  const [isHovered, setIsHovered] = useState(false);
+  const [isPaused, setIsPaused] = useState(false); // User manually paused
+  const [isInView, setIsInView] = useState(false); // Track if video is in viewport
+  const [isMuted, setIsMuted] = useState(true); // Mobile starts muted
+  const [isMobile, setIsMobile] = useState(false); // Track if mobile
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
+  // Check if mobile on mount
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Scroll reveal effect
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -137,23 +57,148 @@ export default function CaseStudiesPage() {
     return () => observer.disconnect();
   }, []);
 
-  const getColorClasses = (color: string) => {
-    const colors: { [key: string]: { bg: string, border: string, text: string, glow: string } } = {
-      blue: { bg: 'from-blue-500/20 to-blue-600/10', border: 'border-blue-500/30', text: 'text-blue-400', glow: 'shadow-blue-500/20' },
-      purple: { bg: 'from-purple-500/20 to-purple-600/10', border: 'border-purple-500/30', text: 'text-purple-400', glow: 'shadow-purple-500/20' },
-      green: { bg: 'from-green-500/20 to-green-600/10', border: 'border-green-500/30', text: 'text-green-400', glow: 'shadow-green-500/20' },
-      amber: { bg: 'from-amber-500/20 to-amber-600/10', border: 'border-amber-500/30', text: 'text-amber-400', glow: 'shadow-amber-500/20' },
+  // Autoplay video silently on mount (volume fades in when scrolling into view)
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = false;
+      videoRef.current.volume = 0; // Start silent, fade in when in view
+      videoRef.current.play().catch(() => {});
+    }
+  }, []);
+
+  // Handle hover volume fade (only when video is in view)
+  useEffect(() => {
+    if (!videoRef.current || !isInView) return;
+    
+    let animationFrame: number;
+    const targetVolume = isHovered ? 0.25 : 0.01; // 25% when hovered, 1% in background
+    
+    const fadeVolume = () => {
+      if (!videoRef.current) return;
+      
+      const currentVolume = videoRef.current.volume;
+      const diff = targetVolume - currentVolume;
+      
+      // Slower fade in (0.015), faster fade out (0.08)
+      const fadeSpeed = isHovered ? 0.015 : 0.08;
+      
+      if (Math.abs(diff) > 0.005) {
+        videoRef.current.volume = currentVolume + diff * fadeSpeed;
+        animationFrame = requestAnimationFrame(fadeVolume);
+      } else {
+        videoRef.current.volume = targetVolume;
+      }
     };
-    return colors[color] || colors.blue;
+    
+    fadeVolume();
+    return () => cancelAnimationFrame(animationFrame);
+  }, [isHovered, isInView]);
+
+  // Fade in/out audio when scrolling in/out of video section (desktop only)
+  useEffect(() => {
+    if (!videoContainerRef.current || !videoRef.current) return;
+
+    let fadeInterval: NodeJS.Timeout;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!videoRef.current) return;
+          
+          if (fadeInterval) clearInterval(fadeInterval);
+          
+          if (entry.isIntersecting) {
+            setIsInView(true);
+            // On mobile, keep muted until user taps
+            if (isMobile) {
+              videoRef.current.volume = 0;
+              return;
+            }
+            // Desktop: Fade in smoothly to 1% background volume when scrolling into view
+            fadeInterval = setInterval(() => {
+              if (!videoRef.current) return;
+              if (videoRef.current.volume < 0.01) {
+                videoRef.current.volume = Math.min(0.01, videoRef.current.volume + 0.0005);
+              } else {
+                clearInterval(fadeInterval);
+              }
+            }, 20);
+          } else {
+            setIsInView(false);
+            // Smoothly fade to silent when scrolling away (both desktop and mobile)
+            setIsHovered(false);
+            
+            // For mobile: also mute when scrolling away
+            if (isMobile) {
+              setIsMuted(true);
+            }
+            
+            // Fade audio to 0 for both desktop and mobile
+            fadeInterval = setInterval(() => {
+              if (!videoRef.current) return;
+              if (videoRef.current.volume > 0.0005) {
+                videoRef.current.volume = Math.max(0, videoRef.current.volume - 0.008); // Faster fade for mobile
+              } else {
+                videoRef.current.volume = 0;
+                clearInterval(fadeInterval);
+              }
+            }, 20);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(videoContainerRef.current);
+    return () => {
+      observer.disconnect();
+      if (fadeInterval) clearInterval(fadeInterval);
+    };
+  }, [isMobile]);
+
+  const toggleVideo = () => {
+    // On mobile, toggle mute/unmute instead of play/pause
+    if (isMobile) {
+      if (videoRef.current) {
+        if (isMuted) {
+          setIsMuted(false);
+          videoRef.current.volume = 0.20; // 20% volume
+        } else {
+          setIsMuted(true);
+          videoRef.current.volume = 0;
+        }
+      }
+      return;
+    }
+    
+    // Desktop: toggle play/pause
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPaused(true);
+      } else {
+        videoRef.current.play();
+        setIsPaused(false);
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
   };
 
   return (
     <div className="min-h-screen bg-[#0B1437] relative overflow-hidden">
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-[1000px] h-[1000px] bg-green-500/8 rounded-full top-[-300px] left-[-300px] animate-pulse" style={{ filter: 'blur(180px)' }} />
-        <div className="absolute w-[900px] h-[900px] bg-blue-500/8 rounded-full top-[30%] right-[-300px] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '1s' }} />
-        <div className="absolute w-[1000px] h-[1000px] bg-purple-500/8 rounded-full bottom-[-200px] left-[20%] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '2s' }} />
+        <div className="absolute w-[1000px] h-[1000px] bg-purple-500/8 rounded-full top-[-300px] left-[-300px]" style={{ filter: 'blur(180px)' }} />
+        <div className="absolute w-[900px] h-[900px] bg-blue-500/8 rounded-full top-[30%] right-[-300px]" style={{ filter: 'blur(180px)' }} />
+        <div className="absolute w-[1000px] h-[1000px] bg-purple-500/8 rounded-full bottom-[-200px] left-[20%]" style={{ filter: 'blur(180px)' }} />
       </div>
 
       {/* Grid Pattern */}
@@ -162,14 +207,17 @@ export default function CaseStudiesPage() {
       <PublicNav />
       <MobilePublicNav />
       
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-24 sm:py-32">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 pt-28 pb-24 sm:py-32">
         {/* Header */}
-        <div className="text-center mb-16 sm:mb-20">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-full mb-6">
-            <TrendingUp className="w-4 h-4 text-green-400 animate-pulse" />
-            <span className="text-green-400 font-semibold">Real Results from Real Agents</span>
+        <div className="text-center mb-20 sm:mb-20">
+          {/* Pill badge - both mobile and desktop */}
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-purple-500/10 border border-purple-500/20 rounded-full mb-5 sm:mb-8">
+            <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400 animate-pulse" />
+            <span className="text-purple-400 font-semibold text-xs sm:text-base">Real Results from Real Agents</span>
           </div>
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 text-center">
+          
+          {/* Desktop Title */}
+          <h1 className="hidden sm:block text-6xl md:text-7xl font-bold mb-6 text-center">
             <div className="flex justify-center">
               <BlurText
                 text="Success Stories"
@@ -183,291 +231,377 @@ export default function CaseStudiesPage() {
               <BlurText
                 text="That Speak for Themselves"
                 delay={120}
-                className="bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent"
+                className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
                 animateBy="words"
                 direction="top"
               />
             </div>
           </h1>
-          <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto">
-            Watch how agents are turning old, dusty leads into booked appointments and closed policies.
+          
+          {/* Mobile Title - 2 lines */}
+          <h1 className="sm:hidden text-4xl font-bold mb-4 text-center">
+            <div className="flex justify-center">
+              <BlurText
+                text="Success Stories"
+                delay={100}
+                className="text-white"
+                animateBy="words"
+                direction="top"
+              />
+            </div>
+            <div className="flex justify-center mt-1">
+              <BlurText
+                text="That Speak For It Self"
+                delay={120}
+                className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+                animateBy="words"
+                direction="top"
+              />
+            </div>
+          </h1>
+          
+          <p className="text-1sm sm:text-xl text-gray-400 max-w-2xl mx-auto">
+            Watch how agents are turning old, dusty leads into booked appointments.
           </p>
+        </div>
 
-          {/* Aggregate Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto mt-10">
-            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-              <p className="text-2xl sm:text-3xl font-bold text-green-400">347</p>
-              <p className="text-gray-400 text-sm">Appointments Booked</p>
+        {/* Platform-Wide Stats Banner - Hidden on Mobile */}
+        <div className="scroll-reveal hidden sm:block mb-32">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl p-5 border border-blue-500/20 text-center">
+              <Phone className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+              <p className="text-3xl font-bold text-white">400K+</p>
+              <p className="text-gray-400 text-sm">Calls Made</p>
             </div>
-            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-              <p className="text-2xl sm:text-3xl font-bold text-blue-400">74</p>
-              <p className="text-gray-400 text-sm">Policies Sold</p>
+            <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 rounded-xl p-5 border border-purple-500/20 text-center">
+              <Calendar className="w-6 h-6 text-purple-400 mx-auto mb-2" />
+              <p className="text-3xl font-bold text-white">3.1K+</p>
+              <p className="text-gray-400 text-sm">Appointments</p>
             </div>
-            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-              <p className="text-2xl sm:text-3xl font-bold text-purple-400">$111K</p>
-              <p className="text-gray-400 text-sm">Total Revenue</p>
+            <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 rounded-xl p-5 border border-emerald-500/20 text-center">
+              <Users className="w-6 h-6 text-emerald-400 mx-auto mb-2" />
+              <p className="text-3xl font-bold text-white">250+</p>
+              <p className="text-gray-400 text-sm">Agents</p>
             </div>
-            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-              <p className="text-2xl sm:text-3xl font-bold text-amber-400">21.9K</p>
-              <p className="text-gray-400 text-sm">Leads Called</p>
+            <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 rounded-xl p-5 border border-amber-500/20 text-center">
+              <DollarSign className="w-6 h-6 text-amber-400 mx-auto mb-2" />
+              <p className="text-3xl font-bold text-white">$1.1M+</p>
+              <p className="text-gray-400 text-sm">Revenue</p>
             </div>
           </div>
         </div>
 
-        {/* Video Case Studies - Alternating Layout */}
-        <div className="space-y-16 sm:space-y-24 mb-20">
-          {caseStudies.map((study, index) => {
-            const colors = getColorClasses(study.color);
-            const isReversed = index % 2 === 1;
-            
-            return (
+        {/* Featured Video Testimonial */}
+        <div className="scroll-reveal mb-32 sm:mb-40 mt-4 sm:mt-32">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-20 items-center justify-center max-w-5xl mx-auto">
+            {/* Video Section - Centered */}
+            <div className="flex justify-center relative">
+              {/* Glow Effect Behind Phone */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-[310px] h-[460px] sm:w-[440px] sm:h-[660px] bg-gradient-to-br from-purple-500/40 via-blue-500/30 to-pink-500/40 rounded-full blur-[60px] sm:blur-[80px] animate-pulse" />
+              </div>
+              <div 
+                ref={videoContainerRef}
+                className="relative aspect-[9/16] w-[245px] sm:w-[330px] cursor-pointer z-10"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                onClick={toggleVideo}
+              >
+                {/* Phone Frame */}
+                <div className="absolute inset-0 bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border-[3px] sm:border-4 border-gray-700 shadow-2xl shadow-purple-500/30 overflow-hidden">
+                  {/* Notch */}
+                  <div className="absolute top-1.5 sm:top-2 left-1/2 -translate-x-1/2 w-14 sm:w-20 h-4 sm:h-6 bg-gray-800 rounded-full z-20" />
+                  
+                  {/* Video Element */}
+                  <video
+                    ref={videoRef}
+                    className="absolute inset-3 sm:inset-4 rounded-[1.5rem] sm:rounded-[2rem] w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] h-[calc(100%-1.5rem)] sm:h-[calc(100%-2rem)] object-cover"
+                    poster="/testimonials/marcus-thumbnail.jpg"
+                    playsInline
+                    loop
+                    autoPlay
+                  >
+                    <source src="/testimonials/marcus-testimonial.mp4" type="video/mp4" />
+                  </video>
+                  
+                  {/* Paused Overlay - Desktop only */}
+                  {isPaused && !isMobile && (
+                    <div className="absolute inset-3 sm:inset-4 rounded-[1.5rem] sm:rounded-[2rem] bg-black/40 flex flex-col items-center justify-center z-10">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/20 backdrop-blur-sm border-2 border-purple-500/50 flex items-center justify-center">
+                        <Play className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400 ml-0.5" />
+                      </div>
+                      <p className="text-white/80 text-[10px] sm:text-xs mt-2 sm:mt-3 font-medium">Tap to play</p>
+                    </div>
+                  )}
+                  
+                  {/* Pause button on hover - Desktop */}
+                  {!isPaused && isHovered && !isMobile && (
+                    <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all">
+                      <Pause className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                    </div>
+                  )}
+                  
+                  {/* Mobile: Clean mute/unmute indicator */}
+                  {isMobile && (
+                    <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-20 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ease-out ${isMuted ? 'bg-black/60 scale-100' : 'bg-purple-500/90 scale-110'}`}>
+                      <span className={`text-lg transition-transform duration-300 ${isMuted ? 'scale-100' : 'scale-110'}`}>{isMuted ? '🔇' : '🔊'}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Section - Cleaner Design */}
+            <div className="flex-1 max-w-md lg:pl-8 w-full px-2 sm:px-0">
+              {/* Name & Location - Centered on mobile */}
+              <div className="text-center lg:text-left mb-4 sm:mb-6">
+                <h2 className="text-2xl sm:text-4xl font-bold text-white mb-0.5 sm:mb-1">Vlad B.</h2>
+                <p className="text-gray-400 text-sm sm:text-sm">Independent Agent • Cleveland, OH</p>
+              </div>
+              
+              {/* Stats Grid - 2x2 on mobile, 2x2 on desktop */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-3 mb-4 sm:mb-6">
+                <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-4 border border-gray-800 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-blue-400">5,694</p>
+                  <p className="text-gray-500 text-xs sm:text-xs mt-1 sm:mt-1">Calls</p>
+                </div>
+                <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-4 border border-gray-800 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-purple-400">24</p>
+                  <p className="text-gray-500 text-xs sm:text-xs mt-1 sm:mt-1">Appts</p>
+                </div>
+                <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-4 border border-gray-800 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-emerald-400">8</p>
+                  <p className="text-gray-500 text-xs sm:text-xs mt-1 sm:mt-1">Policies</p>
+                </div>
+                <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-4 border border-gray-800 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-amber-400">$7.2K</p>
+                  <p className="text-gray-500 text-xs sm:text-xs mt-1 sm:mt-1">Revenue</p>
+                </div>
+              </div>
+              
+              {/* Quote - Hidden on mobile, shown on tablet+ */}
+              <div className="hidden sm:block bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-gray-300 text-sm italic leading-relaxed">
+                  "Sterling Dialer called every single one of my old leads in the last 4 weeks. My calendar has never been this full and I was able to make an extra $7K this month of December."
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* More Agent Reviews */}
+        <div className="scroll-reveal mb-30 sm:mb-36">
+          <div className="text-center mb-6 sm:mb-10">
+            <h2 className="text-3xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">More Agent Reviews</h2>
+            <p className="text-gray-400 text-sm sm:text-base">What other agents are saying</p>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 max-w-6xl mx-auto">
+            {textTestimonials.map((testimonial, index) => (
               <div
                 key={index}
-                className={`scroll-reveal grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center ${isReversed ? 'lg:flex-row-reverse' : ''}`}
+                className="bg-white/5 backdrop-blur-sm rounded-lg sm:rounded-xl p-4 sm:p-6 border border-white/10 hover:border-purple-500/30 transition-all"
               >
-                {/* Video Section */}
-                <div className={`${isReversed ? 'lg:order-2' : 'lg:order-1'}`}>
-                  <div className={`relative aspect-[9/16] max-w-[280px] sm:max-w-[320px] mx-auto lg:mx-0 ${isReversed ? 'lg:ml-auto' : ''}`}>
-                    {/* Phone Frame */}
-                    <div className="absolute inset-0 bg-gray-900 rounded-[2.5rem] border-4 border-gray-700 shadow-2xl overflow-hidden">
-                      {/* Notch */}
-                      <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-6 bg-gray-800 rounded-full z-10" />
-                      
-                      {/* Video Content Placeholder */}
-                      <div className={`absolute inset-4 rounded-[2rem] bg-gradient-to-br ${colors.bg} flex flex-col items-center justify-center`}>
-                        {/* Play Button */}
-                        <button 
-                          onClick={() => setActiveVideo(activeVideo === index ? null : index)}
-                          className={`w-20 h-20 rounded-full bg-white/10 backdrop-blur-sm border-2 ${colors.border} flex items-center justify-center hover:scale-110 transition-all group`}
-                        >
-                          <Play className={`w-8 h-8 ${colors.text} ml-1 group-hover:scale-110 transition-transform`} />
-                        </button>
-                        <p className="text-white/60 text-sm mt-4">Watch Testimonial</p>
-                        
-                        {/* Avatar at bottom */}
-                        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center">
-                          <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${colors.bg} border-2 ${colors.border} flex items-center justify-center mx-auto mb-2`}>
-                            <span className={`text-xl font-bold ${colors.text}`}>{study.avatar}</span>
-                          </div>
-                          <p className="text-white font-semibold">{study.name}</p>
-                          <p className="text-gray-400 text-sm">{study.location}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats Section */}
-                <div className={`${isReversed ? 'lg:order-1' : 'lg:order-2'}`}>
-                  <div className={`bg-[#1A2647]/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 border ${colors.border} hover:shadow-xl ${colors.glow} transition-all`}>
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-6">
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-2xl sm:text-3xl font-bold text-white">{study.name}</h3>
-                          <div className="flex">
-                            {[1,2,3,4,5].map(s => (
-                              <Star key={s} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                            ))}
-                          </div>
-                        </div>
-                        <p className="text-gray-400">{study.role} • {study.location}</p>
-                      </div>
-                      <div className={`p-3 rounded-xl bg-gradient-to-br ${colors.bg} border ${colors.border}`}>
-                        <Award className={`w-6 h-6 ${colors.text}`} />
-                      </div>
-                    </div>
-
-                    {/* Quote */}
-                    <div className={`relative mb-6 p-4 bg-[#0B1437]/50 rounded-xl border-l-4 ${colors.border}`}>
-                      <Quote className={`absolute top-2 right-2 w-6 h-6 ${colors.text} opacity-30`} />
-                      <p className="text-gray-300 italic leading-relaxed">"{study.quote}"</p>
-                    </div>
-
-                    {/* First 7 Days Stats */}
-                    <div className="mb-6">
-                      <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">First 7 Days</p>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="bg-[#0B1437]/50 rounded-xl p-3 text-center">
-                          <p className="text-xl sm:text-2xl font-bold text-blue-400">{study.stats.firstWeek.calls}</p>
-                          <p className="text-gray-500 text-xs">Calls Made</p>
-                        </div>
-                        <div className="bg-[#0B1437]/50 rounded-xl p-3 text-center">
-                          <p className="text-xl sm:text-2xl font-bold text-purple-400">{study.stats.firstWeek.connected}</p>
-                          <p className="text-gray-500 text-xs">Connected</p>
-                        </div>
-                        <div className="bg-[#0B1437]/50 rounded-xl p-3 text-center">
-                          <p className="text-xl sm:text-2xl font-bold text-green-400">{study.stats.firstWeek.appointments}</p>
-                          <p className="text-gray-500 text-xs">Appointments</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Total Results */}
-                    <div className="mb-6">
-                      <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Total Results</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <div className="bg-[#0B1437]/50 rounded-xl p-3 text-center">
-                          <p className="text-lg sm:text-xl font-bold text-blue-400">{study.stats.total.leads}</p>
-                          <p className="text-gray-500 text-xs">Leads Called</p>
-                        </div>
-                        <div className="bg-[#0B1437]/50 rounded-xl p-3 text-center">
-                          <p className="text-lg sm:text-xl font-bold text-purple-400">{study.stats.total.appointments}</p>
-                          <p className="text-gray-500 text-xs">Appointments</p>
-                        </div>
-                        <div className="bg-[#0B1437]/50 rounded-xl p-3 text-center">
-                          <p className="text-lg sm:text-xl font-bold text-green-400">{study.stats.total.policies}</p>
-                          <p className="text-gray-500 text-xs">Policies</p>
-                        </div>
-                        <div className="bg-[#0B1437]/50 rounded-xl p-3 text-center">
-                          <p className="text-lg sm:text-xl font-bold text-amber-400">{study.stats.total.revenue}</p>
-                          <p className="text-gray-500 text-xs">Revenue</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Highlight Badge */}
-                    <div className={`inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r ${colors.bg} border ${colors.border} rounded-full`}>
-                      <Sparkles className={`w-4 h-4 ${colors.text}`} />
-                      <span className={`${colors.text} font-semibold text-sm`}>{study.highlight}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Additional Text Testimonials */}
-        <div className="mb-20">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">More Agent Reviews</h2>
-            <p className="text-gray-400">Real feedback from agents across the country</p>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {textTestimonials.map((testimonial, index) => (
-              <div 
-                key={index}
-                className="scroll-reveal bg-[#1A2647]/60 backdrop-blur-sm rounded-xl p-6 border border-gray-800 hover:border-blue-500/30 transition-all hover:scale-[1.02]"
-              >
-                <div className="flex items-center gap-1 mb-4">
-                  {[1,2,3,4,5].map(s => (
-                    <Star key={s} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                <div className="flex items-center gap-0.5 sm:gap-1 mb-2 sm:mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
                   ))}
                 </div>
-                <p className="text-gray-300 mb-4 leading-relaxed">"{testimonial.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">{testimonial.name.split(' ').map(n => n[0]).join('')}</span>
+                <p className="text-gray-300 text-sm sm:text-base mb-3 sm:mb-4 leading-relaxed">"{testimonial.text}"</p>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
+                    {testimonial.name.split(' ').map(n => n[0]).join('')}
                   </div>
                   <div>
-                    <p className="text-white font-semibold text-sm">{testimonial.name}</p>
-                    <p className="text-gray-500 text-xs">{testimonial.location}</p>
+                    <p className="text-white font-medium text-sm sm:text-base">{testimonial.name}</p>
+                    <p className="text-gray-500 text-xs sm:text-sm">{testimonial.location}</p>
                   </div>
                 </div>
-              </div>
+                      </div>
             ))}
-          </div>
-        </div>
-
-        {/* Aggregate Stats Banner */}
-        <div className="scroll-reveal bg-gradient-to-r from-green-600/20 via-emerald-600/10 to-green-600/20 rounded-2xl p-8 sm:p-12 border border-green-500/30 mb-20">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2">Platform-Wide Results</h2>
-            <p className="text-gray-400">What Sterling Dialer has achieved for all agents combined</p>
-          </div>
-          
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            <div className="text-center">
-              <p className="text-4xl sm:text-5xl font-bold text-green-400 mb-2">2.4M+</p>
-              <p className="text-gray-400">Total Calls Made</p>
-            </div>
-            <div className="text-center">
-              <p className="text-4xl sm:text-5xl font-bold text-blue-400 mb-2">47K+</p>
-              <p className="text-gray-400">Appointments Booked</p>
-            </div>
-            <div className="text-center">
-              <p className="text-4xl sm:text-5xl font-bold text-purple-400 mb-2">500+</p>
-              <p className="text-gray-400">Happy Agents</p>
-            </div>
-            <div className="text-center">
-              <p className="text-4xl sm:text-5xl font-bold text-amber-400 mb-2">$2.1M+</p>
-              <p className="text-gray-400">Revenue Generated</p>
+                      </div>
+                    </div>
+                    
+        {/* Before vs After Comparison */}
+        <div className="scroll-reveal mb-30 sm:mb-36">
+          <div className="text-center mb-6 sm:mb-10">
+            <h2 className="text-4xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Before vs After</h2>
+            <p className="text-gray-400 text-sm sm:text-base">The difference AI automation makes</p>
+                    </div>
+                    
+          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
+            {/* Before */}
+            <div className="bg-gradient-to-br from-red-500/10 to-red-600/5 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-red-500/20">
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white">Before Sterling</h3>
+              </div>
+              <div className="space-y-2 sm:space-y-4">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-300 text-sm sm:text-base">100 calls/day manually</p>
+                </div>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-300 text-sm sm:text-base">1-3 appointments/day</p>
+                </div>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-300 text-sm sm:text-base">Old leads collecting dust</p>
+                </div>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-300 text-sm sm:text-base">Inconsistent follow-up</p>
+                </div>
+                    </div>
+                  </div>
+                  
+            {/* After */}
+            <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-emerald-500/20">
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
+                    </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white">After Sterling</h3>
+                    </div>
+              <div className="space-y-2 sm:space-y-4">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-300 text-sm sm:text-base">500+ calls/day on autopilot</p>
+                    </div>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-300 text-sm sm:text-base">4-6 appointments/day</p>
+                    </div>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-300 text-sm sm:text-base">Every lead gets worked</p>
+                    </div>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-300 text-sm sm:text-base">Consistent daily outreach</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* The Math Section */}
-        <div className="scroll-reveal bg-gradient-to-br from-blue-600/10 to-purple-600/10 rounded-2xl p-8 sm:p-12 border border-blue-500/30 mb-20">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-10">
-            The Math Is Simple
-          </h2>
-          <div className="grid sm:grid-cols-3 gap-8 text-center">
-            <div className="group">
-              <div className="w-20 h-20 rounded-2xl bg-blue-500/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-all border border-blue-500/30">
-                <DollarSign className="w-10 h-10 text-blue-400" />
-              </div>
-              <p className="text-4xl font-bold text-blue-400 mb-2">$379</p>
-              <p className="text-gray-400">Per Month</p>
+        <div className="scroll-reveal mb-30 sm:mb-36">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-6 sm:mb-10">
+              <h2 className="text-xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Vlad's Results for $379/month</h2>
+              <p className="text-gray-400 text-sm sm:text-base">Real numbers from his first month</p>
             </div>
 
-            <div className="group">
-              <div className="w-20 h-20 rounded-2xl bg-purple-500/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-all border border-purple-500/30">
-                <Phone className="w-10 h-10 text-purple-400" />
+            {/* Desktop: 3 columns with icons */}
+            <div className="hidden sm:grid grid-cols-3 gap-4 mb-8">
+              <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl p-6 border border-blue-500/20 text-center">
+                <Phone className="w-8 h-8 text-blue-400 mx-auto mb-3" />
+                <p className="text-3xl font-bold text-white mb-1">5,694</p>
+                <p className="text-gray-400 text-sm">Calls Made</p>
               </div>
-              <p className="text-4xl font-bold text-purple-400 mb-2">720+</p>
-              <p className="text-gray-400">Dials Per Day</p>
+              <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 rounded-xl p-6 border border-purple-500/20 text-center">
+                <Calendar className="w-8 h-8 text-purple-400 mx-auto mb-3" />
+                <p className="text-3xl font-bold text-white mb-1">24</p>
+                <p className="text-gray-400 text-sm">Appointments Booked</p>
+              </div>
+              <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 rounded-xl p-6 border border-emerald-500/20 text-center">
+                <DollarSign className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
+                <p className="text-3xl font-bold text-white mb-1">$7.2K</p>
+                <p className="text-gray-400 text-sm">Revenue Generated</p>
+              </div>
             </div>
 
-            <div className="group">
-              <div className="w-20 h-20 rounded-2xl bg-green-500/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-all border border-green-500/30">
-                <Target className="w-10 h-10 text-green-400" />
+            {/* Mobile: Stacked rows */}
+            <div className="sm:hidden space-y-2 mb-6">
+              <div className="bg-[#1A2647]/60 rounded-lg p-4 border border-gray-800 flex items-center justify-between">
+                <span className="text-gray-300 text-sm">Calls Made</span>
+                <span className="text-xl font-bold text-blue-400">5,694</span>
               </div>
-              <p className="text-4xl font-bold text-green-400 mb-2">1</p>
-              <p className="text-gray-400">Policy = ROI</p>
+              <div className="bg-[#1A2647]/60 rounded-lg p-4 border border-gray-800 flex items-center justify-between">
+                <span className="text-gray-300 text-sm">Appointments</span>
+                <span className="text-xl font-bold text-purple-400">24</span>
+              </div>
+              <div className="bg-[#1A2647]/60 rounded-lg p-4 border border-gray-800 flex items-center justify-between">
+                <span className="text-gray-300 text-sm">Policies Sold</span>
+                <span className="text-xl font-bold text-amber-400">8</span>
+              </div>
+              <div className="bg-[#1A2647]/60 rounded-lg p-4 border border-gray-800 flex items-center justify-between">
+                <span className="text-gray-300 text-sm">Revenue</span>
+                <span className="text-xl font-bold text-emerald-400">$7.2K</span>
+              </div>
+            </div>
+
+            {/* Desktop: Full ROI breakdown */}
+            <div className="hidden sm:block bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl p-6 border border-purple-500/20">
+              <div className="flex items-center justify-center gap-6 text-center">
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">Vlad Paid</p>
+                  <p className="text-2xl font-bold text-white">$379</p>
+                </div>
+                <ArrowRight className="w-6 h-6 text-purple-400" />
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">Vlad's Return</p>
+                  <p className="text-2xl font-bold text-emerald-400">$7,200</p>
+                </div>
+                <ArrowRight className="w-6 h-6 text-purple-400" />
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">Vlad's ROI</p>
+                  <p className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">19x</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile: Simplified ROI */}
+            <div className="sm:hidden bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl p-4 border border-purple-500/20 text-center">
+              <p className="text-gray-400 text-xs mb-1">Return on Investment</p>
+              <p className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">19x ROI</p>
+              <p className="text-gray-500 text-xs mt-2">$379 → $7,200</p>
             </div>
           </div>
-          <p className="text-center text-gray-300 mt-10 text-lg max-w-2xl mx-auto">
-            Sterling Dialer pays for itself with <span className="text-green-400 font-bold">ONE policy</span>. 
-            Everything after that is pure profit for your business.
-          </p>
         </div>
 
-        {/* CTA */}
-        <div className="scroll-reveal text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-            Ready to Write Your Success Story?
+        {/* CTA Section */}
+        <div className="scroll-reveal text-center pb-14 sm:pb-24">
+          <div className="max-w-2xl mx-auto p-5 sm:p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl sm:rounded-2xl border border-purple-500/20">
+            <h2 className="text-xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">
+              Ready to Be Our Next Success?
           </h2>
-          <p className="text-lg sm:text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-            You already paid for those leads. Let's make sure you get your money's worth.
+            <p className="text-gray-400 text-xs sm:text-base mb-4 sm:mb-6">
+              7-day free trial and see results in your first week.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/signup"
-              className="group px-8 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold text-lg rounded-xl transition-all hover:scale-105 hover:shadow-2xl hover:shadow-green-500/50 flex items-center justify-center gap-2"
+              className="inline-flex items-center gap-2 px-5 py-2.5 sm:px-8 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-sm sm:text-lg rounded-lg sm:rounded-xl transition-all hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30"
             >
-              <Rocket className="w-6 h-6 group-hover:translate-y-[-4px] transition-transform" />
-              Start Your Free Trial
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <Rocket className="w-4 h-4 sm:w-5 sm:h-5" />
+              Start Free Trial
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </Link>
-            <Link
-              href="/demo"
-              className="px-8 sm:px-10 py-4 sm:py-5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold text-lg rounded-xl transition-all hover:scale-105"
-            >
-              Hear Demo Calls
-            </Link>
+            <p className="text-gray-500 text-[10px] sm:text-sm mt-3 sm:mt-4">
+              7-day free trial • Cancel anytime
+            </p>
           </div>
-          <p className="text-sm text-gray-400 mt-6">
-            <Zap className="w-4 h-4 inline mr-1 text-green-400 animate-pulse" />
-            7 Days Free • Only Pay <span className="text-green-400 font-bold">$0.35/min</span> for Calls
-          </p>
         </div>
       </div>
 
       <PublicFooter />
       <MobileFooter />
 
-      </div>
+      <style jsx>{`
+        .scroll-reveal {
+          opacity: 0;
+          transform: translateY(30px);
+          transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .scroll-reveal.revealed {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      `}</style>
+    </div>
   );
 }

@@ -246,7 +246,7 @@ export function MobilePublicNav() {
               <div className="w-8 h-8 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-lg flex items-center justify-center shadow-lg">
                 <span className="text-sm font-bold text-white">SD</span>
               </div>
-              <span className="text-base font-bold text-white">Menu</span>
+              <span className="text-base font-bold text-white">Sterling Dialer</span>
             </div>
             <button
               onClick={() => setIsOpen(false)}
@@ -416,10 +416,12 @@ export function MobilePublicNav() {
             </div>
           </nav>
 
-          {/* CTA Section - Conditional - Now inside scrollable area */}
+          {/* CTA Section - Conditional - Now inside scrollable area - Hidden when legal menu is open */}
           <div 
-            className="p-4 border-t border-gray-800/50 space-y-3"
-            style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+            className={`p-4 border-t border-gray-800/50 space-y-3 transition-all duration-300 ${
+              legalOpen ? 'opacity-0 pointer-events-none h-0 p-0 border-0 overflow-hidden' : 'opacity-100'
+            }`}
+            style={{ paddingBottom: legalOpen ? '0' : 'max(1rem, env(safe-area-inset-bottom))' }}
           >
             {isLoading ? (
               // LOADING: Show skeleton
@@ -438,7 +440,7 @@ export function MobilePublicNav() {
                     animation: isOpen ? 'fadeInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both' : 'none'
                   }}
                 >
-                  <p className="text-xs text-green-400 font-semibold mb-1">🚀 30-DAY FREE TRIAL</p>
+                  <p className="text-xs text-green-400 font-semibold mb-1">🚀 7-DAY FREE TRIAL</p>
                   <p className="text-sm text-white font-bold mb-1">$379/month after trial</p>
                   <p className="text-xs text-gray-400">+ $0.35/min for calls</p>
                 </div>
@@ -447,7 +449,7 @@ export function MobilePublicNav() {
                 <Link
                   href="/signup"
                   onClick={() => setIsOpen(false)}
-                  className="block w-full py-3.5 px-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white font-bold rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/40 active:scale-95 text-center"
+                  className="relative block w-full py-3.5 px-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white font-bold rounded-xl transition-all duration-300 hover:scale-[1.02] active:scale-95 text-center shadow-[0_0_30px_rgba(147,51,234,0.5),0_0_60px_rgba(99,102,241,0.3)] hover:shadow-[0_0_40px_rgba(147,51,234,0.6),0_0_80px_rgba(99,102,241,0.4)]"
                   style={{
                     animation: isOpen ? 'fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both' : 'none'
                   }}

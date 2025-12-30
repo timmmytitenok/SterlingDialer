@@ -5,7 +5,7 @@ import { Mail, Phone, Smartphone } from 'lucide-react';
 
 export function MobileFooter() {
   return (
-    <footer className="lg:hidden relative bg-gradient-to-b from-[#0B1437] to-[#0A1129] border-t border-gray-800/50 pt-10 pb-6 px-4 overflow-hidden">
+    <footer className="lg:hidden relative bg-gradient-to-b from-[#0B1437] to-[#0A1129] border-t border-gray-800/50 border-b-4 border-b-gray-700 pt-10 pb-6 px-4 overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
         <div className="absolute w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -bottom-20 -left-20" />

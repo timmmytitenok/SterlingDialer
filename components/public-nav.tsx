@@ -213,14 +213,14 @@ export function PublicNav() {
           </div>
           
           {/* Right Side: Conditional Based on Auth */}
-          <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-4 flex-shrink-0 min-w-[220px] justify-end">
             {isLoading ? (
-              // LOADING: Show skeleton
+              // LOADING: Show skeleton that matches actual button sizes
               <div className="flex items-center gap-4">
-                {/* Sign In skeleton */}
-                <div className="w-16 h-6 bg-white/10 rounded animate-pulse" />
-                {/* Button skeleton */}
-                <div className="w-32 h-10 bg-gradient-to-r from-purple-600/30 to-blue-600/30 rounded-full animate-pulse" />
+                {/* Sign In skeleton - matches px-4 py-2 */}
+                <div className="w-[60px] h-[40px] bg-white/5 rounded-lg" />
+                {/* Button skeleton - matches px-7 py-3 with icon */}
+                <div className="w-[156px] h-[44px] bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full" />
               </div>
             ) : user === null ? (
               // NOT LOGGED IN: Show Sign In + Start Free Trial
@@ -259,10 +259,10 @@ export function PublicNav() {
           </div>
 
           {/* Mobile CTA - Conditional */}
-          <div className="lg:hidden">
+          <div className="lg:hidden min-w-[100px]">
             {isLoading ? (
-              // Mobile skeleton
-              <div className="w-24 h-10 bg-gradient-to-r from-purple-600/30 to-indigo-600/30 rounded-lg animate-pulse" />
+              // Mobile skeleton - matches actual button size
+              <div className="w-[100px] h-[42px] bg-gradient-to-r from-purple-600/15 to-indigo-600/15 rounded-lg" />
             ) : user !== null ? (
               <Link 
                 href="/dashboard" 

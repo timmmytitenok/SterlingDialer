@@ -3,7 +3,7 @@ import { Shield, Lock, ArrowRight, CheckCircle } from 'lucide-react';
 
 export function PublicFooter() {
   return (
-    <footer className="hidden lg:block relative z-10 border-t border-gray-800/50">
+    <footer className="hidden lg:block relative z-10 border-t border-gray-800/50 border-b-4 border-b-gray-700">
       {/* Main Footer */}
       <div className="bg-[#0A1129]/80 backdrop-blur-sm">
         <div className="container mx-auto px-8 py-10">

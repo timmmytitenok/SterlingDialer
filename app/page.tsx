@@ -167,9 +167,9 @@ export default function LandingPage() {
                     direction="top"
                   />
                 </div>
-                <div className="flex justify-center mb-1 text-5xl">
+                <div className="flex justify-center mb-1 text-3xl">
                   <BlurText
-                    text="Book More Appointments"
+                    text="Books Appointments"
                     delay={120}
                     className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400"
                     animateBy="words"
@@ -202,7 +202,7 @@ export default function LandingPage() {
             </h1>
 
             {/* Subheadline */}
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 mb-12 lg:mb-15 max-w-3xl mx-auto leading-relaxed text-center animate-slide-up px-4" style={{ animationDelay: '0.1s' }}>
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 mb-16 lg:mb-15 max-w-3xl mx-auto leading-relaxed text-center animate-slide-up px-4" style={{ animationDelay: '0.1s' }}>
               Have thousands of old life insurance leads collecting dust? Let Sterling Dialer revive them into booked appointments!
             </p>
 
@@ -220,7 +220,7 @@ export default function LandingPage() {
             </div>
 
             {/* Mobile App Badge - COMING SOON (MOBILE ONLY) */}
-            <div className="lg:hidden inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-2 border-purple-500/50 rounded-full mb-12 lg:mb-20 hover:scale-105 transition-transform cursor-pointer animate-slide-up mx-auto" style={{ animationDelay: '0.25s' }}>
+            <div className="lg:hidden inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-2 border-purple-500/50 rounded-full mb-16 lg:mb-20 hover:scale-105 transition-transform cursor-pointer animate-slide-up mx-auto" style={{ animationDelay: '0.25s' }}>
               <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 animate-pulse flex-shrink-0" />
               <span className="text-xs sm:text-sm text-white font-bold text-center">
                 <span className="text-purple-400">iOS & Android App</span> Coming Soon! 📱
@@ -249,7 +249,7 @@ export default function LandingPage() {
             </div>
 
             {/* Live Stats Counter with Animation */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 max-w-5xl mx-auto animate-slide-up px-4" style={{ animationDelay: '0.45s' }}>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 max-w-5xl mx-auto animate-slide-up px-4 mt-32 sm:mt-14 lg:mt-0" style={{ animationDelay: '0.45s' }}>
               <div ref={callsCounter.ref} className="scroll-reveal bg-gradient-to-br from-blue-500/10 to-blue-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-blue-500/20 text-center">
                 <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-400 mb-1 lg:mb-2">
                   {Math.floor(callsCounter.count / 1000)}K+
@@ -396,7 +396,7 @@ export default function LandingPage() {
                   Book 10+ Appointments in Your First Week
                 </h3>
                 <p className="text-gray-500 text-sm">
-                  No questions asked. No fine print. We're that confident.
+                  No questions asked. We're that confident.
                 </p>
               </div>
             </div>
@@ -416,11 +416,11 @@ export default function LandingPage() {
                 <div className="p-4 sm:p-6"></div>
                 <div className="p-4 sm:p-6 text-center border-x border-gray-800">
                   <p className="text-gray-400 text-sm mb-1">Traditional</p>
-                  <p className="text-white font-bold">Hiring Callers</p>
+                  <p className="text-white font-bold">Hiring</p>
                 </div>
                 <div className="p-4 sm:p-6 text-center bg-gradient-to-r from-blue-500/10 to-purple-500/10">
                   <p className="text-blue-400 text-sm mb-1">AI-Powered</p>
-                  <p className="text-white font-bold">Sterling Dialer</p>
+                  <p className="text-white font-bold">Sterling</p>
                 </div>
               </div>
               {/* Rows */}
@@ -676,7 +676,7 @@ export default function LandingPage() {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-105 group"
               >
                 <Phone className="w-5 h-5" />
-                Schedule Free Consultation
+                Free Consultation Call
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -684,7 +684,7 @@ export default function LandingPage() {
         </section>
 
         {/* Professional Footer - Desktop Only */}
-        <footer className="hidden lg:block relative z-10 border-t border-gray-800/50">
+        <footer className="hidden lg:block relative z-10 border-t border-gray-800/50 border-b-4 border-b-gray-700">
           {/* Main Footer */}
           <div className="bg-[#0A1129]/80 backdrop-blur-sm">
             <div className="container mx-auto px-8 py-10">

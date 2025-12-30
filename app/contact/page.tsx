@@ -79,14 +79,16 @@ export default function ContactPage() {
       {/* Grid Pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.08)_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 py-32">
+      <div className="relative z-10 max-w-6xl mx-auto px-3 sm:px-4 pt-28 pb-20 sm:py-32">
         {/* Header */}
-        <div className="text-center mb-22 animate-in fade-in slide-in-from-bottom duration-700">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-6">
-            <Mail className="w-4 h-4 text-blue-400 animate-pulse" />
-            <span className="text-blue-400 font-semibold">Get In Touch</span>
+        <div className="text-center mb-10 sm:mb-16 animate-in fade-in slide-in-from-bottom duration-700">
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-4 sm:mb-6">
+            <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400 animate-pulse" />
+            <span className="text-blue-400 font-semibold text-xs sm:text-base">Get In Touch</span>
           </div>
-          <h1 className="text-6xl md:text-8xl font-bold mb-6 text-center">
+          
+          {/* Desktop Title */}
+          <h1 className="hidden sm:block text-6xl md:text-8xl font-bold mb-6 text-center">
             <div className="flex justify-center">
               <BlurText
                 text="Contact"
@@ -106,10 +108,38 @@ export default function ContactPage() {
               />
             </div>
           </h1>
-          <p className="text-1xl text-gray-400 max-w-2xl mx-auto">
+          
+          {/* Mobile Title */}
+          <div className="sm:hidden text-center mb-4">
+            <div className="flex justify-center">
+              <BlurText
+                text="Contact"
+                delay={100}
+                className="text-white text-6xl font-bold"
+                animateBy="words"
+                direction="top"
+              />
+            </div>
+            <div className="flex justify-center mt-1">
+              <BlurText
+                text="Sterling Support"
+                delay={120}
+                className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent text-4xl font-bold"
+                animateBy="words"
+                direction="top"
+              />
+            </div>
+          </div>
+          
+          {/* Desktop subtitle */}
+          <p className="hidden sm:block text-lg text-gray-400 max-w-2xl mx-auto">
             Questions about reviving your old leads? We're always here happy to help.
           </p>
-
+          
+          {/* Mobile subtitle */}
+          <p className="sm:hidden text-sm text-gray-400 max-w-xs mx-auto px-2">
+            Questions? We're here to help.
+          </p>
         </div>
 
         <div className="space-y-8">

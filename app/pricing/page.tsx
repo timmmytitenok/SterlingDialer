@@ -103,7 +103,7 @@ export default function PricingPage() {
         <div className="container mx-auto px-4 sm:px-6">
 
           {/* Header */}
-          <div className="text-center mb-8 sm:mb-12 md:mb-16 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom duration-700">
+          <div className="text-center mb-16 sm:mb-12 md:mb-16 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom duration-700">
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-4 sm:mb-6">
               <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400 animate-pulse" />
               <span className="text-xs sm:text-sm text-blue-400 font-semibold">Simple, Transparent Pricing</span>
@@ -134,7 +134,7 @@ export default function PricingPage() {
           </div>
 
           {/* Main Pricing Card - Simple & High-Conversion */}
-          <div className="scroll-reveal-scale max-w-4xl mx-auto mb-8 sm:mb-12 px-2 sm:px-4">
+          <div className="scroll-reveal-scale max-w-4xl mx-auto mb-16 sm:mb-12 px-2 sm:px-4">
             <div className="group relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 border-2 border-blue-500/40 shadow-2xl transition-all duration-500 hover:scale-105 hover:border-blue-500/70 hover:shadow-3xl hover:shadow-blue-500/60 overflow-hidden">
               
               {/* Animated Glow Effect */}
@@ -161,8 +161,8 @@ export default function PricingPage() {
 
                 {/* Price - Mobile optimized */}
                 <div className="mt-4 sm:mt-5 md:mt-6 text-center animate-fade-in">
-                  <div className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-1 sm:mb-2">
-                    $379<span className="text-base sm:text-lg md:text-2xl font-normal text-white/60"> / month</span>
+                  <div className="text-6xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-1 sm:mb-2">
+                    $379<span className="text-lg sm:text-lg md:text-2xl font-normal text-white/60"> / month</span>
                   </div>
                   <div className="mt-2 text-sm sm:text-base md:text-lg text-emerald-400 font-semibold">
                     + $0.35 per minute for calls
@@ -170,7 +170,7 @@ export default function PricingPage() {
                 </div>
 
                 {/* Features with colored icons */}
-                <div className="mt-4 sm:mt-6 md:mt-8 space-y-2.5 sm:space-y-3 md:space-y-4 text-sm sm:text-base px-2">
+                <div className="mt-8 sm:mt-6 md:mt-8 space-y-2.5 sm:space-y-3 md:space-y-4 text-sm sm:text-base px-2">
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
                       <Upload className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-400" />
@@ -224,13 +224,14 @@ export default function PricingPage() {
           </div>
 
           {/* Detailed Features Section - Below the Card */}
-          <div className="scroll-reveal max-w-6xl mx-auto mt-16 sm:mt-20 md:mt-24 mb-20 sm:mb-28 md:mb-36 px-3 sm:px-4">
+          <div className="scroll-reveal max-w-6xl mx-auto mt-20 sm:mt-20 md:mt-24 mb-32 sm:mb-36 md:mb-44 px-3 sm:px-4">
             <div className="text-center mb-6 sm:mb-8 md:mb-10">
               <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-white/50 mb-1.5 sm:mb-2">
                 WHAT'S INCLUDED
               </h3>
               <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white px-4">
-                Everything You Need in Sterling Pro Access
+                <span className="sm:hidden">Everything You Need</span>
+                <span className="hidden sm:inline">Everything You Need in Sterling Pro Access</span>
               </h2>
             </div>
 
@@ -378,44 +379,68 @@ export default function PricingPage() {
           </div>
 
           {/* ROI Calculator */}
-          <div className="scroll-reveal max-w-4xl mx-auto mb-20 sm:mb-28 md:mb-36 px-3 sm:px-4 md:px-0">
-            <div className="text-center mb-8 sm:mb-10">
+          <div className="scroll-reveal max-w-4xl mx-auto mb-32 sm:mb-36 md:mb-44 px-3 sm:px-4 md:px-0">
+            <div className="text-center mb-6 sm:mb-10">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">The Numbers Don't Lie</h2>
               <p className="text-gray-400 text-sm sm:text-base">What $379/month actually gets you</p>
             </div>
             
-            <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-8">
+            {/* Mobile: Horizontal scroll row, Desktop: 3-column grid */}
+            <div className="hidden sm:grid grid-cols-3 gap-4 md:gap-6 mb-8">
               <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-6 text-center border border-gray-800">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-400 mb-2">500+</div>
-                <div className="text-white font-medium text-xs sm:text-sm">Calls/Day</div>
+                <div className="text-4xl md:text-5xl font-bold text-blue-400 mb-2">500+</div>
+                <div className="text-white font-medium text-sm">Calls/Day</div>
               </div>
               <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-6 text-center border border-gray-800">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-400 mb-2">3-5</div>
-                <div className="text-white font-medium text-xs sm:text-sm">Appts/Day</div>
+                <div className="text-4xl md:text-5xl font-bold text-purple-400 mb-2">3-5</div>
+                <div className="text-white font-medium text-sm">Appts/Day</div>
               </div>
               <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-6 text-center border border-gray-800">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-green-400 mb-2">$6K+</div>
-                <div className="text-white font-medium text-xs sm:text-sm">Monthly Revenue</div>
+                <div className="text-4xl md:text-5xl font-bold text-green-400 mb-2">$6K+</div>
+                <div className="text-white font-medium text-sm">Monthly Revenue</div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 rounded-xl p-5 sm:p-6 border border-green-500/20">
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-center">
-                <span className="text-gray-300 text-sm sm:text-base">60 appts</span>
-                <span className="text-gray-500 hidden sm:inline">×</span>
-                <span className="text-gray-300 text-sm sm:text-base">10% close rate</span>
-                <span className="text-gray-500 hidden sm:inline">×</span>
-                <span className="text-gray-300 text-sm sm:text-base">$1,000 commission</span>
+            {/* Mobile Only: Clean stacked layout */}
+            <div className="sm:hidden space-y-3 mb-6">
+              <div className="bg-[#1A2647]/60 rounded-xl p-5 border border-gray-800 flex items-center justify-between">
+                <div className="text-white font-medium">Calls/Day</div>
+                <div className="text-4xl font-bold text-blue-400">500+</div>
+              </div>
+              <div className="bg-[#1A2647]/60 rounded-xl p-5 border border-gray-800 flex items-center justify-between">
+                <div className="text-white font-medium">Appts/Day</div>
+                <div className="text-4xl font-bold text-purple-400">3-5+</div>
+              </div>
+              <div className="bg-[#1A2647]/60 rounded-xl p-5 border border-gray-800 flex items-center justify-between">
+                <div className="text-white font-medium">Monthly Revenue</div>
+                <div className="text-4xl font-bold text-green-400">$6K+</div>
+              </div>
+            </div>
+
+            {/* Math equation - simplified for mobile */}
+            <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 rounded-xl p-4 sm:p-6 border border-green-500/20">
+              {/* Desktop: Full equation */}
+              <div className="hidden sm:flex flex-row items-center justify-center gap-6 text-center">
+                <span className="text-gray-300">60 appts</span>
+                <span className="text-gray-500">×</span>
+                <span className="text-gray-300">10% close rate</span>
+                <span className="text-gray-500">×</span>
+                <span className="text-gray-300">$1,000 commission</span>
                 <span className="text-gray-500">=</span>
-                <span className="text-green-400 font-bold text-xl sm:text-2xl">$6,000/mo</span>
+                <span className="text-green-400 font-bold text-2xl">$6,000/mo</span>
+              </div>
+              {/* Mobile: Simplified */}
+              <div className="sm:hidden text-center">
+                <p className="text-gray-400 text-sm mb-2">60 appts × 10% close × $1K</p>
+                <p className="text-green-400 font-bold text-3xl">= $6,000/mo</p>
               </div>
             </div>
           </div>
 
 
           {/* Features Grid */}
-          <div className="scroll-reveal max-w-6xl mx-auto mb-20 sm:mb-28 md:mb-36 px-3 sm:px-4">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-6 sm:mb-8 md:mb-12 px-4">
+          <div className="scroll-reveal max-w-6xl mx-auto mb-32 sm:mb-36 md:mb-44 px-3 sm:px-4">
+            <h2 className="text-3xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-6 sm:mb-8 md:mb-12 px-4">
               Built for Insurance Professionals
             </h2>
 
@@ -446,8 +471,8 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* Comparison Table */}
-          <div className="scroll-reveal max-w-4xl mx-auto mb-20 sm:mb-28 md:mb-36 px-3 sm:px-4">
+          {/* Comparison Table - Hidden on Mobile */}
+          <div className="scroll-reveal hidden sm:block max-w-4xl mx-auto mb-36 md:mb-44 px-3 sm:px-4">
             <div className="text-center mb-6 sm:mb-10">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-4">Hiring vs Sterling</h2>
               <p className="text-gray-400 text-sm sm:text-base">See why agents are switching to AI</p>
@@ -491,8 +516,8 @@ export default function PricingPage() {
           </div>
 
           {/* FAQ Section */}
-          <div className="scroll-reveal max-w-3xl mx-auto mb-20 sm:mb-28 md:mb-36 px-3 sm:px-4">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-6 sm:mb-8 md:mb-12 px-4">
+          <div className="scroll-reveal max-w-3xl mx-auto mb-32 sm:mb-36 md:mb-44 px-3 sm:px-4">
+            <h2 className="text-3xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-6 sm:mb-8 md:mb-12 px-4">
               Frequently Asked Questions
             </h2>
 
@@ -539,7 +564,7 @@ export default function PricingPage() {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-105 group"
               >
                 <Phone className="w-5 h-5" />
-                Schedule Free Consultation
+                 Free Consultation Call
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>

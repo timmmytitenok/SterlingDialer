@@ -261,8 +261,8 @@ export default function DemoPage() {
             </p>
 
 
-            {/* Live Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto mt-12 sm:mt-16 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '400ms' }}>
+            {/* Live Stats - Hidden on Mobile */}
+            <div className="hidden sm:grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto mt-12 sm:mt-16 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '400ms' }}>
               <div ref={callsCounter.ref} className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
                 <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-400">
                   {callsCounter.count >= 1000 ? `${Math.floor(callsCounter.count / 1000)}K+` : `${callsCounter.count}+`}
@@ -288,14 +288,14 @@ export default function DemoPage() {
         </section>
 
         {/* LISTEN TO STERLING AI SECTION - Glowy Two Cards */}
-        <section className="scroll-reveal py-10 sm:py-24 px-3 sm:px-4 relative">
+        <section className="scroll-reveal py-16 sm:py-24 px-3 sm:px-4 relative">
           
           <div className="max-w-6xl mx-auto relative z-10">
             {/* Section Header - BIGGER Title */}
-            <div className="text-center mb-10 sm:mb-16 animate-in fade-in slide-in-from-bottom duration-700">
-              <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-400/30 rounded-full mb-4 sm:mb-8 shadow-lg shadow-blue-500/20">
-                <Headphones className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
-                <span className="text-sm sm:text-base font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Real AI Conversations</span>
+            <div className="text-center mb-6 sm:mb-16 animate-in fade-in slide-in-from-bottom duration-700">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-400/30 rounded-full mb-3 sm:mb-8 shadow-lg shadow-blue-500/20">
+                <Headphones className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-blue-400" />
+                <span className="text-xs sm:text-base font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Real AI Conversations</span>
                   </div>
               
               {/* Desktop Big Title */}
@@ -306,17 +306,17 @@ export default function DemoPage() {
               </h2>
               
               {/* Mobile Big Title */}
-              <h2 className="sm:hidden text-3xl font-bold mb-3 leading-tight">
+              <h2 className="sm:hidden text-2xl font-bold mb-2 leading-tight">
                 <span className="text-white">Hear </span>
-                <span className="bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">Sterling Dialer</span>
+                <span className="bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">Sterling</span>
                 <span className="text-white"> In Action</span>
               </h2>
               
-              <p className="text-base sm:text-xl text-gray-400 max-w-2xl mx-auto">Listen to real appointment bookings — made by AI</p>
+              <p className="text-sm sm:text-xl text-gray-400 max-w-2xl mx-auto">Listen to real appointment bookings — made by AI</p>
                   </div>
 
             {/* Two Big Glowy Cards - Side by Side */}
-            <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-8">
               {recordings.map((rec, index) => {
                 const isPlaying = activePlayer === rec.id;
                 const isFirst = rec.id === 1;
@@ -324,7 +324,7 @@ export default function DemoPage() {
                 return (
                   <div
                     key={rec.id}
-                    className={`group relative rounded-3xl overflow-hidden transition-all duration-500 cursor-pointer animate-in fade-in slide-in-from-bottom
+                    className={`group relative rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-500 cursor-pointer animate-in fade-in slide-in-from-bottom
                       ${isPlaying 
                         ? 'scale-[1.02]' 
                         : 'hover:scale-[1.04]'
@@ -332,12 +332,12 @@ export default function DemoPage() {
                     style={{ animationDelay: `${index * 150}ms`, animationDuration: '600ms' }}
                   >
                     {/* Animated Gradient Border */}
-                    <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${isFirst ? 'from-blue-500 via-cyan-500 to-blue-600' : 'from-purple-500 via-pink-500 to-purple-600'} p-[2px] ${isPlaying ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'} transition-opacity duration-300`}>
-                      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-transparent to-transparent animate-spin-slow" style={{ background: `conic-gradient(from 0deg, ${isFirst ? '#3b82f6, #06b6d4, #3b82f6' : '#a855f7, #ec4899, #a855f7'})`, animationDuration: '4s' }} />
+                    <div className={`absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-br ${isFirst ? 'from-blue-500 via-cyan-500 to-blue-600' : 'from-purple-500 via-pink-500 to-purple-600'} p-[2px] ${isPlaying ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'} transition-opacity duration-300`}>
+                      <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-transparent to-transparent animate-spin-slow" style={{ background: `conic-gradient(from 0deg, ${isFirst ? '#3b82f6, #06b6d4, #3b82f6' : '#a855f7, #ec4899, #a855f7'})`, animationDuration: '4s' }} />
                     </div>
                     
                     {/* Inner Card */}
-                    <div className={`relative bg-[#0B1437] m-[2px] rounded-3xl overflow-hidden transition-all duration-300`}>
+                    <div className={`relative bg-[#0B1437] m-[2px] rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300`}>
                       {/* Glowing Orbs Inside Card - Soft gradual fade */}
                       <div className="absolute inset-0 overflow-hidden pointer-events-none">
                         <div className={`absolute w-[400px] h-[400px] ${isFirst ? 'bg-blue-500/20' : 'bg-purple-500/20'} rounded-full -top-40 -right-40 ${isPlaying ? 'animate-pulse' : 'group-hover:animate-pulse'}`} style={{ filter: 'blur(80px)' }} />
@@ -345,31 +345,31 @@ export default function DemoPage() {
                     </div>
                       
                       {/* Card Content */}
-                      <div className="relative z-10 p-6 sm:p-8">
+                      <div className="relative z-10 p-4 sm:p-8">
                         {/* Header with Icon */}
-                        <div className="flex items-start gap-4 mb-6">
-                          <div className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br ${isFirst ? 'from-blue-500 to-cyan-500' : 'from-purple-500 to-pink-500'} flex items-center justify-center shadow-2xl ${isFirst ? 'shadow-blue-500/50' : 'shadow-purple-500/50'} group-hover:scale-110 transition-transform duration-300`}>
-                            <CalendarCheck className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                        <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
+                          <div className={`relative w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br ${isFirst ? 'from-blue-500 to-cyan-500' : 'from-purple-500 to-pink-500'} flex items-center justify-center shadow-2xl ${isFirst ? 'shadow-blue-500/50' : 'shadow-purple-500/50'} group-hover:scale-110 transition-transform duration-300`}>
+                            <CalendarCheck className="w-6 h-6 sm:w-10 sm:h-10 text-white" />
                             {/* Glow ring */}
-                            <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${isFirst ? 'from-blue-400 to-cyan-400' : 'from-purple-400 to-pink-400'} opacity-0 group-hover:opacity-50 blur-xl transition-opacity duration-300`} />
+                            <div className={`absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br ${isFirst ? 'from-blue-400 to-cyan-400' : 'from-purple-400 to-pink-400'} opacity-0 group-hover:opacity-50 blur-xl transition-opacity duration-300`} />
                           </div>
-                          <div className="flex-1 pt-1">
-                            <p className={`text-sm sm:text-base font-bold uppercase tracking-wider mb-1 bg-gradient-to-r ${isFirst ? 'from-blue-400 to-cyan-400' : 'from-purple-400 to-pink-400'} bg-clip-text text-transparent`}>
+                          <div className="flex-1 pt-0 sm:pt-1">
+                            <p className={`text-xs sm:text-base font-bold uppercase tracking-wider mb-0.5 sm:mb-1 bg-gradient-to-r ${isFirst ? 'from-blue-400 to-cyan-400' : 'from-purple-400 to-pink-400'} bg-clip-text text-transparent`}>
                               {rec.subtitle}
                             </p>
-                            <h3 className="text-2xl sm:text-3xl font-bold text-white">{rec.title}</h3>
+                            <h3 className="text-lg sm:text-3xl font-bold text-white">{rec.title}</h3>
                           </div>
                         </div>
                         
-                        {/* Description */}
-                        <p className="text-base sm:text-lg text-gray-300 mb-8 leading-relaxed">
+                        {/* Description - Hidden on mobile */}
+                        <p className="hidden sm:block text-lg text-gray-300 mb-8 leading-relaxed">
                           {rec.desc}
                         </p>
                         
-                        {/* Play Button - Big & Glowy */}
+                        {/* Play Button - Compact on mobile */}
                         <div 
                           onClick={() => togglePlay(rec.id)}
-                          className={`relative w-full py-5 sm:py-6 rounded-2xl flex items-center justify-center gap-4 transition-all duration-300 overflow-hidden
+                          className={`relative w-full py-3 sm:py-6 rounded-xl sm:rounded-2xl flex items-center justify-center gap-3 sm:gap-4 transition-all duration-300 overflow-hidden
                             ${isPlaying 
                               ? `bg-gradient-to-r ${isFirst ? 'from-blue-600 to-cyan-500' : 'from-purple-600 to-pink-500'} shadow-2xl ${isFirst ? 'shadow-blue-500/50' : 'shadow-purple-500/50'}` 
                               : `bg-white/5 border-2 ${isFirst ? 'border-blue-500/30 hover:border-blue-400/60' : 'border-purple-500/30 hover:border-purple-400/60'} hover:bg-white/10`
@@ -380,26 +380,26 @@ export default function DemoPage() {
                             <div className={`absolute inset-0 bg-gradient-to-r ${isFirst ? 'from-blue-500/0 via-blue-500/10 to-blue-500/0' : 'from-purple-500/0 via-purple-500/10 to-purple-500/0'} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
                           )}
                           
-                          <div className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all shadow-lg ${
+                          <div className={`relative w-10 h-10 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all shadow-lg ${
                             isPlaying 
                               ? 'bg-white/20 shadow-white/20' 
                               : `bg-gradient-to-r ${isFirst ? 'from-blue-500 to-cyan-500 shadow-blue-500/50' : 'from-purple-500 to-pink-500 shadow-purple-500/50'}`
                           }`}>
                             {isPlaying ? (
-                              <Pause className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                              <Pause className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                             ) : (
-                              <Play className="w-6 h-6 sm:w-7 sm:h-7 text-white ml-1" />
+                              <Play className="w-5 h-5 sm:w-7 sm:h-7 text-white ml-0.5" />
                             )}
                           </div>
-                          <span className="relative text-white font-bold text-lg sm:text-xl">
-                            {isPlaying ? 'Now Playing...' : 'Play Recording'}
+                          <span className="relative text-white font-bold text-base sm:text-xl">
+                            {isPlaying ? 'Playing...' : 'Play'}
                           </span>
                         </div>
                         
                         {/* Progress Section */}
-                        <div className="mt-6 space-y-4">
+                        <div className="mt-4 sm:mt-6 space-y-3 sm:space-y-4">
                           {/* Progress Bar - Glowy */}
-                          <div className="relative h-3 bg-gray-800/80 rounded-full overflow-hidden">
+                          <div className="relative h-2 sm:h-3 bg-gray-800/80 rounded-full overflow-hidden">
                             <div 
                               className={`h-full bg-gradient-to-r ${isFirst ? 'from-blue-500 to-cyan-400' : 'from-purple-500 to-pink-400'} rounded-full transition-all duration-150`}
                               style={{ width: `${progress[rec.id]}%` }}
@@ -414,8 +414,8 @@ export default function DemoPage() {
                           {/* Time & Speed Controls */}
                           <div className="flex items-center justify-between">
                             {/* Time Display */}
-                            <div className="flex items-center gap-2 text-sm sm:text-base text-gray-400 font-medium">
-                              <Clock className="w-4 h-4" />
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-base text-gray-400 font-medium">
+                              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                               <span>{formatTime(currentTime[rec.id] || 0)}</span>
                               <span className="text-gray-600">/</span>
                               <span>{formatTime(duration[rec.id] || 0)}</span>
@@ -424,7 +424,7 @@ export default function DemoPage() {
                             {/* Speed Control Button - Glowy */}
                             <button
                               onClick={(e) => changeSpeed(rec.id, e)}
-                              className={`relative px-4 py-2 rounded-xl text-sm sm:text-base font-bold transition-all duration-200 
+                              className={`relative px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-base font-bold transition-all duration-200 
                                 bg-gradient-to-r ${isFirst ? 'from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400' : 'from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400'} text-white active:scale-95 shadow-lg ${isFirst ? 'shadow-blue-500/30' : 'shadow-purple-500/30'}`}
                             >
                               {playbackSpeed[rec.id]}x
@@ -450,16 +450,12 @@ export default function DemoPage() {
         </section>
 
         {/* HOW IT WORKS SECTION - Vibrant & Glowy */}
-        <section className="scroll-reveal py-12 sm:py-28 px-3 sm:px-4 relative overflow-hidden">
+        <section className="scroll-reveal py-20 sm:py-28 px-3 sm:px-4 relative overflow-hidden">
           
           <div className="max-w-6xl mx-auto relative z-10">
             {/* Section Header - Bigger & Gradient */}
             <div className="text-center mb-12 sm:mb-20 animate-in fade-in slide-in-from-bottom duration-700">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-green-500/20 border border-white/10 rounded-full mb-4 sm:mb-6">
-                <Zap className="w-4 h-4 text-yellow-400" />
-                <span className="text-sm font-semibold text-white">Simple 3-Step Process</span>
-              </div>
-              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4">
+              <h2 className="text-5xl sm:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4">
                 How It <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-green-400 bg-clip-text text-transparent">Works</span>
               </h2>
               <p className="text-base sm:text-xl text-gray-400">Three simple steps. That's it.</p>
@@ -555,51 +551,76 @@ export default function DemoPage() {
         </section>
 
         {/* ROI CALCULATOR SECTION */}
-        <section className="scroll-reveal py-10 sm:py-24 px-3 sm:px-4">
+        <section className="scroll-reveal py-16 sm:py-24 px-3 sm:px-4">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8 sm:mb-10">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">The Numbers Don't Lie</h2>
+              <h2 className="text-3xl sm:text-3xl md:text-4xl font-bold text-white mb-2">The Numbers Don't Lie</h2>
               <p className="text-gray-400 text-sm sm:text-base">What $379/month actually gets you</p>
             </div>
             
-            <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-8">
-              <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-6 text-center border border-gray-800">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-400 mb-2">500+</div>
-                <div className="text-white font-medium text-xs sm:text-sm">Calls/Day</div>
+            {/* Desktop: 3 columns, Mobile: Stacked */}
+            <div className="hidden sm:grid grid-cols-3 gap-4 md:gap-6 mb-8">
+              <div className="bg-[#1A2647]/60 rounded-xl p-6 text-center border border-gray-800">
+                <div className="text-4xl md:text-5xl font-bold text-blue-400 mb-2">500+</div>
+                <div className="text-white font-medium text-sm">Calls/Day</div>
               </div>
-              <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-6 text-center border border-gray-800">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-400 mb-2">3-5</div>
-                <div className="text-white font-medium text-xs sm:text-sm">Appts/Day</div>
+              <div className="bg-[#1A2647]/60 rounded-xl p-6 text-center border border-gray-800">
+                <div className="text-4xl md:text-5xl font-bold text-purple-400 mb-2">3-5+</div>
+                <div className="text-white font-medium text-sm">Appts/Day</div>
               </div>
-              <div className="bg-[#1A2647]/60 rounded-xl p-4 sm:p-6 text-center border border-gray-800">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-green-400 mb-2">$6K+</div>
-                <div className="text-white font-medium text-xs sm:text-sm">Monthly Revenue</div>
+              <div className="bg-[#1A2647]/60 rounded-xl p-6 text-center border border-gray-800">
+                <div className="text-4xl md:text-5xl font-bold text-green-400 mb-2">$6K+</div>
+                <div className="text-white font-medium text-sm">Monthly Revenue</div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 rounded-xl p-5 sm:p-6 border border-green-500/20">
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-center">
-                <span className="text-gray-300 text-sm sm:text-base">60 appts</span>
-                <span className="text-gray-500 hidden sm:inline">×</span>
-                <span className="text-gray-300 text-sm sm:text-base">10% close rate</span>
-                <span className="text-gray-500 hidden sm:inline">×</span>
-                <span className="text-gray-300 text-sm sm:text-base">$1,000 commission</span>
-                <span className="text-gray-500">=</span>
-                <span className="text-green-400 font-bold text-xl sm:text-2xl">$6,000/mo</span>
+            {/* Mobile: Stacked rows */}
+            <div className="sm:hidden space-y-3 mb-8">
+              <div className="bg-[#1A2647]/60 rounded-xl p-5 border border-gray-800 flex items-center justify-between">
+                <div className="text-white font-medium">Calls/Day</div>
+                <div className="text-4xl font-bold text-blue-400">500+</div>
               </div>
+              <div className="bg-[#1A2647]/60 rounded-xl p-5 border border-gray-800 flex items-center justify-between">
+                <div className="text-white font-medium">Appts/Day</div>
+                <div className="text-4xl font-bold text-purple-400">3-5+</div>
+              </div>
+              <div className="bg-[#1A2647]/60 rounded-xl p-5 border border-gray-800 flex items-center justify-between">
+                <div className="text-white font-medium">Monthly Revenue</div>
+                <div className="text-4xl font-bold text-green-400">$6K+</div>
+              </div>
+            </div>
+
+            {/* Desktop: Full math equation */}
+            <div className="hidden sm:block bg-gradient-to-r from-green-500/10 to-emerald-500/5 rounded-xl p-6 border border-green-500/20">
+              <div className="flex items-center justify-center gap-6 text-center">
+                <span className="text-gray-300 text-base">60 appts</span>
+                <span className="text-gray-500">×</span>
+                <span className="text-gray-300 text-base">10% close rate</span>
+                <span className="text-gray-500">×</span>
+                <span className="text-gray-300 text-base">$1,000 commission</span>
+                <span className="text-gray-500">=</span>
+                <span className="text-green-400 font-bold text-2xl">$6,000/mo</span>
+              </div>
+            </div>
+
+            {/* Mobile: Simplified result */}
+            <div className="sm:hidden bg-gradient-to-r from-green-500/10 to-emerald-500/5 rounded-xl p-5 border border-green-500/20 text-center">
+              <p className="text-gray-400 text-sm mb-2">Average monthly return</p>
+              <p className="text-green-400 font-bold text-3xl">$6,000+</p>
+              <p className="text-gray-500 text-xs mt-2">Based on 60 appts × 10% close × $1K commission</p>
             </div>
           </div>
         </section>
 
         {/* FINAL CTA */}
-        <section className="scroll-reveal py-24 sm:py-32 px-3 sm:px-4 pb-32 sm:pb-48">
+        <section className="scroll-reveal py-20 sm:py-32 px-3 sm:px-4 pb-40 sm:pb-48">
           <div className="max-w-2xl mx-auto text-center">
             <div className="p-6 sm:p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
               <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3">
                 Ready to Get Started?
               </h2>
               <p className="text-gray-400 text-sm sm:text-base mb-6">
-                Start your 7-day free trial and see results in your first week.
+                7-day free trial and see results your first week.
               </p>
               <Link
                 href="/signup"
