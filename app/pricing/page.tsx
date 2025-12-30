@@ -9,16 +9,6 @@ import BlurText from '@/components/blur-text';
 import { CheckCircle2, Zap, ArrowRight, Phone, Calendar, BarChart3, Clock, Shield, Sparkles, Gift, Rocket, Users, BadgeCheck, Lock, FileCheck, Star, HelpCircle, Headphones, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 
-// Social proof ticker data
-const tickerItems = [
-  'John D. just signed up from Texas',
-  'Sarah M. booked 4 appointments',
-  'Mike R. closed a $2,400 policy',
-  'Emily K. started free trial',
-  'David L. booked 6 appointments today',
-  'Lisa T. just upgraded to Pro',
-];
-
 // Animated counter hook
 function useCountUp(end: number, duration: number = 2000, startOnView: boolean = true) {
   const [count, setCount] = useState(0);
@@ -74,11 +64,6 @@ export default function PricingPage() {
   // Animated counters
   const callsCounter = useCountUp(2400000, 2500);
   const appointmentsCounter = useCountUp(47000, 2000);
-  const [todayAppointments, setTodayAppointments] = useState(247);
-  
-  useEffect(() => {
-    setTodayAppointments(Math.floor(Math.random() * 140) + 180);
-  }, []);
   
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -111,22 +96,7 @@ export default function PricingPage() {
       {/* Grid Pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.08)_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
 
-      {/* Social Proof Ticker */}
-      <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white py-2 overflow-hidden">
-        <div className="animate-ticker flex whitespace-nowrap">
-          {[...tickerItems, ...tickerItems].map((item, i) => (
-            <span key={i} className="mx-8 text-sm font-medium flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-yellow-300" />
-              {item}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Spacer for ticker */}
-      <div className="h-10" />
-
-      <PublicNav />
+      <PublicNav />Re
       <MobilePublicNav />
 
       <main className="relative z-10 pt-28 sm:pt-28 lg:pt-32 pb-12 sm:pb-20">
@@ -134,15 +104,9 @@ export default function PricingPage() {
 
           {/* Header */}
           <div className="text-center mb-8 sm:mb-12 md:mb-16 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom duration-700">
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full">
-                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400 animate-pulse" />
-                <span className="text-xs sm:text-sm text-blue-400 font-semibold">Simple, Transparent Pricing</span>
-              </div>
-              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-amber-500/10 border border-amber-500/30 rounded-full">
-                <Users className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
-                <span className="text-xs sm:text-sm text-amber-400 font-semibold">Trusted by 500+ Agents</span>
-              </div>
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-4 sm:mb-6">
+              <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400 animate-pulse" />
+              <span className="text-xs sm:text-sm text-blue-400 font-semibold">Simple, Transparent Pricing</span>
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-3 sm:mb-4 md:mb-6 text-center leading-tight px-2">
               <div className="flex justify-center">
@@ -734,47 +698,12 @@ export default function PricingPage() {
           animation: gradient-shift 15s ease infinite;
         }
         
-        @keyframes ticker {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .animate-ticker {
-          animation: ticker 30s linear infinite;
-        }
-      `}</style>
+        `}</style>
 
       <PublicFooter />
       <MobileFooter />
 
-      {/* Floating Chat Widget */}
-      <Link href="/contact" className="fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 group">
-        <Headphones className="w-6 h-6" />
-        <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg pointer-events-none">
-          Need help? Chat with us!
-        </div>
-      </Link>
-
-      {/* FAQ Quick Link */}
-      <Link 
-        href="/faq" 
-        className="fixed bottom-24 right-6 z-40 bg-purple-600/90 hover:bg-purple-600 text-white p-3 rounded-full shadow-lg shadow-purple-500/30 transition-all duration-300 hover:scale-110 group"
-      >
-        <HelpCircle className="w-5 h-5" />
-        <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg pointer-events-none">
-          Have Questions?
-        </div>
-      </Link>
-
-      {/* Today's Appointments Counter */}
-      <div className="hidden lg:block fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
-        <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-lg border border-green-500/30 rounded-full px-6 py-2.5 shadow-xl">
-          <p className="text-green-400 text-sm font-medium flex items-center gap-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span><span className="font-bold text-white">{todayAppointments}</span> appointments booked today</span>
-          </p>
-        </div>
       </div>
-    </div>
   );
 }
 

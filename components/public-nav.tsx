@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Rocket } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export function PublicNav() {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -133,63 +135,80 @@ export function PublicNav() {
       
       <div className="container mx-auto px-6 py-5">
         <div className="flex items-center justify-between gap-8">
-          {/* Logo */}
+          {/* Logo - Cleaner */}
           <Link href="/" className="flex items-center gap-3 group relative flex-shrink-0">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl blur opacity-50 group-hover:opacity-75 transition-opacity" />
-              <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                <span className="text-white font-bold text-2xl">SD</span>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl blur opacity-40 group-hover:opacity-60 transition-opacity" />
+              <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-purple-700 to-pink-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-all duration-300">
+                <span className="text-white font-bold text-lg">SD</span>
               </div>
             </div>
-            <span className="text-2xl font-bold text-white group-hover:text-purple-400 transition-colors">
-              Sterling<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400"> Dialer</span>
+            <span className="text-xl font-bold text-white">
+              Sterling Dialer
             </span>
           </Link>
 
-          {/* Navigation - Centered */}
-          <div className="hidden lg:flex items-center gap-5 flex-1 justify-center">
+          {/* Navigation - Centered with pill hover & active state */}
+          <div className="hidden lg:flex items-center gap-3 flex-1 justify-center">
             <Link 
               href="/" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-semibold group"
+              className={`px-4 py-2 rounded-lg transition-all duration-200 font-medium ${
+                pathname === '/'
+                  ? 'text-white bg-white/10'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
             >
-              <span className="relative z-10">Home</span>
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+              Home
             </Link>
             <Link 
               href="/pricing" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-semibold group"
+              className={`px-4 py-2 rounded-lg transition-all duration-200 font-medium ${
+                pathname === '/pricing'
+                  ? 'text-white bg-white/10'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
             >
-              <span className="relative z-10">Pricing</span>
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+              Pricing
             </Link>
             <Link 
               href="/demo" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-semibold group"
+              className={`px-4 py-2 rounded-lg transition-all duration-200 font-medium ${
+                pathname === '/demo'
+                  ? 'text-white bg-white/10'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
             >
-              <span className="relative z-10">Demo</span>
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+              Demo
             </Link>
-            {/* Case Studies - Hidden for now */}
-            {/* <Link 
+            <Link 
               href="/case-studies" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-semibold group"
+              className={`px-4 py-2 rounded-lg transition-all duration-200 font-medium ${
+                pathname === '/case-studies'
+                  ? 'text-white bg-white/10'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
             >
-              <span className="relative z-10">Case Studies</span>
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-            </Link> */}
+              Case Studies
+            </Link>
             <Link 
               href="/faq" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-semibold group"
+              className={`px-4 py-2 rounded-lg transition-all duration-200 font-medium ${
+                pathname === '/faq'
+                  ? 'text-white bg-white/10'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
             >
-              <span className="relative z-10">FAQ</span>
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+              FAQ
             </Link>
             <Link 
               href="/contact" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-all font-semibold group"
+              className={`px-4 py-2 rounded-lg transition-all duration-200 font-medium ${
+                pathname === '/contact'
+                  ? 'text-white bg-white/10'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
             >
-              <span className="relative z-10">Contact</span>
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+              Contact
             </Link>
           </div>
           
@@ -214,11 +233,12 @@ export function PublicNav() {
                   Sign In
                 </Link>
 
-                {/* Start Free Trial Button */}
+                {/* Start Free Trial Button - Larger with glow */}
                 <Link 
                   href="/signup" 
-                  className="group relative px-6 py-2.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/50 overflow-hidden inline-flex items-center gap-2"
+                  className="group relative px-7 py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/40 overflow-hidden inline-flex items-center gap-2"
                 >
+                  <Rocket className="w-4 h-4 relative z-10" />
                   <span className="relative z-10">Start Free Trial</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
                 </Link>

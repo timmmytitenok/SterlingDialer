@@ -153,7 +153,7 @@ export function MobilePublicNav() {
     { name: 'Home', href: '/', icon: Sparkles },
     { name: 'Pricing', href: '/pricing', icon: DollarSign },
     { name: 'Demo', href: '/demo', icon: TrendingUp },
-    // { name: 'Case Studies', href: '/case-studies', icon: TrendingUp }, // Hidden for now
+    { name: 'Case Studies', href: '/case-studies', icon: TrendingUp },
     { name: 'FAQ', href: '/faq', icon: HelpCircle },
     { name: 'Contact', href: '/contact', icon: Mail },
   ];
