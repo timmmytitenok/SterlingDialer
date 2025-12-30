@@ -1280,16 +1280,16 @@ export async function POST(request: Request) {
       } else {
         console.log(`⚠️ Lead ${nextLead.name} marked as no_answer (attempt ${newTotalCalls}) - will retry tomorrow`);
       }
-      console.log('⚠️ Call failed - returning continue signal (call-result webhook will trigger next call)');
+      console.log('⚠️ Call failed - lead marked, returning error');
       
-      // Return success with continueDialing flag so the dialer knows to keep going
-      // The call-result webhook handles triggering the next call, not a recursive fetch
+      // Return error - DO NOT use continueDialing flag (it caused infinite loops!)
+      // The normal webhook flow will handle triggering the next call
       return NextResponse.json({
         success: false,
         error: `Call failed: ${errorMessage}`,
         leadId: nextLead.id,
         leadName: nextLead.name,
-        continueDialing: true,  // Signal that dialer should continue with next lead
+        leadMarkedDead: shouldMarkDead,
       });
     }
 

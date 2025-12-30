@@ -1672,13 +1672,8 @@ export async function POST(request: Request) {
               console.log('   Message:', nextCallData.message);
             }
             
-            // Check if call failed but should continue (e.g., bad phone number)
-            if (nextCallData.continueDialing && !nextCallData.success) {
-              console.log('⚠️ Call failed but continueDialing=true, triggering another call...');
-              // Add a small delay and retry to get the next lead
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              continue;
-            }
+            // NOTE: Removed continueDialing loop - it was causing infinite loops!
+            // The normal webhook flow handles triggering the next call after success.
           } catch (parseError) {
             console.log('✅ Next call triggered (response not JSON)');
             nextCallSuccess = true;
