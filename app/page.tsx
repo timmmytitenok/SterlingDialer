@@ -695,7 +695,7 @@ export default function LandingPage() {
 
         {/* Schedule Call CTA */}
         <section className="pt-24 pb-48 scroll-reveal">
-          <div className="max-w-2xl mx-auto text-center px-4">
+        <div className="scroll-reveal max-w-2xl mx-auto text-center mb-12 sm:mb-16 px-4">
             <div className="p-6 sm:p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
               <h3 className="text-2xl sm:text-4xl font-bold text-white mb-3">Still Have Questions?</h3>
               <p className="text-gray-400 text-sm sm:text-base mb-6">
@@ -706,7 +706,7 @@ export default function LandingPage() {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-105 group"
               >
                 <Phone className="w-5 h-5" />
-                Free Consultation Call
+                 Free Consultation Call
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
