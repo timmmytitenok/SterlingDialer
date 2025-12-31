@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { getTodayDateString } from '@/lib/timezone-helpers';
+import { getEstDateString } from '@/lib/timezone-helpers';
 
 /**
  * GET /api/ai-control/check-leads
@@ -25,8 +25,8 @@ export async function GET(request: Request) {
       .eq('user_id', userId)
       .single();
     
-    const userTimezone = aiSettings?.user_timezone || 'America/New_York';
-    const todayStr = getTodayDateString(userTimezone);
+    // ALWAYS use EST for day reset (midnight Eastern Time for ALL users)
+    const todayStr = getEstDateString();
 
     // Get active Google Sheets for this user
     const { data: activeSheets } = await supabase

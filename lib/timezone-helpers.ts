@@ -73,11 +73,29 @@ export function getDaysAgoInUserTimezone(userTimezone: string, daysAgo: number):
 
 /**
  * Get current date string in user's timezone (YYYY-MM-DD)
+ * NOTE: This is used for display purposes only
  */
 export function getTodayDateString(userTimezone: string): string {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat('en-CA', { // en-CA uses YYYY-MM-DD format
     timeZone: userTimezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  
+  return formatter.format(now);
+}
+
+/**
+ * Get current date string in EST timezone (YYYY-MM-DD)
+ * ALWAYS uses America/New_York so ALL users reset at midnight EST
+ * This is used for daily counter resets (calls_made_today, today_spend, etc.)
+ */
+export function getEstDateString(): string {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-CA', { // en-CA uses YYYY-MM-DD format
+    timeZone: 'America/New_York', // ALWAYS EST - midnight reset for ALL users
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

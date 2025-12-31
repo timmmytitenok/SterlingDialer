@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { getTodayDateString } from '@/lib/timezone-helpers';
+import { getTodayDateString, getEstDateString } from '@/lib/timezone-helpers';
 
 /**
  * Retell Webhook - Enhanced Call Processing with Double-Dial & Time-Based Tracking
@@ -216,8 +216,8 @@ export async function POST(request: Request) {
         .select('user_timezone')
         .eq('user_id', userId)
         .single();
-      const userTz = settingsForTz?.user_timezone || 'America/New_York';
-      const todayStrDD = getTodayDateString(userTz);
+      // ALWAYS use EST for day reset (midnight Eastern Time for ALL users)
+      const todayStrDD = getEstDateString();
       
       console.log('📝 UPDATING LEAD:');
       console.log(`   Lead ID: ${leadId}`);
@@ -364,8 +364,8 @@ export async function POST(request: Request) {
     const costPerMinute = userProfile?.cost_per_minute || 0.35; // Default to $0.35
     console.log(`💰 User cost per minute: $${costPerMinute} (tier: ${userProfile?.subscription_tier || 'unknown'})`);
 
-    const userTimezone = aiSettings.user_timezone || 'America/New_York';
-    const todayStr = getTodayDateString(userTimezone);
+    // ALWAYS use EST for day reset (midnight Eastern Time for ALL users)
+    const todayStr = getEstDateString();
 
     // Note: We no longer track time periods (morning/daytime/evening)
     // Simple 20-attempt system now

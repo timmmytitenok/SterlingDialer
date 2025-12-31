@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { getTodayDateString } from '@/lib/timezone-helpers';
+import { getTodayDateString, getEstDateString } from '@/lib/timezone-helpers';
 
 // =====================================================
 // BLOCKED LEAD VENDORS - Safety check before sending to Retell
@@ -242,7 +242,11 @@ export async function POST(request: Request) {
     // Priority: user_retell_config.timezone (admin setting) > ai_control_settings.user_timezone > default
     const userTimezone = userTimezoneConfig?.timezone || aiSettings.user_timezone || 'America/New_York';
     console.log(`🌍 User timezone: ${userTimezone} (from ${userTimezoneConfig?.timezone ? 'user_retell_config' : aiSettings.user_timezone ? 'ai_control_settings' : 'default'})`);
-    const todayStr = getTodayDateString(userTimezone);
+    
+    // IMPORTANT: Day reset is ALWAYS based on EST (midnight Eastern Time) for ALL users
+    // This ensures consistent daily counter resets across all timezones
+    const todayStr = getEstDateString();
+    console.log(`📅 Day reset date (EST): ${todayStr}`);
 
     // Reset daily counters if it's a new day
     let currentSpend = aiSettings.today_spend || 0;
