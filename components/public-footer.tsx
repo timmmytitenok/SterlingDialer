@@ -38,8 +38,8 @@ export function PublicFooter() {
                 <Link href="/demo" className="block text-gray-500 hover:text-white transition-colors text-sm">
                   Demo
                 </Link>
-                <Link href="/case-studies" className="block text-gray-500 hover:text-white transition-colors text-sm">
-                  Studies
+                <Link href="/faq" className="block text-gray-500 hover:text-white transition-colors text-sm">
+                  FAQ
                 </Link>
               </div>
             </div>
@@ -85,7 +85,7 @@ export function PublicFooter() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-8">
               <p className="text-gray-600 text-sm">
-                © 2024 Sterling Dialer
+                © 2025 Sterling Dialer
               </p>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-1.5 text-gray-600 text-xs">

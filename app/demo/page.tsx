@@ -83,10 +83,10 @@ export default function DemoPage() {
 
   const speedOptions = [1, 1.25, 1.5, 2];
 
-  // Animated counters for stats
-  const callsCounter = useCountUp(400000, 2500);
-  const appointmentsCounter = useCountUp(3100, 2000);
-  const agentsCounter = useCountUp(250, 1500);
+  // Stats counters hidden for now
+  // const callsCounter = useCountUp(400000, 2500);
+  // const appointmentsCounter = useCountUp(3100, 2000);
+  // const agentsCounter = useCountUp(250, 1500);
 
   const togglePlay = (playerNum: number) => {
     // Stop the OTHER player (only 2 now)
@@ -287,29 +287,7 @@ export default function DemoPage() {
             </p>
 
 
-            {/* Live Stats - Hidden on Mobile */}
-            <div className="hidden sm:grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto mt-12 sm:mt-16 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '400ms' }}>
-              <div ref={callsCounter.ref} className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
-                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-400">
-                  {callsCounter.count >= 1000 ? `${Math.floor(callsCounter.count / 1000)}K+` : `${callsCounter.count}+`}
-                </div>
-                <div className="text-gray-500 text-[10px] sm:text-xs">Calls Made</div>
-              </div>
-              <div ref={appointmentsCounter.ref} className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
-                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-400">
-                  {appointmentsCounter.count >= 1000 ? `${(appointmentsCounter.count / 1000).toFixed(1)}K+` : `${appointmentsCounter.count}+`}
-                </div>
-                <div className="text-gray-500 text-[10px] sm:text-xs">Appointments</div>
-              </div>
-              <div ref={agentsCounter.ref} className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
-                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-400">{agentsCounter.count}+</div>
-                <div className="text-gray-500 text-[10px] sm:text-xs">Agents</div>
-              </div>
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 text-center">
-                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-amber-400">24hrs</div>
-                <div className="text-gray-500 text-[10px] sm:text-xs">Setup</div>
-              </div>
-            </div>
+{/* Stats section hidden for now */}
           </div>
         </section>
 

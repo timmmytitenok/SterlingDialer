@@ -66,7 +66,7 @@ export function MobileFooter() {
         {/* Legal Links - Removed (now in nav dropdown) */}
         <div className="space-y-2 pt-4 border-t border-gray-800/50">
           <p className="text-xs text-gray-600 text-center">
-            © 2024 Sterling Dialer. All rights reserved.
+            © 2025 Sterling Dialer. All rights reserved.
           </p>
           <p className="text-xs text-gray-500 text-center">
             Start your <span className="text-gray-300 font-bold">7 day</span> free trial today

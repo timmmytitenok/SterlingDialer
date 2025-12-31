@@ -75,10 +75,10 @@ export default function LandingPage() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
 
-  // Animated counters for stats
-  const callsCounter = useCountUp(400000, 2500);
-  const appointmentsCounter = useCountUp(3100, 2000);
-  const agentsCounter = useCountUp(250, 1500);
+  // Stats counters hidden for now
+  // const callsCounter = useCountUp(400000, 2500);
+  // const appointmentsCounter = useCountUp(3100, 2000);
+  // const agentsCounter = useCountUp(250, 1500);
 
   // Today's appointments counter (random number between 180-320, set on client only)
   const [todayAppointments, setTodayAppointments] = useState(247);
@@ -228,7 +228,7 @@ export default function LandingPage() {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 lg:mb-42 animate-slide-up px-4 w-full max-w-2xl mx-auto" style={{ animationDelay: '0.3s' }}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 lg:mb-16 animate-slide-up px-4 w-full max-w-2xl mx-auto" style={{ animationDelay: '0.3s' }}>
               <Link
                 href="/signup"
                 className="group relative w-full sm:w-auto px-8 py-4 lg:px-10 lg:py-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-bold text-lg lg:text-xl rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50 text-center"
@@ -248,40 +248,7 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Live Stats Counter with Animation */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 max-w-5xl mx-auto animate-slide-up px-4 mt-32 sm:mt-14 lg:mt-0" style={{ animationDelay: '0.45s' }}>
-              <div ref={callsCounter.ref} className="scroll-reveal bg-gradient-to-br from-blue-500/10 to-blue-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-blue-500/20 text-center">
-                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-400 mb-1 lg:mb-2">
-                  {Math.floor(callsCounter.count / 1000)}K+
-                </div>
-                <div className="text-gray-400 text-xs sm:text-sm lg:text-base">Calls Made</div>
-              </div>
-              <div ref={appointmentsCounter.ref} className="scroll-reveal delay-1 bg-gradient-to-br from-green-500/10 to-green-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-green-500/20 text-center">
-                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-green-400 mb-1 lg:mb-2">
-                  {(appointmentsCounter.count / 1000).toFixed(1)}K+
-                </div>
-                <div className="text-gray-400 text-xs sm:text-sm lg:text-base">Appointments</div>
-              </div>
-              <div ref={agentsCounter.ref} className="scroll-reveal delay-2 bg-gradient-to-br from-purple-500/10 to-purple-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-purple-500/20 text-center">
-                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-purple-400 mb-1 lg:mb-2">{agentsCounter.count}+</div>
-                <div className="text-gray-400 text-xs sm:text-sm lg:text-base">Agents</div>
-              </div>
-              <div className="scroll-reveal delay-3 bg-gradient-to-br from-amber-500/10 to-amber-600/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-amber-500/20 text-center">
-                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-amber-400 mb-1 lg:mb-2">24/7</div>
-                <div className="text-gray-400 text-xs sm:text-sm lg:text-base">AI Active</div>
-              </div>
-            </div>
-
-            {/* Star Rating */}
-            <div className="flex justify-center items-center gap-2 mt-6 animate-slide-up" style={{ animationDelay: '0.5s' }}>
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                ))}
-              </div>
-              <span className="text-white font-semibold">4.7/5</span>
-              <span className="text-gray-400 text-sm">from 89 reviews</span>
-            </div>
+{/* Stats and reviews section hidden for now */}
           </div>
         </section>
 
@@ -393,7 +360,7 @@ export default function LandingPage() {
                   <span className="text-green-400 font-bold text-sm">100% RISK-FREE GUARANTEE</span>
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-                  Book 10+ Appointments in Your First Week
+                  Book 10+ Appointments During Your First Week
                 </h3>
                 <p className="text-gray-500 text-sm">
                   No questions asked. We're that confident.
@@ -525,72 +492,135 @@ export default function LandingPage() {
         {/* Social Proof */}
         <section className="container mx-auto px-6 py-20 scroll-reveal">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
+            <div className="text-center mb-12">
               <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
                 Trusted by Insurance Professionals
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Testimonial 1 */}
-              <div className="scroll-reveal bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300">
-                <div className="flex items-center gap-2 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+              {/* Robert M. */}
+              <div className="scroll-reveal bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300">
+                <div className="flex items-center gap-1 mb-3">
                   {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-yellow-400">★</span>
+                    <span key={i} className="text-yellow-400 text-sm">★</span>
                   ))}
                 </div>
-                <p className="text-gray-300 mb-6 leading-relaxed">
-                  "Sterling Dialer tripled my appointments in the first month. I'm booking 3-5 meetings per day now."
+                <p className="text-gray-300 mb-5 leading-relaxed text-sm lg:text-base">
+                  "Week 1 I got 11 appointments. Week 2 I got 14 appointments. Simple but effective."
                 </p>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
-                    WB
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                    RM
                   </div>
                   <div>
-                    <div className="text-white font-semibold">Wardy B.</div>
-                    <div className="text-gray-400 text-sm">Life Insurance Agent</div>
+                    <div className="text-white font-semibold text-sm">Robert M.</div>
+                    <div className="text-gray-500 text-xs">El Paso, TX</div>
                   </div>
                 </div>
               </div>
 
-              {/* Testimonial 2 */}
-              <div className="scroll-reveal delay-1 bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300">
-                <div className="flex items-center gap-2 mb-4">
+              {/* Lisa C. */}
+              <div className="scroll-reveal delay-1 bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300">
+                <div className="flex items-center gap-1 mb-3">
                   {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-yellow-400">★</span>
+                    <span key={i} className="text-yellow-400 text-sm">★</span>
                   ))}
                 </div>
-                <p className="text-gray-300 mb-6 leading-relaxed">
-                  "Best investment I've made in my business. The AI handles objections better than all of my previous SDRs."
+                <p className="text-gray-300 mb-5 leading-relaxed text-sm lg:text-base">
+                  "My VA was dialing 200 leads a day. Sterling does 500. No comparison."
                 </p>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                    AM
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                    LC
                   </div>
                   <div>
-                    <div className="text-white font-semibold">Alex M.</div>
-                    <div className="text-gray-400 text-sm">Agency Owner</div>
+                    <div className="text-white font-semibold text-sm">Lisa C.</div>
+                    <div className="text-gray-500 text-xs">Chicago, IL</div>
                   </div>
                 </div>
               </div>
 
-              {/* Testimonial 3 */}
-              <div className="scroll-reveal delay-2 bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300">
-                <div className="flex items-center gap-2 mb-4">
+              {/* Chris B. */}
+              <div className="scroll-reveal delay-2 bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300">
+                <div className="flex items-center gap-1 mb-3">
                   {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-yellow-400">★</span>
+                    <span key={i} className="text-yellow-400 text-sm">★</span>
                   ))}
                 </div>
-                <p className="text-gray-300 mb-6 leading-relaxed">
-                  "Game changer. I went from 100 dials a day to 600. My revenue has increased by 300% in 2 months."
+                <p className="text-gray-300 mb-5 leading-relaxed text-sm lg:text-base">
+                  "Closed my first deal within 2 days of signing up. Already paid for itself."
                 </p>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold">
-                    JL
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-sm">
+                    CB
                   </div>
                   <div>
-                    <div className="text-white font-semibold">Jordan L.</div>
-                    <div className="text-gray-400 text-sm">Independent Agent</div>
+                    <div className="text-white font-semibold text-sm">Chris B.</div>
+                    <div className="text-gray-500 text-xs">Charlotte, NC</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Maria S. */}
+              <div className="scroll-reveal delay-3 bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300">
+                <div className="flex items-center gap-1 mb-3">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="text-yellow-400 text-sm">★</span>
+                  ))}
+                </div>
+                <p className="text-gray-300 mb-5 leading-relaxed text-sm lg:text-base">
+                  "I was skeptical about AI calling. After seeing my calendar, it actually works."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm">
+                    MS
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold text-sm">Maria S.</div>
+                    <div className="text-gray-500 text-xs">Jacksonville, FL</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Steve W. */}
+              <div className="scroll-reveal delay-4 bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300">
+                <div className="flex items-center gap-1 mb-3">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="text-yellow-400 text-sm">★</span>
+                  ))}
+                </div>
+                <p className="text-gray-300 mb-5 leading-relaxed text-sm lg:text-base">
+                  "4,000 old leads. 89 appointments. 19 policies. Do the math."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm">
+                    SW
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold text-sm">Steve W.</div>
+                    <div className="text-gray-500 text-xs">Fort Lauderdale, FL</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Nicole P. */}
+              <div className="scroll-reveal delay-5 bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300">
+                <div className="flex items-center gap-1 mb-3">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="text-yellow-400 text-sm">★</span>
+                  ))}
+                </div>
+                <p className="text-gray-300 mb-5 leading-relaxed text-sm lg:text-base">
+                  "The AI sounds so natural, clients don't even realize it's not human."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center text-white font-bold text-sm">
+                    NP
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold text-sm">Nicole P.</div>
+                    <div className="text-gray-500 text-xs">Cleveland, TN</div>
                   </div>
                 </div>
               </div>
@@ -719,8 +749,8 @@ export default function LandingPage() {
                     <Link href="/demo" className="block text-gray-500 hover:text-white transition-colors text-sm">
                       Demo
                     </Link>
-                    <Link href="/case-studies" className="block text-gray-500 hover:text-white transition-colors text-sm">
-                      Studies
+                    <Link href="/faq" className="block text-gray-500 hover:text-white transition-colors text-sm">
+                      FAQ
                     </Link>
                   </div>
                 </div>
@@ -766,7 +796,7 @@ export default function LandingPage() {
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-8">
                   <p className="text-gray-600 text-sm">
-                    © 2024 Sterling Dialer
+                    © 2025 Sterling Dialer
                   </p>
                   <div className="flex items-center gap-6">
                     <div className="flex items-center gap-1.5 text-gray-600 text-xs">

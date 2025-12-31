@@ -2,6 +2,12 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
+  // Block access to hidden pages (redirect to home)
+  const pathname = request.nextUrl.pathname;
+  if (pathname === '/case-studies') {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+  
   // First, handle Supabase session
   const response = await updateSession(request);
   

@@ -180,16 +180,7 @@ export function PublicNav() {
             >
               Demo
             </Link>
-            <Link 
-              href="/case-studies" 
-              className={`px-4 py-2 rounded-lg transition-all duration-200 font-medium ${
-                pathname === '/case-studies'
-                  ? 'text-white bg-white/10'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              Case Studies
-            </Link>
+{/* Case Studies link hidden for now */}
             <Link 
               href="/faq" 
               className={`px-4 py-2 rounded-lg transition-all duration-200 font-medium ${

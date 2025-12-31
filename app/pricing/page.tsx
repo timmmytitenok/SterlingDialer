@@ -224,7 +224,7 @@ export default function PricingPage() {
           </div>
 
           {/* Detailed Features Section - Below the Card */}
-          <div className="scroll-reveal max-w-6xl mx-auto mt-20 sm:mt-20 md:mt-24 mb-32 sm:mb-36 md:mb-44 px-3 sm:px-4">
+          <div className="scroll-reveal max-w-6xl mx-auto mt-20 sm:mt-30 md:mt-48 mb-32 sm:mb-36 md:mb-44 px-3 sm:px-4">
             <div className="text-center mb-6 sm:mb-8 md:mb-10">
               <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-white/50 mb-1.5 sm:mb-2">
                 WHAT'S INCLUDED
