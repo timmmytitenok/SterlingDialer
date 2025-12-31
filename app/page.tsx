@@ -694,7 +694,7 @@ export default function LandingPage() {
         </section>
 
         {/* Schedule Call CTA */}
-        <section className="container mx-auto px-6 pt-24 pb-48 scroll-reveal">
+        <section className="container mx-auto px-4 pt-24 pb-48 scroll-reveal">
           <div className="max-w-2xl mx-auto text-center">
             <div className="p-6 sm:p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
               <h3 className="text-2xl sm:text-4xl font-bold text-white mb-3">Still Have Questions?</h3>
