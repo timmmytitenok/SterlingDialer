@@ -181,13 +181,19 @@ export async function GET(req: Request) {
     console.log(`💵 Minutes Revenue: $${minutesRevenue}, Total Refills: ${totalRefills}`);
 
     // ============================================
-    // 3. TIME-BASED BREAKDOWN
+    // 3. TIME-BASED BREAKDOWN (ALWAYS USE EST)
     // ============================================
     
+    // Get current time in EST for consistent day reset across all users
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const last7Days = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const last30Days = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const today = new Date(estNow.getFullYear(), estNow.getMonth(), estNow.getDate());
+    // Convert back to UTC for database queries
+    const todayUTC = new Date(today.toLocaleString('en-US', { timeZone: 'UTC' }));
+    const last7Days = new Date(todayUTC.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const last30Days = new Date(todayUTC.getTime() - 30 * 24 * 60 * 60 * 1000);
+    
+    console.log(`📅 Admin stats using EST timezone - Today starts at: ${today.toISOString()}`);
 
     // Today's revenue
     const todayRefills = refillTransactions?.filter((t: any) => {
@@ -327,12 +333,12 @@ export async function GET(req: Request) {
     }
 
     // ============================================
-    // 7. CHART DATA (Last 12 Months) - Including Custom Revenue
+    // 7. CHART DATA (Last 12 Months) - Including Custom Revenue (Using EST)
     // ============================================
     
     const chartData12Months = [];
     for (let i = 11; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const date = new Date(estNow.getFullYear(), estNow.getMonth() - i, 1);
       const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 1);
 

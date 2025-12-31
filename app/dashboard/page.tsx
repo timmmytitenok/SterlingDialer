@@ -40,27 +40,21 @@ export default async function DashboardPage() {
 
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
 
-  // Get user's timezone for accurate day reset (fixes 7pm reset bug!)
-  const { data: aiSettings } = await supabase
-    .from('ai_control_settings')
-    .select('user_timezone')
-    .eq('user_id', user.id)
-    .single();
+  // ALWAYS use EST (America/New_York) for day reset - consistent across ALL users
+  // This ensures the dashboard, AI dialer, and admin panel all reset at the same time (midnight EST)
+  const EST_TIMEZONE = 'America/New_York';
+  console.log(`🌍 Using EST timezone for day reset (midnight Eastern Time for ALL users)`);
 
-  const userTimezone = aiSettings?.user_timezone || 'America/New_York'; // Default to EST if not set
-  console.log(`🌍 User timezone: ${userTimezone} (Day resets at midnight in this timezone, not UTC!)`);
+  // Get current date ranges IN EST TIMEZONE (consistent for all users!)
+  const startOfTodayISO = getStartOfTodayInUserTimezone(EST_TIMEZONE);
+  const startOfYesterdayISO = getDaysAgoInUserTimezone(EST_TIMEZONE, 1);
+  const startOf7DaysISO = getDaysAgoInUserTimezone(EST_TIMEZONE, 7);
+  const startOf30DaysISO = getDaysAgoInUserTimezone(EST_TIMEZONE, 30);
+  const todayDateString = getTodayDateString(EST_TIMEZONE);
+  const yesterdayDateString = getDateStringDaysAgo(EST_TIMEZONE, 1);
 
-  // Get current date ranges IN USER'S TIMEZONE (not UTC!)
-  // This fixes the bug where day was resetting at 7pm instead of midnight
-  const startOfTodayISO = getStartOfTodayInUserTimezone(userTimezone);
-  const startOfYesterdayISO = getDaysAgoInUserTimezone(userTimezone, 1);
-  const startOf7DaysISO = getDaysAgoInUserTimezone(userTimezone, 7);
-  const startOf30DaysISO = getDaysAgoInUserTimezone(userTimezone, 30);
-  const todayDateString = getTodayDateString(userTimezone);
-  const yesterdayDateString = getDateStringDaysAgo(userTimezone, 1);
-
-  console.log(`📅 Today starts at: ${startOfTodayISO} (midnight in ${userTimezone})`);
-  console.log(`📅 Today's date: ${todayDateString}`);
+  console.log(`📅 Today starts at: ${startOfTodayISO} (midnight EST)`);
+  console.log(`📅 Today's date (EST): ${todayDateString}`);
 
   // ============================================================================
   // SCALABLE QUERIES - Using count queries to handle 200k+ calls efficiently
@@ -169,8 +163,8 @@ export default async function DashboardPage() {
   const adminStatsYesterday = allAdminStats?.find(stat => stat.date === yesterdayDateString);
 
   // Calculate admin adjustments for different time periods
-  const last7DaysDate = getDateStringDaysAgo(userTimezone, 7);
-  const last30DaysDate = getDateStringDaysAgo(userTimezone, 30);
+  const last7DaysDate = getDateStringDaysAgo(EST_TIMEZONE, 7);
+  const last30DaysDate = getDateStringDaysAgo(EST_TIMEZONE, 30);
   
   // Admin adjustments for last 7 days
   const admin7DaysCalls = allAdminStats?.filter(stat => stat.date >= last7DaysDate).reduce((sum, stat) => sum + (stat.total_calls || 0), 0) || 0;
@@ -311,9 +305,9 @@ export default async function DashboardPage() {
   // Calculate daily base cost
   let dailyBaseCost = 0;
   if (subscription) {
-    // Get current date in user's timezone for month calculation
-    const nowInUserTZ = new Date(new Date().toLocaleString('en-US', { timeZone: userTimezone }));
-    const daysInMonth = new Date(nowInUserTZ.getFullYear(), nowInUserTZ.getMonth() + 1, 0).getDate();
+    // Get current date in EST for month calculation
+    const nowInEST = new Date(new Date().toLocaleString('en-US', { timeZone: EST_TIMEZONE }));
+    const daysInMonth = new Date(nowInEST.getFullYear(), nowInEST.getMonth() + 1, 0).getDate();
     let monthlyPrice = 0;
     
     // Updated pricing (November 2024)
@@ -328,7 +322,7 @@ export default async function DashboardPage() {
     console.log('='.repeat(60));
     console.log(`💰 DAILY BASE COST (${subscription.subscription_tier.toUpperCase()})`);
     console.log(`   Monthly Price: $${monthlyPrice}`);
-    console.log(`   Days in ${nowInUserTZ.toLocaleString('en-US', { month: 'long', timeZone: userTimezone })}: ${daysInMonth}`);
+    console.log(`   Days in ${nowInEST.toLocaleString('en-US', { month: 'long', timeZone: EST_TIMEZONE })}: ${daysInMonth}`);
     console.log(`   Daily Cost: $${monthlyPrice} ÷ ${daysInMonth} = $${dailyBaseCost.toFixed(2)}/day`);
     console.log('='.repeat(60));
     console.log('');
@@ -457,10 +451,10 @@ export default async function DashboardPage() {
     console.log(`   📅 ${r.date}: revenue=$${r.revenue || 0}, ai_retainer=$${r.ai_retainer_cost || 0}, ai_daily=$${r.ai_daily_cost || 0}, TOTAL=$${calculatedTotal.toFixed(2)}`);
   });
 
-  // Prepare chart data (using user's timezone for accurate date boundaries!)
+  // Prepare chart data (using EST for consistent date boundaries!)
   const monthlyRevenueData = [];
   for (let i = 29; i >= 0; i--) {
-    const dateStr = getDateStringDaysAgo(userTimezone, i);
+    const dateStr = getDateStringDaysAgo(EST_TIMEZONE, i);
     
     const dayRevenue = revenueData?.find(r => r.date === dateStr);
     
@@ -557,19 +551,25 @@ export default async function DashboardPage() {
     return apt.created_at >= startOfYesterdayISO && apt.created_at < startOfTodayISO;
   }).length || 0) + (adminStatsYesterday?.appointments_booked || 0);
 
-  // Prepare call activity chart data (using user's timezone for accurate date boundaries!)
+  // Prepare call activity chart data (using EST for consistent date boundaries!)
   const callActivityData = [];
   for (let i = 29; i >= 0; i--) {
-    const dateStr = getDateStringDaysAgo(userTimezone, i);
+    const dateStr = getDateStringDaysAgo(EST_TIMEZONE, i);
     
-    // Get start and end of this day in user's timezone
-    const dayStartISO = getDaysAgoInUserTimezone(userTimezone, i);
-    const dayEndISO = i > 0 ? getDaysAgoInUserTimezone(userTimezone, i - 1) : new Date().toISOString();
+    // Get start and end of this day in EST
+    const dayStartISO = getDaysAgoInUserTimezone(EST_TIMEZONE, i);
+    const dayEndISO = i > 0 ? getDaysAgoInUserTimezone(EST_TIMEZONE, i - 1) : new Date().toISOString();
+    
+    // Convert to timestamps for accurate comparison (fixes string comparison bug!)
+    const dayStartTime = new Date(dayStartISO).getTime();
+    const dayEndTime = new Date(dayEndISO).getTime();
     
     // Use chartCallsData (limited columns, high limit) for chart calculations
-    const dayCalls = chartCallsData?.filter(call => 
-      call.created_at >= dayStartISO && call.created_at < dayEndISO
-    ) || [];
+    // IMPORTANT: Use Date comparison, NOT string comparison for accurate filtering
+    const dayCalls = chartCallsData?.filter(call => {
+      const callTime = new Date(call.created_at).getTime();
+      return callTime >= dayStartTime && callTime < dayEndTime;
+    }) || [];
     
     const answeredCalls = dayCalls.filter(call => call.disposition === 'answered' || call.connected === true).length;
     const bookedCalls = dayCalls.filter(call => call.outcome === 'appointment_booked').length;

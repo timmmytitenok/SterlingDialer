@@ -186,9 +186,15 @@ export default function SalesDashboardPage() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  // Helper function to get current time in EST (consistent with rest of app)
+  const getEstNow = () => {
+    const now = new Date();
+    return new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  };
+
   // Calculate stats based on time period
   const getChartData = () => {
-    const now = new Date();
+    const now = getEstNow();
     const data: { label: string; amount: number }[] = [];
     
     if (chartPeriod === '7days') {
@@ -248,7 +254,7 @@ export default function SalesDashboardPage() {
   
   // Get total for selected period
   const getPeriodTotal = () => {
-    const now = new Date();
+    const now = getEstNow();
     let startDate: Date;
     
     if (chartPeriod === '7days') {
@@ -269,7 +275,7 @@ export default function SalesDashboardPage() {
 
   // Get current month and last month data
   const getCurrentMonthRevenue = () => {
-    const now = new Date();
+    const now = getEstNow();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     return commissions
       .filter(c => (c.month_year || c.created_at.substring(0, 7)) === currentMonth)
@@ -277,7 +283,7 @@ export default function SalesDashboardPage() {
   };
 
   const getLastMonthRevenue = () => {
-    const now = new Date();
+    const now = getEstNow();
     now.setMonth(now.getMonth() - 1);
     const lastMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     return commissions
