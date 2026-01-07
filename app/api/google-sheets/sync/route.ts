@@ -86,27 +86,28 @@ export async function POST(request: Request) {
     const sheetConfig = sheetConfigs[0];
 
     console.log('🔄 SYNC - Sheet Config lead_type:', sheetConfig.lead_type);
-    console.log('🔄 SYNC - Lead Type Mapping: 1=NULL/Default, 2=FE, 3=FE Veteran, 4=Mortgage Protection');
+    console.log('🔄 SYNC - Lead Type Mapping: 2=FE, 3=FE Veteran, 4=MP, 5=FE #2, 6=MP #2');
     
-    // BULLETPROOF: If sheet doesn't have a valid lead_type (2, 3, or 4), REJECT the sync
-    const validLeadTypes = [2, 3, 4];
+    // BULLETPROOF: If sheet doesn't have a valid lead_type, REJECT the sync
+    const validLeadTypes = [2, 3, 4, 5, 6];
     if (!validLeadTypes.includes(sheetConfig.lead_type)) {
       console.error('❌❌❌ CRITICAL ERROR: Sheet lead_type is invalid!');
       console.error(`   Sheet ID: ${sheetConfig.id}`);
       console.error(`   Sheet Name: ${sheetConfig.sheet_name}`);
       console.error(`   lead_type value: ${sheetConfig.lead_type}`);
-      console.error('   Expected: 2 (Final Expense), 3 (Veterans FE), or 4 (Mortgage Protection)');
+      console.error('   Expected: 2 (FE), 3 (FE Veteran), 4 (MP), 5 (FE #2), or 6 (MP #2)');
       
       return NextResponse.json({
-        error: 'This sheet has an invalid lead type. Please delete and re-add the sheet, making sure to select Final Expense, Veterans, or Mortgage Protection.',
+        error: 'This sheet has an invalid lead type. Please delete and re-add the sheet, making sure to select a valid lead type.',
         sheetId: sheetConfig.id,
         sheetName: sheetConfig.sheet_name,
         currentLeadType: sheetConfig.lead_type,
-        validLeadTypes: [2, 3, 4],
+        validLeadTypes: [2, 3, 4, 5, 6],
       }, { status: 400 });
     }
     
-    console.log(`✅ Sheet has valid lead_type: ${sheetConfig.lead_type} (${sheetConfig.lead_type === 2 ? 'Final Expense' : sheetConfig.lead_type === 3 ? 'Veterans FE' : 'Mortgage Protection'})`);
+    const leadTypeLabels: Record<number, string> = { 2: 'Final Expense', 3: 'FE Veteran', 4: 'Mortgage Protection', 5: 'Final Expense #2', 6: 'Mortgage Protection #2' };
+    console.log(`✅ Sheet has valid lead_type: ${sheetConfig.lead_type} (${leadTypeLabels[sheetConfig.lead_type] || 'Unknown'})`);
 
     // Get service account credentials from environment
     const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;

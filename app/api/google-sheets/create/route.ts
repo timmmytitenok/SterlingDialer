@@ -16,10 +16,10 @@ export async function POST(request: Request) {
     const { sheetUrl, googleSheetId, sheetName, tabName, columnMapping, minLeadAgeDays, leadType } = await request.json();
 
     console.log('📋 CREATE SHEET - Received leadType:', leadType, `(type: ${typeof leadType})`);
-    console.log('📋 CREATE SHEET - Lead Type Mapping: 2=FE, 3=FE Veteran, 4=Mortgage Protection');
+    console.log('📋 CREATE SHEET - Lead Type Mapping: 2=FE, 3=FE Veteran, 4=MP, 5=FE #2, 6=MP #2');
     
-    // BULLETPROOF: Validate leadType is one of the expected values (2, 3, or 4)
-    const validLeadTypes = [2, 3, 4];
+    // BULLETPROOF: Validate leadType is one of the expected values
+    const validLeadTypes = [2, 3, 4, 5, 6];
     if (!validLeadTypes.includes(leadType)) {
       console.error('❌❌❌ CRITICAL ERROR: leadType is invalid!');
       console.error(`   Received: ${leadType} (type: ${typeof leadType})`);
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       // If leadType is 1, null, or undefined, reject the request
       if (leadType === 1 || leadType === null || leadType === undefined) {
         return NextResponse.json({
-          error: 'Invalid lead type. Please select Final Expense, Veterans, or Mortgage Protection.',
+          error: 'Invalid lead type. Please select a valid script type.',
           receivedLeadType: leadType,
         }, { status: 400 });
       }

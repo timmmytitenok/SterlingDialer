@@ -98,15 +98,16 @@ export default function AdminUserDetailPage() {
   const [confirmationEmail, setConfirmationEmail] = useState('');
   const [scriptType, setScriptType] = useState<'final_expense' | 'mortgage_protection'>('final_expense');
   
-  // Per-user Retell AI Agents
+  // Per-user Retell AI Agents (2 agents per user)
+  // Lead Type options: final_expense, final_expense_2, mortgage_protection, mortgage_protection_2
   const [retellAgent1Id, setRetellAgent1Id] = useState('');
   const [retellAgent1Phone, setRetellAgent1Phone] = useState('');
   const [retellAgent1Name, setRetellAgent1Name] = useState('');
-  const [retellAgent1Type, setRetellAgent1Type] = useState<'final_expense' | 'mortgage_protection'>('final_expense');
+  const [retellAgent1Type, setRetellAgent1Type] = useState<'final_expense' | 'final_expense_2' | 'mortgage_protection' | 'mortgage_protection_2'>('final_expense');
   const [retellAgent2Id, setRetellAgent2Id] = useState('');
   const [retellAgent2Phone, setRetellAgent2Phone] = useState('');
   const [retellAgent2Name, setRetellAgent2Name] = useState('');
-  const [retellAgent2Type, setRetellAgent2Type] = useState<'final_expense' | 'mortgage_protection'>('final_expense');
+  const [retellAgent2Type, setRetellAgent2Type] = useState<'final_expense' | 'final_expense_2' | 'mortgage_protection' | 'mortgage_protection_2'>('mortgage_protection');
   
 
   // Quick Setup / Onboarding steps
@@ -186,7 +187,7 @@ export default function AdminUserDetailPage() {
       if (data.user.script_type) setScriptType(data.user.script_type);
       if (data.user.cost_per_minute !== undefined) setCostPerMinute(data.user.cost_per_minute.toString());
       
-      // Per-user Retell AI Agents
+      // Per-user Retell AI Agents (2 agents)
       if (data.user.retell_agent_1_id) setRetellAgent1Id(data.user.retell_agent_1_id);
       if (data.user.retell_agent_1_phone) setRetellAgent1Phone(data.user.retell_agent_1_phone);
       if (data.user.retell_agent_1_name) setRetellAgent1Name(data.user.retell_agent_1_name);
@@ -774,11 +775,13 @@ export default function AdminUserDetailPage() {
                       <label className="text-xs text-gray-400 block mb-1">Lead Type</label>
                       <select
                         value={retellAgent1Type}
-                        onChange={(e) => setRetellAgent1Type(e.target.value as 'final_expense' | 'mortgage_protection')}
+                        onChange={(e) => setRetellAgent1Type(e.target.value as 'final_expense' | 'final_expense_2' | 'mortgage_protection' | 'mortgage_protection_2')}
                         className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-green-500/30 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 focus:outline-none text-sm cursor-pointer"
                       >
                         <option value="final_expense">💚 Final Expense</option>
+                        <option value="final_expense_2">💚 Final Expense #2</option>
                         <option value="mortgage_protection">🏠 Mortgage Protection</option>
+                        <option value="mortgage_protection_2">🏠 Mortgage Protection #2</option>
                       </select>
                     </div>
                   </div>
@@ -829,11 +832,13 @@ export default function AdminUserDetailPage() {
                       <label className="text-xs text-gray-400 block mb-1">Lead Type</label>
                       <select
                         value={retellAgent2Type}
-                        onChange={(e) => setRetellAgent2Type(e.target.value as 'final_expense' | 'mortgage_protection')}
+                        onChange={(e) => setRetellAgent2Type(e.target.value as 'final_expense' | 'final_expense_2' | 'mortgage_protection' | 'mortgage_protection_2')}
                         className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-blue-500/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none text-sm cursor-pointer"
                       >
                         <option value="final_expense">💚 Final Expense</option>
+                        <option value="final_expense_2">💚 Final Expense #2</option>
                         <option value="mortgage_protection">🏠 Mortgage Protection</option>
+                        <option value="mortgage_protection_2">🏠 Mortgage Protection #2</option>
                       </select>
                     </div>
                   </div>
@@ -860,6 +865,7 @@ export default function AdminUserDetailPage() {
                     </div>
                 </div>
               </div>
+
             </div>
 
               {/* Dialer Status */}
@@ -1037,7 +1043,7 @@ export default function AdminUserDetailPage() {
                         costPerMinute: parseFloat(costPerMinute) || 0.35,
                         timezone: timezone || 'America/New_York',
                         confirmationEmail: confirmationEmail.trim() || null,
-                    // New agent fields
+                    // Agent 1 and 2 fields (2 agents per user)
                     retellAgent1Id: retellAgent1Id.trim() || null,
                     retellAgent1Phone: retellAgent1Phone.trim() || null,
                     retellAgent1Name: retellAgent1Name.trim() || null,

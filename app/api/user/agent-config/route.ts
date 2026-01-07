@@ -17,7 +17,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch user's Retell config with agent settings
+    // Fetch user's Retell config with agent settings (2 agents per user)
     const { data: config, error: configError } = await supabase
       .from('user_retell_config')
       .select(`
@@ -52,21 +52,22 @@ export async function GET() {
       config?.retell_agent_2_name
     );
 
-    // Build agent configuration response
-    // If not configured, show "Script #1" or "Script #2" as default name
+    // Build agent configuration response (2 agents per user)
+    // Agent 1 is used for Final Expense lead types (2, 3, 5)
+    // Agent 2 is used for Mortgage Protection lead types (4, 6)
     const agents = {
       agent1: {
         id: config?.retell_agent_1_id || null,
         phone: config?.retell_agent_1_phone || null,
-        name: isAgent1Configured ? config.retell_agent_1_name : 'Script #1',
+        name: isAgent1Configured ? config.retell_agent_1_name : 'Agent 1',
         type: config?.retell_agent_1_type || 'final_expense',
         isConfigured: isAgent1Configured,
       },
       agent2: {
         id: config?.retell_agent_2_id || null,
         phone: config?.retell_agent_2_phone || null,
-        name: isAgent2Configured ? config.retell_agent_2_name : 'Script #2',
-        type: config?.retell_agent_2_type || 'final_expense',
+        name: isAgent2Configured ? config.retell_agent_2_name : 'Agent 2',
+        type: config?.retell_agent_2_type || 'mortgage_protection',
         isConfigured: isAgent2Configured,
       },
       voiceName: config?.agent_name || 'Sarah',

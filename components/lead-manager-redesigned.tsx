@@ -174,10 +174,10 @@ type Lead = {
   street_address?: string;
 };
 
-// Agent config type for custom agent names
+// Agent config type for custom agent names - includes type for dynamic mapping
 interface AgentConfig {
-  agent1: { name: string; isConfigured: boolean };
-  agent2: { name: string; isConfigured: boolean };
+  agent1: { name: string; isConfigured: boolean; type: string };
+  agent2: { name: string; isConfigured: boolean; type: string };
 }
 
 // Emoji options for agents - consistent with lead-type-selector
@@ -188,23 +188,64 @@ const getAgentEmoji = (name: string, index: number): string => {
   return agentEmojis[(hash + index) % agentEmojis.length];
 };
 
-// Helper to get lead type label - now supports custom agent names
-// 1 = NULL/default, 2 = Agent 1, 3 = Agent 1 (Veteran), 4 = Agent 2
+// Helper to get lead type label - shows the configured agent NAME
+// Maps lead_type to the agent whose configured type matches
+// lead_type 2 = final_expense, 3 = veteran, 4 = mortgage_protection, 5 = final_expense_2, 6 = mortgage_protection_2
 const getLeadTypeLabel = (leadType?: number, agentConfig?: AgentConfig): { label: string; icon: string; color: string } => {
   const agent1Name = agentConfig?.agent1?.name || 'Agent 1';
   const agent2Name = agentConfig?.agent2?.name || 'Agent 2';
+  const agent1Type = agentConfig?.agent1?.type || 'final_expense';
+  const agent2Type = agentConfig?.agent2?.type || 'mortgage_protection';
   
-  switch (leadType) {
-    case 2:
+  // Map lead_type to type string
+  const leadTypeToTypeString: Record<number, string> = {
+    2: 'final_expense',
+    3: 'final_expense', // Veteran is still final_expense type
+    4: 'mortgage_protection',
+    5: 'final_expense_2',
+    6: 'mortgage_protection_2',
+  };
+  
+  const leadTypeString = leadType ? leadTypeToTypeString[leadType] : null;
+  
+  // Check which agent is configured with this lead type
+  if (leadTypeString) {
+    // Agent 1 handles this lead type
+    if (agent1Type === leadTypeString) {
       return { label: agent1Name, icon: getAgentEmoji(agent1Name, 0), color: 'green' };
-    case 3:
-      return { label: `${agent1Name} (Veteran)`, icon: '🎖️', color: 'amber' };
-    case 4:
+    }
+    // Agent 2 handles this lead type
+    if (agent2Type === leadTypeString) {
       return { label: agent2Name, icon: getAgentEmoji(agent2Name, 1), color: 'blue' };
-    case 1:
-    default:
-      return { label: 'Unknown', icon: '❓', color: 'gray' };
+    }
+    
+    // Fallback: check if agent type "family" matches (e.g., final_expense matches final_expense_2)
+    const isFinalExpenseFamily = ['final_expense', 'final_expense_2'].includes(leadTypeString);
+    const isMortgageFamily = ['mortgage_protection', 'mortgage_protection_2'].includes(leadTypeString);
+    
+    if (isFinalExpenseFamily) {
+      // Check if any agent handles final expense family
+      if (['final_expense', 'final_expense_2'].includes(agent1Type)) {
+        return { label: agent1Name, icon: getAgentEmoji(agent1Name, 0), color: 'green' };
+      }
+      if (['final_expense', 'final_expense_2'].includes(agent2Type)) {
+        return { label: agent2Name, icon: getAgentEmoji(agent2Name, 1), color: 'blue' };
+      }
+    }
+    
+    if (isMortgageFamily) {
+      // Check if any agent handles mortgage family
+      if (['mortgage_protection', 'mortgage_protection_2'].includes(agent1Type)) {
+        return { label: agent1Name, icon: getAgentEmoji(agent1Name, 0), color: 'green' };
+      }
+      if (['mortgage_protection', 'mortgage_protection_2'].includes(agent2Type)) {
+        return { label: agent2Name, icon: getAgentEmoji(agent2Name, 1), color: 'blue' };
+      }
+    }
   }
+  
+  // Default fallback
+  return { label: 'Unknown', icon: '❓', color: 'gray' };
 };
 
 type GoogleSheet = {
@@ -425,6 +466,15 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
 
   // Track if we've already done an auto-retry
   const [hasAutoRetried, setHasAutoRetried] = useState(false);
+
+  // Track visit to Lead Manager for onboarding step 3
+  useEffect(() => {
+    fetch('/api/onboarding/mark-step-complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ step: 3 }),
+    }).catch(() => {}); // Silently fail if not in onboarding
+  }, []);
 
   useEffect(() => {
     const initializeAndLoadLeads = async () => {

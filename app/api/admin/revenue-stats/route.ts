@@ -243,6 +243,14 @@ export async function GET(req: Request) {
 
     const customRevenueForCharts = customItemsForCharts?.filter((item: any) => item.type === 'revenue') || [];
     console.log(`📊 Found ${customRevenueForCharts.length} custom revenue items for charts`);
+    
+    // DEBUG: Log all custom revenue items to see what's being fetched
+    if (customRevenueForCharts.length > 0) {
+      console.log('📋 Custom revenue items for charts:');
+      customRevenueForCharts.forEach((item: any, i: number) => {
+        console.log(`   ${i + 1}. Date: ${item.date}, Category: "${item.category}", Amount: $${item.amount}`);
+      });
+    }
 
     // ============================================
     // 5. CHART DATA (Last 30 Days) - Including Custom Revenue
@@ -267,17 +275,28 @@ export async function GET(req: Request) {
         return sDate >= dateStart && sDate < dateEnd;
       }).length * 379;
 
-      // Custom revenue (Balance Refill category) - manual entries
-      const dayCustomRefills = customRevenueForCharts.filter((item: any) => {
-        return item.date === dateStr && item.category === 'Balance Refill';
-      }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+      // Custom revenue - normalize date and get all matching entries for this day
+      const dayCustomItems = customRevenueForCharts.filter((item: any) => {
+        const itemDateStr = typeof item.date === 'string' ? item.date.split('T')[0] : new Date(item.date).toISOString().split('T')[0];
+        return itemDateStr === dateStr;
+      });
 
-      // Custom revenue (Subscription category)
-      const dayCustomSubs = customRevenueForCharts.filter((item: any) => {
-        return item.date === dateStr && item.category === 'Subscription';
-      }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+      // Balance Refill category → goes to minutesRevenue
+      const dayCustomRefills = dayCustomItems
+        .filter((item: any) => item.category === 'Balance Refill')
+        .reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
 
-      const totalMinutes = dayRefills + dayCustomRefills;
+      // Subscription category → goes to subscriptionRevenue  
+      const dayCustomSubs = dayCustomItems
+        .filter((item: any) => item.category === 'Subscription')
+        .reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+
+      // All OTHER categories → also goes to minutesRevenue (so they appear in chart)
+      const dayCustomOther = dayCustomItems
+        .filter((item: any) => item.category !== 'Balance Refill' && item.category !== 'Subscription')
+        .reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+
+      const totalMinutes = dayRefills + dayCustomRefills + dayCustomOther;
       const totalSubs = daySubs + dayCustomSubs;
 
       chartData30Days.push({
@@ -311,17 +330,28 @@ export async function GET(req: Request) {
         return sDate >= dateStart && sDate < dateEnd;
       }).length * 379;
 
-      // Custom revenue (Balance Refill category) - manual entries
-      const dayCustomRefills = customRevenueForCharts.filter((item: any) => {
-        return item.date === dateStr && item.category === 'Balance Refill';
-      }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+      // Custom revenue - normalize date and get all matching entries for this day
+      const dayCustomItems = customRevenueForCharts.filter((item: any) => {
+        const itemDateStr = typeof item.date === 'string' ? item.date.split('T')[0] : new Date(item.date).toISOString().split('T')[0];
+        return itemDateStr === dateStr;
+      });
 
-      // Custom revenue (Subscription category)
-      const dayCustomSubs = customRevenueForCharts.filter((item: any) => {
-        return item.date === dateStr && item.category === 'Subscription';
-      }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+      // Balance Refill category → goes to minutesRevenue
+      const dayCustomRefills = dayCustomItems
+        .filter((item: any) => item.category === 'Balance Refill')
+        .reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
 
-      const totalMinutes = dayRefills + dayCustomRefills;
+      // Subscription category → goes to subscriptionRevenue  
+      const dayCustomSubs = dayCustomItems
+        .filter((item: any) => item.category === 'Subscription')
+        .reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+
+      // All OTHER categories → also goes to minutesRevenue (so they appear in chart)
+      const dayCustomOther = dayCustomItems
+        .filter((item: any) => item.category !== 'Balance Refill' && item.category !== 'Subscription')
+        .reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+
+      const totalMinutes = dayRefills + dayCustomRefills + dayCustomOther;
       const totalSubs = daySubs + dayCustomSubs;
 
       chartData7Days.push({
@@ -354,19 +384,29 @@ export async function GET(req: Request) {
         return sDate >= monthStart && sDate < monthEnd;
       }).length * 379;
 
-      // Custom revenue for this month (Balance Refill category) - manual entries
-      const monthCustomRefills = customRevenueForCharts.filter((item: any) => {
-        const itemDate = new Date(item.date);
-        return itemDate >= monthStart && itemDate < monthEnd && item.category === 'Balance Refill';
-      }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+      // Custom revenue for this month - normalize dates and filter by month range
+      const monthCustomItems = customRevenueForCharts.filter((item: any) => {
+        const itemDateStr = typeof item.date === 'string' ? item.date.split('T')[0] : item.date;
+        const itemDate = new Date(itemDateStr + 'T00:00:00'); // Ensure consistent parsing
+        return itemDate >= monthStart && itemDate < monthEnd;
+      });
 
-      // Custom revenue for this month (Subscription category)
-      const monthCustomSubs = customRevenueForCharts.filter((item: any) => {
-        const itemDate = new Date(item.date);
-        return itemDate >= monthStart && itemDate < monthEnd && item.category === 'Subscription';
-      }).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+      // Balance Refill category → goes to minutesRevenue
+      const monthCustomRefills = monthCustomItems
+        .filter((item: any) => item.category === 'Balance Refill')
+        .reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
 
-      const totalMinutes = monthRefills + monthCustomRefills;
+      // Subscription category → goes to subscriptionRevenue
+      const monthCustomSubs = monthCustomItems
+        .filter((item: any) => item.category === 'Subscription')
+        .reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+
+      // All OTHER categories → also goes to minutesRevenue (so they appear in chart)
+      const monthCustomOther = monthCustomItems
+        .filter((item: any) => item.category !== 'Balance Refill' && item.category !== 'Subscription')
+        .reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+
+      const totalMinutes = monthRefills + monthCustomRefills + monthCustomOther;
       const totalSubs = monthSubs + monthCustomSubs;
 
       chartData12Months.push({

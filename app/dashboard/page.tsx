@@ -137,13 +137,58 @@ export default async function DashboardPage() {
   const totalCostFromCalls = callCosts?.reduce((sum, call) => sum + (call.cost || 0), 0) || 0;
   console.log(`💰 Total cost from calls table: $${totalCostFromCalls.toFixed(2)}`);
 
-  // Fetch last 30 days of call data for chart (only needed columns, limited)
-  const { data: chartCallsData } = await supabase
+  // Fetch last 30 days of call data for chart (only needed columns)
+  // NOTE: Supabase has a default 1000 row limit. We need to fetch in batches or increase limit.
+  console.log(`📊 CHART DEBUG: Fetching calls for user ${user.id} since ${startOf30DaysISO}`);
+  
+  // Fetch all calls by making multiple requests if needed (pagination)
+  let chartCallsData: any[] = [];
+  let hasMore = true;
+  let offset = 0;
+  const batchSize = 1000;
+  
+  while (hasMore) {
+    const { data: batch, error: batchError } = await supabase
+      .from('calls')
+      .select('created_at, disposition, connected, outcome')
+      .eq('user_id', user.id)
+      .gte('created_at', startOf30DaysISO)
+      .order('created_at', { ascending: true })
+      .range(offset, offset + batchSize - 1);
+    
+    if (batchError) {
+      console.error('📊 CHART BATCH ERROR:', batchError);
+      break;
+    }
+    
+    if (batch && batch.length > 0) {
+      chartCallsData = [...chartCallsData, ...batch];
+      offset += batchSize;
+      hasMore = batch.length === batchSize; // If we got a full batch, there might be more
+    } else {
+      hasMore = false;
+    }
+  }
+  
+  const chartError = null; // Handled in loop
+  
+  console.log(`📊 CHART DEBUG: Fetched ${chartCallsData?.length || 0} calls for chart`);
+  if (chartError) console.error('📊 CHART ERROR:', chartError);
+  if (chartCallsData && chartCallsData.length > 0) {
+    console.log(`📊 CHART DEBUG: Oldest call: ${chartCallsData[0]?.created_at}`);
+    console.log(`📊 CHART DEBUG: Newest call: ${chartCallsData[chartCallsData.length - 1]?.created_at}`);
+    // Show last 10 calls to debug
+    console.log(`📊 LAST 10 CALLS IN DB:`, chartCallsData.slice(-10).map(c => c.created_at));
+  }
+  
+  // Also fetch ALL recent calls (regardless of date filter) to compare
+  const { data: recentCallsDebug } = await supabase
     .from('calls')
-    .select('created_at, disposition, connected, outcome')
+    .select('created_at')
     .eq('user_id', user.id)
-    .gte('created_at', startOf30DaysISO)
-    .limit(500000);
+    .order('created_at', { ascending: false })
+    .limit(10);
+  console.log(`📊 ACTUAL RECENT CALLS (no date filter):`, recentCallsDebug?.map(c => c.created_at));
 
   // Fetch ALL admin-adjusted stats from revenue_tracking table
   const { data: allAdminStats } = await supabase
@@ -553,12 +598,18 @@ export default async function DashboardPage() {
 
   // Prepare call activity chart data (using EST for consistent date boundaries!)
   const callActivityData = [];
+  console.log(`📊 CHART BUILD: Building chart data for ${chartCallsData?.length || 0} calls`);
   for (let i = 29; i >= 0; i--) {
     const dateStr = getDateStringDaysAgo(EST_TIMEZONE, i);
     
     // Get start and end of this day in EST
     const dayStartISO = getDaysAgoInUserTimezone(EST_TIMEZONE, i);
     const dayEndISO = i > 0 ? getDaysAgoInUserTimezone(EST_TIMEZONE, i - 1) : new Date().toISOString();
+    
+    // Debug: log date boundaries for recent days
+    if (i <= 7) {
+      console.log(`📊 DAY ${i}: ${dateStr} | Start: ${dayStartISO} | End: ${dayEndISO}`);
+    }
     
     // Convert to timestamps for accurate comparison (fixes string comparison bug!)
     const dayStartTime = new Date(dayStartISO).getTime();
@@ -570,6 +621,11 @@ export default async function DashboardPage() {
       const callTime = new Date(call.created_at).getTime();
       return callTime >= dayStartTime && callTime < dayEndTime;
     }) || [];
+    
+    // Debug: log call counts for recent days
+    if (i <= 7 && dayCalls.length > 0) {
+      console.log(`📊 DAY ${i} (${dateStr}): Found ${dayCalls.length} calls`);
+    }
     
     const answeredCalls = dayCalls.filter(call => call.disposition === 'answered' || call.connected === true).length;
     const bookedCalls = dayCalls.filter(call => call.outcome === 'appointment_booked').length;
@@ -600,6 +656,12 @@ export default async function DashboardPage() {
       policiesSold: daySoldPolicies + adminPoliciesForDay,  // Real + Admin
     });
   }
+  
+  // Debug: summarize chart data
+  const chartTotalCalls = callActivityData.reduce((sum, d) => sum + d.totalCalls, 0);
+  const chartTotalAnswered = callActivityData.reduce((sum, d) => sum + d.answeredCalls, 0);
+  console.log(`📊 CHART SUMMARY: Total calls in chart: ${chartTotalCalls}, Answered: ${chartTotalAnswered}`);
+  console.log(`📊 CHART DATA (last 7 days):`, callActivityData.slice(-7).map(d => `${d.date}: ${d.totalCalls} calls`).join(', '));
 
   return (
     <div className="min-h-screen bg-[#0B1437] relative overflow-hidden">

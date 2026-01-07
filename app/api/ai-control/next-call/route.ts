@@ -28,8 +28,13 @@ const VENDOR_PLACEHOLDER = '123456';
 
 // =====================================================
 // PER-USER AGENT SELECTION
-// Each user has their own Agent 1 and Agent 2 configured
-// lead_type 2 or 3 = Agent 1, lead_type 4 = Agent 2
+// Each user has 2 AI Agents configured (Agent 1 and Agent 2)
+// Lead types determine which agent is used AND which Retell script is used:
+// lead_type 2 = Final Expense (Agent 1)
+// lead_type 3 = Final Expense Veteran (Agent 1)
+// lead_type 5 = Final Expense #2 (Agent 1) - same agent, different script
+// lead_type 4 = Mortgage Protection (Agent 2)
+// lead_type 6 = Mortgage Protection #2 (Agent 2) - same agent, different script
 // =====================================================
 
 interface UserAgentConfig {
@@ -43,67 +48,81 @@ interface UserAgentConfig {
 
 /**
  * Select the correct per-user agent based on lead_type
- * lead_type 2 or 3 = Agent 1
- * lead_type 4 = Agent 2
+ * IMPORTANT: Only 2 agents per user! Lead type determines script, not agent count.
+ * 
+ * Final Expense types (Agent 1):
+ *   - lead_type 2 = Final Expense
+ *   - lead_type 3 = Final Expense Veteran
+ *   - lead_type 5 = Final Expense #2 (different script, same agent)
+ * 
+ * Mortgage Protection types (Agent 2):
+ *   - lead_type 4 = Mortgage Protection
+ *   - lead_type 6 = Mortgage Protection #2 (different script, same agent)
+ * 
  * If lead_type is null/1, defaults to Agent 1
  */
 const selectAgentByLeadType = (
   leadType: number | null, 
   userConfig: UserAgentConfig
 ): { agentId: string | null; phoneNumber: string | null; agentName: string | null; agentSource: string } => {
-  // lead_type: 1/null=Default (use Agent 1), 2=Agent 1, 3=Agent 1 (Veteran), 4=Agent 2
+  // lead_type mapping to AGENTS:
+  // 1/null = Default (use Agent 1)
+  // 2, 3, 5 = Agent 1 (Final Expense family - all use same agent)
+  // 4, 6 = Agent 2 (Mortgage Protection family - all use same agent)
   
   // Handle null, undefined, or 1 (default) - use Agent 1
   const effectiveLeadType = leadType === null || leadType === undefined || leadType === 1 ? 2 : leadType;
   
   console.log(`🎯 Agent Selection - leadType: ${leadType} → effectiveLeadType: ${effectiveLeadType}`);
   
-  // lead_type 2 or 3 = Agent 1
-  if (effectiveLeadType === 2 || effectiveLeadType === 3) {
+  // Final Expense family (lead_type 2, 3, or 5) = Agent 1
+  if (effectiveLeadType === 2 || effectiveLeadType === 3 || effectiveLeadType === 5) {
     if (userConfig.agent1_id && userConfig.agent1_phone) {
-      console.log(`✅ Using Agent 1: ${userConfig.agent1_name || 'Unnamed'}`);
+      const scriptLabel = effectiveLeadType === 5 ? 'Final Expense #2' : effectiveLeadType === 3 ? 'Final Expense (Veteran)' : 'Final Expense';
+      console.log(`✅ Using Agent 1 for ${scriptLabel}: ${userConfig.agent1_name || 'Unnamed'}`);
       return { 
         agentId: userConfig.agent1_id, 
         phoneNumber: userConfig.agent1_phone,
         agentName: userConfig.agent1_name,
         agentSource: 'USER_AGENT_1' 
       };
-      }
+    }
     console.log('⚠️ Agent 1 not fully configured, checking Agent 2 as fallback...');
-    // Fallback to Agent 2 if Agent 1 not configured
-    if (userConfig.agent2_id && userConfig.agent2_phone) {
-      console.log(`⚠️ Falling back to Agent 2: ${userConfig.agent2_name || 'Unnamed'}`);
-      return { 
-        agentId: userConfig.agent2_id, 
-        phoneNumber: userConfig.agent2_phone,
-        agentName: userConfig.agent2_name,
-        agentSource: 'USER_AGENT_2_FALLBACK' 
-      };
-      }
   }
   
-  // lead_type 4 = Agent 2
-  if (effectiveLeadType === 4) {
+  // Mortgage Protection family (lead_type 4 or 6) = Agent 2
+  if (effectiveLeadType === 4 || effectiveLeadType === 6) {
     if (userConfig.agent2_id && userConfig.agent2_phone) {
-      console.log(`✅ Using Agent 2: ${userConfig.agent2_name || 'Unnamed'}`);
+      const scriptLabel = effectiveLeadType === 6 ? 'Mortgage Protection #2' : 'Mortgage Protection';
+      console.log(`✅ Using Agent 2 for ${scriptLabel}: ${userConfig.agent2_name || 'Unnamed'}`);
       return { 
         agentId: userConfig.agent2_id, 
         phoneNumber: userConfig.agent2_phone,
         agentName: userConfig.agent2_name,
         agentSource: 'USER_AGENT_2' 
       };
-      }
-    console.log('⚠️ Agent 2 not fully configured, checking Agent 1 as fallback...');
-    // Fallback to Agent 1 if Agent 2 not configured
-    if (userConfig.agent1_id && userConfig.agent1_phone) {
-      console.log(`⚠️ Falling back to Agent 1: ${userConfig.agent1_name || 'Unnamed'}`);
-      return { 
-        agentId: userConfig.agent1_id, 
-        phoneNumber: userConfig.agent1_phone,
-        agentName: userConfig.agent1_name,
-        agentSource: 'USER_AGENT_1_FALLBACK' 
-      };
     }
+    console.log('⚠️ Agent 2 not fully configured, checking Agent 1 as fallback...');
+  }
+  
+  // Fallback: Try any configured agent (1 → 2)
+  if (userConfig.agent1_id && userConfig.agent1_phone) {
+    console.log(`⚠️ Falling back to Agent 1: ${userConfig.agent1_name || 'Unnamed'}`);
+    return { 
+      agentId: userConfig.agent1_id, 
+      phoneNumber: userConfig.agent1_phone,
+      agentName: userConfig.agent1_name,
+      agentSource: 'USER_AGENT_1_FALLBACK' 
+    };
+  }
+  if (userConfig.agent2_id && userConfig.agent2_phone) {
+    console.log(`⚠️ Falling back to Agent 2: ${userConfig.agent2_name || 'Unnamed'}`);
+    return { 
+      agentId: userConfig.agent2_id, 
+      phoneNumber: userConfig.agent2_phone,
+      agentName: userConfig.agent2_name,
+      agentSource: 'USER_AGENT_2_FALLBACK' 
+    };
   }
   
   // No agents configured
@@ -783,7 +802,7 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Build user agent config from retell settings
+    // Build user agent config from retell settings (2 agents per user)
     const userAgentConfig: UserAgentConfig = {
       agent1_id: retellConfig.retell_agent_1_id || null,
       agent1_phone: retellConfig.retell_agent_1_phone || null,
@@ -793,9 +812,9 @@ export async function POST(request: Request) {
       agent2_name: retellConfig.retell_agent_2_name || 'Agent 2',
     };
     
-    console.log('📋 Per-User Agent Config:');
-    console.log(`   Agent 1: ${userAgentConfig.agent1_name} - ID: ${userAgentConfig.agent1_id ? 'SET' : '❌'}, Phone: ${userAgentConfig.agent1_phone ? 'SET' : '❌'}`);
-    console.log(`   Agent 2: ${userAgentConfig.agent2_name} - ID: ${userAgentConfig.agent2_id ? 'SET' : '❌'}, Phone: ${userAgentConfig.agent2_phone ? 'SET' : '❌'}`);
+    console.log('📋 Per-User Agent Config (2 agents):');
+    console.log(`   Agent 1 (FE, FE Veteran, FE#2): ${userAgentConfig.agent1_name} - ID: ${userAgentConfig.agent1_id ? 'SET' : '❌'}, Phone: ${userAgentConfig.agent1_phone ? 'SET' : '❌'}`);
+    console.log(`   Agent 2 (MP, MP#2): ${userAgentConfig.agent2_name} - ID: ${userAgentConfig.agent2_id ? 'SET' : '❌'}, Phone: ${userAgentConfig.agent2_phone ? 'SET' : '❌'}`);
 
     // Select the correct agent based on lead_type (uses per-user agents)
     const { agentId: selectedAgentId, phoneNumber: selectedPhoneNumber, agentName, agentSource } = selectAgentByLeadType(
@@ -1066,7 +1085,7 @@ export async function POST(request: Request) {
     console.log(`   Lead Name: ${nextLead.name}`);
     console.log(`   Raw lead_type from DB: ${nextLead.lead_type} (type: ${typeof nextLead.lead_type})`);
     console.log(`   Sending to Retell as: ${dynamicVariables.lead_type} (type: ${typeof dynamicVariables.lead_type})`);
-    const leadTypeLabels: Record<string, string> = { '1': 'NULL/Default', '2': 'Final Expense', '3': 'Final Expense (Veteran)', '4': 'Mortgage Protection' };
+    const leadTypeLabels: Record<string, string> = { '1': 'NULL/Default', '2': 'Final Expense', '3': 'Final Expense (Veteran)', '4': 'Mortgage Protection', '5': 'Final Expense #2', '6': 'Mortgage Protection #2' };
     console.log(`   Meaning: ${leadTypeLabels[String(dynamicVariables.lead_type)] || 'UNKNOWN'}`);
     
     // CRITICAL WARNING: If lead_type is 1 but we have MP fields, something is wrong!

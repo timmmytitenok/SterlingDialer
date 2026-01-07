@@ -34,6 +34,12 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Account is not active' }, { status: 403 });
     }
 
+    // Update last_login to track activity (every time they access dashboard)
+    await supabase
+      .from('sales_team')
+      .update({ last_login: new Date().toISOString() })
+      .eq('id', actualId);
+
     // Get commissions
     const { data: commissions } = await supabase
       .from('sales_commissions')

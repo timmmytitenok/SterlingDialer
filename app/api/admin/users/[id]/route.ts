@@ -339,7 +339,7 @@ export async function GET(
       ai_is_running: aiControlSettings.data?.status === 'running',
       ai_maintenance_mode: profile.data?.ai_maintenance_mode ?? false,
       
-      // Per-user Retell AI Agents
+      // Per-user Retell AI Agents (2 agents per user)
       retell_agent_1_id: retellConfig.data?.retell_agent_1_id ?? null,
       retell_agent_1_phone: retellConfig.data?.retell_agent_1_phone ?? null,
       retell_agent_1_name: retellConfig.data?.retell_agent_1_name ?? null,
@@ -347,7 +347,7 @@ export async function GET(
       retell_agent_2_id: retellConfig.data?.retell_agent_2_id ?? null,
       retell_agent_2_phone: retellConfig.data?.retell_agent_2_phone ?? null,
       retell_agent_2_name: retellConfig.data?.retell_agent_2_name ?? null,
-      retell_agent_2_type: retellConfig.data?.retell_agent_2_type ?? 'final_expense',
+      retell_agent_2_type: retellConfig.data?.retell_agent_2_type ?? 'mortgage_protection',
       
       // Subscription Status - safely handle missing data
       // Default to true if user has active trial/subscription status, false otherwise

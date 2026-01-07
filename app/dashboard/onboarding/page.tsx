@@ -114,12 +114,12 @@ export default function OnboardingStepsPage() {
     },
     {
       number: 3,
-      title: 'Connect Your Lead Sheet',
-      description: 'Upload or link your Google Sheet to sync your lead list.',
+      title: 'Explore Lead Manager',
+      description: 'Check out where you\'ll upload and manage your leads.',
       icon: Sheet,
       completed: profile?.onboarding_step_3_sheet,
       action: () => router.push('/dashboard/leads'),
-      buttonText: 'Upload Sheet',
+      buttonText: 'View Lead Manager',
     },
     {
       number: 4,

@@ -88,11 +88,14 @@ export default function SalesTeamPage() {
       // Revenue generated = commissions / 0.30 (using 30% recurring rate as average)
       const revenueGenerated = totalCommissionsEarned / 0.30;
       
+      // Count team size excluding admin (Timmy)
+      const actualTeamSize = team.filter((p: SalesPerson) => p.email !== TIMMY_EMAIL).length;
+      
       setStats({
         totalRevenue: revenueGenerated,
         totalPaid: team.reduce((sum: number, p: SalesPerson) => sum + (p.total_paid || 0), 0),
         totalPending: team.reduce((sum: number, p: SalesPerson) => sum + (p.pending_payout || 0), 0),
-        teamSize: team.length,
+        teamSize: actualTeamSize,
       });
     } catch (err: any) {
       console.error('Error loading sales team:', err);
@@ -240,7 +243,7 @@ export default function SalesTeamPage() {
               </div>
             </div>
             <div className="px-6 py-3 bg-green-500/10 border-2 border-green-500/30 rounded-xl">
-              <span className="text-green-300 font-bold text-lg">{salesTeam.length} Members</span>
+              <span className="text-green-300 font-bold text-lg">{stats.teamSize} Members</span>
             </div>
           </div>
         </div>

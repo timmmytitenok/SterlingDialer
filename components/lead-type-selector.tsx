@@ -3,10 +3,14 @@
 import { useState, useEffect } from 'react';
 import { X, ChevronRight, Loader2, AlertCircle, Lock } from 'lucide-react';
 
-// Lead type values that will be stored and sent to Retell
-// 2 = Agent 1 (first configured agent)
-// 4 = Agent 2 (second configured agent)
-export type LeadTypeValue = 2 | 4;
+// Lead type values that will be stored and sent to Retell for SCRIPT selection
+// The lead_type determines which Retell script is used
+// 2 = Final Expense → uses Agent 1
+// 3 = Final Expense Veteran → uses Agent 1
+// 4 = Mortgage Protection → uses Agent 2
+// 5 = Final Expense #2 → uses Agent 1
+// 6 = Mortgage Protection #2 → uses Agent 2
+export type LeadTypeValue = 2 | 3 | 4 | 5 | 6;
 
 export interface LeadTypeResult {
   leadType: LeadTypeValue;
@@ -19,7 +23,7 @@ interface AgentConfig {
   id: string | null;
   phone: string | null;
   name: string;
-  type: 'final_expense' | 'mortgage_protection';
+  type: 'final_expense' | 'final_expense_2' | 'mortgage_protection' | 'mortgage_protection_2';
   isConfigured: boolean;
 }
 
@@ -28,21 +32,12 @@ interface LeadTypeSelectorProps {
   onCancel: () => void;
 }
 
-// Emoji options for agents
-const agentEmojis = ['🤖', '📞', '💼', '🎯', '⭐', '🔥', '💚', '💙', '🏠', '🛡️', '📊', '💪'];
-
-// Get a consistent emoji based on agent name
-const getAgentEmoji = (name: string, index: number): string => {
-  // Use name hash to pick consistent emoji
-  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return agentEmojis[(hash + index) % agentEmojis.length];
-};
-
 export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Only 2 agents per user
   const [agent1, setAgent1] = useState<AgentConfig>({ id: null, phone: null, name: 'Agent 1', type: 'final_expense', isConfigured: false });
-  const [agent2, setAgent2] = useState<AgentConfig>({ id: null, phone: null, name: 'Agent 2', type: 'final_expense', isConfigured: false });
+  const [agent2, setAgent2] = useState<AgentConfig>({ id: null, phone: null, name: 'Agent 2', type: 'mortgage_protection', isConfigured: false });
 
   useEffect(() => {
     const fetchAgentConfig = async () => {
@@ -64,19 +59,38 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
     fetchAgentConfig();
   }, []);
 
+  // Map agent type to lead_type value
+  const getLeadTypeForAgent = (agentType: string): LeadTypeValue => {
+    switch (agentType) {
+      case 'final_expense': return 2;
+      case 'final_expense_2': return 5;
+      case 'mortgage_protection': return 4;
+      case 'mortgage_protection_2': return 6;
+      default: return 2;
+    }
+  };
+
+  // Get script type from agent type
+  const getScriptType = (agentType: string): 'final_expense' | 'mortgage_protection' => {
+    if (agentType.includes('mortgage')) return 'mortgage_protection';
+    return 'final_expense';
+  };
+
   const handleAgent1Select = () => {
+    const leadType = getLeadTypeForAgent(agent1.type);
     onSelect({
-      leadType: 2, // Agent 1 uses lead_type 2
-      scriptType: 'final_expense', // For backwards compatibility
+      leadType,
+      scriptType: getScriptType(agent1.type),
       isVeteran: false,
       label: agent1.name,
     });
   };
 
   const handleAgent2Select = () => {
+    const leadType = getLeadTypeForAgent(agent2.type);
     onSelect({
-      leadType: 4, // Agent 2 uses lead_type 4
-      scriptType: 'mortgage_protection', // For backwards compatibility
+      leadType,
+      scriptType: getScriptType(agent2.type),
       isVeteran: false,
       label: agent2.name,
     });
@@ -111,6 +125,13 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
 
   // Check if any agents are configured
   const hasAnyAgent = agent1.isConfigured || agent2.isConfigured;
+
+  // Get emoji based on agent type
+  const getAgentEmoji = (agentType: string, isConfigured: boolean): string => {
+    if (!isConfigured) return '🔒';
+    if (agentType.includes('mortgage')) return '🏠';
+    return '💚';
+  };
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -176,7 +197,6 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
                   : 'bg-gray-900/50 border-gray-700/50 cursor-not-allowed'
               }`}
             >
-              {/* Blocked overlay for unconfigured agents */}
               {!agent1.isConfigured && (
                 <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-[1px] flex items-center justify-center z-10">
                   <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/90 rounded-lg border border-gray-600/50">
@@ -190,7 +210,7 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
                   ? 'bg-gradient-to-br from-green-500 to-emerald-600 group-hover:scale-110' 
                   : 'bg-gray-700/50'
               }`}>
-                {agent1.isConfigured ? (agent1.type === 'mortgage_protection' ? '🏠' : '💚') : '🔒'}
+                {getAgentEmoji(agent1.type, agent1.isConfigured)}
               </div>
               <div className="flex-1">
                 <h3 className={`text-xl font-bold transition-colors ${
@@ -198,14 +218,12 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
                 }`}>
                   {agent1.name}
                 </h3>
-                <p className="text-gray-500 text-sm">
-                  {agent1.isConfigured 
-                    ? agent1.type === 'mortgage_protection' ? '🏠 Mortgage Protection' : '💚 Final Expense'
-                    : 'Contact admin to configure'}
-                </p>
+                {!agent1.isConfigured && (
+                  <p className="text-gray-500 text-sm">Contact admin to configure</p>
+                )}
               </div>
               {agent1.isConfigured && (
-              <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-green-400 group-hover:translate-x-1 transition-all" />
+                <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-green-400 group-hover:translate-x-1 transition-all" />
               )}
             </button>
 
@@ -219,7 +237,6 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
                   : 'bg-gray-900/50 border-gray-700/50 cursor-not-allowed'
               }`}
             >
-              {/* Blocked overlay for unconfigured agents */}
               {!agent2.isConfigured && (
                 <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-[1px] flex items-center justify-center z-10">
                   <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/90 rounded-lg border border-gray-600/50">
@@ -233,7 +250,7 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
                   ? 'bg-gradient-to-br from-blue-500 to-indigo-600 group-hover:scale-110' 
                   : 'bg-gray-700/50'
               }`}>
-                {agent2.isConfigured ? (agent2.type === 'mortgage_protection' ? '🏠' : '💚') : '🔒'}
+                {getAgentEmoji(agent2.type, agent2.isConfigured)}
               </div>
               <div className="flex-1">
                 <h3 className={`text-xl font-bold transition-colors ${
@@ -241,14 +258,12 @@ export function LeadTypeSelector({ onSelect, onCancel }: LeadTypeSelectorProps) 
                 }`}>
                   {agent2.name}
                 </h3>
-                <p className="text-gray-500 text-sm">
-                  {agent2.isConfigured 
-                    ? agent2.type === 'mortgage_protection' ? '🏠 Mortgage Protection' : '💚 Final Expense'
-                    : 'Contact admin to configure'}
-                </p>
+                {!agent2.isConfigured && (
+                  <p className="text-gray-500 text-sm">Contact admin to configure</p>
+                )}
               </div>
               {agent2.isConfigured && (
-              <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+                <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
               )}
             </button>
           </div>
