@@ -581,18 +581,18 @@ export default function CaseStudiesPage() {
               Ready to Be Our Next Success?
           </h2>
             <p className="text-gray-400 text-xs sm:text-base mb-4 sm:mb-6">
-              7-day free trial and see results in your first week.
+              Pay As You Go — Only $0.65 per minute used
           </p>
             <Link
               href="/signup"
               className="inline-flex items-center gap-2 px-5 py-2.5 sm:px-8 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-sm sm:text-lg rounded-lg sm:rounded-xl transition-all hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30"
             >
               <Rocket className="w-4 h-4 sm:w-5 sm:h-5" />
-              Start Free Trial
+              Get Started
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </Link>
             <p className="text-gray-500 text-[10px] sm:text-sm mt-3 sm:mt-4">
-              7-day free trial • Cancel anytime
+              No monthly fees • Pay only for calls
             </p>
           </div>
         </div>

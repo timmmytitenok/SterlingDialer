@@ -159,7 +159,7 @@ export function TrialCountdownBanner() {
             <div className={`hidden md:flex px-3 py-1 ${colors.badge} border rounded-full`}>
               <span className="text-xs font-bold flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
-                {tier === 'pro' ? 'PRO TRIAL' : 'FREE TRIAL'}
+                PAY AS YOU GO
               </span>
             </div>
           </div>

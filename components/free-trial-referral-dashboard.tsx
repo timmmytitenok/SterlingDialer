@@ -92,7 +92,7 @@ export function FreeTrialReferralDashboard({ userId }: { userId: string }) {
             </div>
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
-                Extend Your Free Trial
+                Earn Referral Credits
                 <Sparkles className="w-5 h-5 text-yellow-400" />
               </h2>
               <p className="text-green-300 text-sm md:text-base">Invite friends and unlock up to 28 extra days!</p>
@@ -136,7 +136,7 @@ export function FreeTrialReferralDashboard({ userId }: { userId: string }) {
                 <div className="w-7 h-7 rounded-lg bg-green-500/20 flex items-center justify-center flex-shrink-0 border border-green-500/30">
                   <span className="text-green-400 font-bold text-sm">3</span>
                 </div>
-                <p className="text-gray-300 text-sm">You automatically get +7 days added to your trial!</p>
+                <p className="text-gray-300 text-sm">You automatically get credits added to your account!</p>
               </div>
             </div>
           </div>
@@ -173,7 +173,7 @@ export function FreeTrialReferralDashboard({ userId }: { userId: string }) {
             </div>
             <p className="text-xs text-green-400/80 mt-3 flex items-center gap-2">
               <span className="text-base">✨</span>
-              Share this link! Each valid sign-up adds 7 days to your trial
+              Share this link! Earn credits for each valid sign-up
             </p>
           </div>
         </div>
@@ -310,7 +310,7 @@ export function FreeTrialReferralDashboard({ userId }: { userId: string }) {
                     ref.status === 'completed' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
                     'bg-orange-500/20 text-orange-400 border border-orange-500/30'
                   }`}>
-                    {ref.status === 'completed' ? '✅ +7 Days' : '⏳ Pending'}
+                    {ref.status === 'completed' ? '✅ Credit Added' : '⏳ Pending'}
                   </span>
                 </div>
               </div>
@@ -327,7 +327,7 @@ export function FreeTrialReferralDashboard({ userId }: { userId: string }) {
           </div>
           <h3 className="text-xl font-bold text-white mb-2">No referrals yet</h3>
           <p className="text-gray-400 mb-6 max-w-md mx-auto">
-            Start sharing your referral link to extend your free trial by up to 28 days!
+            Start sharing your referral link to earn bonus credits!
           </p>
           <button
             onClick={() => copyToClipboard(referralLink)}

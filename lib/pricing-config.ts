@@ -2,49 +2,63 @@
  * PRICING CONFIGURATION
  * 
  * Centralized pricing configuration for Sterling Dialer
- * Update prices here to reflect across the entire application
+ * PAY AS YOU GO MODEL - No monthly fees, just $0.65 per minute
  */
 
 export const PRICING_CONFIG = {
-  // Standard Subscription Tiers
-  starter: {
-    name: 'Starter',
-    monthlyPrice: 379,
-    costPerMinute: 0.30,
-    freeMinutes: 600,
+  // Pay As You Go - Main tier for all users
+  pay_as_you_go: {
+    name: 'Pay As You Go',
+    monthlyPrice: 0,
+    costPerMinute: 0.65,
+    freeMinutes: 0,
     maxDailyCalls: 600,
-    aiCallerCount: 1,
-    description: 'Perfect for getting started',
-  },
-  pro: {
-    name: 'Pro',
-    monthlyPrice: 899,
-    costPerMinute: 0.25,
-    freeMinutes: 1200,
-    maxDailyCalls: 1200,
     aiCallerCount: 2,
-    description: 'For serious closers',
-  },
-  elite: {
-    name: 'Elite',
-    monthlyPrice: 1499,
-    costPerMinute: 0.20,
-    freeMinutes: 2000,
-    maxDailyCalls: 1800,
-    aiCallerCount: 3,
-    description: 'Maximum volume & automation',
+    description: 'No monthly fee, pay only for minutes used',
   },
 
-  // Free Trial (7 days)
-  free_trial: {
-    name: 'Free Trial',
+  // Legacy: Starter (keep for existing users)
+  starter: {
+    name: 'Starter',
     monthlyPrice: 0,
-    costPerMinute: 0.30,
+    costPerMinute: 0.65,
     freeMinutes: 0,
     maxDailyCalls: 600,
     aiCallerCount: 1,
-    trialDuration: 30, // days
-    description: '7-day free trial',
+    description: 'Pay as you go',
+  },
+
+  // Legacy: Pro (keep for existing users)
+  pro: {
+    name: 'Pro',
+    monthlyPrice: 0,
+    costPerMinute: 0.65,
+    freeMinutes: 0,
+    maxDailyCalls: 1200,
+    aiCallerCount: 2,
+    description: 'Pay as you go',
+  },
+
+  // Legacy: Elite (keep for existing users)
+  elite: {
+    name: 'Elite',
+    monthlyPrice: 0,
+    costPerMinute: 0.65,
+    freeMinutes: 0,
+    maxDailyCalls: 1800,
+    aiCallerCount: 3,
+    description: 'Pay as you go',
+  },
+
+  // Legacy: Free Trial (now just regular access)
+  free_trial: {
+    name: 'Pay As You Go',
+    monthlyPrice: 0,
+    costPerMinute: 0.65,
+    freeMinutes: 0,
+    maxDailyCalls: 600,
+    aiCallerCount: 1,
+    description: 'Pay as you go',
   },
 
   // Free Access (for friends - customizable via SQL)

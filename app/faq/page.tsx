@@ -93,25 +93,25 @@ export default function FAQPage() {
       category: 'pricing',
       icon: <DollarSign className="w-5 h-5 text-emerald-400" />,
       question: "How much does it cost per call?",
-      answer: <>Calls cost <span className="text-emerald-400 font-semibold">$0.35 per minute</span> for everyone. Not all calls get picked up, but on average it takes about 2-3 minutes of conversation to book an appointment. With the <span className="text-purple-400 font-semibold">$379/month</span> subscription, you get full platform access and unlimited calling capacity.</>
+      answer: <>Calls cost <span className="text-emerald-400 font-semibold">$0.65 per minute</span>. Not all calls get picked up, but on average it takes about 2-3 minutes of conversation to book an appointment. With our <span className="text-purple-400 font-semibold">Pay As You Go</span> model, there are no monthly fees — you only pay for what you use.</>
     },
     {
       category: 'pricing',
       icon: <Rocket className="w-5 h-5 text-purple-400" />,
-      question: "How does the free trial work?",
-      answer: <>Start with a <span className="text-purple-400 font-semibold">7-day free trial</span>! You get full access to all features - unlimited AI agents, unlimited leads, and all premium features. You only pay <span className="text-emerald-400 font-semibold">$0.35 per minute</span> for the calls you make. After 7 days, it's $379/month. Cancel anytime with no questions asked.</>
+      question: "How does Pay As You Go pricing work?",
+      answer: <>Simple! With our <span className="text-purple-400 font-semibold">Pay As You Go</span> model, there are <span className="text-blue-400 font-semibold">no monthly fees</span>. You only pay <span className="text-blue-400 font-semibold">$0.65 per minute</span> for the calls you make. Add funds to your account, and you're ready to go. No contracts, no commitments!</>
     },
     {
       category: 'pricing',
       icon: <CreditCard className="w-5 h-5 text-blue-400" />,
       question: "What if I run out of calling credits?",
-      answer: <>Sterling Dialer uses a prepaid system with <span className="text-blue-400 font-semibold">auto-refill</span> to keep your AI running. Calls cost $0.35 per minute. We auto-refill <span className="text-emerald-400 font-semibold">$25</span> to your balance when it drops below $1, so your AI never stops working. You can manage your balance and payment methods in your dashboard.</>
+      answer: <>Sterling Dialer uses a prepaid system with <span className="text-blue-400 font-semibold">auto-refill</span> to keep your AI running. Calls cost <span className="text-emerald-400 font-semibold">$0.65 per minute</span>. We auto-refill <span className="text-emerald-400 font-semibold">$25</span> to your balance when it drops below $1, so your AI never stops working. You can manage your balance and payment methods in your dashboard.</>
     },
     {
       category: 'pricing',
       icon: <Sparkles className="w-5 h-5 text-purple-400" />,
-      question: "What features are included with Sterling Pro Access?",
-      answer: <>Everything! For <span className="text-purple-400 font-semibold">$379/month</span>, you get unlimited AI calling agents, unlimited leads per day, live call transfers, Cal.ai appointment booking, Google Sheets integration, call recordings & transcripts, performance dashboard, priority support, and <span className="text-blue-400 font-semibold">24/7 AI operation</span>. One simple plan with all features unlocked.</>
+      question: "What features are included with Sterling Dialer?",
+      answer: <>Everything! With our <span className="text-purple-400 font-semibold">Pay As You Go</span> model at just <span className="text-emerald-400 font-semibold">$0.65/min</span>, you get unlimited AI calling agents, unlimited leads per day, live call transfers, Cal.ai appointment booking, Google Sheets integration, call recordings & transcripts, performance dashboard, priority support, and <span className="text-blue-400 font-semibold">24/7 AI operation</span>. No monthly fees — all features unlocked.</>
     },
     {
       category: 'pricing',
@@ -171,7 +171,7 @@ export default function FAQPage() {
     {
       category: 'features',
       icon: <FileText className="w-5 h-5 text-emerald-400" />,
-      question: "Does this work for life insurance, final expense, mortgage protection, or Medicare?",
+      question: "Does this work for life insurance, health insurance, final expense, mortgage protection, or Medicare?",
       answer: <>Yes. Sterling works with <span className="text-emerald-400 font-semibold">all types of insurance leads</span>. Whether you sell final expense, term life, whole life, mortgage protection, annuities, or Medicare — the AI adapts to your script and product. Just upload your leads and configure your pitch.</>
     },
     // Support & Compliance
@@ -274,12 +274,12 @@ export default function FAQPage() {
           </h1>
           
           <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto px-2">
-            Everything you need to know about reviving your old leads and booking more appointments
+            Everything you need to know about reviving your old leads.
           </p>
         </div>
 
         {/* Category Tabs - Desktop only */}
-        <div className="scroll-reveal hidden sm:block mb-10">
+        <div className="hidden sm:block mb-10">
           <div className="flex flex-wrap justify-center gap-2">
             {categories.map((cat) => (
               <button
@@ -309,11 +309,24 @@ export default function FAQPage() {
         </div>
 
         {/* FAQ Accordion */}
-        <div className="scroll-reveal space-y-3 sm:space-y-4 mb-16 sm:mb-16">
-          {filteredFaqs.map((faq, index) => (
+        <div className="space-y-3 sm:space-y-4 mb-16 sm:mb-16">
+          {filteredFaqs.map((faq, index) => {
+            // First 2 questions load immediately, rest have staggered reveal
+            const getRevealClass = () => {
+              if (index < 2) return '';
+              const delayIndex = index - 2;
+              if (delayIndex === 0) return 'scroll-reveal';
+              if (delayIndex === 1) return 'scroll-reveal delay-1';
+              if (delayIndex === 2) return 'scroll-reveal delay-2';
+              if (delayIndex === 3) return 'scroll-reveal delay-3';
+              if (delayIndex === 4) return 'scroll-reveal delay-4';
+              return 'scroll-reveal delay-5';
+            };
+            
+            return (
             <div
               key={index}
-              className="group bg-[#1A2647] border border-gray-800 rounded-lg sm:rounded-xl overflow-hidden hover:border-blue-500/50 transition-all duration-300"
+              className={`group bg-[#1A2647] border border-gray-800 rounded-lg sm:rounded-xl overflow-hidden hover:border-blue-500/50 transition-all duration-300 ${getRevealClass()}`}
             >
               <button
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
@@ -343,7 +356,8 @@ export default function FAQPage() {
                 </div>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
 
         {/* CTA Section */}
@@ -360,11 +374,11 @@ export default function FAQPage() {
             </h2>
             {/* Desktop subtitle */}
             <p className="hidden sm:block text-base text-gray-300 mb-7 max-w-2xl mx-auto leading-relaxed">
-              $379/month. Unlimited leads. Appointments booked automatically.
+              Unlimited leads. Appointments booked automatically.
             </p>
             {/* Mobile subtitle */}
             <p className="sm:hidden text-xs text-gray-300 mb-5 max-w-2xl mx-auto leading-relaxed">
-              $379/month. Unlimited leads. Booked automatically.
+              Unlimited leads. Booked automatically.
             </p>
             <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-4 justify-center items-center">
               <Link
@@ -372,7 +386,7 @@ export default function FAQPage() {
                 className="group w-full sm:w-auto px-5 py-2.5 sm:px-8 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-sm sm:text-lg rounded-lg sm:rounded-xl transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50 flex items-center justify-center gap-2"
               >
                 <Rocket className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-y-[-2px] transition-transform" />
-                Start Free Trial
+                Get Started
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
@@ -384,7 +398,7 @@ export default function FAQPage() {
             </div>
             <p className="text-[10px] sm:text-sm text-gray-400 mt-3 sm:mt-4">
               <Zap className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-green-400" />
-              7-Day Free Trial — Pay Only for Minutes You Use
+              Pay As You Go — $0.65/min • No Monthly Fees
             </p>
           </div>
         </div>

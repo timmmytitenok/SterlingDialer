@@ -203,27 +203,27 @@ export default function LandingPage() {
 
             {/* Subheadline */}
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 mb-16 lg:mb-15 max-w-3xl mx-auto leading-relaxed text-center animate-slide-up px-4" style={{ animationDelay: '0.1s' }}>
-              Have thousands of old life insurance leads collecting dust? Let Sterling Dialer revive them into booked appointments!
+              Have thousands of old insurance leads collecting dust? Let Sterling Dialer revive them into booked appointments!
             </p>
 
-            {/* Free Trial Badge */}
-            <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-green-600/20 border-2 border-green-500/50 rounded-full mb-6 lg:mb-15 hover:scale-105 transition-transform cursor-pointer animate-slide-up mx-auto" style={{ animationDelay: '0.2s' }}>
-              <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 animate-pulse flex-shrink-0" />
-              {/* Mobile: Shorter text */}
-              <span className="text-xs sm:hidden text-white font-bold text-center whitespace-nowrap">
-                7-Day Free Trial — Pay Per Minute
-              </span>
-              {/* Desktop: Full text */}
-              <span className="hidden sm:block text-base text-white font-bold text-center">
-                7-Day Free Trial — Pay Only for Minutes <span className="font-extrabold">You</span> Use
-              </span>
-            </div>
-
-            {/* Mobile App Badge - COMING SOON (MOBILE ONLY) */}
-            <div className="lg:hidden inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-2 border-purple-500/50 rounded-full mb-16 lg:mb-20 hover:scale-105 transition-transform cursor-pointer animate-slide-up mx-auto" style={{ animationDelay: '0.25s' }}>
+            {/* Mobile App Badge - COMING SOON (MOBILE ONLY - Shows first on mobile) */}
+            <div className="lg:hidden inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-2 border-purple-500/50 rounded-full mb-6 hover:scale-105 transition-transform cursor-pointer animate-slide-up mx-auto" style={{ animationDelay: '0.2s' }}>
               <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 animate-pulse flex-shrink-0" />
               <span className="text-xs sm:text-sm text-white font-bold text-center">
                 <span className="text-purple-400">iOS & Android App</span> Coming Soon! 📱
+              </span>
+            </div>
+
+            {/* Pay As You Go Badge */}
+            <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-purple-600/20 border-2 border-purple-500/50 rounded-full mb-16 lg:mb-15 hover:scale-105 transition-transform cursor-pointer animate-slide-up mx-auto" style={{ animationDelay: '0.25s' }}>
+              <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 animate-pulse flex-shrink-0" />
+              {/* Mobile: Shorter text */}
+              <span className="text-xs sm:hidden text-white font-bold text-center whitespace-nowrap">
+                $0.65/min • No Monthly Fees
+              </span>
+              {/* Desktop: Full text */}
+              <span className="hidden sm:block text-base text-white font-bold text-center">
+                Only $0.65 Per Minute • No Monthly Fees
               </span>
             </div>
 
@@ -235,7 +235,7 @@ export default function LandingPage() {
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   <Rocket className="w-5 h-5 lg:w-6 lg:h-6 group-hover:translate-y-[-4px] transition-transform" />
-                  Start Free Trial
+                  Start Calling
                   <ArrowRight className="w-5 h-5 lg:w-6 lg:h-6 group-hover:translate-x-1 transition-transform" />
                 </span>
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
@@ -392,7 +392,7 @@ export default function LandingPage() {
               </div>
               {/* Rows */}
               {[
-                { label: 'Monthly Cost', old: '$1,600+/mo', new: '$379/mo', highlight: true },
+                { label: 'Monthly Cost', old: '$1,600+/mo', new: '$0.65/min', highlight: true },
                 { label: 'Calls Per Day', old: '100-200', new: '500+', highlight: true },
                 { label: 'Availability', old: '8 hrs/day', new: '24/7', highlight: true },
                 { label: 'Training Time', old: '2-4 weeks', new: 'None', highlight: false },
@@ -694,8 +694,8 @@ export default function LandingPage() {
         </section>
 
         {/* Schedule Call CTA */}
-        <section className="pt-24 pb-48 scroll-reveal">
-        <div className="scroll-reveal max-w-2xl mx-auto text-center mb-12 sm:mb-16 px-4">
+        <section className="container mx-auto px-4 sm:px-6 pt-24 pb-36">
+          <div className="scroll-reveal max-w-2xl mx-auto text-center">
             <div className="p-6 sm:p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
               <h3 className="text-2xl sm:text-4xl font-bold text-white mb-3">Still Have Questions?</h3>
               <p className="text-gray-400 text-sm sm:text-base mb-6">
@@ -706,7 +706,7 @@ export default function LandingPage() {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-105 group"
               >
                 <Phone className="w-5 h-5" />
-                 Free Consultation Call
+                Free Consultation Call
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -728,13 +728,13 @@ export default function LandingPage() {
                     <span className="text-white font-bold text-lg tracking-tight">Sterling Dialer</span>
                   </div>
                   <p className="text-gray-500 text-sm leading-relaxed mb-4 max-w-[280px]">
-                    AI-powered appointment setting for life insurance agents. Turn old leads into booked appointments today.
+                    AI-powered appointment setting for life and health insurance agents. Turn old leads into booked appointments today.
                   </p>
                   <Link 
                     href="/signup" 
                     className="inline-flex items-center gap-2 text-sm text-purple-400 hover:text-purple-300 font-medium transition-colors group"
                   >
-                    Start your free trial
+                    Start calling — $0.65/min
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
@@ -811,7 +811,7 @@ export default function LandingPage() {
                 </div>
                 
                 <div className="text-gray-500 text-sm">
-                  Start your <span className="text-white font-semibold">7 day</span> free trial today
+                  Get started with <span className="text-white font-semibold">Pay As You Go</span> — Only $0.65/min
                 </div>
               </div>
             </div>

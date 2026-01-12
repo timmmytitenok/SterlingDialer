@@ -127,12 +127,13 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
 
   const getTierInfo = () => {
     const tiers = {
-      trial: { name: 'Free Trial', price: 0, color: 'green' },
-      pro: { name: 'Pro Access', price: 379, color: 'purple' },
+      trial: { name: 'Pay As You Go', price: 0, color: 'green' },
+      pro: { name: 'Pay As You Go', price: 0, color: 'green' },
       vip: { name: 'VIP Access (Lifetime)', price: 0, color: 'amber' },
-      starter: { name: 'Starter Plan', price: 379, color: 'blue' },
-      elite: { name: 'Elite Plan', price: 1499, color: 'amber' },
-      free_trial: { name: 'Free Trial', price: 0, color: 'green' }, // legacy
+      starter: { name: 'Pay As You Go', price: 0, color: 'green' },
+      pay_as_you_go: { name: 'Pay As You Go', price: 0, color: 'green' },
+      elite: { name: 'Pay As You Go', price: 0, color: 'green' },
+      free_trial: { name: 'Pay As You Go', price: 0, color: 'green' }, // legacy
       free_access: { name: 'VIP Access', price: 0, color: 'amber' }, // legacy
     };
     return tiers[currentTier as keyof typeof tiers] || { name: 'No Plan', price: 0, color: 'gray' };
@@ -182,17 +183,17 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
       const trialEnd = new Date(trialEndsAt);
       const endDate = trialEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       
-      // Always show "Free Trial — Ends [date]" when on trial
-      return { text: `Free Trial — Ends ${endDate}`, color: 'green' };
+      // Show Pay As You Go status
+      return { text: `Pay As You Go — Active`, color: 'green' };
     }
     
     // If on trial but no trialEndsAt date, show generic message
     if (isOnTrial) {
-      return { text: 'Free Trial — Active', color: 'green' };
+      return { text: 'Pay As You Go — Active', color: 'green' };
     }
     
-    // No trial - active billing
-    return { text: 'Active — Renews Monthly', color: 'green' };
+    // Active billing
+    return { text: 'Pay As You Go — Active', color: 'green' };
   };
 
   const billingStatus = getBillingStatus();
@@ -292,7 +293,7 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
           {/* Show explanation based on status */}
           {isCanceled && isOnTrial ? (
             <p className="text-xs text-red-400 pl-6 md:pl-8 mt-2">
-              🚫 You canceled your free trial. You'll keep access until this date, then your account will be closed out!
+              🚫 You canceled your account. You'll keep access until this date, then your account will be closed out!
             </p>
           ) : isOnTrial ? (
             <p className="text-xs text-gray-400 pl-6 md:pl-8 mt-2">
@@ -342,7 +343,7 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
         </button>
 
-        {/* Cancel Subscription / Free Trial */}
+        {/* Cancel Account */}
         {hasSubscription && (
           <button
             onClick={handleManageBilling}
@@ -355,8 +356,8 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
             {isCanceled 
               ? 'Reactivate Subscription' 
               : isOnTrial 
-              ? 'Cancel Free Trial' 
-              : 'Cancel Subscription'}
+              ? 'Cancel Account' 
+              : 'Cancel Account'}
           </button>
         )}
       </div>

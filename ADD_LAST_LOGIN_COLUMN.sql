@@ -12,3 +12,4 @@ SET last_login = created_at
 WHERE last_login IS NULL;
 
 SELECT 'last_login column added successfully!' as status;
+TW

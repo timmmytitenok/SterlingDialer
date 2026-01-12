@@ -133,9 +133,9 @@ export default function PricingPage() {
             </p>
           </div>
 
-          {/* Main Pricing Card - Simple & High-Conversion */}
-          <div className="scroll-reveal-scale max-w-4xl mx-auto mb-16 sm:mb-12 px-2 sm:px-4">
-            <div className="group relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 border-2 border-blue-500/40 shadow-2xl transition-all duration-500 hover:scale-105 hover:border-blue-500/70 hover:shadow-3xl hover:shadow-blue-500/60 overflow-hidden">
+          {/* Main Pricing Card - Clean & Minimal */}
+          <div className="scroll-reveal-scale max-w-4xl mx-auto mb-16 sm:mb-12 px-3 sm:px-4 mt-8 sm:mt-12">
+            <div className="group relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-2xl p-5 sm:p-8 md:p-10 border-2 border-blue-500/40 shadow-2xl transition-all duration-500 sm:hover:scale-105 hover:border-blue-500/70 hover:shadow-3xl hover:shadow-blue-500/60 overflow-hidden">
               
               {/* Animated Glow Effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/20 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 animate-pulse" />
@@ -143,82 +143,49 @@ export default function PricingPage() {
               {/* Rotating Border Glow */}
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl opacity-20 blur-xl group-hover:opacity-40 transition-opacity duration-500" />
               
-              <div className="relative z-10">
-                {/* Badge */}
-                <div className="mb-3 sm:mb-4 flex justify-center animate-bounce-in">
-                  <span className="rounded-full bg-purple-600/20 px-3 sm:px-4 py-1 sm:py-1.5 text-xs font-semibold text-purple-300 tracking-wide border border-purple-500/30">
-                    ⭐ ONE SIMPLE PLAN ⭐
-                  </span>
+              <div className="relative z-10 text-center">
+                {/* Price - Big & Bold at top */}
+                <div className="mb-1 sm:mb-2">
+                  <span className="text-5xl sm:text-7xl md:text-8xl font-bold text-white">$0.65</span>
+                  <span className="text-lg sm:text-2xl text-white/50 ml-1">/min</span>
                 </div>
-
-                {/* Title - Mobile smaller */}
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center animate-slide-up">
-                  Sterling Pro Access
-                </h2>
-                <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-white/70 text-center animate-slide-up-delay px-2">
-                  Let AI call your leads and fill your calendar.
+                
+                <p className="text-blue-400 font-semibold text-xs sm:text-lg mb-6 sm:mb-8">
+                  No monthly fees — just pay for what you use
                 </p>
-
-                {/* Price - Mobile optimized */}
-                <div className="mt-4 sm:mt-5 md:mt-6 text-center animate-fade-in">
-                  <div className="text-6xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-1 sm:mb-2">
-                    $379<span className="text-lg sm:text-lg md:text-2xl font-normal text-white/60"> / month</span>
+                
+                {/* Features - 2x2 grid on mobile, horizontal on desktop */}
+                <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-3 sm:gap-6 mb-8 sm:mb-14">
+                  <div className="flex items-center gap-2 justify-center sm:justify-start">
+                    <Upload className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                    <span className="text-gray-300 text-xs sm:text-sm">Unlimited leads</span>
                   </div>
-                  <div className="mt-2 text-sm sm:text-base md:text-lg text-emerald-400 font-semibold">
-                    + $0.35 per minute for calls
+                  <div className="flex items-center gap-2 justify-center sm:justify-start">
+                    <Phone className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                    <span className="text-gray-300 text-xs sm:text-sm">500+ calls/day</span>
                   </div>
-                </div>
-
-                {/* Features with colored icons */}
-                <div className="mt-8 sm:mt-6 md:mt-8 space-y-2.5 sm:space-y-3 md:space-y-4 text-sm sm:text-base px-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                      <Upload className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-400" />
-                    </div>
-                    <span className="text-gray-300">Upload unlimited leads</span>
+                  <div className="flex items-center gap-2 justify-center sm:justify-start">
+                    <Calendar className="w-4 h-4 text-green-400 flex-shrink-0" />
+                    <span className="text-gray-300 text-xs sm:text-sm">Auto booking</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                      <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-purple-400" />
-                    </div>
-                    <span className="text-gray-300">AI dials 500+ calls daily</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                      <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-400" />
-                    </div>
-                    <span className="text-gray-300">Books appointments to your calendar</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
-                    </div>
-                    <span className="text-gray-300">Full recordings & transcripts</span>
+                  <div className="flex items-center gap-2 justify-center sm:justify-start">
+                    <FileText className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                    <span className="text-gray-300 text-xs sm:text-sm">Full transcripts</span>
                   </div>
                 </div>
-
-                {/* CTA Button - Mobile optimized */}
+                
+                {/* CTA - Full width on mobile */}
                 <Link
                   href="/signup"
-                  className="relative mt-7 sm:mt-6 md:mt-8 w-full flex items-center justify-center gap-1.5 sm:gap-2 px-5 sm:px-6 md:px-8 py-3 sm:py-3.5 md:py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white font-bold text-sm sm:text-base md:text-lg rounded-lg sm:rounded-xl transition-all duration-300 shadow-2xl hover:shadow-purple-500/80 group/btn overflow-hidden"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white font-bold text-base sm:text-lg rounded-xl transition-all duration-300 shadow-2xl hover:shadow-purple-500/50 sm:hover:scale-105 group/btn"
                 >
-                  <span className="relative z-10 flex items-center gap-1.5 sm:gap-2">
-                    <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 animate-pulse" />
-                    Start 7-Day Free Trial
-                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 group-hover/btn:translate-x-1 transition-transform" />
-                  </span>
-                  {/* Button Shine Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover/btn:translate-x-[200%] transition-transform duration-1000" />
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
+                  {/* Mobile: Shorter text */}
+                  <span className="sm:hidden">Get Started</span>
+                  {/* Desktop: Full text */}
+                  <span className="hidden sm:inline">Get Started — Pay As You Go</span>
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover/btn:translate-x-1 transition-transform" />
                 </Link>
-
-                {/* Reassurance - Different text for mobile/desktop */}
-                <p className="mt-2.5 sm:mt-3 md:mt-4 text-[10px] sm:text-xs text-center text-white/50">
-                  {/* Mobile: Short version */}
-                  <span className="sm:hidden">Secure payment via Stripe</span>
-                  {/* Desktop: Full version */}
-                  <span className="hidden sm:inline">Cancel anytime · No long-term contracts · Secure payment via Stripe</span>
-                </p>
-
               </div>
             </div>
           </div>
@@ -231,7 +198,7 @@ export default function PricingPage() {
               </h3>
               <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white px-4">
                 <span className="sm:hidden">Everything You Need</span>
-                <span className="hidden sm:inline">Everything You Need in Sterling Pro Access</span>
+                <span className="hidden sm:inline">Everything Included — No Hidden Fees</span>
               </h2>
             </div>
 
@@ -382,7 +349,7 @@ export default function PricingPage() {
           <div className="scroll-reveal max-w-4xl mx-auto mb-32 sm:mb-36 md:mb-44 px-3 sm:px-4 md:px-0">
             <div className="text-center mb-6 sm:mb-10">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">The Numbers Don't Lie</h2>
-              <p className="text-gray-400 text-sm sm:text-base">What $379/month actually gets you</p>
+              <p className="text-gray-400 text-sm sm:text-base">What Pay As You Go actually gets you</p>
             </div>
             
             {/* Mobile: Horizontal scroll row, Desktop: 3-column grid */}
@@ -492,7 +459,7 @@ export default function PricingPage() {
               </div>
               {/* Rows */}
               {[
-                { label: 'Monthly Cost', old: '$1,600+/mo', new: '$379/mo' },
+                { label: 'Monthly Cost', old: '$1,600+/mo', new: '$0.65/min' },
                 { label: 'Calls Per Day', old: '100-200', new: '500+' },
                 { label: 'Availability', old: '8 hrs/day', new: '24/7' },
                 { label: 'Training Time', old: '2-4 weeks', new: 'None' },
@@ -523,23 +490,23 @@ export default function PricingPage() {
 
             <div className="space-y-3 sm:space-y-4">
               <div className="bg-white/5 backdrop-blur-sm rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-white/10 hover:border-blue-500/30 transition-all">
-                <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">What's included with Sterling Pro Access?</h3>
+                <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">What's included with Pay As You Go?</h3>
                 <p className="text-xs sm:text-sm md:text-base text-gray-400">
-                  Everything! For $379/month, you get unlimited AI calling agents, unlimited leads per day, live call transfers, Cal.ai appointment booking, Google Sheets integration, call recordings & transcripts, performance dashboard, priority support, and 24/7 AI operation. One simple plan with all features unlocked.
+                  Everything! For just $0.65/minute, you get unlimited AI calling agents, unlimited leads per day, live call transfers, Cal.ai appointment booking, Google Sheets integration, call recordings & transcripts, performance dashboard, priority support, and 24/7 AI operation. No monthly fees!
                 </p>
               </div>
 
               <div className="bg-white/5 backdrop-blur-sm rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-white/10 hover:border-purple-500/30 transition-all">
-                <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">How does the 7-day free trial work?</h3>
+                <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">How does Pay As You Go pricing work?</h3>
                 <p className="text-xs sm:text-sm md:text-base text-gray-400">
-                  Start with a 7-day free trial! You get full access to all features - unlimited AI agents, unlimited leads, and all premium features. You only pay for the minutes you use during calls. After 7 days, it's $379/month. Cancel anytime with no questions asked.
+                  Simple! Add funds to your account, and you're only charged for actual call minutes used. No monthly subscription, no hidden fees. You control how much you spend. When your balance runs low, just add more funds and keep dialing!
                 </p>
               </div>
 
               <div className="bg-white/5 backdrop-blur-sm rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-white/10 hover:border-green-500/30 transition-all">
-                <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">Can I cancel anytime?</h3>
+                <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">Are there any monthly fees?</h3>
                 <p className="text-xs sm:text-sm md:text-base text-gray-400">
-                  Absolutely. No contracts, no commitments. Cancel anytime with one click from your billing portal. But here's the thing: most agents DOUBLE their appointments in the first month. Once you see results, you won't want to stop.
+                  No! Zero monthly fees. You only pay for the minutes you use at $0.65/minute. No contracts, no commitments, no recurring charges. Perfect for agents who want flexibility and control over their budget.
                 </p>
               </div>
 
@@ -553,22 +520,24 @@ export default function PricingPage() {
           </div>
 
           {/* Schedule Call CTA */}
-          <div className="scroll-reveal max-w-2xl mx-auto text-center mb-12 sm:mb-16 px-4">
-            <div className="p-6 sm:p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
-              <h3 className="text-2xl sm:text-4xl font-bold text-white mb-3">Still Have Questions?</h3>
-              <p className="text-gray-400 text-sm sm:text-base mb-6">
-                Book a free 15-minute call and We'll show you exactly how Sterling Dialer can help grow your business today.
-              </p>
-              <Link
-                href="/schedule-call"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-105 group"
-              >
-                <Phone className="w-5 h-5" />
-                 Free Consultation Call
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
+          <section className="pt-24 pb-36">
+            <div className="scroll-reveal max-w-2xl mx-auto text-center">
+              <div className="p-6 sm:p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
+                <h3 className="text-2xl sm:text-4xl font-bold text-white mb-3">Still Have Questions?</h3>
+                <p className="text-gray-400 text-sm sm:text-base mb-6">
+                  Book a free 15-minute call and We'll show you exactly how Sterling Dialer can help grow your business today.
+                </p>
+                <Link
+                  href="/schedule-call"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-105 group"
+                >
+                  <Phone className="w-5 h-5" />
+                  Free Consultation Call
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
             </div>
-          </div>
+          </section>
 
         </div>
       </main>

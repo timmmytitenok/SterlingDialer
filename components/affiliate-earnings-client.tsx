@@ -379,7 +379,7 @@ export function AffiliateEarningsClient({
         <div className="bg-gradient-to-br from-amber-900/20 to-yellow-900/20 rounded-xl p-6 border border-amber-500/30">
           <div className="text-sm font-bold text-gray-400 uppercase mb-2">Pending Payment</div>
           <div className="text-4xl font-black text-amber-400">{stats.inTrial}</div>
-          <div className="text-xs text-gray-400 mt-2">Still in free trial</div>
+          <div className="text-xs text-gray-400 mt-2">Pending activation</div>
         </div>
 
         <div className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 rounded-xl p-6 border border-green-500/30">
@@ -512,8 +512,8 @@ export function AffiliateEarningsClient({
           <h4 className="text-white font-bold mb-3">How It Works</h4>
           <div className="space-y-2 text-sm text-gray-300">
             <p>• Share your referral link with potential customers</p>
-            <p>• They sign up and get a 7-day free trial</p>
-            <p>• <strong className="text-yellow-400">When they make their first payment</strong> to become Pro Access, you start earning!</p>
+            <p>• They sign up and start using Pay As You Go ($0.65/min)</p>
+            <p>• <strong className="text-yellow-400">When they start making calls</strong>, you start earning!</p>
             <p>• You earn <strong className="text-green-400">$37.90/month (10% of $379)</strong> for <strong>EVERY month</strong> they stay subscribed</p>
             <p>• Commissions automatically recur monthly while they remain active</p>
             <p>• Payments are processed manually at the end of each month</p>

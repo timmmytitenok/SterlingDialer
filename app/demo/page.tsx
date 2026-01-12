@@ -283,7 +283,7 @@ export default function DemoPage() {
             
             {/* Subtitle - Better mobile sizing */}
             <p className="text-1sm sm:text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed px-2 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '200ms' }}>
-              Have old life insurance leads collecting dust? Let Sterling Dialer revive them into booked appointments — automatically.
+              Have old insurance leads collecting dust? Let Sterling Dialer revive them into booked appointments — automatically.
             </p>
 
 
@@ -559,7 +559,7 @@ export default function DemoPage() {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8 sm:mb-10">
               <h2 className="text-3xl sm:text-3xl md:text-4xl font-bold text-white mb-2">The Numbers Don't Lie</h2>
-              <p className="text-gray-400 text-sm sm:text-base">What $379/month actually gets you</p>
+              <p className="text-gray-400 text-sm sm:text-base">What Pay As You Go actually gets you</p>
             </div>
             
             {/* Desktop: 3 columns, Mobile: Stacked */}
@@ -623,19 +623,19 @@ export default function DemoPage() {
               <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3">
                 Ready to Get Started?
               </h2>
-              <p className="text-gray-400 text-sm sm:text-base mb-6">
-                7-day free trial and see results your first week.
+              <p className="text-gray-400 text-sm sm:text-base mb-8">
+                Pay As You Go — Only $0.65 per minute used
               </p>
               <Link
                 href="/signup"
-                className="inline-flex items-center gap-2 px-6 py-3 sm:px-8 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-base sm:text-lg rounded-xl transition-all hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30"
+                className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-12 py-3 sm:px-20 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-base sm:text-lg rounded-xl transition-all hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30"
               >
                 <Rocket className="w-5 h-5" />
-                Start Free Trial
+                Get Started
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <p className="text-gray-500 text-xs sm:text-sm mt-4">
-                7-day free trial • Cancel anytime
+                No monthly fees • Pay only for calls
               </p>
             </div>
           </div>

@@ -71,7 +71,7 @@ export function WelcomeModal({ userName, onContinue }: WelcomeModalProps) {
           {/* Benefits */}
           <div className="space-y-3 mb-8 text-left max-w-md mx-auto">
             {[
-              'Your 7-day trial is now active',
+              'Your account is now active',
               'AI agent ready to revive your leads',
               'Automatic appointment booking enabled',
               'Full access to all premium features',

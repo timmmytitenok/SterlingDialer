@@ -157,9 +157,12 @@ function LoginPageContent() {
         <div className="text-center mb-6">
           <div 
             onClick={handleLogoClick}
-            className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-2xl mb-3 shadow-lg cursor-pointer hover:scale-110 transition-transform"
+            className="group relative inline-block cursor-pointer mb-3"
           >
-            <span className="text-xl font-bold text-white">SD</span>
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition-all duration-300" />
+            <div className="relative inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-2xl shadow-lg group-hover:scale-110 group-hover:shadow-purple-500/30 transition-all duration-300">
+              <span className="text-xl font-bold text-white">SD</span>
+            </div>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">
             {isAdminDashboardMode ? '🔐 Admin Dashboard Access' : 'Welcome Back'}
@@ -252,7 +255,7 @@ function LoginPageContent() {
             <p className="text-gray-400 text-sm">
               Don't have an account?{' '}
               <Link href="/signup" className="text-blue-400 hover:text-blue-300 font-semibold">
-                Start Free Trial
+                Get Started
               </Link>
             </p>
           </div>

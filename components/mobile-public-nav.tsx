@@ -257,9 +257,9 @@ export function MobilePublicNav() {
           </div>
 
           {/* Scrollable Content Area */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain flex flex-col">
           {/* Navigation Links - Sliding Panels */}
-          <nav ref={navRef} className="py-4 px-3 relative">
+          <nav ref={navRef} className="py-4 px-3 relative flex-1">
             {/* Main Menu */}
             <div 
               className={`space-y-1 transition-all duration-400 ease-out ${
@@ -416,9 +416,9 @@ export function MobilePublicNav() {
             </div>
           </nav>
 
-          {/* CTA Section - Conditional - Now inside scrollable area - Hidden when legal menu is open */}
+          {/* CTA Section - Conditional - Pushed to bottom - Hidden when legal menu is open */}
           <div 
-            className={`p-4 border-t border-gray-800/50 space-y-3 transition-all duration-300 ${
+            className={`flex-shrink-0 p-4 border-t border-gray-800/50 space-y-3 transition-all duration-300 mt-auto ${
               legalOpen ? 'opacity-0 pointer-events-none h-0 p-0 border-0 overflow-hidden' : 'opacity-100'
             }`}
             style={{ paddingBottom: legalOpen ? '0' : 'max(1rem, env(safe-area-inset-bottom))' }}
@@ -431,21 +431,21 @@ export function MobilePublicNav() {
                 <div className="h-8 bg-gray-800/30 rounded-lg animate-pulse mx-auto w-48" />
               </div>
             ) : !user ? (
-              // LOGGED OUT: Show trial banner + Start Free Trial + Sign In
+              // LOGGED OUT: Show Pay As You Go banner + Get Started + Sign In
               <>
-                {/* Free Trial Banner */}
+                {/* Pay As You Go Banner */}
                 <div 
                   className="bg-gradient-to-r from-green-600/20 to-emerald-600/20 border border-green-500/30 rounded-xl p-3 text-center"
                   style={{
                     animation: isOpen ? 'fadeInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both' : 'none'
                   }}
                 >
-                  <p className="text-xs text-green-400 font-semibold mb-1">🚀 7-DAY FREE TRIAL</p>
-                  <p className="text-sm text-white font-bold mb-1">$379/month after trial</p>
-                  <p className="text-xs text-gray-400">+ $0.35/min for calls</p>
+                  <p className="text-xs text-green-400 font-semibold mb-1">💰 PAY AS YOU GO</p>
+                  <p className="text-sm text-white font-bold mb-1">$0.65 per minute</p>
+                  <p className="text-xs text-gray-400">No monthly fees • Only pay for calls</p>
                 </div>
 
-                {/* Start Free Trial Button */}
+                {/* Get Started Button */}
                 <Link
                   href="/signup"
                   onClick={() => setIsOpen(false)}
@@ -456,7 +456,7 @@ export function MobilePublicNav() {
                 >
                   <span className="flex items-center justify-center gap-2">
                     <Sparkles className="w-5 h-5" />
-                    Start Free Trial
+                    Start Calling
                   </span>
                 </Link>
 

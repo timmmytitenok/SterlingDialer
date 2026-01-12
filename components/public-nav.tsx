@@ -138,8 +138,8 @@ export function PublicNav() {
           {/* Logo - Cleaner */}
           <Link href="/" className="flex items-center gap-3 group relative flex-shrink-0">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl blur opacity-40 group-hover:opacity-60 transition-opacity" />
-              <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-purple-700 to-pink-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl blur opacity-0 group-hover:opacity-50 transition-all duration-300" />
+              <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-purple-700 to-pink-600 flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-purple-500/30 transition-all duration-300">
                 <span className="text-white font-bold text-lg">SD</span>
               </div>
             </div>
@@ -214,7 +214,7 @@ export function PublicNav() {
                 <div className="w-[156px] h-[44px] bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full" />
               </div>
             ) : user === null ? (
-              // NOT LOGGED IN: Show Sign In + Start Free Trial
+              // NOT LOGGED IN: Show Sign In + Get Started
               <>
                 {/* Sign In Link */}
                 <Link 
@@ -224,13 +224,13 @@ export function PublicNav() {
                   Sign In
                 </Link>
 
-                {/* Start Free Trial Button - Larger with glow */}
+                {/* Get Started Button - Larger with glow */}
                 <Link 
                   href="/signup" 
                   className="group relative px-7 py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white font-semibold rounded-full transition-all duration-300 hover:scale-105 shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/40 overflow-hidden inline-flex items-center gap-2"
                 >
                   <Rocket className="w-4 h-4 relative z-10" />
-                  <span className="relative z-10">Start Free Trial</span>
+                  <span className="relative z-10">Start Calling</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
                 </Link>
               </>

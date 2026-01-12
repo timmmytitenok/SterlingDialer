@@ -421,7 +421,7 @@ export default function OnboardingFormPage() {
                     </li>
                       <li className="flex items-center gap-2">
                         <ChevronRight className="w-3 h-3 text-gray-600" />
-                        Name: <span className="text-white font-medium">"Life Insurance"</span>
+                        Name: <span className="text-white font-medium">"Life & Health Insurance"</span>
                       </li>
                       <li className="flex items-center gap-2 text-amber-400">
                         <Zap className="w-3 h-3" />

@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, ArrowRight, CheckCircle2, Lock, Zap, CreditCard } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle2, Lock, Zap, CreditCard, DollarSign } from 'lucide-react';
 
 export default function TrialActivatePage() {
   const [loading, setLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const router = useRouter();
 
-  const handleActivateTrial = async () => {
+  const handleActivate = async () => {
     if (!termsAccepted) {
       alert('Please accept the Terms of Service to continue');
       return;
@@ -18,9 +18,9 @@ export default function TrialActivatePage() {
     setLoading(true);
     
     try {
-      console.log('🚀 Activating trial...');
+      console.log('🚀 Activating Pay As You Go account...');
       
-      // Call API to create Stripe setup session (saves card, no charge)
+      // Call API to create Stripe setup session (saves card for pay-per-minute)
       const response = await fetch('/api/trial/activate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -33,94 +33,90 @@ export default function TrialActivatePage() {
 
       if (data.url) {
         console.log('✅ Redirecting to Stripe...');
-        // Redirect to Stripe checkout (setup mode)
+        // Redirect to Stripe checkout (saves card)
         window.location.href = data.url;
       } else {
         console.error('❌ No URL in response:', data);
-        alert(data.error || 'Failed to start trial. Check console for details.');
+        alert(data.error || 'Failed to activate. Check console for details.');
         setLoading(false);
       }
     } catch (error: any) {
       console.error('❌ Exception:', error);
-      alert(`Error activating trial: ${error.message}`);
+      alert(`Error activating: ${error.message}`);
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0B1437] relative overflow-hidden flex items-center justify-center p-3 sm:p-4">
-      {/* Animated Background - Soft gradual glow */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+    <div className="min-h-screen bg-[#0B1437] relative overflow-hidden flex items-center justify-center p-3 sm:p-4 pt-16 sm:pt-20">
+      {/* Animated Background - Same as Landing Page */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute w-[1000px] h-[1000px] bg-blue-500/8 rounded-full top-[-300px] left-[-300px] animate-pulse" style={{ filter: 'blur(180px)' }} />
-        <div className="absolute w-[900px] h-[900px] bg-purple-500/8 rounded-full bottom-[-200px] right-[-300px] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '1s' }} />
+        <div className="absolute w-[900px] h-[900px] bg-purple-500/8 rounded-full top-[20%] right-[-300px] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '1s' }} />
+        <div className="absolute w-[1000px] h-[1000px] bg-pink-500/8 rounded-full bottom-[-300px] left-[20%] animate-pulse" style={{ filter: 'blur(180px)', animationDelay: '2s' }} />
       </div>
+
+      {/* Grid Pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.08)_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-2xl">
         {/* Header */}
-        <div className="text-center mb-4 sm:mb-8">
+        <div className="text-center mb-8 sm:mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-green-500/10 border border-green-500/20 rounded-full mb-3 sm:mb-6">
             <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-green-400 animate-pulse" />
             <span className="text-green-400 font-semibold text-xs sm:text-sm">Step 2 of 2</span>
           </div>
-          <h1 className="text-4xl sm:text-4xl md:text-5xl font-bold text-white mb-2 sm:mb-4 px-2">
-            Activate Your<br className="sm:hidden" /> Free Trial
+          <h1 className="text-4xl sm:text-4xl md:text-5xl font-bold text-white px-2">
+            Add Payment Method
           </h1>
-          <p className="text-gray-300 text-sm sm:text-lg md:text-xl px-4">
-            Add your payment method to start your 7-day trial
-          </p>
         </div>
 
-        {/* Pricing Card - Same as pricing page */}
+        {/* Pricing Card - Pay As You Go */}
         <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 border-2 border-blue-500/40 shadow-2xl mb-4 sm:mb-6">
-          <div className="mb-3 sm:mb-4 flex justify-center">
+          <div className="mb-6 sm:mb-8 flex justify-center">
             <span className="rounded-full bg-purple-600/20 px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-semibold text-purple-300 tracking-wide border border-purple-500/30">
-              ⭐ ONE SIMPLE PLAN ⭐
+              ⭐ PAY AS YOU GO ⭐
             </span>
           </div>
 
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center">
-            Sterling Pro Access
-          </h2>
-          <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-white/70 text-center">
-            Let AI call your leads and fill your calendar.
-          </p>
-
-          <div className="mt-4 sm:mt-6 text-center">
-            <div className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-1 sm:mb-2">
-              $379<span className="text-lg sm:text-xl md:text-2xl font-normal text-white/60"> / month</span>
+          <div className="text-center">
+            <div className="text-6xl sm:text-7xl md:text-8xl font-bold text-white mb-1 sm:mb-2">
+              $0.65<span className="text-lg sm:text-xl md:text-2xl font-normal text-white/60"> / minute</span>
             </div>
-            <div className="mt-2 sm:mt-3 text-sm sm:text-base md:text-lg text-emerald-400 font-semibold">
-              + $0.35 per minute for calls
+          <div className="mt-2 sm:mt-3 text-[10px] sm:text-xs text-blue-400 font-medium">
+            No subscription • No monthly fees • No contracts
             </div>
           </div>
 
-          <ul className="mt-5 sm:mt-6 md:mt-8 space-y-2 sm:space-y-3 text-xs sm:text-sm text-white/80">
-            <li className="flex items-center gap-2 sm:gap-3">
-              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0" />
-              <span>Unlimited AI agents & unlimited leads</span>
-            </li>
-            <li className="flex items-center gap-2 sm:gap-3">
-              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0" />
-              <span>Live call transfers straight to your phone</span>
-            </li>
-            <li className="flex items-center gap-2 sm:gap-3">
-              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0" />
-              <span>Automatic appointment booking into your calendar</span>
-            </li>
-            <li className="flex items-center gap-2 sm:gap-3">
-              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0" />
-              <span>Recordings, transcripts & performance dashboard</span>
-            </li>
-          </ul>
+          <div className="mt-8 sm:mt-10 mb-10 sm:mb-12 flex justify-center">
+            <div className="grid grid-cols-2 gap-x-8 sm:gap-x-12 gap-y-3 sm:gap-y-4 text-sm sm:text-base text-white/90">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-400 flex-shrink-0" />
+                <span>Unlimited leads</span>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-400 flex-shrink-0" />
+                <span>500+ calls/day</span>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-400 flex-shrink-0" />
+                <span>Auto booking</span>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-400 flex-shrink-0" />
+                <span>Full transcripts</span>
+              </div>
+            </div>
+          </div>
 
-          {/* Trial Details */}
+          {/* Pay As You Go Details */}
           <div className="mt-5 sm:mt-6 md:mt-8 p-3 sm:p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg sm:rounded-xl">
             <div className="flex items-start gap-2 sm:gap-3">
-              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-white font-bold text-xs sm:text-sm mb-1">Free for 7 days, then $379/month</p>
+                <p className="text-white font-bold text-xs sm:text-sm mb-1">How Pay As You Go Works</p>
                 <p className="text-gray-300 text-[10px] sm:text-xs leading-relaxed">
-                  Your card will be automatically charged $379 when your trial ends. Cancel anytime before Day 7 to avoid charges.
+                  Add funds to your call balance when you're ready. You're only charged for the actual minutes used during AI calls. No monthly fees, no hidden charges!
                 </p>
               </div>
             </div>
@@ -136,32 +132,41 @@ export default function TrialActivatePage() {
                 className="mt-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer flex-shrink-0"
               />
               <span className="text-[10.5px] sm:text-[10px] md:text-sm text-gray-300 leading-relaxed">
-                By continuing, I confirm I have read and agree to Sterling Dialer's{' '}
+                By continuing, you agree to Sterling Dialer's{' '}
                 <a 
-                  href="/terms-of-service" 
+                  href="/terms" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-400 hover:text-blue-300 underline font-semibold"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  Terms of Service
+                  Terms
                 </a>,{' '}
                 <a 
-                  href="/privacy-policy" 
+                  href="/privacy" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-400 hover:text-blue-300 underline font-semibold"
                   onClick={(e) => e.stopPropagation()}
                 >
                   Privacy Policy
-                </a>, and TCPA-compliant usage guidelines, and I consent to receive service-related SMS updates.
+                </a>,{' '}
+                <a 
+                  href="https://www.fcc.gov/general/telemarketing-and-robocalls" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 underline font-semibold"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  TCPA usage rules
+                </a>, and consent to service-related SMS messages.
               </span>
             </label>
           </div>
 
           {/* Activate Button */}
           <button
-            onClick={handleActivateTrial}
+            onClick={handleActivate}
             disabled={loading || !termsAccepted}
             className="mt-4 sm:mt-5 md:mt-6 w-full px-6 py-3 sm:px-8 sm:py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white font-bold text-base sm:text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-2xl hover:shadow-purple-500/80 disabled:opacity-50 flex items-center justify-center gap-2"
           >
@@ -172,28 +177,26 @@ export default function TrialActivatePage() {
               </>
             ) : (
               <>
-                <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="text-sm sm:text-base md:text-lg">Add Card & Start Trial</span>
+                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-sm sm:text-base md:text-lg">Add Card & Get Started</span>
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
               </>
             )}
           </button>
 
           <p className="mt-3 sm:mt-4 text-[10px] sm:text-xs text-center text-white/50">
-            No charge today • Billing starts automatically after 7 days
+            No monthly fees • Only pay for minutes used
           </p>
         </div>
 
         {/* Security */}
-        <div className="mt-4 sm:mt-6 flex items-center justify-center gap-3 sm:gap-6 text-[10px] sm:text-xs text-gray-500 flex-wrap px-4">
+        <div className="mt-4 sm:mt-6 pb-8 sm:pb-12 flex items-center justify-center gap-3 sm:gap-6 text-[10px] sm:text-xs text-gray-500 flex-wrap px-4">
           <div className="flex items-center gap-1">
             <Lock className="w-3 h-3" />
             <span>Secure checkout</span>
           </div>
-          <span className="hidden sm:inline">•</span>
+          <span>•</span>
           <span>Powered by Stripe</span>
-          <span className="hidden sm:inline">•</span>
-          <span>Cancel anytime</span>
         </div>
       </div>
     </div>

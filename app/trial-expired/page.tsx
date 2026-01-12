@@ -83,8 +83,8 @@ export default function TrialExpiredPage() {
             <div className="inline-flex items-center gap-3 px-6 py-3 bg-amber-500/10 border-2 border-amber-500/40 rounded-xl mb-10">
               <Clock className="w-6 h-6 md:w-8 md:h-8 text-amber-400" />
               <div className="text-left">
-                <p className="text-lg md:text-xl font-bold text-amber-300">Your Free Trial Has Ended</p>
-                <p className="text-sm md:text-base text-amber-200">Thank you for trying Sterling Dialer!</p>
+                <p className="text-lg md:text-xl font-bold text-amber-300">Your Account Needs Attention</p>
+                <p className="text-sm md:text-base text-amber-200">Add funds to continue using Sterling Dialer!</p>
               </div>
             </div>
 
@@ -97,7 +97,7 @@ export default function TrialExpiredPage() {
             </p>
           </div>
 
-          {/* Subscription Tier Selector (No Free Trial Option) */}
+          {/* Subscription Tier Selector */}
           <div className="animate-in fade-in slide-in-from-bottom duration-700 mt-24">
             <SubscriptionTierSelector currentTier="none" hideFreeTrial={true} />
           </div>

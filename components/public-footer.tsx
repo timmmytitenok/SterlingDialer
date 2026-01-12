@@ -17,13 +17,13 @@ export function PublicFooter() {
                 <span className="text-white font-bold text-lg tracking-tight">Sterling Dialer</span>
               </div>
               <p className="text-gray-500 text-sm leading-relaxed mb-4 max-w-[280px]">
-                AI-powered appointment setting for life insurance agents. Turn old leads into booked appointments today.
+                AI-powered appointment setting for life and health insurance agents. Turn old leads into booked appointments today.
               </p>
               <Link 
                 href="/signup" 
                 className="inline-flex items-center gap-2 text-sm text-purple-400 hover:text-purple-300 font-medium transition-colors group"
               >
-                Start your free trial
+                Start calling — $0.65/min
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -100,7 +100,7 @@ export function PublicFooter() {
             </div>
             
             <div className="text-gray-500 text-sm">
-              Start your <span className="text-white font-semibold">7 day</span> free trial today
+              Get started with <span className="text-white font-semibold">Pay As You Go</span> — Only $0.65/min
             </div>
           </div>
         </div>

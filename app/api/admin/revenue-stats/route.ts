@@ -243,7 +243,7 @@ export async function GET(req: Request) {
 
     const customRevenueForCharts = customItemsForCharts?.filter((item: any) => item.type === 'revenue') || [];
     console.log(`📊 Found ${customRevenueForCharts.length} custom revenue items for charts`);
-    
+
     // DEBUG: Log all custom revenue items to see what's being fetched
     if (customRevenueForCharts.length > 0) {
       console.log('📋 Custom revenue items for charts:');

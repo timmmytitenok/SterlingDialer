@@ -305,16 +305,16 @@ function SignupPageContent() {
 
       <div className="relative z-10 w-full max-w-md">
         {/* Header - MATCHES LOGIN */}
-        <div className="text-center mb-4 sm:mb-6 mt-4 sm:mt-0">
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-2xl mb-2 sm:mb-3 shadow-lg">
-            <span className="text-lg sm:text-xl font-bold text-white">SD</span>
+        <div className="text-center mb-6 sm:mb-8 mt-4 sm:mt-0">
+          <div className="group relative inline-block cursor-pointer mb-2 sm:mb-3">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition-all duration-300" />
+            <div className="relative inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-800 via-purple-600 to-pink-600 rounded-2xl shadow-lg group-hover:scale-110 group-hover:shadow-purple-500/30 transition-all duration-300">
+              <span className="text-lg sm:text-xl font-bold text-white">SD</span>
+            </div>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">
-            Start Your Free Trial
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">
+            Create Your Account
           </h1>
-          <p className="text-gray-300 text-sm sm:text-base">
-            Create an account to activate your 7-day trial
-          </p>
         </div>
 
         {/* Sales Referral Badge */}
@@ -359,10 +359,10 @@ function SignupPageContent() {
         <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
           <div className="flex items-center gap-1.5 mb-1">
             <Zap className="w-3.5 h-3.5 text-green-400" />
-            <span className="text-green-400 font-bold text-xs">7 Days Free — No Charge Today</span>
+            <span className="text-green-400 font-bold text-xs">Pay As You Go — No Monthly Fees!</span>
           </div>
           <p className="text-gray-300 text-xs">
-            We'll ask for a card, but you won't be charged until after your trial ends.
+            Only pay $0.65/min for calls you make. No subscriptions.
           </p>
         </div>
 
@@ -462,7 +462,7 @@ function SignupPageContent() {
               ) : (
                 <>
                   <Sparkles className="w-5 h-5" />
-                  Continue to Trial Activation
+                  Continue to Setup
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
@@ -475,15 +475,11 @@ function SignupPageContent() {
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 text-xs text-gray-300">
                 <CheckCircle className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
-                <span>Add your card (no charge today)</span>
+                <span>Add your card (for pay-per-minute billing)</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-gray-300">
                 <CheckCircle className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
-                <span>7 days of full access</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-gray-300">
-                <CheckCircle className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
-                <span>Cancel anytime before trial ends</span>
+                <span>Get setup within 24 hours</span>
               </div>
             </div>
           </div>
@@ -506,9 +502,9 @@ function SignupPageContent() {
             <span className="whitespace-nowrap">Secure</span>
           </div>
           <span>•</span>
-          <span className="whitespace-nowrap">No charge for 7 days</span>
+          <span className="whitespace-nowrap">No monthly fees</span>
           <span>•</span>
-          <span className="whitespace-nowrap">Cancel anytime</span>
+          <span className="whitespace-nowrap">$0.65/min</span>
         </div>
       </div>
     </div>

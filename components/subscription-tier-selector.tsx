@@ -62,15 +62,15 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Free Trial Card */}
+      {/* Pay As You Go Card */}
       {!hideFreeTrial && (
         <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-2xl p-8 border-2 border-green-500/30">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/20 rounded-full mb-4">
               <Sparkles className="w-8 h-8 text-green-400" />
             </div>
-            <h3 className="text-3xl font-bold text-white mb-2">🎁 Start Your Free Trial</h3>
-            <p className="text-green-300 text-lg">Try all features FREE for 7 days - Card required (no charge for 7 days)</p>
+            <h3 className="text-3xl font-bold text-white mb-2">💰 Get Started</h3>
+            <p className="text-green-300 text-lg">$0.65 per minute • No monthly fees • Card required for billing</p>
           </div>
 
           <button
@@ -86,7 +86,7 @@ export function SubscriptionTierSelector({ currentTier, hideFreeTrial = false }:
             ) : (
               <span className="flex items-center justify-center gap-2">
                 <Clock className="w-6 h-6" />
-                Start 7-Day Free Trial
+                Get Started — $0.65/min
                 <ArrowRight className="w-6 h-6" />
               </span>
             )}

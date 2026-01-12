@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    console.log('💳 Creating trial activation checkout for user:', user.id);
+    console.log('💳 Creating Pay As You Go activation checkout for user:', user.id);
 
     // Get or create Stripe customer
     const { data: profile } = await supabase
@@ -43,25 +43,22 @@ export async function POST(request: Request) {
       console.log('✅ Using existing Stripe customer:', customerId);
     }
 
-    // Get the Pro Access price ID from environment
-    const priceId = process.env.STRIPE_PRO_PRICE_ID;
-    if (!priceId) {
-      throw new Error('STRIPE_PRO_PRICE_ID not configured');
-    }
+    // Pay As You Go price ID ($0/month subscription to save card on file)
+    const priceId = process.env.STRIPE_PAY_AS_YOU_GO_PRICE_ID || 'price_1SordgRB7fq2FJAg5dNUjttu';
 
-    // Create Stripe Checkout Session in SUBSCRIPTION mode with 7-day trial
+    // Create Stripe Checkout Session in SUBSCRIPTION mode ($0/month - just saves card)
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      mode: 'subscription', // SUBSCRIPTION mode - will auto-charge after trial!
+      mode: 'subscription', // SUBSCRIPTION mode - $0/month, saves card for pay-per-minute
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId, // $379/month Pro Access
+          price: priceId, // $0/month Pay As You Go
           quantity: 1,
         },
       ],
       subscription_data: {
-        trial_period_days: 7, // 7-day free trial
+        // NO trial - Pay As You Go starts immediately!
         metadata: {
           user_id: user.id,
         },
@@ -70,21 +67,20 @@ export async function POST(request: Request) {
       cancel_url: `${request.headers.get('origin')}/trial-activate?canceled=true`,
       metadata: {
         user_id: user.id,
-        type: 'trial_activation',
+        type: 'pay_as_you_go_activation',
       },
     });
 
-    // 🔒 SECURITY: DO NOT grant trial access here!
-    // Trial access will be granted by the webhook AFTER user adds payment method
-    // This prevents users from getting free trial without a card on file
+    // 🔒 SECURITY: Access granted via webhook after card is saved
+    // User pays $0.65 per minute used - no monthly fee!
 
-    console.log('✅ Trial activation checkout session created');
-    console.log('🎯 User must complete checkout with card before trial access is granted');
-    console.log('🔒 Webhook will activate trial after checkout.session.completed event');
+    console.log('✅ Pay As You Go activation checkout session created');
+    console.log('🎯 User saves card, then pays $0.65/min for calls');
+    console.log('🔒 Webhook will activate account after checkout.session.completed event');
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    console.error('Error creating trial activation:', error);
+    console.error('Error creating activation:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to create checkout session' },
       { status: 500 }

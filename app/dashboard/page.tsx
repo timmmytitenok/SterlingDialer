@@ -149,10 +149,10 @@ export default async function DashboardPage() {
   
   while (hasMore) {
     const { data: batch, error: batchError } = await supabase
-      .from('calls')
-      .select('created_at, disposition, connected, outcome')
-      .eq('user_id', user.id)
-      .gte('created_at', startOf30DaysISO)
+    .from('calls')
+    .select('created_at, disposition, connected, outcome')
+    .eq('user_id', user.id)
+    .gte('created_at', startOf30DaysISO)
       .order('created_at', { ascending: true })
       .range(offset, offset + batchSize - 1);
     

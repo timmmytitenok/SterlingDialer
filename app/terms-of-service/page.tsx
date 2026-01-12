@@ -41,7 +41,7 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-3">4. Subscription and Billing</h2>
               <p className="mb-3">
-                <strong className="text-white">Free Trial:</strong> New users receive a 7-day free trial. Your payment method will be charged automatically when the trial ends unless you cancel before Day 7.
+                <strong className="text-white">Pay As You Go:</strong> Sterling operates on a pay-per-minute model. There are no monthly subscription fees. You are charged $0.65 per minute for AI calls made through the platform.
               </p>
               <p className="mb-3">
                 <strong className="text-white">Subscription Fees:</strong> Pro Access is billed at $379/month plus $0.35 per minute for calls made by the AI agent.

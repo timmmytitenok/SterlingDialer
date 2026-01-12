@@ -21,7 +21,7 @@ export function SubscriptionEnded({ wasFreeTrial = false, endDate }: Subscriptio
 
           {/* Title */}
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            {wasFreeTrial ? 'Your Free Trial Has Ended' : 'Your Subscription Has Ended'}
+            {wasFreeTrial ? 'Your Account Needs Attention' : 'Your Account Needs Attention'}
           </h1>
 
           {/* Subtitle */}

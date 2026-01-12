@@ -208,8 +208,8 @@ export default function SalespersonSchedulePage() {
 
   useEffect(() => {
     const salesperson = getSalesperson(salespersonSlug);
-    if (!salesperson) {
-      // Will show 404
+    if (!salesperson || !salesperson.isActive) {
+      // Will show 404 - salesperson not found or not active
       setMounted(true);
       return;
     }
