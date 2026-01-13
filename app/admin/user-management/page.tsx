@@ -34,7 +34,7 @@ export default function AdminUsersPage() {
   // Redirect mobile users to My Revenue
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      window.location.href = '/admin/my-revenue';
+      window.location.href = '/admin/sterling-stats';
     }
   }, []);
 

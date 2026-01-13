@@ -75,7 +75,7 @@ function LoginPageContent() {
 
         setSuccess('✅ Admin access granted! Redirecting to admin panel...');
         setTimeout(() => {
-          window.location.href = '/admin/my-revenue';
+          window.location.href = '/admin/sterling-stats';
         }, 1000);
         return;
       }

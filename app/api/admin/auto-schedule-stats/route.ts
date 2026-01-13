@@ -100,6 +100,9 @@ export async function GET() {
       6: { userCount: 0, totalDailyBudget: 0, totalProfit: 0 }, // Saturday
     };
 
+    // Track users who are actually active on at least one day this week
+    const usersActiveThisWeek = new Set<string>();
+
     filteredUsers.forEach((user: { 
       user_id: string; 
       auto_dialer_enabled: boolean; 
@@ -143,6 +146,7 @@ export async function GET() {
           dayStats[dayIndex].userCount += 1;
           dayStats[dayIndex].totalDailyBudget += dailyBudget;
           dayStats[dayIndex].totalProfit += profitPerDay;
+          usersActiveThisWeek.add(user.user_id); // Track this user as active
           
           if (isExtra && !isWeeklyActive) {
             console.log(`      Day ${dayIndex} (${dateForThisDay}): EXTRA (not in weekly schedule but manually added)`);
@@ -155,8 +159,8 @@ export async function GET() {
       }
     });
 
-    // Calculate totals across all days
-    const totalActiveUsers = filteredUsers.length;
+    // Calculate totals - only count users who are actually active on at least one day
+    const totalActiveUsers = usersActiveThisWeek.size;
     const totalWeeklyProfit = Object.values(dayStats).reduce((sum, day) => sum + day.totalProfit, 0);
 
     console.log('📊 Auto Schedule Stats calculated:');

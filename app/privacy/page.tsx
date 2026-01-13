@@ -61,7 +61,7 @@ export default function PrivacyPage() {
                   <h2 className="text-xl sm:text-2xl font-bold text-white">1. Information We Collect</h2>
                 </div>
                 <p className="mb-4">We collect only the information necessary to operate, secure, and improve the Service.</p>
-
+                
                 <h3 className="text-lg font-semibold text-white mt-5 mb-2">1.1 Account Information</h3>
                 <ul className="space-y-1 list-disc list-inside">
                   <li>Full name</li>

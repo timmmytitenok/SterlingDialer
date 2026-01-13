@@ -47,6 +47,37 @@ export async function POST(request: Request) {
     console.log(`✅ User ${userId} marked as ${isDead ? 'DEAD 💀' : 'ACTIVE 💚'}`);
     console.log('   Updated data:', data);
 
+    // If marking as dead, also disable auto-scheduling to prevent AI from auto-launching
+    if (isDead) {
+      console.log('🔄 Disabling auto-scheduling for dead user...');
+      
+      // Disable in dialer_settings
+      const { error: dialerError } = await supabase
+        .from('dialer_settings')
+        .update({ auto_start_enabled: false })
+        .eq('user_id', userId);
+      
+      if (dialerError) {
+        console.error('⚠️ Warning: Could not disable dialer_settings auto_start:', dialerError.message);
+      } else {
+        console.log('   ✅ dialer_settings.auto_start_enabled = false');
+      }
+
+      // Disable in ai_control_settings
+      const { error: aiControlError } = await supabase
+        .from('ai_control_settings')
+        .update({ schedule_enabled: false })
+        .eq('user_id', userId);
+      
+      if (aiControlError) {
+        console.error('⚠️ Warning: Could not disable ai_control_settings schedule:', aiControlError.message);
+      } else {
+        console.log('   ✅ ai_control_settings.schedule_enabled = false');
+      }
+
+      console.log('✅ Auto-scheduling disabled for dead user - AI will not auto-launch');
+    }
+
     return NextResponse.json({ success: true, isDead });
   } catch (error: any) {
     console.error('❌ Error toggling dead status:', error);

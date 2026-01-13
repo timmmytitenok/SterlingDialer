@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   Users,
   LogOut,
-  DollarSign,
   Gift,
   Shield,
   TrendingUp,
@@ -17,11 +16,9 @@ export function AdminSidebar() {
   const router = useRouter();
 
   const mainNavigation = [
-    { name: 'My Revenue', href: '/admin/my-revenue', icon: DollarSign },
     { name: 'Sterling Stats', href: '/admin/sterling-stats', icon: TrendingUp },
     { name: 'User Management', href: '/admin/user-management', icon: Users },
     { name: 'Sales Team', href: '/admin/sales-team', icon: Gift },
-    // { name: 'Affiliate Program', href: '/admin/affiliate-program', icon: Gift }, // Hidden for now
   ];
 
   const handleSignOut = async () => {
@@ -31,7 +28,7 @@ export function AdminSidebar() {
   };
 
   return (
-    <aside className="hidden md:flex w-64 bg-[#0A1129] border-r border-gray-800 flex-col">
+    <aside className="hidden md:flex w-64 h-full bg-[#0A1129]/80 backdrop-blur-xl border-r border-gray-800/50 flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-gray-800">
         <div className="flex items-center gap-3">

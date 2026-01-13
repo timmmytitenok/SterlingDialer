@@ -311,8 +311,8 @@ export default function AdminUserDetailPage() {
               </div>
             </div>
 
-            {/* Right Side: Account Type Badge & View Dashboard Button */}
-            <div className="flex flex-col items-end gap-4">
+            {/* Right Side: View Dashboard Button - Centered */}
+            <div className="flex items-center gap-4">
               {/* DEAD USER Badge - Shows prominently if user is dead */}
               {user.is_dead && (
                 <div className="relative group/badge animate-pulse">
@@ -323,58 +323,27 @@ export default function AdminUserDetailPage() {
                   </span>
                 </div>
               )}
-              
-              {/* Account Type Badge - Hidden if user is dead */}
-              {!user.is_dead && (
-                <div className="relative group/badge">
-                  <div className={`absolute inset-0 rounded-full blur-md transition-opacity ${
-                    user.account_type?.includes('VIP') || user.subscription_tier === 'vip'
-                      ? 'bg-yellow-500/30 opacity-50 group-hover/badge:opacity-75'
-                      : user.account_type === 'Pro Access' || user.subscription_tier === 'pro' || user.account_type === 'Free Trial' || user.subscription_tier === 'trial'
-                      ? 'bg-blue-500/30 opacity-50 group-hover/badge:opacity-75'
-                      : 'bg-purple-500/30 opacity-50 group-hover/badge:opacity-75'
-                  }`}></div>
-                  <span className={`relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 font-bold text-sm tracking-wide transition-all hover:scale-105 ${
-                user.account_type?.includes('VIP') || user.subscription_tier === 'vip'
-                  ? 'bg-gradient-to-r from-yellow-500/20 via-amber-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/50 shadow-lg shadow-yellow-500/20'
-                  : user.account_type === 'Pro Access' || user.subscription_tier === 'pro' || user.account_type === 'Free Trial' || user.subscription_tier === 'trial'
-                  ? 'bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-blue-500/20 text-blue-400 border-blue-500/50 shadow-lg shadow-blue-500/20'
-                  : 'bg-purple-500/10 text-purple-400 border-purple-500/30'
-              }`}>
-                {user.account_type?.includes('VIP') || user.subscription_tier === 'vip' ? (
-                  <span className="text-lg">👑</span>
-                ) : user.account_type === 'Pro Access' || user.subscription_tier === 'pro' ? (
-                  <span className="text-lg">⚡</span>
-                ) : user.account_type === 'Free Trial' || user.subscription_tier === 'trial' ? (
-                  <span className="text-lg">🆓</span>
-                ) : (
-                  <CreditCard className="w-4 h-4" />
-                )}
-                {user.account_type}
-              </span>
-                </div>
-              )}
 
               {/* View Dashboard Button */}
               <a
                 href={`/login?email=${encodeURIComponent(user.email)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                  className="group/btn relative flex items-center gap-2 px-6 py-3 overflow-hidden rounded-xl font-semibold transition-all duration-300 hover:scale-[1.03]"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-500/40 rounded-xl"></div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/10 to-cyan-500/0 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
-                  <div className="absolute inset-0 rounded-xl shadow-lg shadow-cyan-500/0 group-hover/btn:shadow-cyan-500/30 transition-shadow duration-300"></div>
-                  <ExternalLink className="w-5 h-5 relative z-10 text-cyan-400 group-hover/btn:rotate-12 transition-transform duration-300" />
-                  <span className="relative z-10 text-white">View Dashboard</span>
-                </a>
-              </div>
+                className="group/btn relative flex items-center gap-2 px-6 py-3 overflow-hidden rounded-xl font-semibold transition-all duration-300 hover:scale-[1.03]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-500/40 rounded-xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/10 to-cyan-500/0 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
+                <div className="absolute inset-0 rounded-xl shadow-lg shadow-cyan-500/0 group-hover/btn:shadow-cyan-500/30 transition-shadow duration-300"></div>
+                <ExternalLink className="w-5 h-5 relative z-10 text-cyan-400 group-hover/btn:rotate-12 transition-transform duration-300" />
+                <span className="relative z-10 text-white">View Dashboard</span>
+              </a>
+            </div>
             </div>
           </div>
         </div>
 
         {/* Stats Cards - Single Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
           {/* Last AI Active / Running */}
           <div className="group/card relative cursor-pointer h-full">
             <div className={`absolute -inset-0.5 rounded-2xl blur-md transition-all duration-300 group-hover/card:blur-lg ${
@@ -453,23 +422,7 @@ export default function AdminUserDetailPage() {
             </div>
           </div>
 
-          {/* Total Spent */}
-          <div className="group/card relative cursor-pointer h-full">
-            <div className="absolute -inset-0.5 bg-green-500/25 rounded-2xl blur-md opacity-60 group-hover/card:opacity-100 group-hover/card:blur-lg transition-all duration-300"></div>
-            <div className="relative h-full bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border-2 border-green-500/50 shadow-xl transition-all duration-300 group-hover/card:scale-[1.02] flex flex-col">
-            <div className="flex items-center gap-3 mb-3">
-                <div className="p-3 bg-green-500/15 rounded-xl border border-green-500/40 group-hover/card:bg-green-500/25 group-hover/card:border-green-400/60 transition-all shadow-lg shadow-green-500/0 group-hover/card:shadow-green-500/30">
-                <DollarSign className="w-6 h-6 text-green-400" />
-                    </div>
-              <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">Total Spent</div>
-                    </div>
-              <div className="flex-1 flex flex-col justify-center">
-                <div className="text-4xl font-black text-green-400 mb-1 group-hover/card:text-green-300 transition-colors">${user.total_spent?.toFixed(2) || '0.00'}</div>
-                <div className="text-xs text-gray-500">Subscription + Refills</div>
-              </div>
-            </div>
-                </div>
-              </div>
+        </div>
 
         {/* Divider */}
         <div className="my-10 flex items-center gap-4">

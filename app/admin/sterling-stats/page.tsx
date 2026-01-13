@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Users, Phone, CheckCircle, Calendar, Loader2, TrendingUp } from 'lucide-react';
+import { Users, Phone, CheckCircle, Calendar, Loader2, TrendingUp, LogOut } from 'lucide-react';
 import { AdminStatCard } from '@/components/admin/admin-stat-card';
 
 interface RevenueData {
@@ -29,10 +29,16 @@ export default function SterlingStatsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [revenueData, setRevenueData] = useState<RevenueData | null>(null);
+  const supabase = createClient();
 
   useEffect(() => {
     loadRevenueData();
   }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/signup');
+  };
 
   const loadRevenueData = async () => {
     try {
@@ -142,6 +148,17 @@ export default function SterlingStatsPage() {
             icon={TrendingUp}
             className="border-purple-500/30"
           />
+        </div>
+
+        {/* Mobile Sign Out Button */}
+        <div className="md:hidden mt-12 mb-8">
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 transition-all"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-semibold">Sign Out</span>
+          </button>
         </div>
       </div>
     </div>
