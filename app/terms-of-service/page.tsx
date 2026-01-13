@@ -44,7 +44,7 @@ export default function TermsOfServicePage() {
                 <strong className="text-white">Pay As You Go:</strong> Sterling operates on a pay-per-minute model. There are no monthly subscription fees. You are charged $0.65 per minute for AI calls made through the platform.
               </p>
               <p className="mb-3">
-                <strong className="text-white">Subscription Fees:</strong> Pro Access is billed at $379/month plus $0.35 per minute for calls made by the AI agent.
+                <strong className="text-white">Pay As You Go:</strong> Calls are billed at $0.65 per minute. No monthly subscription fees.
               </p>
               <p className="mb-3">
                 <strong className="text-white">Auto-Refill:</strong> When you enable auto-refill for call balance, your payment method will be automatically charged $25 when your balance drops below $1. You can disable auto-refill at any time.

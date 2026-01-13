@@ -19,6 +19,7 @@ interface BillingManagementContentProps {
   initialBalance?: number;
   initialAutoRefill?: boolean;
   initialRefillAmount?: number;
+  costPerMinute?: number;
 }
 
 export function BillingManagementContent({
@@ -33,6 +34,7 @@ export function BillingManagementContent({
   initialBalance,
   initialAutoRefill,
   initialRefillAmount,
+  costPerMinute = 0.65,
 }: BillingManagementContentProps) {
   const [showUpgrade, setShowUpgrade] = useState(false);
 
@@ -99,6 +101,7 @@ export function BillingManagementContent({
               accountCreatedAt={accountCreatedAt}
               referralBonusDays={referralBonusDays}
               trialEndsAt={trialEndsAt}
+              costPerMinute={costPerMinute}
             />
           ) : (
             /* Upgrade View */

@@ -69,13 +69,19 @@ export default async function BillingPage() {
 
   const { data: profileData } = await supabase
     .from('profiles')
-    .select('auto_refill_enabled, auto_refill_amount')
+    .select('auto_refill_enabled, auto_refill_amount, cost_per_minute')
     .eq('user_id', user.id)
     .single();
 
   const currentBalance = callBalanceData?.balance || 0;
   const autoRefillEnabled = profileData?.auto_refill_enabled || false;
   const autoRefillAmount = profileData?.auto_refill_amount || 25;
+  const costPerMinute = profileData?.cost_per_minute ?? 0.65;
+  
+  console.log('💰 Billing Page - Cost Per Minute:', {
+    fromProfile: profileData?.cost_per_minute,
+    final: costPerMinute
+  });
 
   // Get subscription features
   const subscriptionFeatures = await getSubscriptionFeatures(user.id);
@@ -122,6 +128,7 @@ export default async function BillingPage() {
         initialBalance={currentBalance}
         initialAutoRefill={autoRefillEnabled}
         initialRefillAmount={autoRefillAmount}
+        costPerMinute={costPerMinute}
       />
     </>
   );

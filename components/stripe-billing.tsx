@@ -12,12 +12,15 @@ interface StripeBillingProps {
   accountCreatedAt?: string;
   referralBonusDays?: number;
   trialEndsAt?: string;
+  costPerMinute?: number;
 }
 
-export function StripeBilling({ userId, userEmail, hasSubscription, currentTier = 'none', subscriptionData, accountCreatedAt, referralBonusDays = 0, trialEndsAt }: StripeBillingProps) {
+export function StripeBilling({ userId, userEmail, hasSubscription, currentTier = 'none', subscriptionData, accountCreatedAt, referralBonusDays = 0, trialEndsAt, costPerMinute: initialCostPerMinute = 0.65 }: StripeBillingProps) {
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<any>(null);
+  const [paymentMethodLoading, setPaymentMethodLoading] = useState(true);
   const [realTimeStatus, setRealTimeStatus] = useState<any>(null);
+  const [costPerMinute, setCostPerMinute] = useState(initialCostPerMinute);
   
   // Debug: Log subscription data to see what we're working with
   console.log('🔍 StripeBilling Full Debug:', {
@@ -47,11 +50,22 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
   console.log('🔴 Is Canceled (from Stripe):', realTimeStatus?.cancelAtPeriodEnd);
   console.log('✅ Final Is Canceled:', isCanceled);
 
-  // Fetch payment method AND real-time subscription status
+  // Fetch payment method, cost per minute, AND real-time subscription status
   useEffect(() => {
     const fetchBillingData = async () => {
+      setPaymentMethodLoading(true);
       try {
         console.log('🚀 FETCHING BILLING DATA...');
+        
+        // Fetch cost per minute from the same API as the balance card
+        const balanceResponse = await fetch('/api/balance/get');
+        if (balanceResponse.ok) {
+          const balanceData = await balanceResponse.json();
+          if (balanceData.cost_per_minute !== undefined) {
+            setCostPerMinute(balanceData.cost_per_minute);
+            console.log('💰 Cost per minute fetched:', balanceData.cost_per_minute);
+          }
+        }
         
         // Fetch payment method
         const pmResponse = await fetch('/api/stripe/get-payment-method');
@@ -79,15 +93,14 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
         }
       } catch (error) {
         console.error('❌ Error fetching billing data:', error);
+      } finally {
+        setPaymentMethodLoading(false);
       }
     };
 
-    if (hasSubscription) {
-      console.log('✅ Has subscription - fetching billing data');
-      fetchBillingData();
-    } else {
-      console.log('⚠️ No subscription - skipping billing data fetch');
-    }
+    // Always fetch billing data to get cost per minute
+    console.log('✅ Fetching billing data...');
+    fetchBillingData();
     
     // Auto-refresh when user returns from Stripe portal
     const handleVisibilityChange = () => {
@@ -245,6 +258,44 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
     );
   }
 
+  // Show full skeleton while loading
+  if (paymentMethodLoading) {
+    return (
+      <div className="space-y-4 md:space-y-6">
+        <div className="bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-xl md:rounded-2xl p-5 md:p-8 border-2 border-blue-500/30 shadow-xl animate-pulse">
+          {/* Plan Info Skeleton */}
+          <div className="mb-5 md:mb-6">
+            <div className="h-8 md:h-10 bg-gray-700/50 rounded-lg w-48 mb-2"></div>
+            <div className="h-6 md:h-8 bg-gray-700/40 rounded-lg w-32 mb-1"></div>
+            <div className="h-4 bg-gray-700/30 rounded w-52 mb-3"></div>
+            <div className="h-7 bg-gray-700/30 rounded-full w-36"></div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-gray-800 my-4 md:my-6"></div>
+
+          {/* Card on File Skeleton */}
+          <div className="mb-5 md:mb-6">
+            <div className="flex items-center gap-2 md:gap-3 mb-2">
+              <div className="w-4 h-4 md:w-5 md:h-5 bg-gray-700/50 rounded"></div>
+              <div className="h-4 bg-gray-700/40 rounded w-24"></div>
+            </div>
+            <div className="pl-6 md:pl-8">
+              <div className="h-5 md:h-6 bg-gray-700/50 rounded-md w-40 mb-2"></div>
+              <div className="h-3 md:h-4 bg-gray-700/30 rounded-md w-64"></div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-gray-800 my-4 md:my-6"></div>
+
+          {/* Button Skeleton */}
+          <div className="h-12 md:h-14 bg-gray-700/30 rounded-xl w-full"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Current Plan Card */}
@@ -255,7 +306,7 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
           <p className="text-xl md:text-2xl font-bold text-blue-400 mb-1">
             {tierInfo.price > 0 ? `$${tierInfo.price}` : '$0'}<span className="text-sm md:text-base text-gray-400 font-normal">/month</span>
           </p>
-          <p className="text-xs md:text-sm text-gray-400 mb-3">+ $0.35 per minute for calls</p>
+          <p className="text-xs md:text-sm text-gray-400 mb-3">+ ${costPerMinute.toFixed(2)} per minute for calls</p>
           
           {/* Status Badge */}
           <div className={`inline-flex items-center gap-2 px-2.5 md:px-3 py-1.5 rounded-full ${
@@ -281,45 +332,21 @@ export function StripeBilling({ userId, userEmail, hasSubscription, currentTier 
         {/* Divider */}
         <div className="border-t border-gray-800 my-4 md:my-6"></div>
 
-        {/* First Billing Date / Next Billing Date / Canceled Message */}
-        <div className="mb-4 md:mb-5">
-          <div className="flex items-center gap-2 md:gap-3 mb-2">
-            <Calendar className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
-            <p className="text-xs md:text-sm font-semibold text-gray-300">
-              {isCanceled ? 'Trial Ends' : isOnTrial ? 'First Billing Date' : 'Next Billing Date'}
-            </p>
-          </div>
-          <p className="text-base md:text-lg text-white font-medium pl-6 md:pl-8">{getNextBillingDate()}</p>
-          {/* Show explanation based on status */}
-          {isCanceled && isOnTrial ? (
-            <p className="text-xs text-red-400 pl-6 md:pl-8 mt-2">
-              🚫 You canceled your account. You'll keep access until this date, then your account will be closed out!
-            </p>
-          ) : isOnTrial ? (
-            <p className="text-xs text-gray-400 pl-6 md:pl-8 mt-2">
-              💳 Your card will be charged $379 on this date unless you cancel before then
-            </p>
-          ) : null}
-        </div>
-
-        {/* Divider */}
-        <div className="border-t border-gray-800 my-4 md:my-6"></div>
-
         {/* Card on File */}
         <div className="mb-5 md:mb-6">
           <div className="flex items-center gap-2 md:gap-3 mb-2">
             <CreditCard className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
             <p className="text-xs md:text-sm font-semibold text-gray-300">Card on File</p>
-                    </div>
+          </div>
           {paymentMethod ? (
             <div className="pl-6 md:pl-8">
               <p className="text-base md:text-lg text-white font-medium mb-2">
                 {paymentMethod.brand?.charAt(0).toUpperCase()}{paymentMethod.brand?.slice(1)} •••• {paymentMethod.last4}
               </p>
               <p className="text-[10px] md:text-xs text-gray-400 leading-relaxed">
-                This card will be used for all charges, including subscription fees, call minutes, and auto-refills.
+                This card will be used for all charges, including call minutes and auto-refills.
               </p>
-              </div>
+            </div>
           ) : (
             <p className="text-base md:text-lg text-gray-500 pl-6 md:pl-8">No payment method on file</p>
           )}

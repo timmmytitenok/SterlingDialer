@@ -1248,15 +1248,23 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
     }
   };
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside - use mousedown to avoid race condition with click handlers
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (openStatusDropdownId && !(e.target as Element).closest('.lead-status-dropdown')) {
-        setOpenStatusDropdownId(null);
+      if (openStatusDropdownId) {
+        const target = e.target as Element;
+        // Check if click is inside dropdown or on a status toggle button
+        const isInsideDropdown = target.closest('.lead-status-dropdown');
+        const isStatusButton = target.closest('[data-status-toggle]');
+        
+        if (!isInsideDropdown && !isStatusButton) {
+          setOpenStatusDropdownId(null);
+        }
       }
     };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    // Use mousedown instead of click to avoid race condition
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openStatusDropdownId]);
 
   // Server-side pagination - leads are already filtered and paginated from the server!
@@ -1885,6 +1893,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                                   ) : (
                                     <>
                                       <button
+                                        data-status-toggle="true"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           handleStatusDropdownToggle(lead.id, e.currentTarget);
@@ -2146,60 +2155,12 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
               {/* Name & Status Header */}
               <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#1a1f35]/60 to-[#0f1525]/60 rounded-2xl border border-gray-700/30 backdrop-blur-sm">
                 <h3 className="text-2xl font-bold text-white">{selectedLead.name}</h3>
-                {/* Editable Status */}
-                <div className="relative lead-status-dropdown">
-                  {updatingLeadId === selectedLead.id ? (
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/20 text-gray-400 border border-gray-500/30">
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      <span className="text-xs font-medium">Updating...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStatusDropdownToggle(`modal-${selectedLead.id}`, e.currentTarget);
-                        }}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all hover:scale-105 cursor-pointer ${
-                          LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(selectedLead))?.className || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                        } border`}
-                      >
-                        <span>{LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(selectedLead))?.label || selectedLead.status}</span>
-                        <ChevronDown className={`w-3 h-3 opacity-60 transition-transform ${openStatusDropdownId === `modal-${selectedLead.id}` ? 'rotate-180' : ''}`} />
-                      </button>
-                      {openStatusDropdownId === `modal-${selectedLead.id}` && (
-                        <div 
-                          className="fixed z-[99999] w-44 bg-[#1A2647] border border-gray-700 rounded-lg shadow-2xl shadow-black/50 overflow-hidden"
-                          style={{
-                            top: dropdownStyle.top !== undefined ? `${dropdownStyle.top}px` : 'auto',
-                            bottom: dropdownStyle.bottom !== undefined ? `${dropdownStyle.bottom}px` : 'auto',
-                            left: `${dropdownStyle.left}px`,
-                          }}
-                        >
-                          {LEAD_STATUS_OPTIONS.map((option) => (
-                            <button
-                              key={option.value}
-                              onClick={(e) => {
-                                handleLeadStatusChange(selectedLead, option.value, e);
-                                setSelectedLead({ ...selectedLead, status: option.value });
-                              }}
-                              className={`w-full px-3 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-gray-700/50 transition-colors ${
-                                getLeadStatus(selectedLead) === option.value ? 'bg-gray-700/30' : ''
-                              }`}
-                            >
-                              <span className={`inline-flex items-center gap-2 px-2 py-0.5 rounded-full ${option.className} border`}>
-                                {option.label}
-                              </span>
-                              {getLeadStatus(selectedLead) === option.value && (
-                                <Check className="w-3.5 h-3.5 text-green-400" />
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+                {/* Status Badge - Display only */}
+                <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${
+                  LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(selectedLead))?.className || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                } border`}>
+                  {LEAD_STATUS_OPTIONS.find(s => s.value === getLeadStatus(selectedLead))?.label || selectedLead.status}
+                </span>
               </div>
 
               {/* 1. Contact Information Section */}

@@ -21,7 +21,8 @@ export function CallBalanceCard({
 }: CallBalanceCardProps) {
   const [balance, setBalance] = useState(initialBalance);
   const [loading, setLoading] = useState(false);
-  const [costPerMinute, setCostPerMinute] = useState(0.30);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [costPerMinute, setCostPerMinute] = useState(0.65);
   const [hasConfigured, setHasConfigured] = useState(initialAutoRefill);
   const [autoRefillOn, setAutoRefillOn] = useState(initialAutoRefill);
   const [showConsent, setShowConsent] = useState(false);
@@ -50,6 +51,7 @@ export function CallBalanceCard({
           setHasConfigured(data.auto_refill_enabled);
           setAutoRefillOn(data.auto_refill_enabled);
         }
+        setDataLoaded(true);
 
         // Check if returning from balance refill
         const urlParams = new URLSearchParams(window.location.search);
@@ -75,6 +77,7 @@ export function CallBalanceCard({
         }
       } catch (error) {
         console.error('Failed to fetch user data:', error);
+        setDataLoaded(true); // Still show content even if fetch fails
       }
     };
 
@@ -202,7 +205,11 @@ export function CallBalanceCard({
                '✓ GOOD'}
             </div>
           </div>
-          <p className="text-gray-500 text-xs md:text-sm">≈ {minutesRemaining} minutes at ${costPerMinute}/min</p>
+          {dataLoaded ? (
+            <p className="text-gray-500 text-xs md:text-sm">≈ {minutesRemaining} minutes at ${costPerMinute}/min</p>
+          ) : (
+            <div className="h-4 bg-gray-700/50 rounded w-40 animate-pulse"></div>
+          )}
         </div>
       </div>
 

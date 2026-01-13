@@ -51,7 +51,7 @@ export async function GET() {
 
       return NextResponse.json({
         ...newBalance,
-        cost_per_minute: profile?.cost_per_minute || 0.30,
+        cost_per_minute: profile?.cost_per_minute ?? 0.65,
         subscription_tier: profile?.subscription_tier || 'none',
         is_affiliate_partner: profile?.is_affiliate_partner || false,
       });
@@ -72,7 +72,7 @@ export async function GET() {
 
     return NextResponse.json({
       ...balance,
-      cost_per_minute: profile?.cost_per_minute || 0.30,
+      cost_per_minute: profile?.cost_per_minute ?? 0.65,
       subscription_tier: profile?.subscription_tier || 'none',
       is_affiliate_partner: profile?.is_affiliate_partner || false,
     });
