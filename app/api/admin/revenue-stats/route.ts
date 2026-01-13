@@ -158,7 +158,7 @@ export async function GET(req: Request) {
     
     const userCostMap = new Map<string, number>();
     userProfiles?.forEach((p: any) => {
-      userCostMap.set(p.user_id, p.cost_per_minute || 0.35);
+      userCostMap.set(p.user_id, p.cost_per_minute || 0.65);
     });
     
     // AI cost per minute (your expense)

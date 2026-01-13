@@ -98,7 +98,7 @@ export async function GET(
     let subscriptionSpent = 0; // Track subscription spending
     
     // Get user's cost per minute (default $0.35, your expense is $0.15)
-    const userCostPerMinute = profile.data?.cost_per_minute || 0.35;
+    const userCostPerMinute = profile.data?.cost_per_minute || 0.65;
     const AI_COST_PER_MINUTE = 0.15; // Your actual cost
     const STRIPE_FEE_PERCENT = 0.03; // 3% Stripe fee
     

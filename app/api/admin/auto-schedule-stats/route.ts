@@ -75,7 +75,7 @@ export async function GET() {
 
       // Create a map of user_id -> cost_per_minute
       (profiles || []).forEach((p: { user_id: string; cost_per_minute: number | null }) => {
-        userRates[p.user_id] = p.cost_per_minute || 0.35; // Default to $0.35 if not set
+        userRates[p.user_id] = p.cost_per_minute || 0.65; // Default to $0.65 if not set
       });
     }
 

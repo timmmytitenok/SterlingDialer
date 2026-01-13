@@ -361,7 +361,7 @@ export async function POST(request: Request) {
       .eq('user_id', userId)
       .single();
 
-    const costPerMinute = userProfile?.cost_per_minute || 0.35; // Default to $0.35
+    const costPerMinute = userProfile?.cost_per_minute || 0.65; // Default to $0.65
     console.log(`💰 User cost per minute: $${costPerMinute} (tier: ${userProfile?.subscription_tier || 'unknown'})`);
 
     // ALWAYS use EST for day reset (midnight Eastern Time for ALL users)
@@ -575,7 +575,9 @@ export async function POST(request: Request) {
         console.log('');
       }
       
-      callCost = 0; // No charge for unanswered/short calls
+      // ALWAYS charge for call duration - even short calls cost money from Retell!
+      callCost = durationMinutes * costPerMinute;
+      console.log(`💰 Short/unanswered call cost: $${callCost.toFixed(4)} (${durationSeconds.toFixed(1)}s × $${costPerMinute}/min)`);
       
     } else {
       // CALL WAS PICKED UP!
@@ -1090,13 +1092,14 @@ export async function POST(request: Request) {
     // UPDATE SPEND & BALANCE & AI COSTS
     // ========================================================================
     
-    // Only update spend/balance/calls_made for:
-    // 1. Answered calls (charge money)
-    // 2. Double dial no answer (count as 1 dial, no charge)
+    // Calls_made_today only increments for:
+    // 1. Answered calls (10+ seconds)
+    // 2. Double dial no answer (counts as 1 completed dial attempt)
+    // But balance/spend is deducted for ALL calls with duration > 0 (Retell charges us!)
     const shouldIncrementCallCount = wasDoubleDial || callWasAnswered;
     
-    if (callWasAnswered && callCost > 0) {
-      // Only charge for answered calls
+    if (callCost > 0) {
+      // Charge for ALL calls with duration - Retell charges us for every second!
       // IMPORTANT: Re-fetch current values to avoid race conditions!
       const { data: freshSettings } = await supabase
         .from('ai_control_settings')
@@ -1107,10 +1110,15 @@ export async function POST(request: Request) {
       const currentSpend = freshSettings?.today_spend || 0;
       const currentCallCount = freshSettings?.calls_made_today || 0;
       const newSpend = currentSpend + callCost;
-      const newCallCount = currentCallCount + 1;
+      // Only increment call count for answered calls or completed double dial
+      const newCallCount = shouldIncrementCallCount ? currentCallCount + 1 : currentCallCount;
 
       console.log(`💰 Updating spend: $${currentSpend.toFixed(2)} → $${newSpend.toFixed(2)}`);
-      console.log(`📞 Incrementing calls_made_today: ${currentCallCount} → ${newCallCount}`);
+      if (shouldIncrementCallCount) {
+        console.log(`📞 Incrementing calls_made_today: ${currentCallCount} → ${newCallCount}`);
+      } else {
+        console.log(`📞 NOT incrementing calls_made_today (short call, waiting for double dial)`);
+      }
 
       await supabase
         .from('ai_control_settings')
