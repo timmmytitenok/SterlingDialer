@@ -19,7 +19,7 @@ export function SettingsLayoutClient({
     { name: 'Profile', href: '/dashboard/settings/profile', icon: User },
     { name: 'Billing', href: '/dashboard/settings/billing', icon: CreditCard },
     { name: 'Balance', href: '/dashboard/settings/balance', icon: Wallet },
-    { name: 'Schedule', href: '/dashboard/schedule', icon: Clock },
+    // { name: 'Schedule', href: '/dashboard/schedule', icon: Clock },
     { name: 'Support', href: '/dashboard/settings/support', icon: HeadphonesIcon },
   ];
 

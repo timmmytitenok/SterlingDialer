@@ -713,7 +713,51 @@ export async function GET(req: Request) {
     console.log(`   Total Minutes Expense (AI cost): $${totalMinutesExpense.toFixed(2)}`);
 
     // ============================================
-    // 11. RETURN DATA
+    // 11. PLATFORM OVERVIEW STATS
+    // ============================================
+    
+    console.log('📊 Fetching platform overview stats...');
+    
+    // Total Call Balance Reserve - sum of all user balances from call_balance table (excluding admin accounts)
+    const { data: balanceData, error: balanceError } = await supabase
+      .from('call_balance')
+      .select('user_id, balance');
+    
+    if (balanceError) {
+      console.error('⚠️ Error fetching call balances:', balanceError);
+    }
+    
+    // Filter out admin accounts and sum balances
+    const totalCallBalanceReserve = balanceData
+      ?.filter((b: any) => !ADMIN_USER_IDS.includes(b.user_id))
+      .reduce((sum: number, b: any) => sum + (b.balance || 0), 0) || 0;
+    
+    console.log(`💰 Total Call Balance Reserve: $${totalCallBalanceReserve.toFixed(2)}`);
+    console.log(`   (from ${balanceData?.filter((b: any) => !ADMIN_USER_IDS.includes(b.user_id)).length || 0} user accounts)`);
+    
+    // Active Users in Last 7 Days - ONLY users who actually ran AI (made calls)
+    const { data: calledUsers7Days, error: callsError7d } = await supabase
+      .from('calls')
+      .select('user_id')
+      .gte('created_at', last7Days.toISOString());
+    
+    if (callsError7d) {
+      console.error('⚠️ Error fetching users who made calls:', callsError7d);
+    }
+    
+    // Get unique users who made calls (excluding admin accounts)
+    const activeUsers7DaysSet = new Set<string>();
+    calledUsers7Days?.forEach((c: any) => {
+      if (c.user_id && !ADMIN_USER_IDS.includes(c.user_id)) {
+        activeUsers7DaysSet.add(c.user_id);
+      }
+    });
+    
+    const activeUsersLast7Days = activeUsers7DaysSet.size;
+    console.log(`👥 Active Users (Last 7 Days - ran AI): ${activeUsersLast7Days}`);
+
+    // ============================================
+    // 12. RETURN DATA
     // ============================================
     
     console.log('✅ Returning revenue stats...');
@@ -778,10 +822,16 @@ export async function GET(req: Request) {
         total: totalUsers || 0,
         activeUsers: activeUsers, // Users with AI configured
         activeUsersToday: activeUsersToday, // Users who made at least 1 call today
+        activeUsersLast7Days: activeUsersLast7Days, // Users who logged in or made calls in last 7 days
         proAccess: proUsers, // Pro subscribers only (excluding VIP)
         vipAccess: vipUsers, // VIP subscribers only
         conversionRate: totalUsers && totalUsers > 0 ? ((proUsers / totalUsers) * 100).toFixed(1) : '0.0',
         avgRevenuePerUser: activeUsers && activeUsers > 0 ? (totalRevenue / activeUsers).toFixed(0) : '0',
+      },
+      
+      // Platform overview
+      platform: {
+        totalCallBalanceReserve: Math.round(totalCallBalanceReserve * 100) / 100, // Round to 2 decimals
       },
       
       // Call activity

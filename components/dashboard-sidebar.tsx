@@ -17,8 +17,8 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
   const mainNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Lead Manager', href: '/dashboard/leads', icon: Users },
-    { name: 'AI Dialer', href: '/dashboard/ai-dialer', icon: Sparkles },
-    { name: 'AI Messenger', href: '/dashboard/ai-messenger', icon: MessageSquare },
+    { name: 'Sterling Dialer', href: '/dashboard/sterling-dialer', icon: Sparkles },
+    // { name: 'AI Messenger', href: '/dashboard/ai-messenger', icon: MessageSquare },
     { name: 'Appointments', href: '/dashboard/appointments', icon: CalendarDays },
     { name: 'Call History', href: '/dashboard/call-history', icon: Phone },
   ];

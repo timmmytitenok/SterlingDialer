@@ -1,8 +1,51 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Users, Loader2, AlertCircle, UserCheck, UserX, Settings, Skull } from 'lucide-react';
+
+// Animated Number Component
+const AnimatedNumber = ({ value, duration = 800 }: { value: number; duration?: number }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  const previousValue = useRef(0);
+  const animationFrame = useRef<number | null>(null);
+
+  useEffect(() => {
+    const start = previousValue.current;
+    const end = value;
+    const startTime = performance.now();
+
+    const easeOutExpo = (t: number) => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = easeOutExpo(progress);
+      
+      const currentValue = start + (end - start) * easedProgress;
+      setDisplayValue(Math.round(currentValue));
+
+      if (progress < 1) {
+        animationFrame.current = requestAnimationFrame(animate);
+      } else {
+        previousValue.current = end;
+      }
+    };
+
+    if (animationFrame.current) {
+      cancelAnimationFrame(animationFrame.current);
+    }
+    animationFrame.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrame.current) {
+        cancelAnimationFrame(animationFrame.current);
+      }
+    };
+  }, [value, duration]);
+
+  return <>{displayValue}</>;
+};
 
 interface User {
   id: string;
@@ -28,6 +71,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
 
@@ -84,6 +128,8 @@ export default function AdminUsersPage() {
       
       setAllUsers(sortedUsers);
       setUsers(sortedUsers);
+      // Trigger animations after a short delay
+      setTimeout(() => setDataLoaded(true), 100);
     } catch (err: any) {
       console.error('❌ Error loading users:', err);
       setError(err.message || 'Failed to load users');
@@ -284,6 +330,14 @@ export default function AdminUsersPage() {
     );
   }
 
+  // CSS for animations
+  const fadeInUp = (delay: number) => ({
+    opacity: dataLoaded ? 1 : 0,
+    transform: dataLoaded ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
+    filter: dataLoaded ? 'blur(0px)' : 'blur(8px)',
+    transition: `all 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
+  });
+
   // Main UI
   return (
     <div 
@@ -292,19 +346,23 @@ export default function AdminUsersPage() {
     >
       <div className="max-w-7xl mx-auto" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-8 pt-6 md:pt-0" style={fadeInUp(0)}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                <Users className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold text-white mb-1">User Management</h1>
-                <p className="text-gray-400">View and manage all user accounts</p>
-              </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 flex items-center gap-3">
+                <div className="p-2 bg-blue-500/20 rounded-xl">
+                  <Users className="w-6 h-6 text-blue-400" />
+                </div>
+                User Management
+              </h1>
+              <p className="text-sm md:text-base text-gray-400">
+                View and manage all user accounts
+              </p>
             </div>
             <div className="px-6 py-3 bg-blue-500/10 border-2 border-blue-500/30 rounded-xl">
-              <span className="text-blue-300 font-bold text-lg">{users.length} Users</span>
+              <span className="text-blue-300 font-bold text-lg">
+                {dataLoaded ? <AnimatedNumber value={Math.max(0, users.length - 2)} duration={1000} /> : 0} Users
+              </span>
             </div>
           </div>
         </div>
@@ -314,6 +372,7 @@ export default function AdminUsersPage() {
           {/* Useless - No Subscription */}
           <button
             onClick={() => applyFilter('useless')}
+            style={fadeInUp(100)}
             className={`p-6 bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl border-2 transition-all duration-200 text-left ${
               activeFilter === 'useless'
                 ? 'border-gray-500/50 shadow-xl shadow-gray-500/20 scale-105'
@@ -326,13 +385,16 @@ export default function AdminUsersPage() {
               </div>
               <div className="text-xs font-bold text-gray-400 uppercase">Useless</div>
             </div>
-            <div className="text-4xl font-black text-gray-400 mb-1">{uselessAccounts}</div>
+            <div className="text-4xl font-black text-gray-400 mb-1">
+              {dataLoaded ? <AnimatedNumber value={uselessAccounts} duration={1000} /> : 0}
+            </div>
             <div className="text-xs text-gray-500">no subscription</div>
           </button>
 
           {/* Needs Onboarding */}
           <button
             onClick={() => applyFilter('needs_onboarding')}
+            style={fadeInUp(150)}
             className={`p-6 bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl border-2 transition-all duration-200 text-left ${
               activeFilter === 'needs_onboarding'
                 ? 'border-amber-500/50 shadow-xl shadow-amber-500/20 scale-105'
@@ -345,13 +407,16 @@ export default function AdminUsersPage() {
               </div>
               <div className="text-xs font-bold text-gray-400 uppercase">Onboarding</div>
             </div>
-            <div className="text-4xl font-black text-amber-400 mb-1">{needsOnboarding}</div>
+            <div className="text-4xl font-black text-amber-400 mb-1">
+              {dataLoaded ? <AnimatedNumber value={needsOnboarding} duration={1000} /> : 0}
+            </div>
             <div className="text-xs text-gray-400">step 1 not done</div>
           </button>
 
           {/* Needs AI Setup */}
           <button
             onClick={() => applyFilter('needs_ai_setup')}
+            style={fadeInUp(200)}
             className={`p-6 bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl border-2 transition-all duration-200 text-left ${
               activeFilter === 'needs_ai_setup'
                 ? 'border-purple-500/50 shadow-xl shadow-purple-500/20 scale-105'
@@ -364,13 +429,16 @@ export default function AdminUsersPage() {
               </div>
               <div className="text-xs font-bold text-gray-400 uppercase">Activate</div>
             </div>
-            <div className="text-4xl font-black text-purple-400 mb-1">{needsAISetup}</div>
+            <div className="text-4xl font-black text-purple-400 mb-1">
+              {dataLoaded ? <AnimatedNumber value={needsAISetup} duration={1000} /> : 0}
+            </div>
             <div className="text-xs text-gray-400">waiting for you to unlock</div>
           </button>
 
           {/* Active Accounts */}
           <button
             onClick={() => applyFilter('active')}
+            style={fadeInUp(250)}
             className={`p-6 bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl border-2 transition-all duration-200 text-left ${
               activeFilter === 'active'
                 ? 'border-green-500/50 shadow-xl shadow-green-500/20 scale-105'
@@ -383,13 +451,16 @@ export default function AdminUsersPage() {
               </div>
               <div className="text-xs font-bold text-gray-400 uppercase">Active</div>
             </div>
-            <div className="text-4xl font-black text-green-400 mb-1">{activeAccounts}</div>
+            <div className="text-4xl font-black text-green-400 mb-1">
+              {dataLoaded ? <AnimatedNumber value={activeAccounts} duration={1000} /> : 0}
+            </div>
             <div className="text-xs text-gray-400">AI unlocked & ready</div>
           </button>
 
           {/* Dead */}
           <button
             onClick={() => applyFilter('dead')}
+            style={fadeInUp(300)}
             className={`p-6 bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl border-2 transition-all duration-200 text-left ${
               activeFilter === 'dead'
                 ? 'border-red-500/50 shadow-xl shadow-red-500/20 scale-105'
@@ -402,7 +473,9 @@ export default function AdminUsersPage() {
               </div>
               <div className="text-xs font-bold text-gray-400 uppercase">Dead</div>
             </div>
-            <div className="text-4xl font-black text-red-400 mb-1">{deadAccounts}</div>
+            <div className="text-4xl font-black text-red-400 mb-1">
+              {dataLoaded ? <AnimatedNumber value={deadAccounts} duration={1000} /> : 0}
+            </div>
             <div className="text-xs text-gray-400">marked as dead</div>
           </button>
         </div>
@@ -431,7 +504,10 @@ export default function AdminUsersPage() {
         )}
 
         {/* Users Table */}
-        <div className="bg-[#1A2647]/40 backdrop-blur-xl rounded-2xl border-2 border-gray-700/30 overflow-hidden shadow-2xl">
+        <div 
+          className="bg-[#1A2647]/40 backdrop-blur-xl rounded-2xl border-2 border-gray-700/30 overflow-hidden shadow-2xl"
+          style={fadeInUp(400)}
+        >
           <div className="overflow-x-auto">
             <table className="w-full table-fixed">
               <thead>
@@ -459,6 +535,11 @@ export default function AdminUsersPage() {
                     key={user.id}
                     onClick={() => router.push(`/admin/user-management/${user.id}`)}
                     className="hover:bg-[#0B1437]/70 transition-all duration-200 cursor-pointer"
+                    style={{
+                      opacity: dataLoaded ? 1 : 0,
+                      transform: dataLoaded ? 'translateX(0)' : 'translateX(-20px)',
+                      transition: `all 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${450 + (index * 30)}ms`,
+                    }}
                   >
                     <td className="px-4 py-4 text-center">
                       <div className="text-gray-400 font-mono font-bold text-sm">

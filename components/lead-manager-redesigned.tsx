@@ -1455,7 +1455,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
         <div className="relative">
           {/* Google Sheets Tab */}
           {activeTab === 'google_sheets' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right duration-500">
+            <div className="space-y-6">
               {/* Add New Sheet Card */}
               {!showAddSheet && (
                 <button
@@ -1631,7 +1631,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
                   {sheets.map((sheet, index) => (
                     <div
                       key={sheet.id}
-                      className="bg-gradient-to-r from-[#1A2647]/80 via-[#1A2647]/60 to-[#1A2647]/40 backdrop-blur-xl rounded-2xl border-2 border-gray-700/40 hover:border-blue-500/60 transition-all duration-300 group hover:shadow-2xl hover:shadow-blue-500/10 animate-in fade-in slide-in-from-bottom duration-500"
+                      className="bg-gradient-to-r from-[#1A2647]/80 via-[#1A2647]/60 to-[#1A2647]/40 backdrop-blur-xl rounded-2xl border-2 border-gray-700/40 hover:border-blue-500/60 transition-all duration-300 group hover:shadow-2xl hover:shadow-blue-500/10"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <div className="p-6">
@@ -1710,7 +1710,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
 
           {/* All Leads Tab */}
           {activeTab === 'all_leads' && (
-            <div className="animate-in fade-in slide-in-from-right duration-500">
+            <div>
               <div className="bg-[#1A2647] rounded-xl border border-gray-800 overflow-hidden">
                 {/* Header */}
                 <div className="p-6 border-b border-gray-800">
@@ -2111,7 +2111,7 @@ export function LeadManagerRedesigned({ userId }: LeadManagerRedesignedProps) {
           }}
         >
           <div 
-            className="relative bg-[#0d1225]/95 backdrop-blur-xl rounded-3xl border border-purple-500/30 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+            className="relative bg-[#0d1225]/95 backdrop-blur-xl rounded-3xl border border-purple-500/30 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300"
             style={{
               boxShadow: '0 0 80px rgba(147, 51, 234, 0.2), 0 0 120px rgba(59, 130, 246, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5)'
             }}

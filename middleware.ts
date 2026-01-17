@@ -8,6 +8,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
   
+  // TEMPORARILY DISABLED: Block ALL sales-related URLs completely
+  // Remove this block when ready to re-enable sales team
+  if (
+    pathname.startsWith('/sales') ||
+    pathname.startsWith('/admin/sales-team') ||
+    pathname.startsWith('/api/sales') ||
+    pathname.startsWith('/api/admin/sales-team')
+  ) {
+    // Return 404 for API routes, redirect for pages
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+  
   // First, handle Supabase session
   const response = await updateSession(request);
   

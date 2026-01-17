@@ -5,6 +5,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { SalesSidebar } from '@/components/sales-sidebar';
 import { Monitor, Smartphone, LogOut, TrendingUp, Copy, Check } from 'lucide-react';
 
+// NOTE: Sales portal is BLOCKED at middleware level - this page won't load
+
 interface SalesPerson {
   id: string;
   full_name: string;

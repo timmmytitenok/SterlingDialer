@@ -38,6 +38,13 @@ export default async function DashboardLayout({
     .eq('user_id', user.id)
     .single();
 
+  // Track last login - update every time user accesses dashboard
+  // This runs server-side so it's efficient
+  await supabase
+    .from('profiles')
+    .update({ last_login: new Date().toISOString() })
+    .eq('user_id', user.id);
+
   // Auto-charging is enabled - no need to redirect for expired trials
   // Stripe will automatically charge when trial ends
   // Users will be auto-upgraded to Pro Access

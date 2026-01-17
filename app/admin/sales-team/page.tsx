@@ -12,6 +12,8 @@ import {
   TrendingUp
 } from 'lucide-react';
 
+// NOTE: Sales team is BLOCKED at middleware level - this page won't load
+
 interface SalesPerson {
   id: string;
   email: string;

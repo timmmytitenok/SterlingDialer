@@ -1,7 +1,42 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+
+// Animated number counter component - slower with gradual slowdown at end
+function AnimatedNumber({ value, duration = 800 }: { value: number; duration?: number }) {
+  const [displayValue, setDisplayValue] = useState(value);
+  const previousValue = useRef(value);
+  
+  useEffect(() => {
+    const startValue = previousValue.current;
+    const endValue = value;
+    const startTime = Date.now();
+    
+    if (startValue === endValue) return;
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Easing function - ease out exponential (slows down significantly at end)
+      const easeOutExpo = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      const current = Math.round(startValue + (endValue - startValue) * easeOutExpo);
+      
+      setDisplayValue(current);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        previousValue.current = endValue;
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  }, [value, duration]);
+  
+  return <>{displayValue.toLocaleString()}</>;
+}
 import {
   ArrowLeft,
   User,
@@ -59,6 +94,21 @@ interface UserDetail {
   subscription_tier: string | null;
   cost_per_minute?: number;
   is_dead?: boolean;
+  // Pre-loaded stats by time range
+  stats_by_range?: {
+    calls: {
+      all_time: number;
+      today: number;
+      '7_days': number;
+      '30_days': number;
+    };
+    appointments: {
+      all_time: number;
+      today: number;
+      '7_days': number;
+      '30_days': number;
+    };
+  };
 }
 
 export default function AdminUserDetailPage() {
@@ -109,6 +159,10 @@ export default function AdminUserDetailPage() {
   const [retellAgent2Name, setRetellAgent2Name] = useState('');
   const [retellAgent2Type, setRetellAgent2Type] = useState<'final_expense' | 'final_expense_2' | 'mortgage_protection' | 'mortgage_protection_2'>('mortgage_protection');
   
+
+  // Separate time range filters for each stat card
+  const [callsTimeRange, setCallsTimeRange] = useState<'all_time' | 'today' | '7_days' | '30_days'>('all_time');
+  const [appointmentsTimeRange, setAppointmentsTimeRange] = useState<'all_time' | 'today' | '7_days' | '30_days'>('all_time');
 
   // Quick Setup / Onboarding steps
   const [onboardingSteps, setOnboardingSteps] = useState({
@@ -299,19 +353,19 @@ export default function AdminUserDetailPage() {
                       <Database className="w-4 h-4 text-gray-500 group-hover/item:text-cyan-500 transition-colors" />
                     <span className="font-mono text-xs">{user.id}</span>
                   </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-300 hover:text-emerald-400 transition-colors cursor-pointer group/item">
-                      <Phone className="w-4 h-4 text-gray-500 group-hover/item:text-emerald-500 transition-colors" />
-                    <span className="font-mono">{user.phone || 'No phone number'}</span>
-                  </div>
                     <div className="flex items-center gap-2 text-sm text-gray-300 hover:text-blue-400 transition-colors cursor-pointer group/item">
                       <Mail className="w-4 h-4 text-gray-500 group-hover/item:text-blue-500 transition-colors" />
                     <span className="font-mono">{user.email}</span>
+                  </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-300 hover:text-emerald-400 transition-colors cursor-pointer group/item">
+                      <Phone className="w-4 h-4 text-gray-500 group-hover/item:text-emerald-500 transition-colors" />
+                    <span className="font-mono">{user.phone || 'No phone number'}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Right Side: View Dashboard Button - Centered */}
+            {/* Right Side: View Dashboard Button */}
             <div className="flex items-center gap-4">
               {/* DEAD USER Badge - Shows prominently if user is dead */}
               {user.is_dead && (
@@ -324,17 +378,17 @@ export default function AdminUserDetailPage() {
                 </div>
               )}
 
-              {/* View Dashboard Button */}
+              {/* View Dashboard Button - Bigger with more padding */}
               <a
                 href={`/login?email=${encodeURIComponent(user.email)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group/btn relative flex items-center gap-2 px-6 py-3 overflow-hidden rounded-xl font-semibold transition-all duration-300 hover:scale-[1.03]"
+                className="group/btn relative flex items-center gap-3 px-8 py-5 overflow-hidden rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-[1.05]"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-500/40 rounded-xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border-2 border-cyan-500/40 rounded-2xl"></div>
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/10 to-cyan-500/0 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
-                <div className="absolute inset-0 rounded-xl shadow-lg shadow-cyan-500/0 group-hover/btn:shadow-cyan-500/30 transition-shadow duration-300"></div>
-                <ExternalLink className="w-5 h-5 relative z-10 text-cyan-400 group-hover/btn:rotate-12 transition-transform duration-300" />
+                <div className="absolute inset-0 rounded-2xl shadow-lg shadow-cyan-500/0 group-hover/btn:shadow-cyan-500/30 transition-shadow duration-300"></div>
+                <ExternalLink className="w-6 h-6 relative z-10 text-cyan-400 group-hover/btn:rotate-12 transition-transform duration-300" />
                 <span className="relative z-10 text-white">View Dashboard</span>
               </a>
             </div>
@@ -389,40 +443,515 @@ export default function AdminUserDetailPage() {
             </div>
 
           {/* Total Dials Made */}
-          <div className="group/card relative cursor-pointer h-full">
+          <div className="group/card relative h-full">
             <div className="absolute -inset-0.5 bg-blue-500/20 rounded-2xl blur-md opacity-50 group-hover/card:opacity-75 group-hover/card:blur-lg transition-all duration-300"></div>
             <div className="relative h-full bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border border-blue-500/40 shadow-xl transition-all duration-300 group-hover/card:scale-[1.02] flex flex-col">
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
                 <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/30 group-hover/card:bg-blue-500/20 group-hover/card:border-blue-400/50 transition-all shadow-lg shadow-blue-500/0 group-hover/card:shadow-blue-500/30">
                 <Phone className="w-6 h-6 text-blue-400" />
               </div>
               <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">Total Dials</div>
+              </div>
+              {/* Arrow-only Time Range Dropdown */}
+              <div className="relative">
+                <select
+                  value={callsTimeRange}
+                  onChange={(e) => setCallsTimeRange(e.target.value as 'all_time' | 'today' | '7_days' | '30_days')}
+                  className="appearance-none bg-transparent text-transparent w-6 h-6 cursor-pointer focus:outline-none"
+                  title="Change time range"
+                >
+                  <option value="all_time">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="7_days">7 Days</option>
+                  <option value="30_days">30 Days</option>
+                </select>
+                <ChevronDown className="absolute inset-0 w-6 h-6 text-gray-400 hover:text-blue-400 transition-colors pointer-events-none" />
+              </div>
             </div>
               <div className="flex-1 flex flex-col justify-center">
-                <div className="text-4xl font-black text-blue-400 mb-1 group-hover/card:text-blue-300 transition-colors">{user.total_calls || 0}</div>
-                <div className="text-xs text-gray-500">All-time calls</div>
+                <div className="text-4xl font-black text-blue-400 mb-1 group-hover/card:text-blue-300 transition-colors">
+                  <AnimatedNumber value={user.stats_by_range?.calls[callsTimeRange] ?? user.total_calls ?? 0} />
+                </div>
+                <div className="text-xs text-gray-500">
+                  {callsTimeRange === 'all_time' ? 'All-time calls' : 
+                   callsTimeRange === 'today' ? 'Today\'s calls' :
+                   callsTimeRange === '7_days' ? 'Last 7 days' : 'Last 30 days'}
+                </div>
               </div>
             </div>
                   </div>
 
           {/* Total Appointments Booked */}
-          <div className="group/card relative cursor-pointer h-full">
+          <div className="group/card relative h-full">
             <div className="absolute -inset-0.5 bg-purple-500/20 rounded-2xl blur-md opacity-50 group-hover/card:opacity-75 group-hover/card:blur-lg transition-all duration-300"></div>
             <div className="relative h-full bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border border-purple-500/40 shadow-xl transition-all duration-300 group-hover/card:scale-[1.02] flex flex-col">
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
                 <div className="p-3 bg-purple-500/10 rounded-xl border border-purple-500/30 group-hover/card:bg-purple-500/20 group-hover/card:border-purple-400/50 transition-all shadow-lg shadow-purple-500/0 group-hover/card:shadow-purple-500/30">
                 <Calendar className="w-6 h-6 text-purple-400" />
                     </div>
               <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">Appointments</div>
+              </div>
+              {/* Arrow-only Time Range Dropdown */}
+              <div className="relative">
+                <select
+                  value={appointmentsTimeRange}
+                  onChange={(e) => setAppointmentsTimeRange(e.target.value as 'all_time' | 'today' | '7_days' | '30_days')}
+                  className="appearance-none bg-transparent text-transparent w-6 h-6 cursor-pointer focus:outline-none"
+                  title="Change time range"
+                >
+                  <option value="all_time">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="7_days">7 Days</option>
+                  <option value="30_days">30 Days</option>
+                </select>
+                <ChevronDown className="absolute inset-0 w-6 h-6 text-gray-400 hover:text-purple-400 transition-colors pointer-events-none" />
+              </div>
                     </div>
               <div className="flex-1 flex flex-col justify-center">
-                <div className="text-4xl font-black text-purple-400 mb-1 group-hover/card:text-purple-300 transition-colors">{user.total_appointments || 0}</div>
-                <div className="text-xs text-gray-500">Booked</div>
+                <div className="text-4xl font-black text-purple-400 mb-1 group-hover/card:text-purple-300 transition-colors">
+                  <AnimatedNumber value={user.stats_by_range?.appointments[appointmentsTimeRange] ?? user.total_appointments ?? 0} />
+                </div>
+                <div className="text-xs text-gray-500">
+                  {appointmentsTimeRange === 'all_time' ? 'Booked' : 
+                   appointmentsTimeRange === 'today' ? 'Today' :
+                   appointmentsTimeRange === '7_days' ? 'Last 7 days' : 'Last 30 days'}
+                </div>
               </div>
             </div>
           </div>
 
         </div>
+
+
+        {/* Divider */}
+        <div className="my-10 flex items-center gap-4">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/30">
+            <Zap className="w-4 h-4 text-emerald-400" />
+            <span className="text-sm font-bold text-emerald-400 uppercase tracking-wider">AI Agent Configuration</span>
+          </div>
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
+        </div>
+
+        {/* AI Agent Configuration - Redesigned */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          
+          {/* LEFT COLUMN: Retell AI Agents */}
+          <div className="group/section relative">
+            <div className="absolute -inset-0.5 bg-gradient-to-br from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-2xl blur-lg opacity-50 group-hover/section:opacity-75 transition-opacity duration-500"></div>
+            <div className="relative h-full bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 pb-4 border border-violet-500/30 shadow-2xl">
+              
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2.5 bg-violet-500/10 rounded-xl border border-violet-500/30">
+                  <Zap className="w-5 h-5 text-violet-400" />
+                </div>
+            <div>
+                  <h3 className="text-lg font-bold text-white">Retell AI Agents</h3>
+                  <p className="text-xs text-gray-400">Assign specific agents to this user</p>
+                </div>
+            </div>
+            
+              {/* Agent 1 Card */}
+              <div className="mt-8 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-xl p-4 border border-green-500/20 mb-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">🟢</span>
+                  <h4 className="text-sm font-bold text-green-400 uppercase tracking-wider">Agent 1</h4>
+                </div>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Agent Name / Title</label>
+                      <input
+                        type="text"
+                        value={retellAgent1Name}
+                        onChange={(e) => setRetellAgent1Name(e.target.value)}
+                        placeholder="e.g. Final Expense Agent"
+                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-green-500/30 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 focus:outline-none text-sm placeholder:text-gray-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Lead Type</label>
+                      <select
+                        value={retellAgent1Type}
+                        onChange={(e) => setRetellAgent1Type(e.target.value as 'final_expense' | 'final_expense_2' | 'mortgage_protection' | 'mortgage_protection_2')}
+                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-green-500/30 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 focus:outline-none text-sm cursor-pointer"
+                      >
+                        <option value="final_expense">💚 Final Expense</option>
+                        <option value="final_expense_2">💚 Final Expense #2</option>
+                        <option value="mortgage_protection">🏠 Mortgage Protection</option>
+                        <option value="mortgage_protection_2">🏠 Mortgage Protection #2</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Agent ID</label>
+                      <input
+                        type="text"
+                        value={retellAgent1Id}
+                        onChange={(e) => setRetellAgent1Id(e.target.value)}
+                        placeholder="agent_xxx..."
+                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-green-500/30 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Phone Number</label>
+                      <input
+                        type="text"
+                        value={retellAgent1Phone}
+                        onChange={(e) => setRetellAgent1Phone(e.target.value)}
+                        placeholder="+1555..."
+                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-green-500/30 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
+                      />
+                    </div>
+                  </div>
+            </div>
+          </div>
+
+              {/* Agent 2 Card */}
+              <div className="mt-7 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-xl p-4 border border-blue-500/20">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">🔵</span>
+                  <h4 className="text-sm font-bold text-blue-400 uppercase tracking-wider">Agent 2</h4>
+                </div>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Agent Name / Title</label>
+                      <input
+                        type="text"
+                        value={retellAgent2Name}
+                        onChange={(e) => setRetellAgent2Name(e.target.value)}
+                        placeholder="e.g. Mortgage Protection Agent"
+                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-blue-500/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none text-sm placeholder:text-gray-500"
+                      />
+              </div>
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Lead Type</label>
+                      <select
+                        value={retellAgent2Type}
+                        onChange={(e) => setRetellAgent2Type(e.target.value as 'final_expense' | 'final_expense_2' | 'mortgage_protection' | 'mortgage_protection_2')}
+                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-blue-500/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none text-sm cursor-pointer"
+                      >
+                        <option value="final_expense">💚 Final Expense</option>
+                        <option value="final_expense_2">💚 Final Expense #2</option>
+                        <option value="mortgage_protection">🏠 Mortgage Protection</option>
+                        <option value="mortgage_protection_2">🏠 Mortgage Protection #2</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Agent ID</label>
+              <input
+                type="text"
+                        value={retellAgent2Id}
+                        onChange={(e) => setRetellAgent2Id(e.target.value)}
+                        placeholder="agent_xxx..."
+                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-blue-500/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
+              />
+            </div>
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Phone Number</label>
+              <input
+                type="text"
+                        value={retellAgent2Phone}
+                        onChange={(e) => setRetellAgent2Phone(e.target.value)}
+                        placeholder="+1555..."
+                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-blue-500/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
+              />
+                    </div>
+                </div>
+              </div>
+
+            </div>
+
+              {/* Dialer Status */}
+              <div className="mt-7 pt-4 border-t border-gray-700/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-400">Dialer Status</span>
+                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold ${
+                    user.ai_maintenance_mode
+                      ? 'bg-red-500/15 border border-red-500/40 text-red-400'
+                      : 'bg-green-500/15 border border-green-500/40 text-green-400'
+                  }`}>
+                    <span className={`w-2 h-2 rounded-full ${user.ai_maintenance_mode ? 'bg-red-400 animate-pulse' : 'bg-green-400'}`}></span>
+                    {user.ai_maintenance_mode ? 'Blocked' : 'Active'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Settings */}
+          <div className="space-y-6">
+            
+            {/* Agent Voice */}
+            <div className="group/section relative">
+              <div className="absolute -inset-0.5 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl blur-lg opacity-50 group-hover/section:opacity-75 transition-opacity duration-500"></div>
+              <div className="relative bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border border-purple-500/30 shadow-2xl">
+                <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <span className="text-white text-sm">🎙️</span>
+                </div>
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Voice</h4>
+              </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">AI Agent's Name</label>
+                  <input
+                    type="text"
+                    value={agentName}
+                    onChange={(e) => setAgentName(e.target.value)}
+                    placeholder="Sarah"
+                      className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-purple-500/30 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none text-sm placeholder:text-gray-500"
+                  />
+                </div>
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Pronoun</label>
+                  <select
+                    value={agentPronoun}
+                    onChange={(e) => setAgentPronoun(e.target.value)}
+                      className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-purple-500/30 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none text-sm cursor-pointer"
+                  >
+                    <option value="She">She</option>
+                    <option value="He">He</option>
+                  </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Calendar Integration */}
+            <div className="group/section relative">
+              <div className="absolute -inset-0.5 bg-gradient-to-br from-sky-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-50 group-hover/section:opacity-75 transition-opacity duration-500"></div>
+              <div className="relative bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border border-sky-500/30 shadow-2xl">
+                <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-cyan-500 flex items-center justify-center">
+                  <span className="text-white text-sm">📅</span>
+                </div>
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Calendar</h4>
+              </div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Cal.ai API Key</label>
+              <input
+                type="text"
+                value={calApiKey}
+                onChange={(e) => setCalApiKey(e.target.value)}
+                      placeholder="cal_live_xxx..."
+                      className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-sky-500/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
+                  />
+                </div>
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Event ID</label>
+                  <input
+                    type="text"
+                    value={calEventId}
+                    onChange={(e) => setCalEventId(e.target.value)}
+                    placeholder="3685354"
+                      className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-sky-500/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
+                  />
+                </div>
+              </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Timezone</label>
+                  <select
+                    value={timezone}
+                    onChange={(e) => setTimezone(e.target.value)}
+                      className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-sky-500/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none text-sm cursor-pointer"
+                  >
+                      <option value="America/New_York">Eastern</option>
+                      <option value="America/Chicago">Central</option>
+                      <option value="America/Denver">Mountain</option>
+                      <option value="America/Los_Angeles">Pacific</option>
+                      <option value="America/Phoenix">Arizona</option>
+                  </select>
+                </div>
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Confirmation Email</label>
+                  <input
+                    type="email"
+                    value={confirmationEmail}
+                    onChange={(e) => setConfirmationEmail(e.target.value)}
+                    placeholder="agent@example.com"
+                      className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-orange-500/30 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 focus:outline-none text-sm placeholder:text-gray-500"
+                  />
+                  </div>
+                </div>
+            </div>
+          </div>
+
+            {/* Billing */}
+            <div className="group/section relative">
+              <div className="absolute -inset-0.5 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-2xl blur-lg opacity-50 group-hover/section:opacity-75 transition-opacity duration-500"></div>
+              <div className="relative bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border border-emerald-500/30 shadow-2xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center">
+                    <span className="text-white text-sm">💰</span>
+                  </div>
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Billing</h4>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">Cost Per Minute</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400 font-bold">$</span>
+                    <input
+                      type="number"
+                      value={costPerMinute}
+                      onChange={(e) => setCostPerMinute(e.target.value)}
+                      placeholder="0.35"
+                      step="0.01"
+                      min="0"
+                      className="w-full pl-8 pr-3 py-3 bg-[#0B1437]/80 text-white rounded-lg border border-emerald-500/30 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:outline-none font-mono text-lg placeholder:text-gray-500"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">Rate charged to user per minute of AI calls</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        
+
+        {/* Hidden fields */}
+            <input type="hidden" value={agentId} />
+        <input type="hidden" value={phoneNumberFE} />
+        <input type="hidden" value={phoneNumberMP} />
+
+          {/* Action Buttons Row */}
+        <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            {/* Save AI Config Button */}
+            <button
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  const response = await fetch('/api/admin/users/update-retell', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: user.id,
+                      agentId: agentId.trim() || null,
+                        phoneNumberFE: phoneNumberFE.trim() || null,
+                        phoneNumberMP: phoneNumberMP.trim() || null,
+                      calApiKey: calApiKey.trim() || null,
+                        calEventId: calEventId.trim() || null,
+                        agentName: agentName.trim() || null,
+                    agentPronoun: agentPronoun || 'She',
+                        costPerMinute: parseFloat(costPerMinute) || 0.35,
+                        timezone: timezone || 'America/New_York',
+                        confirmationEmail: confirmationEmail.trim() || null,
+                    // Agent 1 and 2 fields (2 agents per user)
+                    retellAgent1Id: retellAgent1Id.trim() || null,
+                    retellAgent1Phone: retellAgent1Phone.trim() || null,
+                    retellAgent1Name: retellAgent1Name.trim() || null,
+                    retellAgent1Type: retellAgent1Type,
+                    retellAgent2Id: retellAgent2Id.trim() || null,
+                    retellAgent2Phone: retellAgent2Phone.trim() || null,
+                    retellAgent2Name: retellAgent2Name.trim() || null,
+                    retellAgent2Type: retellAgent2Type,
+                    }),
+                  });
+
+                  if (!response.ok) throw new Error('Failed to save');
+
+                  const notification = document.createElement('div');
+                    notification.className = 'fixed top-8 right-8 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl shadow-green-500/20 z-50 flex items-center gap-3 border border-green-500/30';
+                  notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI configuration saved!</span>';
+                  document.body.appendChild(notification);
+                  setTimeout(() => notification.remove(), 3000);
+
+                  loadUser();
+                } catch (err: any) {
+                  alert(`Error: ${err.message}`);
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving}
+            className="group/btn relative flex-1 overflow-hidden rounded-xl"
+            >
+            <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-xl"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
+                <div className="relative flex items-center justify-center gap-2 px-6 py-4 text-white font-bold">
+              {saving ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  Save Configuration
+                </>
+              )}
+                </div>
+            </button>
+
+            {/* Dialer Access Toggle Button */}
+            <button
+              onClick={async () => {
+                const newMode = !user.ai_maintenance_mode;
+                
+                if (!confirm(`${newMode ? 'BLOCK' : 'UNBLOCK'} AI Dialer access for this user?\n\n${newMode ? 'User will see "AI Agent Setup in Progress" page and cannot use dialer.' : 'User can access and use the AI Dialer!'}`)) return;
+                
+                setSaving(true);
+                try {
+                  const response = await fetch('/api/admin/users/toggle-maintenance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: user.id,
+                      maintenanceMode: newMode,
+                    }),
+                  });
+
+                  if (!response.ok) throw new Error('Failed to toggle');
+
+                  const notification = document.createElement('div');
+                    notification.className = 'fixed top-8 right-8 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl shadow-green-500/20 z-50 flex items-center gap-3 border border-green-500/30';
+                  notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI Dialer ' + (newMode ? 'BLOCKED' : 'UNBLOCKED') + '!</span>';
+                  document.body.appendChild(notification);
+                  setTimeout(() => notification.remove(), 3000);
+
+                  loadUser();
+                } catch (err: any) {
+                  alert(`Error: ${err.message}`);
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving}
+                className={`group/btn relative px-6 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border-2 overflow-hidden ${
+                user.ai_maintenance_mode
+                    ? 'border-green-500/50 text-green-400'
+                    : 'border-red-500/50 text-red-400'
+              } disabled:opacity-50`}
+            >
+                <div className={`absolute inset-0 opacity-10 group-hover/btn:opacity-20 transition-opacity ${
+                  user.ai_maintenance_mode ? 'bg-green-500' : 'bg-red-500'
+                }`}></div>
+              {saving ? (
+                  <Loader2 className="w-5 h-5 animate-spin relative z-10" />
+              ) : user.ai_maintenance_mode ? (
+                <>
+                    <Activity className="w-5 h-5 relative z-10" />
+                    <span className="relative z-10">Unblock Dialer</span>
+                </>
+              ) : (
+                <>
+                    <AlertCircle className="w-5 h-5 relative z-10" />
+                    <span className="relative z-10">Block Dialer</span>
+                </>
+              )}
+            </button>
+        </div>
+        {/* End AI Agent Configuration */}
 
         {/* Divider */}
         <div className="my-10 flex items-center gap-4">
@@ -676,432 +1205,6 @@ export default function AdminUserDetailPage() {
 
               </div>
         {/* End Two-Column Grid */}
-
-        {/* Divider */}
-        <div className="my-10 flex items-center gap-4">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/30">
-            <Zap className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm font-bold text-emerald-400 uppercase tracking-wider">AI Agent Configuration</span>
-          </div>
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
-        </div>
-
-        {/* AI Agent Configuration - Redesigned */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          
-          {/* LEFT COLUMN: Retell AI Agents */}
-        <div className="group/section relative">
-            <div className="absolute -inset-0.5 bg-gradient-to-br from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-2xl blur-lg opacity-50 group-hover/section:opacity-75 transition-opacity duration-500"></div>
-            <div className="relative h-full bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border border-violet-500/30 shadow-2xl">
-              
-              {/* Header */}
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 bg-violet-500/10 rounded-xl border border-violet-500/30">
-                  <Zap className="w-5 h-5 text-violet-400" />
-                </div>
-            <div>
-                  <h3 className="text-lg font-bold text-white">Retell AI Agents</h3>
-                  <p className="text-xs text-gray-400">Assign specific agents to this user</p>
-                </div>
-            </div>
-            
-              {/* Agent 1 Card */}
-              <div className="bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-xl p-4 border border-green-500/20 mb-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-lg">🟢</span>
-                  <h4 className="text-sm font-bold text-green-400 uppercase tracking-wider">Agent 1</h4>
-                </div>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-gray-400 block mb-1">Agent Name / Title</label>
-                      <input
-                        type="text"
-                        value={retellAgent1Name}
-                        onChange={(e) => setRetellAgent1Name(e.target.value)}
-                        placeholder="e.g. Final Expense Agent"
-                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-green-500/30 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 focus:outline-none text-sm placeholder:text-gray-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-400 block mb-1">Lead Type</label>
-                      <select
-                        value={retellAgent1Type}
-                        onChange={(e) => setRetellAgent1Type(e.target.value as 'final_expense' | 'final_expense_2' | 'mortgage_protection' | 'mortgage_protection_2')}
-                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-green-500/30 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 focus:outline-none text-sm cursor-pointer"
-                      >
-                        <option value="final_expense">💚 Final Expense</option>
-                        <option value="final_expense_2">💚 Final Expense #2</option>
-                        <option value="mortgage_protection">🏠 Mortgage Protection</option>
-                        <option value="mortgage_protection_2">🏠 Mortgage Protection #2</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-gray-400 block mb-1">Agent ID</label>
-                      <input
-                        type="text"
-                        value={retellAgent1Id}
-                        onChange={(e) => setRetellAgent1Id(e.target.value)}
-                        placeholder="agent_xxx..."
-                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-green-500/30 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-400 block mb-1">Phone Number</label>
-                      <input
-                        type="text"
-                        value={retellAgent1Phone}
-                        onChange={(e) => setRetellAgent1Phone(e.target.value)}
-                        placeholder="+1555..."
-                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-green-500/30 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
-                      />
-                    </div>
-                  </div>
-            </div>
-          </div>
-
-              {/* Agent 2 Card */}
-              <div className="bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-xl p-4 border border-blue-500/20">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-lg">🔵</span>
-                  <h4 className="text-sm font-bold text-blue-400 uppercase tracking-wider">Agent 2</h4>
-                </div>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-gray-400 block mb-1">Agent Name / Title</label>
-                      <input
-                        type="text"
-                        value={retellAgent2Name}
-                        onChange={(e) => setRetellAgent2Name(e.target.value)}
-                        placeholder="e.g. Mortgage Protection Agent"
-                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-blue-500/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none text-sm placeholder:text-gray-500"
-                      />
-              </div>
-                    <div>
-                      <label className="text-xs text-gray-400 block mb-1">Lead Type</label>
-                      <select
-                        value={retellAgent2Type}
-                        onChange={(e) => setRetellAgent2Type(e.target.value as 'final_expense' | 'final_expense_2' | 'mortgage_protection' | 'mortgage_protection_2')}
-                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-blue-500/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none text-sm cursor-pointer"
-                      >
-                        <option value="final_expense">💚 Final Expense</option>
-                        <option value="final_expense_2">💚 Final Expense #2</option>
-                        <option value="mortgage_protection">🏠 Mortgage Protection</option>
-                        <option value="mortgage_protection_2">🏠 Mortgage Protection #2</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-gray-400 block mb-1">Agent ID</label>
-              <input
-                type="text"
-                        value={retellAgent2Id}
-                        onChange={(e) => setRetellAgent2Id(e.target.value)}
-                        placeholder="agent_xxx..."
-                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-blue-500/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
-              />
-            </div>
-                    <div>
-                      <label className="text-xs text-gray-400 block mb-1">Phone Number</label>
-              <input
-                type="text"
-                        value={retellAgent2Phone}
-                        onChange={(e) => setRetellAgent2Phone(e.target.value)}
-                        placeholder="+1555..."
-                        className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-blue-500/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
-              />
-                    </div>
-                </div>
-              </div>
-
-            </div>
-
-              {/* Dialer Status */}
-              <div className="mt-4 pt-4 border-t border-gray-700/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Dialer Status</span>
-                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold ${
-                    user.ai_maintenance_mode
-                      ? 'bg-red-500/15 border border-red-500/40 text-red-400'
-                      : 'bg-green-500/15 border border-green-500/40 text-green-400'
-                  }`}>
-                    <span className={`w-2 h-2 rounded-full ${user.ai_maintenance_mode ? 'bg-red-400 animate-pulse' : 'bg-green-400'}`}></span>
-                    {user.ai_maintenance_mode ? 'Blocked' : 'Active'}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN: Settings */}
-          <div className="space-y-6">
-            
-            {/* Agent Voice */}
-            <div className="group/section relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl blur-lg opacity-50 group-hover/section:opacity-75 transition-opacity duration-500"></div>
-              <div className="relative bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border border-purple-500/30 shadow-2xl">
-                <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                    <span className="text-white text-sm">🎙️</span>
-                </div>
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Voice</h4>
-              </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-gray-400 block mb-1">AI Agent's Name</label>
-                  <input
-                    type="text"
-                    value={agentName}
-                    onChange={(e) => setAgentName(e.target.value)}
-                    placeholder="Sarah"
-                      className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-purple-500/30 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none text-sm placeholder:text-gray-500"
-                  />
-                </div>
-                  <div>
-                    <label className="text-xs text-gray-400 block mb-1">Pronoun</label>
-                  <select
-                    value={agentPronoun}
-                    onChange={(e) => setAgentPronoun(e.target.value)}
-                      className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-purple-500/30 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none text-sm cursor-pointer"
-                  >
-                    <option value="She">She</option>
-                    <option value="He">He</option>
-                  </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Calendar Integration */}
-            <div className="group/section relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-br from-sky-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-50 group-hover/section:opacity-75 transition-opacity duration-500"></div>
-              <div className="relative bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border border-sky-500/30 shadow-2xl">
-                <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-cyan-500 flex items-center justify-center">
-                  <span className="text-white text-sm">📅</span>
-                </div>
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Calendar</h4>
-              </div>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="text-xs text-gray-400 block mb-1">Cal.ai API Key</label>
-              <input
-                type="text"
-                value={calApiKey}
-                onChange={(e) => setCalApiKey(e.target.value)}
-                      placeholder="cal_live_xxx..."
-                      className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-sky-500/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
-                  />
-                </div>
-                  <div>
-                    <label className="text-xs text-gray-400 block mb-1">Event ID</label>
-                  <input
-                    type="text"
-                    value={calEventId}
-                    onChange={(e) => setCalEventId(e.target.value)}
-                    placeholder="3685354"
-                      className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-sky-500/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none font-mono text-xs placeholder:text-gray-500"
-                  />
-                </div>
-              </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-gray-400 block mb-1">Timezone</label>
-                  <select
-                    value={timezone}
-                    onChange={(e) => setTimezone(e.target.value)}
-                      className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-sky-500/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none text-sm cursor-pointer"
-                  >
-                      <option value="America/New_York">Eastern</option>
-                      <option value="America/Chicago">Central</option>
-                      <option value="America/Denver">Mountain</option>
-                      <option value="America/Los_Angeles">Pacific</option>
-                      <option value="America/Phoenix">Arizona</option>
-                  </select>
-                </div>
-                  <div>
-                    <label className="text-xs text-gray-400 block mb-1">Confirmation Email</label>
-                  <input
-                    type="email"
-                    value={confirmationEmail}
-                    onChange={(e) => setConfirmationEmail(e.target.value)}
-                    placeholder="agent@example.com"
-                      className="w-full px-3 py-2 bg-[#0B1437]/80 text-white rounded-lg border border-orange-500/30 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 focus:outline-none text-sm placeholder:text-gray-500"
-                  />
-                  </div>
-                </div>
-            </div>
-          </div>
-
-            {/* Billing */}
-            <div className="group/section relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-2xl blur-lg opacity-50 group-hover/section:opacity-75 transition-opacity duration-500"></div>
-              <div className="relative bg-gradient-to-br from-[#1A2647]/90 to-[#0F1629]/90 backdrop-blur-xl rounded-2xl p-6 border border-emerald-500/30 shadow-2xl">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center">
-                    <span className="text-white text-sm">💰</span>
-                  </div>
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Billing</h4>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">Cost Per Minute</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400 font-bold">$</span>
-                    <input
-                      type="number"
-                      value={costPerMinute}
-                      onChange={(e) => setCostPerMinute(e.target.value)}
-                      placeholder="0.35"
-                      step="0.01"
-                      min="0"
-                      className="w-full pl-8 pr-3 py-3 bg-[#0B1437]/80 text-white rounded-lg border border-emerald-500/30 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:outline-none font-mono text-lg placeholder:text-gray-500"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">Rate charged to user per minute of AI calls</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Hidden fields */}
-            <input type="hidden" value={agentId} />
-        <input type="hidden" value={phoneNumberFE} />
-        <input type="hidden" value={phoneNumberMP} />
-
-          {/* Action Buttons Row */}
-        <div className="flex flex-col sm:flex-row gap-4 mt-6">
-            {/* Save AI Config Button */}
-            <button
-              onClick={async () => {
-                setSaving(true);
-                try {
-                  const response = await fetch('/api/admin/users/update-retell', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      userId: user.id,
-                      agentId: agentId.trim() || null,
-                        phoneNumberFE: phoneNumberFE.trim() || null,
-                        phoneNumberMP: phoneNumberMP.trim() || null,
-                      calApiKey: calApiKey.trim() || null,
-                        calEventId: calEventId.trim() || null,
-                        agentName: agentName.trim() || null,
-                    agentPronoun: agentPronoun || 'She',
-                        costPerMinute: parseFloat(costPerMinute) || 0.35,
-                        timezone: timezone || 'America/New_York',
-                        confirmationEmail: confirmationEmail.trim() || null,
-                    // Agent 1 and 2 fields (2 agents per user)
-                    retellAgent1Id: retellAgent1Id.trim() || null,
-                    retellAgent1Phone: retellAgent1Phone.trim() || null,
-                    retellAgent1Name: retellAgent1Name.trim() || null,
-                    retellAgent1Type: retellAgent1Type,
-                    retellAgent2Id: retellAgent2Id.trim() || null,
-                    retellAgent2Phone: retellAgent2Phone.trim() || null,
-                    retellAgent2Name: retellAgent2Name.trim() || null,
-                    retellAgent2Type: retellAgent2Type,
-                    }),
-                  });
-
-                  if (!response.ok) throw new Error('Failed to save');
-
-                  const notification = document.createElement('div');
-                    notification.className = 'fixed top-8 right-8 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl shadow-green-500/20 z-50 flex items-center gap-3 border border-green-500/30';
-                  notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI configuration saved!</span>';
-                  document.body.appendChild(notification);
-                  setTimeout(() => notification.remove(), 3000);
-
-                  loadUser();
-                } catch (err: any) {
-                  alert(`Error: ${err.message}`);
-                } finally {
-                  setSaving(false);
-                }
-              }}
-              disabled={saving}
-            className="group/btn relative flex-1 overflow-hidden rounded-xl"
-            >
-            <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-xl"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
-                <div className="relative flex items-center justify-center gap-2 px-6 py-4 text-white font-bold">
-              {saving ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-5 h-5" />
-                  Save Configuration
-                </>
-              )}
-                </div>
-            </button>
-
-            {/* Dialer Access Toggle Button */}
-            <button
-              onClick={async () => {
-                const newMode = !user.ai_maintenance_mode;
-                
-                if (!confirm(`${newMode ? 'BLOCK' : 'UNBLOCK'} AI Dialer access for this user?\n\n${newMode ? 'User will see "AI Agent Setup in Progress" page and cannot use dialer.' : 'User can access and use the AI Dialer!'}`)) return;
-                
-                setSaving(true);
-                try {
-                  const response = await fetch('/api/admin/users/toggle-maintenance', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      userId: user.id,
-                      maintenanceMode: newMode,
-                    }),
-                  });
-
-                  if (!response.ok) throw new Error('Failed to toggle');
-
-                  const notification = document.createElement('div');
-                    notification.className = 'fixed top-8 right-8 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl shadow-green-500/20 z-50 flex items-center gap-3 border border-green-500/30';
-                  notification.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="font-semibold">AI Dialer ' + (newMode ? 'BLOCKED' : 'UNBLOCKED') + '!</span>';
-                  document.body.appendChild(notification);
-                  setTimeout(() => notification.remove(), 3000);
-
-                  loadUser();
-                } catch (err: any) {
-                  alert(`Error: ${err.message}`);
-                } finally {
-                  setSaving(false);
-                }
-              }}
-              disabled={saving}
-                className={`group/btn relative px-6 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border-2 overflow-hidden ${
-                user.ai_maintenance_mode
-                    ? 'border-green-500/50 text-green-400'
-                    : 'border-red-500/50 text-red-400'
-              } disabled:opacity-50`}
-            >
-                <div className={`absolute inset-0 opacity-10 group-hover/btn:opacity-20 transition-opacity ${
-                  user.ai_maintenance_mode ? 'bg-green-500' : 'bg-red-500'
-                }`}></div>
-              {saving ? (
-                  <Loader2 className="w-5 h-5 animate-spin relative z-10" />
-              ) : user.ai_maintenance_mode ? (
-                <>
-                    <Activity className="w-5 h-5 relative z-10" />
-                    <span className="relative z-10">Unblock Dialer</span>
-                </>
-              ) : (
-                <>
-                    <AlertCircle className="w-5 h-5 relative z-10" />
-                    <span className="relative z-10">Block Dialer</span>
-                </>
-              )}
-            </button>
-        </div>
-        {/* End AI Agent Configuration */}
 
         {/* Quick Setup Guide - Hidden when all steps complete */}
         {!onboardingSteps.all_complete && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Wallet, Zap, CheckCircle, AlertCircle, Clock, Sparkles, DollarSign, RefreshCw, Receipt, ExternalLink, Power } from 'lucide-react';
 import Link from 'next/link';
 
@@ -20,6 +20,7 @@ export function CallBalanceCard({
   currentTier = 'starter'
 }: CallBalanceCardProps) {
   const [balance, setBalance] = useState(initialBalance);
+  const [displayBalance, setDisplayBalance] = useState(0);
   const [loading, setLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [costPerMinute, setCostPerMinute] = useState(0.65);
@@ -27,6 +28,49 @@ export function CallBalanceCard({
   const [autoRefillOn, setAutoRefillOn] = useState(initialAutoRefill);
   const [showConsent, setShowConsent] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
+  const animationRef = useRef<number | null>(null);
+  const previousBalanceRef = useRef(0);
+
+  // Animate balance counting up with easeOut effect
+  useEffect(() => {
+    if (!dataLoaded) return;
+    
+    const startValue = previousBalanceRef.current;
+    const endValue = balance;
+    const duration = 1500; // 1.5 seconds
+    let startTime: number | null = null;
+
+    // EaseOutExpo - starts fast, slows down dramatically at the end
+    const easeOutExpo = (t: number) => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+
+    const animate = (currentTime: number) => {
+      if (!startTime) startTime = currentTime;
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = easeOutExpo(progress);
+
+      const currentValue = startValue + (endValue - startValue) * easedProgress;
+      setDisplayBalance(currentValue);
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        setDisplayBalance(endValue);
+        previousBalanceRef.current = endValue;
+      }
+    };
+
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [balance, dataLoaded]);
 
   // Fixed refill amount: $25
   const refillAmount = 25;
@@ -193,7 +237,7 @@ export function CallBalanceCard({
           {/* Mobile: Stack vertically, Desktop: Side by side */}
           <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-4 mb-3 md:mb-4">
             <span className="text-5xl md:text-7xl lg:text-8xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
-              ${balance.toFixed(2)}
+              ${displayBalance.toFixed(2)}
             </span>
             <div className={`px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-bold ${
               balanceStatus === 'low' ? 'bg-red-500/20 text-red-400 border-2 border-red-500/40 animate-pulse' :

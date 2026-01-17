@@ -42,12 +42,22 @@ export async function GET(
 
     console.log('✅ Auth user found:', authUser.user.email);
 
+    // Calculate all date ranges upfront for pre-loading
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfTodayISO = startOfToday.toISOString();
+    
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
     // Calculate 30 days ago date
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
 
     // Fetch all user data in parallel - use maybeSingle() to handle missing data gracefully
+    // Also fetch stats for ALL time ranges upfront for instant switching
     const [
       profile,
       subscription,
@@ -55,14 +65,23 @@ export async function GET(
       retellConfig,
       dialerSettings,
       referralData,
-      callStats,
-      callsLast30Days,
+      // All-time stats
+      callsAllTime,
+      appointmentsAllTime,
+      adminStatsAllTime,
+      // Today stats
+      callsToday,
+      appointmentsToday,
+      // 7 days stats
+      calls7Days,
+      appointments7Days,
+      // 30 days stats
+      calls30Days,
+      appointments30Days,
+      // Other data
       revenueData,
       leadsCount,
-      appointmentsTotal,
-      appointmentsLast30Days,
       lastDialerSession,
-      adminStats,
       lastCall,
       aiControlSettings
     ] = await Promise.all([
@@ -72,17 +91,31 @@ export async function GET(
       supabase.from('user_retell_config').select('*').eq('user_id', userId).maybeSingle(),
       supabase.from('dialer_settings').select('*').eq('user_id', userId).maybeSingle(),
       supabase.from('referrals').select('*').eq('referrer_id', userId),
-      supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', userId), // Count only - no row limit!
-      supabase.from('calls').select('call_id', { count: 'exact' }).eq('user_id', userId).gte('created_at', thirtyDaysAgoISO),
+      // Calls - all time ranges
+      supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('appointments').select('id', { count: 'exact' }).eq('user_id', userId),
+      supabase.from('revenue_tracking').select('*').eq('user_id', userId),
+      // Calls - today
+      supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', startOfTodayISO),
+      supabase.from('appointments').select('id', { count: 'exact' }).eq('user_id', userId).gte('created_at', startOfTodayISO),
+      // Calls - 7 days
+      supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', sevenDaysAgoISO),
+      supabase.from('appointments').select('id', { count: 'exact' }).eq('user_id', userId).gte('created_at', sevenDaysAgoISO),
+      // Calls - 30 days
+      supabase.from('calls').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', thirtyDaysAgoISO),
+      supabase.from('appointments').select('id', { count: 'exact' }).eq('user_id', userId).gte('created_at', thirtyDaysAgoISO),
+      // Other
       supabase.from('balance_transactions').select('amount, type, created_at, stripe_payment_intent_id').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('leads').select('id', { count: 'exact' }).eq('user_id', userId),
-      supabase.from('appointments').select('id', { count: 'exact' }).eq('user_id', userId),
-      supabase.from('appointments').select('id', { count: 'exact' }).eq('user_id', userId).gte('created_at', thirtyDaysAgoISO),
       supabase.from('dialer_sessions').select('started_at').eq('user_id', userId).not('started_at', 'is', null).order('started_at', { ascending: false }).limit(1).maybeSingle(),
-      supabase.from('revenue_tracking').select('*').eq('user_id', userId),
       supabase.from('calls').select('created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('ai_control_settings').select('status').eq('user_id', userId).maybeSingle()
     ]);
+    
+    // Use all-time for main stats (backward compatible)
+    const callStats = callsAllTime;
+    const appointmentsTotal = appointmentsAllTime;
+    const adminStats = adminStatsAllTime;
 
     // Calculate revenue - safely handle missing data
     console.log('💰 Balance transactions data:', {
@@ -197,9 +230,9 @@ export async function GET(
       totalMinutes: totalMinutes,
     });
     
-    // Get 30-day stats
-    const callsLast30 = callsLast30Days.count || 0;
-    const appointmentsLast30 = appointmentsLast30Days.count || 0;
+    // Get 30-day stats (using pre-loaded data)
+    const callsLast30 = calls30Days.count || 0;
+    const appointmentsLast30 = appointments30Days.count || 0;
     
     // Get total counts + admin adjustments
     const totalLeadsCount = leadsCount.count || 0;
@@ -366,14 +399,30 @@ export async function GET(
       // Call Stats
       total_calls: totalCalls,
       total_minutes: totalMinutes.toFixed(2),
-      calls_last_30_days: callsLast30,
+      calls_last_30_days: calls30Days.count || 0,
+      
+      // Pre-loaded stats by time range (for instant switching)
+      stats_by_range: {
+        calls: {
+          all_time: (callsAllTime.count || 0) + totalAdminCalls,
+          today: callsToday.count || 0,
+          '7_days': calls7Days.count || 0,
+          '30_days': calls30Days.count || 0,
+        },
+        appointments: {
+          all_time: (appointmentsAllTime.count || 0) + totalAdminAppointments,
+          today: appointmentsToday.count || 0,
+          '7_days': appointments7Days.count || 0,
+          '30_days': appointments30Days.count || 0,
+        },
+      },
       
       // Lead Stats
       total_leads: totalLeadsCount,
       
       // Appointment Stats
       total_appointments: totalAppointmentsCount,
-      appointments_last_30_days: appointmentsLast30,
+      appointments_last_30_days: appointments30Days.count || 0,
       
       // AI Activity
       last_ai_activity: lastAIActivity,

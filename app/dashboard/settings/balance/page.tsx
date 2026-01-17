@@ -45,7 +45,7 @@ export default async function CallBalancePage() {
       </div>
 
       {/* Call Balance Content */}
-      <div className="animate-in fade-in slide-in-from-bottom duration-500">
+      <div>
         <CallBalanceCard
           userId={user.id}
           initialBalance={callBalance?.balance || 0}

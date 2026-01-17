@@ -18,7 +18,8 @@ export function AdminSidebar() {
   const mainNavigation = [
     { name: 'Sterling Stats', href: '/admin/sterling-stats', icon: TrendingUp },
     { name: 'User Management', href: '/admin/user-management', icon: Users },
-    { name: 'Sales Team', href: '/admin/sales-team', icon: Gift },
+    // HIDDEN: Sales Team - uncomment when ready to use again
+    // { name: 'Sales Team', href: '/admin/sales-team', icon: Gift },
   ];
 
   const handleSignOut = async () => {

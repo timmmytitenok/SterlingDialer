@@ -122,7 +122,9 @@ export async function GET() {
         email: authUser.email || 'No email',
         phone: profile?.phone_number || null,
         setup_status: setupStatus,
-        last_sign_in_at: authUser.last_sign_in_at,
+        // Use last_login from profiles (updated when user accesses dashboard)
+        // Fall back to auth last_sign_in_at, then created_at
+        last_sign_in_at: profile?.last_login || authUser.last_sign_in_at || authUser.created_at,
         account_type: accountType,
         days_left: daysLeft,
         next_billing_date: nextBillingDate,

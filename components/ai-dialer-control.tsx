@@ -339,9 +339,9 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
   
   // Determine button state - also hide button when outside calling hours
   const isButtonDisabled = (autoScheduleEnabled && !isPausedBudget && !isRunning) || isOutsideHours;
-  const buttonText = isRunning ? 'Stop AI Dialer' : 
+  const buttonText = isRunning ? 'Stop Sterling Dialer' : 
                      (autoScheduleEnabled && isPausedBudget) ? 'Override Budget' :
-                     'Launch AI Dialer';
+                     'Launch Sterling Dialer';
 
   // Calculate dynamic override leads based on time remaining until 8 PM
   const calculateOverrideLeads = () => {
@@ -409,7 +409,7 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
             </div>
             <div>
               <h1 className="text-4xl font-bold text-white bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
-                AI Dialer
+                Sterling Dialer
               </h1>
               <p className="text-gray-400 mt-1">Deploy and monitor your AI calling agent</p>
             </div>
@@ -676,7 +676,7 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                     {isRunning ? (
                       <>
                         <Square className="w-6 h-6" />
-                        Stop AI Dialer
+                        Stop Sterling Dialer
                       </>
                     ) : (autoScheduleEnabled && isPausedBudget) ? (
                       <>
@@ -686,7 +686,7 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                     ) : (
                       <>
                         <Rocket className="w-6 h-6" />
-                        Launch AI Dialer
+                        Launch Sterling Dialer
                       </>
                     )}
                   </span>
@@ -877,7 +877,7 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                 {launchStep === 1 && 'Setting up your calling environment'}
                 {launchStep === 2 && 'Activating AI agents'}
                 {launchStep === 3 && 'Starting dialer engine'}
-                {launchStep === 4 && 'AI Dialer is now active!'}
+                {launchStep === 4 && 'Sterling Dialer is now active!'}
               </p>
             </div>
 

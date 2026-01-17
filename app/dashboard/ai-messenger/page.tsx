@@ -1,8 +1,17 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { MessageSquare, Zap, DollarSign, TrendingUp, Mail, Sparkles, Rocket } from 'lucide-react';
 
 export default function AIMessengerPage() {
+  const router = useRouter();
+
+  // Redirect to main dashboard - page is hidden but preserved
+  useEffect(() => {
+    router.replace('/dashboard');
+  }, [router]);
+
   return (
     <div className="min-h-screen bg-[#0B1437] relative overflow-hidden">
       {/* Animated Background */}

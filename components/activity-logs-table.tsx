@@ -579,10 +579,25 @@ export function ActivityLogsTable({ calls }: ActivityLogsTableProps) {
 
   if (calls.length === 0) {
     return (
-      <div className="bg-[#1A2647] rounded-xl p-12 border border-gray-800 text-center">
-        <div className="text-6xl mb-4">📞</div>
-        <h3 className="text-xl font-bold text-white mb-2">No Calls Yet</h3>
-        <p className="text-gray-400">Answered calls will appear here</p>
+      <div className="bg-gradient-to-br from-[#1A2647]/80 to-[#0F1629]/80 backdrop-blur-xl rounded-2xl p-12 border border-blue-500/20 text-center relative overflow-hidden">
+        {/* Background glow effects */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl" />
+        </div>
+        
+        {/* Content */}
+        <div className="relative z-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl border border-blue-500/30 mb-6 shadow-lg shadow-blue-500/10">
+            <svg className="w-10 h-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+            </svg>
+          </div>
+          <h3 className="text-2xl font-bold text-white mb-3">No Calls Yet</h3>
+          <p className="text-gray-400 text-base max-w-sm mx-auto">
+            Your answered calls with recordings will appear here once you start dialing
+          </p>
+        </div>
       </div>
     );
   }
