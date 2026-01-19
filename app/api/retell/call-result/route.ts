@@ -1145,6 +1145,29 @@ export async function POST(request: Request) {
           .update({ balance: newBalance })
           .eq('user_id', userId);
 
+        // Track if we need to stop the AI due to balance issues
+        let shouldStopAI = false;
+        let stopReason = '';
+
+        // ========================================================================
+        // CRITICAL: CHECK IF BALANCE WENT NEGATIVE - STOP AI IMMEDIATELY!
+        // ========================================================================
+        if (newBalance <= 0) {
+          console.log('');
+          console.log('🛑🛑🛑 ========== CRITICAL: BALANCE NOW NEGATIVE! ========== 🛑🛑🛑');
+          console.log(`💰 Balance after this call: $${newBalance.toFixed(2)}`);
+          
+          // If auto-refill is enabled, try to refill BEFORE stopping
+          if (balance.auto_refill_enabled) {
+            console.log('🔄 Auto-refill is enabled - attempting to refill...');
+          } else {
+            // No auto-refill - must stop immediately!
+            console.log('❌ Auto-refill is DISABLED - STOPPING AI IMMEDIATELY!');
+            shouldStopAI = true;
+            stopReason = 'negative_balance_no_autorefill';
+          }
+        }
+
         // ========================================================================
         // CHECK FOR AUTO-REFILL (balance < $1)
         // ========================================================================
@@ -1153,6 +1176,8 @@ export async function POST(request: Request) {
           console.log('🔄🔄🔄 AUTO-REFILL TRIGGERED! 🔄🔄🔄');
           console.log(`💰 Balance dropped to $${newBalance.toFixed(2)} (below $1)`);
           console.log('💳 Charging card $25...');
+          
+          let autoRefillSucceeded = false;
           
           try {
             // Get user's Stripe customer and payment method
@@ -1164,6 +1189,8 @@ export async function POST(request: Request) {
             
             if (!profile?.stripe_customer_id) {
               console.error('❌ No Stripe customer ID - cannot auto-refill');
+              shouldStopAI = true;
+              stopReason = 'autorefill_failed_no_customer';
             } else {
               // Import Stripe
               const Stripe = (await import('stripe')).default;
@@ -1176,6 +1203,8 @@ export async function POST(request: Request) {
               
               if (customer.deleted) {
                 console.error('❌ Customer deleted');
+                shouldStopAI = true;
+                stopReason = 'autorefill_failed_customer_deleted';
               } else {
                 // Get payment method
                 let paymentMethodId = null;
@@ -1208,7 +1237,8 @@ export async function POST(request: Request) {
                     payment_method: paymentMethodId,
                     description: 'Auto-refill: Call Balance $25',
                     metadata: {
-                      type: 'auto_refill',
+                      type: 'balance_refill',
+                      is_first_refill: 'false',
                       user_id: userId,
                       amount: '25',
                     },
@@ -1230,18 +1260,53 @@ export async function POST(request: Request) {
                     
                     console.log(`✅ AUTO-REFILL SUCCESSFUL!`);
                     console.log(`   Balance: $${newBalance.toFixed(2)} → $${refillBalance.toFixed(2)}`);
+                    autoRefillSucceeded = true;
+                  } else {
+                    console.error('❌ Payment did not succeed:', paymentIntent.status);
+                    shouldStopAI = true;
+                    stopReason = 'autorefill_failed_payment_status_' + paymentIntent.status;
                   }
                 } else {
                   console.error('❌ No payment method found');
+                  shouldStopAI = true;
+                  stopReason = 'autorefill_failed_no_payment_method';
                 }
               }
             }
           } catch (autoRefillError: any) {
             console.error('❌ Auto-refill failed:', autoRefillError.message);
+            shouldStopAI = true;
+            stopReason = 'autorefill_exception: ' + autoRefillError.message;
           }
           
           console.log('🔄🔄🔄 ======================================== 🔄🔄🔄');
           console.log('');
+          
+          // If auto-refill failed and balance is negative, stop the AI
+          if (!autoRefillSucceeded && newBalance <= 0) {
+            shouldStopAI = true;
+            if (!stopReason) stopReason = 'autorefill_failed_balance_negative';
+          }
+        }
+        
+        // ========================================================================
+        // STOP AI IF NEEDED (balance issues)
+        // ========================================================================
+        if (shouldStopAI) {
+          console.log('');
+          console.log('🛑🛑🛑 ========== STOPPING AI DUE TO BALANCE ISSUES ========== 🛑🛑🛑');
+          console.log(`💰 Reason: ${stopReason}`);
+          console.log(`💰 Current balance: $${newBalance.toFixed(2)}`);
+          console.log('🛑🛑🛑 ====================================================== 🛑🛑🛑');
+          console.log('');
+          
+          await supabase
+            .from('ai_control_settings')
+            .update({ 
+              status: 'stopped',
+              last_call_status: stopReason
+            })
+            .eq('user_id', userId);
         }
       }
 

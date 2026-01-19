@@ -45,16 +45,44 @@ export async function POST(request: Request) {
       .eq('user_id', user.id)
       .single();
 
-    // Only block launch if balance is completely depleted (< $1) AND no auto-refill
-    // Auto-refill will kick in at $1 anyway
-    const hasBalance = (callBalance?.auto_refill_enabled) || (callBalance?.balance || 0) >= 1;
+    const currentBalance = callBalance?.balance || 0;
+    const autoRefillEnabled = callBalance?.auto_refill_enabled || false;
     
-    if (!hasBalance) {
+    console.log(`💰 Balance Check: $${currentBalance.toFixed(2)}, Auto-refill: ${autoRefillEnabled}`);
+
+    // ========================================================================
+    // CRITICAL BALANCE CHECKS - PREVENT NEGATIVE BALANCE SITUATIONS
+    // ========================================================================
+    
+    // CHECK 1: NEVER allow launch if balance is already negative or zero
+    if (currentBalance <= 0) {
+      console.log('🛑 BLOCKED: Balance is $0 or negative');
       return NextResponse.json(
-        { error: 'Insufficient call balance. Please add funds or enable auto-refill.' },
+        { error: `Cannot launch: Your balance is $${currentBalance.toFixed(2)}. Please add funds first.` },
         { status: 400 }
       );
     }
+    
+    // CHECK 2: If auto-refill is DISABLED, require at least $5 balance
+    // This gives buffer for calls before they need to add more funds
+    if (!autoRefillEnabled && currentBalance < 5) {
+      console.log('🛑 BLOCKED: No auto-refill and balance below $5');
+      return NextResponse.json(
+        { error: `Cannot launch: Your balance is $${currentBalance.toFixed(2)}. Without auto-refill enabled, you need at least $5 to launch. Please add funds or enable auto-refill.` },
+        { status: 400 }
+      );
+    }
+    
+    // CHECK 3: If auto-refill IS enabled, require at least $1 (auto-refill triggers at $1)
+    if (autoRefillEnabled && currentBalance < 1) {
+      console.log('🛑 BLOCKED: Auto-refill enabled but balance below $1');
+      return NextResponse.json(
+        { error: `Cannot launch: Your balance is $${currentBalance.toFixed(2)}. Please wait for auto-refill to complete or add funds manually.` },
+        { status: 400 }
+      );
+    }
+    
+    console.log('✅ Balance check passed!')
 
     // Check for any leads (not just 'pending' status - could be 'new', 'ready', null, etc.)
     const { count: totalLeads } = await supabase

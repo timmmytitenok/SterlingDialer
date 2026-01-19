@@ -251,6 +251,77 @@ export async function POST(request: Request) {
     }
     console.log('✅ [CHECK-1] AI status is running - continuing...');
 
+    // ========================================================================
+    // CRITICAL: CHECK BALANCE BEFORE MAKING ANY CALL
+    // ========================================================================
+    const { data: callBalanceData } = await supabase
+      .from('call_balance')
+      .select('balance, auto_refill_enabled')
+      .eq('user_id', userId)
+      .single();
+    
+    const currentBalance = callBalanceData?.balance || 0;
+    const autoRefillEnabled = callBalanceData?.auto_refill_enabled || false;
+    
+    console.log(`💰 [BALANCE CHECK] Current balance: $${currentBalance.toFixed(2)}, Auto-refill: ${autoRefillEnabled}`);
+    
+    // STOP IMMEDIATELY if balance is zero or negative - NEVER allow calls with no funds!
+    if (currentBalance <= 0) {
+      console.log('');
+      console.log('🛑🛑🛑 ========== CRITICAL: NEGATIVE/ZERO BALANCE ========== 🛑🛑🛑');
+      console.log(`💰 Balance: $${currentBalance.toFixed(2)} - CANNOT MAKE CALLS!`);
+      console.log('🛑 STOPPING AI IMMEDIATELY to prevent further losses');
+      console.log('🛑🛑🛑 ===================================================== 🛑🛑🛑');
+      console.log('');
+      
+      // Stop the AI
+      await supabase
+        .from('ai_control_settings')
+        .update({ 
+          status: 'stopped',
+          last_call_status: 'stopped_negative_balance'
+        })
+        .eq('user_id', userId);
+      
+      return NextResponse.json({
+        done: true,
+        reason: 'negative_balance',
+        message: `AI stopped: Balance is $${currentBalance.toFixed(2)}. Please add funds to continue.`,
+        balance: currentBalance,
+        exitPoint: 'EXIT-BALANCE-NEGATIVE'
+      });
+    }
+    
+    // STOP if balance is very low AND auto-refill is disabled
+    // This prevents running out of funds mid-session with no way to refill
+    if (!autoRefillEnabled && currentBalance < 1) {
+      console.log('');
+      console.log('🛑🛑🛑 ========== LOW BALANCE + NO AUTO-REFILL ========== 🛑🛑🛑');
+      console.log(`💰 Balance: $${currentBalance.toFixed(2)}, Auto-refill: DISABLED`);
+      console.log('🛑 STOPPING AI - User needs to add funds or enable auto-refill');
+      console.log('🛑🛑🛑 ================================================== 🛑🛑🛑');
+      console.log('');
+      
+      await supabase
+        .from('ai_control_settings')
+        .update({ 
+          status: 'stopped',
+          last_call_status: 'stopped_low_balance'
+        })
+        .eq('user_id', userId);
+      
+      return NextResponse.json({
+        done: true,
+        reason: 'low_balance_no_autorefill',
+        message: `AI stopped: Balance is $${currentBalance.toFixed(2)} with no auto-refill. Please add funds or enable auto-refill.`,
+        balance: currentBalance,
+        autoRefillEnabled: false,
+        exitPoint: 'EXIT-BALANCE-LOW-NO-AUTOREFILL'
+      });
+    }
+    
+    console.log('✅ [CHECK-BALANCE] Balance sufficient - continuing...');
+
     // Get user's timezone from user_retell_config (set in admin user management)
     const { data: userTimezoneConfig } = await supabase
       .from('user_retell_config')
