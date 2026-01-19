@@ -169,7 +169,7 @@ export async function GET(req: Request) {
     if (refillTransactions && refillTransactions.length > 0) {
       console.log('📋 STRIPE REFILL TRANSACTIONS DETAILS:');
       refillTransactions.forEach((t: any, i: number) => {
-        const userRate = userCostMap.get(t.user_id) || 0.35;
+        const userRate = userCostMap.get(t.user_id) || 0.65;
         console.log(`   ${i + 1}. Amount: $${t.amount}, User Rate: $${userRate}/min, Type: ${t.type}, Date: ${t.created_at}`);
       });
     } else {
@@ -636,7 +636,7 @@ export async function GET(req: Request) {
     
     refillTransactions?.forEach((t: any) => {
       const refillAmount = t.amount || 0;
-      const userRate = userCostMap.get(t.user_id) || 0.35; // Default $0.35/min if not found
+      const userRate = userCostMap.get(t.user_id) || 0.65; // Default $0.65/min if not found
       
       // Calculate minutes purchased at user's rate
       const minutesPurchased = refillAmount / userRate;
@@ -681,9 +681,9 @@ export async function GET(req: Request) {
     const totalMinutesRevenue = minutesRevenue + customBalanceRefillRevenue;
     
     // Calculate profit for manual Balance Refill entries
-    // Formula: profit_margin = 1 - (AI_cost / user_rate) = 1 - (0.15 / 0.35) = 57.14%
-    // For manual entries without user_id, we use the default $0.35/min rate
-    const DEFAULT_USER_RATE = 0.35;
+    // Formula: profit_margin = 1 - (AI_cost / user_rate) = 1 - (0.15 / 0.65) = 76.9%
+    // For manual entries without user_id, we use the default $0.65/min rate
+    const DEFAULT_USER_RATE = 0.65;
     const CUSTOM_REFILL_PROFIT_MARGIN = 1 - (AI_COST_PER_MINUTE / DEFAULT_USER_RATE); // 62.5%
     const customBalanceRefillProfit = customBalanceRefillRevenue * CUSTOM_REFILL_PROFIT_MARGIN;
     const customBalanceRefillExpense = customBalanceRefillRevenue * (AI_COST_PER_MINUTE / DEFAULT_USER_RATE); // 37.5%

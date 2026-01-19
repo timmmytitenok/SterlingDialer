@@ -116,8 +116,8 @@ export async function GET() {
       const skipDates = user.dialer_skip_dates || [];
       const extraDates = user.dialer_extra_dates || [];
       
-      // Get THIS user's specific rate (default $0.35)
-      const userRate = userRates[user.user_id] || 0.35;
+      // Get THIS user's specific rate (default $0.65)
+      const userRate = userRates[user.user_id] || 0.65;
       
       // Calculate profit margin for THIS user
       // dailyBudget is what they'll spend

@@ -386,7 +386,7 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
   };
 
   const overrideLeads = calculateOverrideLeads();
-  const overrideCostCents = overrideLeads * 1 * 35; // leads × 1 min × $0.35
+  const overrideCostCents = overrideLeads * 1 * 65; // leads × 1 min × $0.65
   const overrideCostDollars = (overrideCostCents / 100).toFixed(2);
 
   return (

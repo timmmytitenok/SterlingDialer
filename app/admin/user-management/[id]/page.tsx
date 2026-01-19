@@ -143,7 +143,7 @@ export default function AdminUserDetailPage() {
   const [calEventId, setCalEventId] = useState('');
   const [agentName, setAgentName] = useState('');
   const [agentPronoun, setAgentPronoun] = useState('She');
-  const [costPerMinute, setCostPerMinute] = useState('0.35');
+  const [costPerMinute, setCostPerMinute] = useState('0.65');
   const [timezone, setTimezone] = useState('America/New_York');
   const [confirmationEmail, setConfirmationEmail] = useState('');
   const [scriptType, setScriptType] = useState<'final_expense' | 'mortgage_protection'>('final_expense');
@@ -804,7 +804,7 @@ export default function AdminUserDetailPage() {
                       type="number"
                       value={costPerMinute}
                       onChange={(e) => setCostPerMinute(e.target.value)}
-                      placeholder="0.35"
+                      placeholder="0.65"
                       step="0.01"
                       min="0"
                       className="w-full pl-8 pr-3 py-3 bg-[#0B1437]/80 text-white rounded-lg border border-emerald-500/30 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:outline-none font-mono text-lg placeholder:text-gray-500"
@@ -843,7 +843,7 @@ export default function AdminUserDetailPage() {
                         calEventId: calEventId.trim() || null,
                         agentName: agentName.trim() || null,
                     agentPronoun: agentPronoun || 'She',
-                        costPerMinute: parseFloat(costPerMinute) || 0.35,
+                        costPerMinute: parseFloat(costPerMinute) || 0.65,
                         timezone: timezone || 'America/New_York',
                         confirmationEmail: confirmationEmail.trim() || null,
                     // Agent 1 and 2 fields (2 agents per user)
