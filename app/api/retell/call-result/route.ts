@@ -149,21 +149,6 @@ export async function POST(request: Request) {
     }
 
     // ========================================================================
-    // 🛡️ BULLETPROOF ERROR HANDLING - ENTIRE PROCESSING WRAPPED
-    // ========================================================================
-    // If ANYTHING crashes during processing, we MUST:
-    // 1. Mark the lead as not_interested (dead) so it doesn't crash again
-    // 2. Trigger the next call so the system doesn't stop
-    // 3. Clean up any stuck leads
-    // ========================================================================
-    let processingResult: any = null;
-    let processingError: any = null;
-    let shouldTriggerNextCall = true; // Default to true - safety first!
-    let finalOutcome = 'unclassified';
-    let finalCallCost = 0;
-
-    try {
-    // ========================================================================
     // DOUBLE DIAL DETECTION - CRITICAL SECTION
     // ========================================================================
     console.log('');
@@ -1816,12 +1801,7 @@ export async function POST(request: Request) {
     console.log('🔄🔄🔄 ============================================ 🔄🔄🔄');
     console.log('');
 
-    // Store results for the finally block
-    finalOutcome = outcome;
-    finalCallCost = callCost;
-    shouldTriggerNextCall = false; // We already triggered it above, don't do it again in finally
-
-    processingResult = {
+    return NextResponse.json({
       success: true,
       message: 'Call processed successfully',
       outcome: outcome,
@@ -1830,139 +1810,9 @@ export async function POST(request: Request) {
       hungUpBy: hungUpBy,
       nextCallTriggered: nextCallSuccess,
       nextCallError: nextCallError,
-    };
-
-    // ========================================================================
-    // END OF INNER TRY - Bulletproof processing complete
-    // ========================================================================
-    } catch (innerError: any) {
-      // ========================================================================
-      // 🚨 BULLETPROOF CATCH - A lead crashed the system!
-      // ========================================================================
-      console.error('');
-      console.error('🚨🚨🚨 ========== CRITICAL: PROCESSING CRASHED ========== 🚨🚨🚨');
-      console.error('❌ Error:', innerError.message);
-      console.error('❌ Stack:', innerError.stack?.substring(0, 500));
-      console.error('');
-      console.error('📋 Lead that caused crash:');
-      console.error(`   - Lead ID: ${leadId}`);
-      console.error(`   - Lead Name: ${lead?.name || 'Unknown'}`);
-      console.error(`   - Lead Phone: ${lead?.phone || 'Unknown'}`);
-      console.error('');
-      
-      processingError = innerError;
-      
-      // 💀 MARK THE LEAD AS DEAD so it NEVER crashes us again!
-      try {
-        console.log('💀 Marking problematic lead as NOT_INTERESTED to prevent future crashes...');
-        await supabase
-          .from('leads')
-          .update({
-            status: 'not_interested',
-            last_call_outcome: `CRASH: ${innerError.message?.substring(0, 100) || 'Unknown error'}`,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', leadId);
-        console.log('✅ Lead marked as not_interested (dead) - will NOT be called again!');
-      } catch (leadUpdateError: any) {
-        console.error('❌ Could not mark lead as dead:', leadUpdateError.message);
-      }
-      
-      console.error('🚨🚨🚨 ===================================================== 🚨🚨🚨');
-      console.error('');
-      
-    } finally {
-      // ========================================================================
-      // 🛡️ BULLETPROOF FINALLY - ALWAYS runs, even after crash!
-      // ========================================================================
-      console.log('');
-      console.log('🛡️ FINALLY BLOCK: Ensuring system recovery...');
-      
-      // If we didn't already trigger next-call (processing crashed before that point),
-      // trigger it now to keep the AI running!
-      if (shouldTriggerNextCall) {
-        console.log('🔄 Processing crashed before next-call - triggering it now...');
-        
-        try {
-          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://sterlingdialer.com';
-          const recoveryResponse = await fetch(`${baseUrl}/api/ai-control/next-call`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId }),
-          });
-          console.log(`✅ Recovery next-call triggered: ${recoveryResponse.status}`);
-        } catch (recoveryError: any) {
-          console.error('❌ Recovery next-call failed:', recoveryError.message);
-          
-          // Last resort: Just reset the AI to stopped so user can restart
-          try {
-            await supabase
-              .from('ai_control_settings')
-              .update({ 
-                status: 'stopped',
-                last_call_status: 'crash_recovery_failed'
-              })
-              .eq('user_id', userId);
-            console.log('⚠️ AI stopped for manual restart');
-          } catch (e) {
-            console.error('❌ Could not stop AI:', e);
-          }
-        }
-      }
-      
-      // ALWAYS clean up any stuck leads for this user (safety net)
-      try {
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-        const { data: cleanedLeads } = await supabase
-          .from('leads')
-          .update({ 
-            status: 'no_answer',
-            last_call_outcome: 'auto_cleanup'
-          })
-          .eq('user_id', userId)
-          .eq('status', 'calling_in_progress')
-          .lt('updated_at', fiveMinutesAgo)
-          .select('id');
-        
-        if (cleanedLeads && cleanedLeads.length > 0) {
-          console.log(`🧹 Cleaned up ${cleanedLeads.length} stuck leads`);
-        }
-      } catch (cleanupError: any) {
-        console.error('❌ Cleanup error:', cleanupError.message);
-      }
-      
-      console.log('🛡️ FINALLY BLOCK COMPLETE');
-      console.log('');
-    }
-
-    // Return result based on what happened
-    if (processingResult) {
-      return NextResponse.json(processingResult);
-    } else if (processingError) {
-      // Even though we crashed, we handled it gracefully
-      return NextResponse.json({
-        success: false,
-        error: 'Call processing crashed but system recovered',
-        errorMessage: processingError.message,
-        leadMarkedDead: true,
-        nextCallTriggered: shouldTriggerNextCall,
-      });
-    } else {
-      // Shouldn't happen, but just in case
-      return NextResponse.json({
-        success: true,
-        message: 'Call processed (unknown state)',
-      });
-    }
-
+    });
   } catch (error: any) {
-    // ========================================================================
-    // OUTER CATCH - This catches errors BEFORE we even get to the lead
-    // (e.g., JSON parsing, header issues, database connection)
-    // ========================================================================
-    console.error('');
-    console.error('❌❌❌ OUTER ERROR (before lead processing):', error.message);
-    console.error('');
+    console.error('❌ Error processing call result:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to process call result' },
       { status: 500 }

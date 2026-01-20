@@ -21,19 +21,11 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [dailyBudget, setDailyBudget] = useState(25);
   const [isUnlimitedBudget, setIsUnlimitedBudget] = useState(false);
-  const [errorModal, setErrorModal] = useState<{ 
-    show: boolean; 
-    title: string; 
-    message: string;
-    code?: string;
-    action?: string;
-    actionUrl?: string;
-  }>({
+  const [errorModal, setErrorModal] = useState<{ show: boolean; title: string; message: string }>({
     show: false,
     title: '',
     message: '',
   });
-  const [isResetting, setIsResetting] = useState(false);
   const [showNoLeadsWarning, setShowNoLeadsWarning] = useState(false);
   const [noLeadsMessage, setNoLeadsMessage] = useState('');
   const [noLeadsReason, setNoLeadsReason] = useState<'no_sheets' | 'no_leads' | 'all_dialed_today' | 'all_exhausted' | null>(null);
@@ -115,32 +107,8 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
     };
   }, []); // Run once on mount, intervals handle updates
 
-  const showError = (title: string, message: string, code?: string, action?: string, actionUrl?: string) => {
-    setErrorModal({ show: true, title, message, code, action, actionUrl });
-  };
-
-  // ========================================================================
-  // BULLETPROOF FIX: Reset stuck states before retrying
-  // ========================================================================
-  const handleReset = async () => {
-    setIsResetting(true);
-    try {
-      const response = await fetch('/api/dialer/reset', { method: 'POST' });
-      const data = await response.json();
-      
-      if (response.ok) {
-        console.log('✅ Reset complete:', data.cleanup);
-        // Refresh status after reset
-        await fetchStatus();
-        setErrorModal({ show: false, title: '', message: '' });
-      } else {
-        console.error('❌ Reset failed:', data.error);
-      }
-    } catch (error) {
-      console.error('Error resetting dialer:', error);
-    } finally {
-      setIsResetting(false);
-    }
+  const showError = (title: string, message: string) => {
+    setErrorModal({ show: true, title, message });
   };
 
   // ========================================================================
@@ -229,14 +197,7 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
       } else {
         setIsLaunching(false);
         setLaunchStep(0);
-        // Use structured error response with code and action
-        showError(
-          'Cannot Launch', 
-          data.error || 'Failed to launch AI dialer',
-          data.code,
-          data.action,
-          data.actionUrl
-        );
+        showError('Cannot Launch', data.error || 'Failed to launch AI dialer');
       }
     } catch (error) {
       setIsLaunching(false);
@@ -1025,46 +986,7 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                   <p className="text-gray-200 leading-relaxed text-base">{errorModal.message}</p>
                 </div>
 
-                {/* BULLETPROOF FIX: Show action buttons based on error code */}
-                {/* Balance-related errors - redirect to balance page */}
-                {(errorModal.code === 'NO_BALANCE' || errorModal.code === 'LOW_BALANCE_NO_AUTOREFILL' || errorModal.code === 'LOW_BALANCE_WITH_AUTOREFILL') && (
-                  <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
-                    <p className="text-sm text-green-300 mb-3">
-                      💡 Add funds to your call balance to start making calls
-                    </p>
-                    <a
-                      href={errorModal.actionUrl || '/dashboard/settings/balance'}
-                      className="group relative overflow-hidden w-full px-5 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-semibold rounded-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-green-500/50 flex items-center justify-center gap-2"
-                    >
-                      <span className="relative z-10 flex items-center gap-2">
-                        <DollarSign className="w-5 h-5" />
-                        Add Call Balance
-                      </span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
-                    </a>
-                  </div>
-                )}
-
-                {/* No leads error - redirect to lead manager */}
-                {(errorModal.code === 'NO_LEADS' || errorModal.message.includes('pending leads')) && (
-                  <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-                    <p className="text-sm text-blue-300 mb-3">
-                      💡 Upload leads to your Lead Manager to start calling
-                    </p>
-                    <a
-                      href={errorModal.actionUrl || '/dashboard/lead-manager'}
-                      className="group relative overflow-hidden w-full px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/50 flex items-center justify-center gap-2"
-                    >
-                      <span className="relative z-10 flex items-center gap-2">
-                        <Target className="w-5 h-5" />
-                        Go to Lead Manager
-                      </span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
-                    </a>
-                  </div>
-                )}
-
-                {/* Budget error - redirect to dialer settings */}
+                {/* Show settings button if it's a budget error */}
                 {errorModal.message.includes('daily budget') && (
                   <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
                     <p className="text-sm text-blue-300 mb-3">
@@ -1083,23 +1005,24 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
                   </div>
                 )}
 
-                {/* BULLETPROOF FIX: Reset button for stuck states */}
-                <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
-                  <p className="text-sm text-yellow-300 mb-3">
-                    🔧 Still having issues? Try resetting the dialer to clear any stuck states
-                  </p>
-                  <button
-                    onClick={handleReset}
-                    disabled={isResetting}
-                    className="group relative overflow-hidden w-full px-5 py-3 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white font-semibold rounded-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-yellow-500/50 flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    <span className="relative z-10 flex items-center gap-2">
-                      <RefreshCw className={`w-5 h-5 ${isResetting ? 'animate-spin' : ''}`} />
-                      {isResetting ? 'Resetting...' : 'Reset Dialer'}
-                    </span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
-                  </button>
-                </div>
+                {/* Show upload leads button if it's a leads error */}
+                {errorModal.message.includes('pending leads') && (
+                  <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                    <p className="text-sm text-blue-300 mb-3">
+                      💡 Upload leads to your Lead Manager to start calling
+                    </p>
+                    <a
+                      href="/dashboard/leads"
+                      className="group relative overflow-hidden w-full px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/50 flex items-center justify-center gap-2"
+                    >
+                      <span className="relative z-10 flex items-center gap-2">
+                        <Target className="w-5 h-5" />
+                        Go to Lead Manager
+                      </span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* Actions */}
