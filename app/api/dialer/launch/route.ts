@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     // Leads stuck in "calling_in_progress" for > 5 minutes should be unlocked
     // ========================================================================
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { count: stuckLeadsCount } = await supabaseAdmin
+    const { data: stuckLeads } = await supabaseAdmin
       .from('leads')
       .update({ 
         status: 'no_answer',
@@ -91,10 +91,10 @@ export async function POST(request: Request) {
       .eq('user_id', user.id)
       .eq('status', 'calling_in_progress')
       .lt('updated_at', fiveMinutesAgo)
-      .select('*', { count: 'exact', head: true });
+      .select('id');
     
-    if (stuckLeadsCount && stuckLeadsCount > 0) {
-      console.log(`🧹 Cleaned up ${stuckLeadsCount} stuck leads (calling_in_progress > 5 min)`);
+    if (stuckLeads && stuckLeads.length > 0) {
+      console.log(`🧹 Cleaned up ${stuckLeads.length} stuck leads (calling_in_progress > 5 min)`);
     }
 
     // ========================================================================
