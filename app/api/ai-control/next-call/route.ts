@@ -174,6 +174,28 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
+    // ========================================================================
+    // BULLETPROOF FIX: AUTO-CLEANUP STUCK LEADS
+    // Clean up any leads stuck in "calling_in_progress" for > 5 minutes
+    // This prevents leads from being permanently locked if a call fails
+    // ========================================================================
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { data: stuckLeads } = await supabase
+      .from('leads')
+      .update({ 
+        status: 'no_answer',
+        last_call_outcome: 'auto_cleanup_stuck',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId)
+      .eq('status', 'calling_in_progress')
+      .lt('updated_at', fiveMinutesAgo)
+      .select('id');
+    
+    if (stuckLeads && stuckLeads.length > 0) {
+      console.log(`🧹 AUTO-CLEANUP: Unlocked ${stuckLeads.length} stuck leads (calling_in_progress > 5 min)`);
+    }
+
     // Get AI settings - try to fetch first
     let { data: aiSettings, error: settingsError } = await supabase
       .from('ai_control_settings')

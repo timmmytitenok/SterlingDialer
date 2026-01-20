@@ -38,12 +38,39 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check call balance
-    const { data: callBalance } = await supabase
+    // ========================================================================
+    // BULLETPROOF FIX 1: AUTO-CREATE BALANCE RECORD IF MISSING
+    // New users might not have a balance record yet - create one!
+    // ========================================================================
+    let { data: callBalance } = await supabase
       .from('call_balance')
       .select('balance, auto_refill_enabled')
       .eq('user_id', user.id)
       .single();
+
+    // If no balance record exists, CREATE one for the user
+    if (!callBalance) {
+      console.log('⚠️ No balance record found for user - creating one...');
+      
+      const { data: newBalance, error: createError } = await supabase
+        .from('call_balance')
+        .insert({
+          user_id: user.id,
+          balance: 0,
+          auto_refill_enabled: true,  // Enable by default so they can launch once they add funds
+          auto_refill_amount: 25,
+          auto_refill_threshold: 1.00,
+        })
+        .select()
+        .single();
+      
+      if (createError) {
+        console.error('❌ Failed to create balance record:', createError);
+      } else {
+        console.log('✅ Created balance record for user');
+        callBalance = newBalance;
+      }
+    }
 
     const currentBalance = callBalance?.balance || 0;
     const autoRefillEnabled = callBalance?.auto_refill_enabled || false;
@@ -51,35 +78,70 @@ export async function POST(request: Request) {
     console.log(`💰 Balance Check: $${currentBalance.toFixed(2)}, Auto-refill: ${autoRefillEnabled}`);
 
     // ========================================================================
+    // BULLETPROOF FIX 2: CLEAN UP STUCK LEADS BEFORE LAUNCHING
+    // Leads stuck in "calling_in_progress" for > 5 minutes should be unlocked
+    // ========================================================================
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { count: stuckLeadsCount } = await supabaseAdmin
+      .from('leads')
+      .update({ 
+        status: 'no_answer',
+        last_call_outcome: 'stuck_cleanup'
+      })
+      .eq('user_id', user.id)
+      .eq('status', 'calling_in_progress')
+      .lt('updated_at', fiveMinutesAgo)
+      .select('*', { count: 'exact', head: true });
+    
+    if (stuckLeadsCount && stuckLeadsCount > 0) {
+      console.log(`🧹 Cleaned up ${stuckLeadsCount} stuck leads (calling_in_progress > 5 min)`);
+    }
+
+    // ========================================================================
     // CRITICAL BALANCE CHECKS - PREVENT NEGATIVE BALANCE SITUATIONS
+    // Now with structured error responses for better UI handling
     // ========================================================================
     
     // CHECK 1: NEVER allow launch if balance is already negative or zero
     if (currentBalance <= 0) {
       console.log('🛑 BLOCKED: Balance is $0 or negative');
-      return NextResponse.json(
-        { error: `Cannot launch: Your balance is $${currentBalance.toFixed(2)}. Please add funds first.` },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        error: `Your balance is $${currentBalance.toFixed(2)}. Please add funds to get started.`,
+        code: 'NO_BALANCE',
+        action: 'ADD_FUNDS',
+        actionUrl: '/dashboard/settings/balance',
+        currentBalance: currentBalance,
+        requiredBalance: autoRefillEnabled ? 1 : 5,
+      }, { status: 400 });
     }
     
     // CHECK 2: If auto-refill is DISABLED, require at least $5 balance
     // This gives buffer for calls before they need to add more funds
     if (!autoRefillEnabled && currentBalance < 5) {
       console.log('🛑 BLOCKED: No auto-refill and balance below $5');
-      return NextResponse.json(
-        { error: `Cannot launch: Your balance is $${currentBalance.toFixed(2)}. Without auto-refill enabled, you need at least $5 to launch. Please add funds or enable auto-refill.` },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        error: `Your balance is $${currentBalance.toFixed(2)}. Without auto-refill, you need at least $5 to launch.`,
+        code: 'LOW_BALANCE_NO_AUTOREFILL',
+        action: 'ADD_FUNDS_OR_ENABLE_AUTOREFILL',
+        actionUrl: '/dashboard/settings/balance',
+        currentBalance: currentBalance,
+        requiredBalance: 5,
+        autoRefillEnabled: false,
+      }, { status: 400 });
     }
     
     // CHECK 3: If auto-refill IS enabled, require at least $1 (auto-refill triggers at $1)
     if (autoRefillEnabled && currentBalance < 1) {
       console.log('🛑 BLOCKED: Auto-refill enabled but balance below $1');
-      return NextResponse.json(
-        { error: `Cannot launch: Your balance is $${currentBalance.toFixed(2)}. Please wait for auto-refill to complete or add funds manually.` },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        error: `Your balance is $${currentBalance.toFixed(2)}. Please add funds or wait for auto-refill.`,
+        code: 'LOW_BALANCE_WITH_AUTOREFILL',
+        action: 'ADD_FUNDS',
+        actionUrl: '/dashboard/settings/balance',
+        currentBalance: currentBalance,
+        requiredBalance: 1,
+        autoRefillEnabled: true,
+      }, { status: 400 });
     }
     
     console.log('✅ Balance check passed!')
@@ -100,10 +162,14 @@ export async function POST(request: Request) {
     const availableLeads = uncalledLeads || totalLeads || 0;
 
     if (availableLeads === 0) {
-      return NextResponse.json(
-        { error: 'No pending leads to call. Please upload leads first.' },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        error: 'No pending leads to call. Please upload leads first.',
+        code: 'NO_LEADS',
+        action: 'UPLOAD_LEADS',
+        actionUrl: '/dashboard/lead-manager',
+        totalLeads: totalLeads || 0,
+        uncalledLeads: uncalledLeads || 0,
+      }, { status: 400 });
     }
 
     console.log(`✅ Found ${availableLeads} available leads to call`);
