@@ -292,13 +292,14 @@ export async function POST(request: Request) {
       });
     }
     
-    // STOP if balance is very low AND auto-refill is disabled
+    // STOP if balance is below $5 AND auto-refill is disabled
     // This prevents running out of funds mid-session with no way to refill
-    if (!autoRefillEnabled && currentBalance < 1) {
+    // Uses $5 threshold (same as launch requirement) for consistency
+    if (!autoRefillEnabled && currentBalance < 5) {
       console.log('');
       console.log('🛑🛑🛑 ========== LOW BALANCE + NO AUTO-REFILL ========== 🛑🛑🛑');
       console.log(`💰 Balance: $${currentBalance.toFixed(2)}, Auto-refill: DISABLED`);
-      console.log('🛑 STOPPING AI - User needs to add funds or enable auto-refill');
+      console.log('🛑 STOPPING AI - Minimum $5 required without auto-refill');
       console.log('🛑🛑🛑 ================================================== 🛑🛑🛑');
       console.log('');
       
@@ -313,7 +314,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         done: true,
         reason: 'low_balance_no_autorefill',
-        message: `AI stopped: Balance is $${currentBalance.toFixed(2)} with no auto-refill. Please add funds or enable auto-refill.`,
+        message: `AI stopped: Balance is $${currentBalance.toFixed(2)}. Minimum $5 required without auto-refill. Please add funds or enable auto-refill.`,
         balance: currentBalance,
         autoRefillEnabled: false,
         exitPoint: 'EXIT-BALANCE-LOW-NO-AUTOREFILL'
@@ -540,13 +541,12 @@ export async function POST(request: Request) {
     console.log('✅ [CHECK-4] Active sheets found:', activeSheetIds.length);
     
     // ========================================================================
-    // INTERNAL LOOP: Try up to 5 leads if they fail consecutively
-    // This prevents a single bad lead from stopping the entire dialer
+    // INTERNAL LOOP: Keep trying leads until we find one that works
+    // Bad leads are marked as 'not_interested' and skipped forever
+    // AI NEVER STOPS due to bad leads - it keeps going until no leads left
     // ========================================================================
-    const MAX_CONSECUTIVE_FAILURES = 5;
-    let consecutiveFailures = 0;
     
-    leadAttemptLoop: while (consecutiveFailures < MAX_CONSECUTIVE_FAILURES) {
+    leadAttemptLoop: while (true) {
     
     // STEP 1: Count total callable leads
     // First, let's see ALL leads for this user to understand the data
@@ -1336,41 +1336,21 @@ export async function POST(request: Request) {
       console.log('');
       
       // ========================================================================
-      // CRITICAL: Increment counters and mark as DEAD after multiple failures
-      // This prevents infinite retry loops on bad phone numbers!
+      // MARK BAD LEAD AS 'not_interested' - NEVER CALL AGAIN
+      // The AI continues to the next lead - NEVER STOPS due to bad leads!
       // ========================================================================
       const currentTotalCalls = nextLead.total_calls_made || 0;
-      const newTotalCalls = currentTotalCalls + 1;
       const currentAttemptsToday = nextLead.call_attempts_today || 0;
       
-      // Check if this lead has failed before (last_call_outcome starts with 'error:')
-      const lastOutcome = nextLead.last_call_outcome || '';
-      const hadPreviousError = lastOutcome.startsWith('error:');
-      
-      // Mark as DEAD if:
-      // 1. This is the 3rd+ consecutive error (2 previous errors + this one)
-      // 2. OR total attempts >= 5 with current error
-      // 3. OR error indicates permanently bad phone (invalid number, disconnected, etc.)
-      const isPermanentError = errorMessage.toLowerCase().includes('invalid') || 
-                               errorMessage.toLowerCase().includes('not a valid') ||
-                               errorMessage.toLowerCase().includes('disconnected') ||
-                               errorMessage.toLowerCase().includes('not in service');
-      const shouldMarkDead = isPermanentError || (hadPreviousError && newTotalCalls >= 3) || newTotalCalls >= 5;
-      
-      const newStatus = shouldMarkDead ? 'dead_lead' : 'no_answer';
-      
-      console.log(`🔧 Lead error handling:`);
-      console.log(`   - Previous outcome: ${lastOutcome || '(none)'}`);
-      console.log(`   - Had previous error: ${hadPreviousError}`);
-      console.log(`   - Total attempts: ${currentTotalCalls} → ${newTotalCalls}`);
-      console.log(`   - Is permanent error: ${isPermanentError}`);
-      console.log(`   - New status: ${newStatus}`);
+      console.log(`🚫 Marking lead as 'not_interested' - will never be called again`);
+      console.log(`   - Lead: ${nextLead.name} (${nextLead.id})`);
+      console.log(`   - Error: ${errorMessage.substring(0, 100)}`);
       
       await supabase
         .from('leads')
         .update({
-          status: newStatus,
-          total_calls_made: newTotalCalls,
+          status: 'not_interested',  // NEVER call this lead again
+          total_calls_made: currentTotalCalls + 1,
           call_attempts_today: currentAttemptsToday + 1,
           last_attempt_date: todayStr,
           last_call_outcome: `error: ${errorMessage.substring(0, 100)}`,
@@ -1378,17 +1358,22 @@ export async function POST(request: Request) {
         })
         .eq('id', nextLead.id);
       
-      if (shouldMarkDead) {
-        console.log(`💀 Lead ${nextLead.name} marked as DEAD_LEAD after ${newTotalCalls} attempts - won't be called again!`);
-      } else {
-        console.log(`⚠️ Lead ${nextLead.name} marked as no_answer (attempt ${newTotalCalls}) - will retry tomorrow`);
-      }
+      console.log(`✅ Lead ${nextLead.name} marked as 'not_interested' - moving to next lead...`);
       
-      // Instead of stopping, try the next lead!
-      consecutiveFailures++;
-      console.log(`🔄 Trying next lead... (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES} consecutive failures)`);
-      await new Promise(resolve => setTimeout(resolve, 500)); // Small delay before retrying
-      continue leadAttemptLoop; // Continue the while loop to pick the next lead
+      // Clear current call tracking so system doesn't get stuck
+      await supabase
+        .from('ai_control_settings')
+        .update({
+          current_call_id: null,
+          current_lead_id: null,
+          last_call_status: 'lead_failed_moving_on'
+        })
+        .eq('user_id', userId);
+      
+      // Small delay then continue to next lead - AI NEVER STOPS!
+      await new Promise(resolve => setTimeout(resolve, 300));
+      console.log(`🔄 Continuing to next lead...`);
+      continue leadAttemptLoop;
     }
 
     const callData = await callResponse.json();
@@ -1446,30 +1431,46 @@ export async function POST(request: Request) {
     
     } // End of leadAttemptLoop while loop
     
-    // If we exit the loop, it means we hit MAX_CONSECUTIVE_FAILURES
-    console.log('');
-    console.log('🛑🛑🛑 TOO MANY CONSECUTIVE FAILURES 🛑🛑🛑');
-    console.log(`   ${consecutiveFailures} leads in a row failed to dial`);
-    console.log('   Stopping AI to prevent infinite loop');
-    console.log('   Check your leads for bad phone numbers!');
-    
-    await supabase
-      .from('ai_control_settings')
-      .update({
-        status: 'stopped',
-        last_call_status: 'too_many_failures'
-      })
-      .eq('user_id', userId);
-    
-    return NextResponse.json({
-      done: true,
-      reason: 'too_many_failures',
-      message: `${consecutiveFailures} leads in a row had bad phone numbers. Check your lead data.`,
-      consecutiveFailures: consecutiveFailures,
-    });
+    // This point should never be reached because the loop is infinite
+    // It only exits via return statements (success, no leads, budget reached, etc.)
     
   } catch (error: any) {
-    console.error('❌ Error in next-call:', error);
+    console.error('❌ CRITICAL ERROR in next-call:', error);
+    
+    // Try to clean up state so user can re-launch
+    try {
+      const { userId } = await request.clone().json();
+      if (userId) {
+        const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+        const cleanupClient = createSupabaseClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+        
+        // Clear tracking fields and set status to stopped so user can re-launch
+        await cleanupClient
+          .from('ai_control_settings')
+          .update({
+            current_call_id: null,
+            current_lead_id: null,
+            status: 'stopped',
+            last_call_status: `exception: ${error.message?.substring(0, 50) || 'unknown'}`
+          })
+          .eq('user_id', userId);
+        
+        // Reset any leads that might be stuck in 'calling_in_progress'
+        await cleanupClient
+          .from('leads')
+          .update({ status: 'new' })
+          .eq('user_id', userId)
+          .eq('status', 'calling_in_progress');
+        
+        console.log('🧹 Cleanup completed after exception - user can re-launch');
+      }
+    } catch (cleanupError) {
+      console.error('❌ Cleanup also failed:', cleanupError);
+    }
+    
     return NextResponse.json(
       { error: error.message || 'Failed to process next call' },
       { status: 500 }

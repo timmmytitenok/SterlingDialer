@@ -34,6 +34,8 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
   const [dialerSettings, setDialerSettings] = useState<any>(null);
   const [isLaunching, setIsLaunching] = useState(false);
   const [launchStep, setLaunchStep] = useState(0);
+  const [showLowBalanceWarning, setShowLowBalanceWarning] = useState(false);
+  const [enablingAutoRefill, setEnablingAutoRefill] = useState(false);
   
   // Fetch status
   const fetchStatus = async () => {
@@ -118,6 +120,17 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
     setActionLoading(true);
     
     try {
+      // FIRST: Check balance and auto-refill status
+      const balanceCents = status?.callBalanceCents || 0;
+      const autoRefillEnabled = status?.autoRefillEnabled || false;
+      
+      // If balance < $5 AND auto-refill disabled, show warning modal
+      if (balanceCents < 500 && !autoRefillEnabled) {
+        setActionLoading(false);
+        setShowLowBalanceWarning(true);
+        return;
+      }
+      
       // Check for callable leads BEFORE showing any modals
       const leadsCheckResponse = await fetch(`/api/ai-control/check-leads?userId=${userId}`);
       const leadsCheckData = await leadsCheckResponse.json();
@@ -1240,6 +1253,162 @@ export function AIDialerControl({ userId }: AIDialerControlProps) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Low Balance Warning Modal */}
+      {showLowBalanceWarning && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-3xl max-w-lg w-full shadow-[0_0_80px_rgba(239,68,68,0.3)] animate-in fade-in zoom-in-95 duration-400">
+            {/* Outer Glow Ring - Red/Orange for warning */}
+            <div className="absolute -inset-[2px] bg-gradient-to-r from-red-500 via-orange-500 to-red-500 rounded-3xl opacity-60 blur-sm animate-pulse" style={{ animationDuration: '2s' }} />
+            
+            {/* Inner Card */}
+            <div className="relative bg-gradient-to-br from-[#1A2647] to-[#0B1437] rounded-3xl overflow-hidden">
+              {/* Animated Background */}
+              <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute w-80 h-80 bg-red-500/20 rounded-full blur-[100px] -top-32 -right-32 animate-pulse" style={{ animationDuration: '3s' }} />
+                <div className="absolute w-64 h-64 bg-orange-500/20 rounded-full blur-[80px] -bottom-20 -left-20 animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }} />
+              </div>
+
+              {/* Top Glow Line */}
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-red-400 to-transparent" />
+
+              <div className="relative">
+                {/* Header */}
+                <div className="p-6 border-b border-red-500/20">
+                  <div className="flex items-start gap-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-red-500/40 rounded-2xl blur-xl animate-pulse" />
+                      <div className="relative w-16 h-16 bg-gradient-to-br from-red-500/30 to-orange-600/30 rounded-2xl border-2 border-red-500/60 flex items-center justify-center shadow-lg shadow-red-500/40">
+                        <DollarSign className="w-9 h-9 text-red-400" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold bg-gradient-to-r from-red-300 to-orange-300 bg-clip-text text-transparent mb-1">Low Balance!</h2>
+                      <p className="text-sm text-red-400/80">Enable auto-refill to continue</p>
+                    </div>
+                    <button
+                      onClick={() => setShowLowBalanceWarning(false)}
+                      className="p-2 hover:bg-red-500/10 rounded-xl transition-all duration-200 border border-transparent hover:border-red-500/30"
+                    >
+                      <X className="w-5 h-5 text-gray-400 hover:text-red-300" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                  {/* Balance Display */}
+                  <div className="relative bg-gradient-to-br from-red-950/40 to-orange-950/30 border border-red-500/30 rounded-2xl p-5 mb-6 shadow-inner">
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent rounded-2xl" />
+                    <div className="relative text-center">
+                      <p className="text-gray-400 text-sm mb-2">Current Balance</p>
+                      <p className="text-4xl font-bold text-red-400 mb-2">
+                        ${((status?.callBalanceCents || 0) / 100).toFixed(2)}
+                      </p>
+                      <p className="text-gray-400 text-sm">
+                        Minimum $5.00 required to launch without auto-refill
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Warning Message */}
+                  <div className="bg-orange-950/30 border border-orange-500/20 rounded-xl p-4 mb-6">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-gray-300 text-sm leading-relaxed">
+                        Your balance is too low to launch the AI dialer. Enable auto-refill to automatically add $25 when your balance drops below $1.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="space-y-3">
+                    <button
+                      onClick={async () => {
+                        setEnablingAutoRefill(true);
+                        try {
+                          const response = await fetch('/api/balance/update-settings', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              auto_refill_enabled: true,
+                              auto_refill_amount: 25,
+                            }),
+                          });
+                          
+                          const data = await response.json();
+                          if (data.success) {
+                            // Redirect to balance page so user can see the setting was enabled
+                            window.location.href = '/dashboard/settings/balance';
+                          } else {
+                            showError('Failed', data.error || 'Could not enable auto-refill. Please try again.');
+                          }
+                        } catch (error) {
+                          showError('Error', 'Failed to enable auto-refill.');
+                        } finally {
+                          setEnablingAutoRefill(false);
+                        }
+                      }}
+                      disabled={enablingAutoRefill}
+                      className="group relative overflow-hidden w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] shadow-xl shadow-green-500/30 hover:shadow-2xl hover:shadow-green-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="relative z-10 flex items-center justify-center gap-3">
+                        {enablingAutoRefill ? (
+                          <>
+                            <RefreshCw className="w-5 h-5 animate-spin" />
+                            Enabling...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="w-6 h-6" />
+                            Enable Auto-Refill ($25)
+                          </>
+                        )}
+                      </span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        setEnablingAutoRefill(true);
+                        try {
+                          const response = await fetch('/api/balance/create-checkout-session', {
+                            method: 'POST',
+                          });
+                          const data = await response.json();
+                          if (data.url) {
+                            window.location.href = data.url;
+                          } else {
+                            showError('Error', data.error || 'Failed to create checkout session.');
+                          }
+                        } catch (error) {
+                          showError('Error', 'Failed to open payment page.');
+                        } finally {
+                          setEnablingAutoRefill(false);
+                        }
+                      }}
+                      disabled={enablingAutoRefill}
+                      className="w-full px-6 py-3.5 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 font-semibold rounded-xl transition-all duration-300 disabled:opacity-50"
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        <DollarSign className="w-5 h-5" />
+                        Add $25 Now
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => setShowLowBalanceWarning(false)}
+                      className="w-full px-6 py-3 bg-gray-800/60 hover:bg-gray-800/80 border border-gray-600/50 text-gray-400 hover:text-gray-300 font-medium rounded-xl transition-all duration-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

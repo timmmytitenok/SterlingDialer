@@ -1207,7 +1207,7 @@ export default function AdminUserDetailPage() {
         {/* End Two-Column Grid */}
 
         {/* Quick Setup Guide - Hidden when all steps complete */}
-        {!onboardingSteps.all_complete && (
+        {!onCboardingSteps.all_complete && (
           <>
         {/* Divider */}
             <div className="my-10 flex items-center gap-4">

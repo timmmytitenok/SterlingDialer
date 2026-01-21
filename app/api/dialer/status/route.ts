@@ -140,15 +140,17 @@ export async function GET() {
     const pendingLeads = uncalledLeads || totalLeads || 0;
     const todayLeadsAttempted = todayCalls; // Each call = one lead attempted
 
-    // Get call balance
+    // Get call balance - include auto_refill_enabled for launch checks
     const { data: callBalance } = await supabase
       .from('call_balance')
-      .select('balance')
+      .select('balance, auto_refill_enabled')
       .eq('user_id', user.id)
       .single();
 
     const callBalanceCents = Math.round((callBalance?.balance || 0) * 100);
+    const autoRefillEnabled = callBalance?.auto_refill_enabled || false;
     const lowBalance = callBalanceCents < 100; // < $1 - only pause if truly depleted (auto-refill kicks in at $1)
+    const lowBalanceNoAutoRefill = callBalanceCents < 500 && !autoRefillEnabled; // < $5 without auto-refill
 
     // Determine status from ai_control_settings
     let status = aiSettings?.status || 'stopped';
@@ -182,8 +184,8 @@ export async function GET() {
       reason = `Calling hours: 9:00 AM - 8:00 PM ${userTimezone.replace('America/', '').replace('_', ' ')}`;
     }
 
-    // Check if budget reached
-    if (status === 'running' && todaySpendCents >= dailyBudgetCents) {
+    // Check if budget reached - only if a budget was actually set (> 0)
+    if (status === 'running' && dailyBudgetCents > 0 && todaySpendCents >= dailyBudgetCents) {
       status = 'paused-budget';
       reason = 'Daily budget limit reached';
     }
@@ -223,7 +225,9 @@ export async function GET() {
       pendingLeads: pendingLeads || 0,
       reason,
       lowBalance,
+      lowBalanceNoAutoRefill,
       callBalanceCents,
+      autoRefillEnabled,
       // Execution mode data from ai_control_settings
       // isBudgetMode takes priority - if budget_limit_cents > 0, it's budget mode
       executionMode: isBudgetMode ? 'budget' : (aiSettings?.execution_mode || 'leads'),

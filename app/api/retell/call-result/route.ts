@@ -151,29 +151,24 @@ export async function POST(request: Request) {
     // ========================================================================
     // DOUBLE DIAL DETECTION - CRITICAL SECTION
     // ========================================================================
+    // IMPORTANT: We ONLY use metadata for detection now!
+    // - First dial (from next-call): metadata.was_double_dial is undefined/false
+    // - Double dial (from call-result trigger): metadata.was_double_dial = true
+    // The old fallback using last_dial_at was unreliable and caused first dials
+    // to be incorrectly detected as double dials.
+    // ========================================================================
     console.log('');
     console.log('🔍🔍🔍 ========== DOUBLE DIAL DETECTION ========== 🔍🔍🔍');
     
-    // Check metadata
-    let wasDoubleDial = metadataDoubleDial;
+    // ONLY use metadata - no fallback! This is the reliable way.
+    const wasDoubleDial = metadataDoubleDial;
     console.log(`   Metadata was_double_dial: ${JSON.stringify(metadata?.was_double_dial)} (parsed: ${metadataDoubleDial})`);
+    console.log(`   ➡️  wasDoubleDial: ${wasDoubleDial}`);
     
-    // Check fallback - was lead called recently?
+    // Log lead's last_dial_at for debugging (but don't use it for detection!)
     const lastDialAt = lead.last_dial_at ? new Date(lead.last_dial_at) : null;
-    const now = new Date();
-    const timeSinceLastDial = lastDialAt ? (now.getTime() - lastDialAt.getTime()) / 1000 : Infinity;
+    console.log(`   [DEBUG] Lead last_dial_at: ${lead.last_dial_at || 'NULL'}`);
     
-    console.log(`   Lead last_dial_at in DB: ${lead.last_dial_at || 'NULL/NEVER SET'}`);
-    console.log(`   Current time: ${now.toISOString()}`);
-    console.log(`   Time since last dial: ${timeSinceLastDial === Infinity ? 'NEVER' : timeSinceLastDial.toFixed(0) + 's'}`);
-    
-    // FALLBACK: If lead was called within 5 MINUTES, treat as double dial
-    if (!wasDoubleDial && timeSinceLastDial < 300) {
-      console.log('⚠️  FALLBACK TRIGGERED: Lead was called within 5 minutes!');
-      wasDoubleDial = true;
-    }
-    
-    console.log(`   ➡️  FINAL wasDoubleDial: ${wasDoubleDial}`);
     console.log('🔍🔍🔍 ============================================ 🔍🔍🔍');
     console.log('');
 
@@ -206,33 +201,39 @@ export async function POST(request: Request) {
       console.log('');
       
       // 1. UPDATE THE LEAD
+      // NOTE: First dial already set times_dialed and call_attempts_today = 1
+      // Double dial only increments times_dialed, NOT call_attempts_today!
       const newTimesDialed = (lead.times_dialed || 0) + 1;
       const newTotalCalls = (lead.total_calls_made || 0) + 1;
-      const newCallAttemptsToday = (lead.call_attempts_today || 0) + 1;
+      // Keep call_attempts_today at 1 (already set by first dial) - DON'T INCREMENT!
+      const currentCallAttemptsToday = lead.call_attempts_today || 1;
       
       // Get today's date string for tracking "already called today"
-      const { data: settingsForTz } = await supabase
-        .from('ai_control_settings')
-        .select('user_timezone')
-        .eq('user_id', userId)
-        .single();
       // ALWAYS use EST for day reset (midnight Eastern Time for ALL users)
       const todayStrDD = getEstDateString();
       
-      console.log('📝 UPDATING LEAD:');
+      // CHECK IF LEAD HIT 20 ATTEMPTS - MARK AS DEAD
+      let finalStatus = 'no_answer';
+      if (newTotalCalls >= 20) {
+        console.log('💀 ========== LEAD HIT 20 ATTEMPTS - MARKING AS DEAD ==========');
+        console.log(`   Lead ${lead.name} has been called 20 times with no pickup`);
+        finalStatus = 'dead_lead';
+      }
+      
+      console.log('📝 UPDATING LEAD (DOUBLE DIAL):');
       console.log(`   Lead ID: ${leadId}`);
-      console.log(`   status: ${lead.status} → no_answer`);
+      console.log(`   status: ${lead.status} → ${finalStatus}`);
       console.log(`   times_dialed: ${lead.times_dialed || 0} → ${newTimesDialed}`);
-      console.log(`   call_attempts_today: ${lead.call_attempts_today || 0} → ${newCallAttemptsToday}`);
+      console.log(`   call_attempts_today: ${currentCallAttemptsToday} (STAYS THE SAME - one session)`);
       console.log(`   last_attempt_date: → ${todayStrDD}`);
       
       const { error: leadErr } = await supabase
         .from('leads')
         .update({
-          status: 'no_answer',
+          status: finalStatus,
           times_dialed: newTimesDialed,
           total_calls_made: newTotalCalls,
-          call_attempts_today: newCallAttemptsToday,
+          // DON'T update call_attempts_today - keep it at 1 from first dial!
           last_attempt_date: todayStrDD,
           last_call_outcome: 'no_answer',
           last_dial_at: new Date().toISOString(),
@@ -243,7 +244,7 @@ export async function POST(request: Request) {
       if (leadErr) {
         console.error('❌ LEAD UPDATE FAILED:', leadErr);
       } else {
-        console.log('✅ LEAD UPDATED: status=no_answer, times_dialed=' + newTimesDialed + ', call_attempts_today=' + newCallAttemptsToday);
+        console.log('✅ LEAD UPDATED: status=no_answer, times_dialed=' + newTimesDialed + ', call_attempts_today STAYS at ' + currentCallAttemptsToday);
       }
       
       // 2. UPDATE calls_made_today
@@ -270,7 +271,26 @@ export async function POST(request: Request) {
         console.log('✅ calls_made_today UPDATED to ' + newCallCount);
       }
       
-      // 3. CREATE CALL RECORD
+      // 3. GET USER'S COST PER MINUTE FOR CHARGING
+      const { data: userProfileDD } = await supabase
+        .from('profiles')
+        .select('cost_per_minute')
+        .eq('user_id', userId)
+        .single();
+      
+      const costPerMinuteDD = userProfileDD?.cost_per_minute || 0.65;
+      const durationMinutesDD = durationSecondsDD / 60;
+      const callCostDD = durationMinutesDD * costPerMinuteDD;
+      
+      console.log('');
+      console.log('💰💰💰 ========== CHARGING FOR DOUBLE DIAL NO-ANSWER ========== 💰💰💰');
+      console.log(`💰 Duration: ${durationMinutesDD.toFixed(4)} minutes (${durationSecondsDD.toFixed(1)}s)`);
+      console.log(`💰 Rate: $${costPerMinuteDD}/min`);
+      console.log(`💰 Cost: $${callCostDD.toFixed(4)}`);
+      console.log('💰💰💰 ========================================================= 💰💰💰');
+      console.log('');
+      
+      // 4. CREATE CALL RECORD WITH ACTUAL COST
       const { error: callErr } = await supabase
         .from('calls')
         .insert({
@@ -279,11 +299,11 @@ export async function POST(request: Request) {
           call_id: call_id,
           lead_name: lead.name || 'Unknown',
           phone_number: lead.phone || 'N/A',
-          duration: durationSecondsDD / 60,
+          duration: durationMinutesDD,
           disposition: 'no_answer',
           outcome: 'no_answer',
           connected: false,
-          cost: 0,
+          cost: callCostDD,  // FIX: Actual cost, not 0!
           recording_url: recording_url,
           in_voicemail: call_analysis?.in_voicemail === true,
           was_double_dial: true,
@@ -293,10 +313,55 @@ export async function POST(request: Request) {
       if (callErr) {
         console.error('❌ CALL RECORD FAILED:', callErr);
       } else {
-        console.log('✅ CALL RECORD CREATED');
+        console.log('✅ CALL RECORD CREATED with cost: $' + callCostDD.toFixed(4));
       }
       
-      // 4. TRIGGER NEXT LEAD
+      // 5. DEDUCT FROM USER'S BALANCE - CRITICAL!
+      if (callCostDD > 0) {
+        const { data: balanceDD } = await supabase
+          .from('call_balance')
+          .select('balance, auto_refill_enabled')
+          .eq('user_id', userId)
+          .single();
+        
+        if (balanceDD) {
+          const newBalanceDD = balanceDD.balance - callCostDD;
+          console.log(`💰 Deducting from balance: $${balanceDD.balance.toFixed(2)} - $${callCostDD.toFixed(4)} = $${newBalanceDD.toFixed(2)}`);
+          
+          await supabase
+            .from('call_balance')
+            .update({ balance: newBalanceDD })
+            .eq('user_id', userId);
+          
+          console.log('✅ Balance updated successfully!');
+          
+          // Check if balance went negative - stop AI if needed
+          if (newBalanceDD <= 0 && !balanceDD.auto_refill_enabled) {
+            console.log('🛑 Balance went negative with no auto-refill - stopping AI');
+            await supabase
+              .from('ai_control_settings')
+              .update({ status: 'stopped', last_call_status: 'stopped_negative_balance' })
+              .eq('user_id', userId);
+          }
+        }
+      }
+      
+      // 6. UPDATE TODAY'S SPEND IN AI CONTROL SETTINGS
+      const { data: currentSettingsDD } = await supabase
+        .from('ai_control_settings')
+        .select('today_spend')
+        .eq('user_id', userId)
+        .single();
+      
+      const newTodaySpendDD = (currentSettingsDD?.today_spend || 0) + callCostDD;
+      await supabase
+        .from('ai_control_settings')
+        .update({ today_spend: newTodaySpendDD })
+        .eq('user_id', userId);
+      
+      console.log(`💰 Today's spend updated: $${(currentSettingsDD?.today_spend || 0).toFixed(2)} → $${newTodaySpendDD.toFixed(2)}`);
+      
+      // 7. TRIGGER NEXT LEAD
       console.log('📞 Triggering next lead...');
       try {
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://sterlingdialer.com';
@@ -458,93 +523,33 @@ export async function POST(request: Request) {
         console.log('📞 Call was NOT answered (no pickup/voicemail)');
       }
       
-      if (!wasDoubleDial) {
-        // First dial - NO ANSWER - DOUBLE DIAL NOW!
-        shouldDoubleDial = true;
-        shouldContinueToNextLead = false;
-        // Use simple outcome for tracking (won't create record yet anyway)
-        outcome = 'no_answer';
-        // Keep current status - we're about to double dial
-        leadStatus = lead.status || 'new';
-        console.log('🔄 FIRST ATTEMPT NO ANSWER - Will double dial immediately!');
-        console.log('   → Lead status stays: ' + leadStatus + ' (waiting for double dial result)');
-        console.log('   → This does NOT count as a dial yet');
-      } else {
+      // ================================================================
+      // FIRST DIAL NO ANSWER - TRIGGER DOUBLE DIAL
+      // ================================================================
+      // NOTE: Double dial no answer is handled by EARLY PATH (lines 199-325)
+      // which returns early. This code only runs for FIRST dial no answer.
+      // If we get here with wasDoubleDial=true, something is wrong!
+      // ================================================================
+      if (wasDoubleDial) {
         // ================================================================
-        // 🔥🔥🔥 DOUBLE DIAL NO ANSWER - DO EVERYTHING HERE! 🔥🔥🔥
+        // This should NEVER run now since we removed the fallback detection
+        // wasDoubleDial can only be true if metadata.was_double_dial was set
         // ================================================================
+        console.log('');
+        console.log('🚨🚨🚨 UNEXPECTED: wasDoubleDial=true in normal flow! 🚨🚨🚨');
+        console.log('🚨 This call should have been caught by the early path at line 194!');
+        console.log('🚨 Metadata was_double_dial was set but early path was skipped...');
+        console.log('🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨');
+        console.log('');
         outcome = 'no_answer';
         leadStatus = 'no_answer';
         
-        console.log('');
-        console.log('📵📵📵 ========== DOUBLE DIAL NO ANSWER ========== 📵📵📵');
-        console.log('🔢 Counting as 1 completed dial!');
-        console.log('📌 Setting lead status to: no_answer');
-        console.log('📞 Incrementing times_dialed');
-        console.log('📵📵📵 ========================================= 📵📵📵');
+        // Calculate cost for this call
+        const fallbackCallCost = durationMinutes * costPerMinute;
         
-        // ================================================================
-        // 1. UPDATE THE LEAD - STATUS AND TIMES_DIALED
-        // ================================================================
-        const newTimesDialed = (lead.times_dialed || 0) + 1;
-        const newTotalCalls = (lead.total_calls_made || 0) + 1;
-        
-        console.log(`📝 Updating lead ${leadId}:`);
-        console.log(`   - status: ${lead.status} → no_answer`);
-        console.log(`   - times_dialed: ${lead.times_dialed || 0} → ${newTimesDialed}`);
-        console.log(`   - total_calls_made: ${lead.total_calls_made || 0} → ${newTotalCalls}`);
-        
-        const { error: leadError } = await supabase
-          .from('leads')
-          .update({
-            status: 'no_answer',
-            times_dialed: newTimesDialed,
-            total_calls_made: newTotalCalls,
-            last_call_outcome: 'no_answer',
-            last_dial_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', leadId);
-        
-        if (leadError) {
-          console.error('❌ FAILED to update lead:', leadError);
-        } else {
-          console.log('✅ LEAD UPDATED: status=no_answer, times_dialed=' + newTimesDialed);
-        }
-        
-        // ================================================================
-        // 2. UPDATE calls_made_today IN ai_control_settings
-        // ================================================================
-        const { data: currentSettings } = await supabase
-          .from('ai_control_settings')
-          .select('calls_made_today')
-          .eq('user_id', userId)
-          .single();
-        
-        const oldCallCount = currentSettings?.calls_made_today || 0;
-        const newCallCount = oldCallCount + 1;
-        
-        console.log(`🔥 calls_made_today: ${oldCallCount} → ${newCallCount}`);
-        
-        const { error: settingsError } = await supabase
-          .from('ai_control_settings')
-          .update({ 
-            calls_made_today: newCallCount,
-            last_call_status: 'no_answer'
-          })
-          .eq('user_id', userId);
-        
-        if (settingsError) {
-          console.error('❌ FAILED to update calls_made_today:', settingsError);
-        } else {
-          console.log('✅ calls_made_today UPDATED to ' + newCallCount);
-        }
-        
-        // ================================================================
-        // 3. CREATE CALL RECORD
-        // ================================================================
-        console.log('💾 Creating call record...');
-        const { error: callError } = await supabase
+        // Create call record - ALWAYS create one!
+        console.log('💾 Creating call record (fallback path)...');
+        const { error: fallbackCallErr } = await supabase
           .from('calls')
           .insert({
             user_id: userId,
@@ -556,22 +561,261 @@ export async function POST(request: Request) {
             disposition: 'no_answer',
             outcome: 'no_answer',
             connected: false,
-            cost: 0,
+            cost: fallbackCallCost,
             recording_url: recording_url,
-            transcript: transcript,
-            call_analysis: call_analysis,
             in_voicemail: inVoicemail,
-            was_double_dial: true,
+            was_double_dial: true, // It was detected as double dial
             created_at: new Date().toISOString(),
           });
         
-        if (callError) {
-          console.error('❌ FAILED to create call record:', callError);
+        if (fallbackCallErr) {
+          console.error('❌ Fallback call record FAILED:', fallbackCallErr);
         } else {
-          console.log('✅ CALL RECORD CREATED');
+          console.log('✅ Fallback call record created with cost: $' + fallbackCallCost.toFixed(4));
         }
         
-        console.log('📵📵📵 ========== DOUBLE DIAL COMPLETE ========== 📵📵📵');
+        // Deduct from balance
+        if (fallbackCallCost > 0) {
+          const { data: fallbackBalance } = await supabase
+            .from('call_balance')
+            .select('balance, auto_refill_enabled')
+            .eq('user_id', userId)
+            .single();
+          
+          if (fallbackBalance) {
+            const newFallbackBalance = fallbackBalance.balance - fallbackCallCost;
+            console.log(`💰 Deducting: $${fallbackBalance.balance.toFixed(2)} - $${fallbackCallCost.toFixed(4)} = $${newFallbackBalance.toFixed(2)}`);
+            
+            await supabase
+              .from('call_balance')
+              .update({ balance: newFallbackBalance })
+              .eq('user_id', userId);
+          }
+        }
+        
+        // Update today's spend
+        const { data: fallbackSettings } = await supabase
+          .from('ai_control_settings')
+          .select('today_spend, calls_made_today')
+          .eq('user_id', userId)
+          .single();
+        
+        const newFallbackSpend = (fallbackSettings?.today_spend || 0) + fallbackCallCost;
+        const newFallbackCalls = (fallbackSettings?.calls_made_today || 0) + 1;
+        
+        await supabase
+          .from('ai_control_settings')
+          .update({ 
+            today_spend: newFallbackSpend,
+            calls_made_today: newFallbackCalls,
+          })
+          .eq('user_id', userId);
+        
+        console.log(`💰 Today's spend updated: $${newFallbackSpend.toFixed(4)}, calls: ${newFallbackCalls}`);
+        
+      } else {
+        // ================================================================
+        // 🎯🎯🎯 FIRST DIAL NO ANSWER - THIS IS THE KEY BLOCK! 🎯🎯🎯
+        // ================================================================
+        // This block runs when:
+        // 1. Call was NOT answered (< 10 seconds)
+        // 2. wasDoubleDial = false (from metadata - no was_double_dial flag)
+        // 
+        // What happens here:
+        // - call_attempts_today = 1 (first attempt of the day for this lead)
+        // - times_dialed increments by 1
+        // - Call record created with was_double_dial = false
+        // - Balance deducted
+        // - Double dial triggered
+        // ================================================================
+        
+        console.log('');
+        console.log('');
+        console.log('🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯');
+        console.log('🎯                                                                 🎯');
+        console.log('🎯        FIRST DIAL NO ANSWER - PROCESSING NOW!                   🎯');
+        console.log('🎯                                                                 🎯');
+        console.log('🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯');
+        console.log('');
+        
+        shouldDoubleDial = true;
+        shouldContinueToNextLead = false;
+        outcome = 'no_answer';
+        leadStatus = 'no_answer';
+        
+        // CRITICAL: Calculate cost NOW before using it!
+        const firstDialCost = durationMinutes * costPerMinute;
+        
+        console.log('📞 FIRST DIAL DETAILS:');
+        console.log(`   - Lead: ${lead.name} (ID: ${leadId})`);
+        console.log(`   - Duration: ${durationSeconds.toFixed(1)}s (${durationMinutes.toFixed(4)} min)`);
+        console.log(`   - Cost: $${firstDialCost.toFixed(4)} ($${costPerMinute}/min)`);
+        console.log('');
+        console.log('📊 WILL UPDATE:');
+        console.log(`   - call_attempts_today: ${lead.call_attempts_today || 0} → 1`);
+        console.log(`   - times_dialed: ${lead.times_dialed || 0} → ${(lead.times_dialed || 0) + 1}`);
+        console.log('');
+        console.log('💾 WILL CREATE: Call record with was_double_dial = FALSE');
+        console.log('💰 WILL CHARGE: $' + firstDialCost.toFixed(4));
+        console.log('🔄 WILL TRIGGER: Double dial after this completes');
+        console.log('');
+        
+        // ================================================================
+        // STEP 1: UPDATE LEAD
+        // - times_dialed: INCREMENT (this is dial #1 of session)
+        // - call_attempts_today: SET TO 1 (this is first attempt today)
+        // - total_calls_made: INCREMENT
+        // ================================================================
+        const firstDialTimesDialed = (lead.times_dialed || 0) + 1;
+        const firstDialTotalCalls = (lead.total_calls_made || 0) + 1;
+        
+        console.log('');
+        console.log('📝 STEP 1: UPDATING LEAD...');
+        console.log('   BEFORE:');
+        console.log(`      times_dialed = ${lead.times_dialed || 0}`);
+        console.log(`      call_attempts_today = ${lead.call_attempts_today || 0}`);
+        console.log(`      total_calls_made = ${lead.total_calls_made || 0}`);
+        console.log('   AFTER:');
+        console.log(`      times_dialed = ${firstDialTimesDialed}`);
+        console.log(`      call_attempts_today = 1  ← SET TO 1 (first attempt of session)`);
+        console.log(`      total_calls_made = ${firstDialTotalCalls}`);
+        
+        const { error: firstDialLeadErr } = await supabase
+          .from('leads')
+          .update({
+            status: 'no_answer',
+            times_dialed: firstDialTimesDialed,
+            total_calls_made: firstDialTotalCalls,
+            call_attempts_today: 1, // SET TO 1 - first attempt of the day
+            last_attempt_date: todayStr,
+            last_call_outcome: 'no_answer',
+            last_dial_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', leadId);
+        
+        if (firstDialLeadErr) {
+          console.error('');
+          console.error('❌❌❌ FIRST DIAL LEAD UPDATE FAILED! ❌❌❌');
+          console.error('   Error:', firstDialLeadErr);
+          console.error('');
+        } else {
+          console.log('');
+          console.log('✅ LEAD UPDATED SUCCESSFULLY!');
+          console.log(`   times_dialed = ${firstDialTimesDialed}`);
+          console.log(`   call_attempts_today = 1`);
+          console.log('');
+        }
+        
+        // ================================================================
+        // STEP 2: CREATE CALL RECORD
+        // - was_double_dial: FALSE (this is first dial, not double dial)
+        // - cost: actual calculated cost
+        // - This appears in call history!
+        // ================================================================
+        console.log('');
+        console.log('💾 STEP 2: CREATING CALL RECORD...');
+        console.log(`   call_id: ${call_id}`);
+        console.log(`   duration: ${durationMinutes.toFixed(4)} min`);
+        console.log(`   cost: $${firstDialCost.toFixed(4)}`);
+        console.log(`   was_double_dial: FALSE  ← This is FIRST dial`);
+        
+        const { error: firstDialCallErr } = await supabase
+          .from('calls')
+          .insert({
+            user_id: userId,
+            lead_id: leadId,
+            call_id: call_id,
+            lead_name: lead.name || 'Unknown',
+            phone_number: lead.phone || 'N/A',
+            duration: durationMinutes,
+            disposition: 'no_answer',
+            outcome: 'no_answer',
+            connected: false,
+            cost: firstDialCost,
+            recording_url: recording_url,
+            transcript: transcript || '',
+            call_analysis: call_analysis,
+            in_voicemail: inVoicemail,
+            was_double_dial: false, // FALSE = first dial
+            created_at: new Date().toISOString(),
+          });
+        
+        if (firstDialCallErr) {
+          console.error('');
+          console.error('❌❌❌ FIRST DIAL CALL RECORD FAILED! ❌❌❌');
+          console.error('   Error:', firstDialCallErr);
+          console.error('');
+        } else {
+          console.log('');
+          console.log('✅ CALL RECORD CREATED!');
+          console.log(`   was_double_dial = false`);
+          console.log(`   cost = $${firstDialCost.toFixed(4)}`);
+          console.log('');
+        }
+        
+        // 3. DEDUCT FROM BALANCE
+        if (firstDialCost > 0) {
+          const { data: firstDialBalance } = await supabase
+            .from('call_balance')
+            .select('balance, auto_refill_enabled')
+            .eq('user_id', userId)
+            .single();
+          
+          if (firstDialBalance) {
+            const newFirstDialBalance = firstDialBalance.balance - firstDialCost;
+            console.log(`💰 Deducting: $${firstDialBalance.balance.toFixed(2)} - $${firstDialCost.toFixed(4)} = $${newFirstDialBalance.toFixed(2)}`);
+            
+            await supabase
+              .from('call_balance')
+              .update({ balance: newFirstDialBalance })
+              .eq('user_id', userId);
+            
+            console.log('✅ Balance updated');
+            
+            // Stop AI if balance went negative without auto-refill
+            if (newFirstDialBalance <= 0 && !firstDialBalance.auto_refill_enabled) {
+              console.log('🛑 Balance negative, no auto-refill - will stop after double dial');
+            }
+          }
+        } else {
+          console.log('⚠️ First dial cost is $0 - not charging');
+        }
+        
+        // 4. UPDATE TODAY'S SPEND AND CALLS COUNT
+        const { data: firstDialSettings } = await supabase
+          .from('ai_control_settings')
+          .select('today_spend, calls_made_today')
+          .eq('user_id', userId)
+          .single();
+        
+        const newFirstDialSpend = (firstDialSettings?.today_spend || 0) + firstDialCost;
+        const newFirstDialCalls = (firstDialSettings?.calls_made_today || 0) + 1;
+        
+        await supabase
+          .from('ai_control_settings')
+          .update({ 
+            today_spend: newFirstDialSpend,
+            calls_made_today: newFirstDialCalls,
+            last_call_status: 'no_answer_first_dial'
+          })
+          .eq('user_id', userId);
+        
+        console.log(`💰 Today's spend: $${newFirstDialSpend.toFixed(4)}, calls: ${newFirstDialCalls}`);
+        console.log('');
+        console.log('');
+        console.log('✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅');
+        console.log('✅                                                              ✅');
+        console.log('✅   FIRST DIAL BLOCK COMPLETED SUCCESSFULLY!                   ✅');
+        console.log('✅                                                              ✅');
+        console.log('✅   ✓ Lead updated (call_attempts_today = 1)                   ✅');
+        console.log('✅   ✓ Call record created (was_double_dial = false)            ✅');
+        console.log('✅   ✓ Balance deducted ($' + firstDialCost.toFixed(4) + ')                           ✅');
+        console.log('✅   ✓ Today spend updated                                      ✅');
+        console.log('✅                                                              ✅');
+        console.log('✅   NOW TRIGGERING DOUBLE DIAL...                              ✅');
+        console.log('✅                                                              ✅');
+        console.log('✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅');
         console.log('');
       }
       
@@ -639,22 +883,19 @@ export async function POST(request: Request) {
     };
     
     // CORRECT LOGIC:
-    // 1. First dial no answer → DON'T count yet, trigger double dial
-    // 2. Double dial no answer → NOW count as 1 dial, set status to no_answer
-    // 3. Call answered (first or double) → count as 1 dial
+    // 1. First dial no answer → DON'T count yet, trigger double dial (shouldDoubleDial = true)
+    // 2. Double dial no answer → HANDLED BY EARLY PATH (lines 199-325), never reaches here!
+    // 3. Call answered (first or double) → count as 1 dial (reaches here)
+    // 4. Double dial answered → count as 1 dial (reaches here)
     const currentAttempts = lead.call_attempts_today || 0;
     
-    if (wasDoubleDial || callWasAnswered) {
-      // Either double dial completed OR call was answered
-      // NOW we count as 1 dial
+    // Only increment counters for ANSWERED calls that reach this point
+    // Double dial no-answer is handled by early path and returns before getting here
+    if (callWasAnswered) {
+      // Call was ANSWERED - count as 1 dial
       leadUpdate.call_attempts_today = currentAttempts + 1;
       leadUpdate.last_attempt_date = todayStr;
-      
-      if (wasDoubleDial && !callWasAnswered) {
-        console.log(`   🔢 DOUBLE DIAL NO ANSWER - NOW counting as 1 dial`);
-      } else if (callWasAnswered) {
-        console.log(`   🔢 CALL ANSWERED - Counting as 1 dial`);
-      }
+      console.log(`   🔢 CALL ANSWERED - Counting as 1 dial`);
       console.log(`   📅 call_attempts_today: ${currentAttempts} → ${leadUpdate.call_attempts_today}`);
       console.log(`   📌 Status: ${leadStatus}`);
     } else {
@@ -667,11 +908,13 @@ export async function POST(request: Request) {
     // ========================================================================
     // SIMPLIFIED TRACKING - 20 ATTEMPT SYSTEM
     // ========================================================================
-    // Increment counters only when session is complete (after double dial OR if answered)
-    if (wasDoubleDial || callWasAnswered) {
-      console.log('📊 Session complete - incrementing total call counters...');
+    // NOTE: Double dial no-answer is handled by EARLY PATH (lines 199-325)
+    // This section only runs for ANSWERED calls (first dial or double dial)
+    // First dial no-answer sets shouldDoubleDial=true and skips this
+    if (callWasAnswered) {
+      console.log('📊 Call answered - incrementing total call counters...');
       
-      // ALWAYS increment times_dialed (this is what the UI displays!)
+      // Increment times_dialed (this is what the UI displays!)
       const currentTimesDial = lead.times_dialed || 0;
       leadUpdate.times_dialed = currentTimesDial + 1;
       console.log(`   - times_dialed: ${currentTimesDial} → ${leadUpdate.times_dialed}`);
@@ -681,27 +924,14 @@ export async function POST(request: Request) {
       leadUpdate.total_calls_made = newTotalCalls;
       console.log(`   - total_calls_made: ${lead.total_calls_made || 0} → ${newTotalCalls}`);
       
-      // Only count pickups if call was answered
-      if (callWasAnswered) {
-        leadUpdate.total_pickups = (lead.total_pickups || 0) + 1;
-        console.log(`   - total_pickups: ${lead.total_pickups || 0} → ${leadUpdate.total_pickups}`);
-        
-        // Calculate pickup rate
-        if (newTotalCalls > 0) {
-          leadUpdate.pickup_rate = (leadUpdate.total_pickups / newTotalCalls) * 100;
-          console.log(`   - pickup_rate: ${leadUpdate.pickup_rate.toFixed(1)}%`);
-        }
-      }
+      // Count pickups for answered calls
+      leadUpdate.total_pickups = (lead.total_pickups || 0) + 1;
+      console.log(`   - total_pickups: ${lead.total_pickups || 0} → ${leadUpdate.total_pickups}`);
       
-      // ========================================================================
-      // CHECK IF LEAD HIT 20 ATTEMPTS - MARK AS DEAD
-      // ========================================================================
-      if (newTotalCalls >= 20 && !callWasAnswered) {
-        console.log('💀 ========== LEAD HIT 20 ATTEMPTS - MARKING AS DEAD ==========');
-        console.log(`   Lead ${lead.name} has been called 20 times with no pickup`);
-        leadUpdate.status = 'dead_lead';
-        leadStatus = 'dead_lead';
-        console.log('   ✅ Status changed to: dead_lead');
+      // Calculate pickup rate
+      if (newTotalCalls > 0) {
+        leadUpdate.pickup_rate = (leadUpdate.total_pickups / newTotalCalls) * 100;
+        console.log(`   - pickup_rate: ${leadUpdate.pickup_rate.toFixed(1)}%`);
       }
     } else {
       console.log('📊 First attempt no answer - NOT incrementing counters yet (waiting for double dial)');

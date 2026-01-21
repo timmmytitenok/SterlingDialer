@@ -144,6 +144,42 @@ export async function POST(request: Request) {
 
     console.log('🚀 AI Dialer launched for user:', user.id);
 
+    // ========================================================================
+    // CLEANUP: Reset any stuck states from previous runs
+    // This fixes the "can't re-launch" issue
+    // ========================================================================
+    console.log('🧹 Cleaning up stuck states from previous runs...');
+    
+    // 1. Reset leads stuck in 'calling_in_progress' back to 'new'
+    const { data: stuckLeads, error: stuckError } = await supabaseAdmin
+      .from('leads')
+      .update({ 
+        status: 'new',
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', user.id)
+      .eq('status', 'calling_in_progress')
+      .select('id');
+    
+    if (stuckLeads && stuckLeads.length > 0) {
+      console.log(`✅ Reset ${stuckLeads.length} leads stuck in 'calling_in_progress' → 'new'`);
+    } else {
+      console.log('✅ No stuck leads found');
+    }
+    
+    // 2. Clear any stale current_call_id and current_lead_id
+    await supabaseAdmin
+      .from('ai_control_settings')
+      .update({
+        current_call_id: null,
+        current_lead_id: null,
+        last_call_status: 'cleanup_before_launch'
+      })
+      .eq('user_id', user.id);
+    
+    console.log('✅ Cleared stale call tracking fields');
+    console.log('🧹 Cleanup complete!');
+
     // CRITICAL: Also update ai_control_settings to 'running' - this is what next-call checks!
     // Use admin client to bypass RLS
     console.log('🔧 Setting ai_control_settings.status = running...');
