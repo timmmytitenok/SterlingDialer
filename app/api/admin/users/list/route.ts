@@ -21,13 +21,30 @@ export async function GET() {
 
     const supabase = createServiceRoleClient();
 
-    // Fetch all auth users
-    const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+    // Fetch ALL auth users by paginating (listUsers defaults to 50 per page)
+    const PER_PAGE = 1000;
+    const allAuthUsers: any[] = [];
+    let page = 1;
+    let hasMore = true;
 
-    if (authError) {
-      console.error('❌ Error fetching auth users:', authError);
-      throw authError;
+    while (hasMore) {
+      const { data, error: authError } = await supabase.auth.admin.listUsers({
+        page,
+        perPage: PER_PAGE,
+      });
+
+      if (authError) {
+        console.error('❌ Error fetching auth users:', authError);
+        throw authError;
+      }
+
+      const users = data?.users ?? [];
+      allAuthUsers.push(...users);
+      hasMore = users.length === PER_PAGE;
+      page++;
     }
+
+    const authData = { users: allAuthUsers };
 
     // Fetch all related data - get ALL profile fields
     const [profiles, subscriptions, callBalances, retellConfigs] = await Promise.all([
