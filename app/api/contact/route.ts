@@ -32,14 +32,22 @@ export async function POST(request: Request) {
 
     console.log('✅ Resend API key found, sending email...');
 
+    const isWaitlistSubmission = typeof message === 'string' && message.includes('WAITLIST SIGNUP');
+    const emailSubject = isWaitlistSubmission
+      ? 'Joining Waitlist'
+      : `Contact Form Submission from ${name}`;
+    const emailHeading = isWaitlistSubmission
+      ? 'Joining Waitlist'
+      : 'New Contact Form Submission';
+
     // Send email using Resend
     const data = await resend.emails.send({
       from: 'Sterling Dialer Contact <onboarding@resend.dev>', // You'll update this with your domain later
       to: ['timothytitenok9@gmail.com'], // Must use your Resend signup email in testing mode
       replyTo: email,
-      subject: `Contact Form Submission from ${name}`,
+      subject: emailSubject,
       html: `
-        <h2>New Contact Form Submission</h2>
+        <h2>${emailHeading}</h2>
         <p><strong>Name:</strong> ${name}</p>
         <p><strong>Email:</strong> ${email}</p>
         <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>

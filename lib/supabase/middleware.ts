@@ -59,6 +59,7 @@ export async function updateSession(request: NextRequest) {
   const isAdminApiRoute = request.nextUrl.pathname.startsWith('/api/admin');
   const isSalesApiRoute = request.nextUrl.pathname.startsWith('/api/sales'); // All sales team API routes
   const isSalesReferralRoute = request.nextUrl.pathname.startsWith('/api/sales-referral'); // Sales referral creation
+  const isPublicApiRoute = request.nextUrl.pathname === '/api/contact'; // Public waitlist/contact form
   const isProtectedRoute =
     request.nextUrl.pathname.startsWith('/dashboard') ||
     (request.nextUrl.pathname.startsWith('/api') &&
@@ -66,7 +67,8 @@ export async function updateSession(request: NextRequest) {
       !isWebhookRoute &&
       !isAdminApiRoute &&
       !isSalesApiRoute &&
-      !isSalesReferralRoute); // Don't require user auth for admin/sales API routes
+      !isSalesReferralRoute &&
+      !isPublicApiRoute); // Don't require user auth for admin/sales/public form APIs
 
   if (isProtectedRoute && !user) {
     // For API routes, return JSON error instead of redirecting (prevents HTML parse errors)
